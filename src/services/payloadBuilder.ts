@@ -279,6 +279,11 @@ export function buildPayload(
         if (msg.role === 'user' && typeof content === 'string') {
             content = content.replace(/\n?\[(?:DICE OUTCOMES:|SURPRISE EVENT:|ENCOUNTER EVENT:|WORLD_EVENT:)[^\]]*\]/g, '');
         }
+        // Strip in-band <think> blocks from assistant content — reasoning is
+        // per-turn and not useful in long-term history (same as reasoning_content).
+        if (msg.role === 'assistant' && typeof content === 'string') {
+            content = content.replace(/<think>[\s\S]*?<\/think>\s*/gi, '').trim() || content;
+        }
 
         const textToEstimate = content || '';
         const cost = countTokens(textToEstimate);

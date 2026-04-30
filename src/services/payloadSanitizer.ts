@@ -70,6 +70,13 @@ export const sanitizePayloadForApi = (rawPayload: any[], allowTools: boolean, mo
             continue;
         }
 
+        // Defensive: reasoning_content must never appear on a user-role message.
+        if (msg.role === 'user' && msg.reasoning_content !== undefined) {
+            const { reasoning_content, ...userMsg } = msg;
+            cleaned.push(userMsg);
+            continue;
+        }
+
         cleaned.push(msg);
     }
 

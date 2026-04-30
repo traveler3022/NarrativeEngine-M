@@ -5,7 +5,21 @@
       "Read(//d/Games/AI DM Project/Automated_system/mobileApp/**)",
       "Bash(npm run:*)",
       "Bash(npx cap:*)",
-      "WebFetch(domain:docs.ollama.com)"
+      "WebFetch(domain:docs.ollama.com)",
+      "Bash(npx tsc *)",
+      "Bash(xargs grep *)",
+      "Bash(git add *)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/Sagesheep/NarrativeEngine-p/main/README.md\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/Sagesheep/NarrativeEngine-p/master/README.md\")",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(curl -s \"https://www.reddit.com/r/SillyTavernAI/comments/1spqqb2/release_narrative_engine_i_built_a_standalone_ai/.json\")",
+      "Bash(python -c \"import sys,json; data=json.load\\(sys.stdin\\); post=data[0]['data']['children'][0]['data']; print\\('TITLE:', post['title']\\); print\\('BODY:'\\); print\\(post['selftext']\\)\")",
+      "Bash(curl -s -A \"Mozilla/5.0\" \"https://www.reddit.com/r/SillyTavernAI/comments/1spqqb2/release_narrative_engine_i_built_a_standalone_ai/.json\" -o reddit_post.json)",
+      "Bash(python -c \"import json; data=json.load\\(open\\('reddit_post.json'\\)\\); post=data[0]['data']['children'][0]['data']; print\\('TITLE:', post['title']\\); print\\(\\); print\\(post['selftext']\\)\")",
+      "WebSearch",
+      "WebFetch(domain:api-docs.deepseek.com)",
+      "WebFetch(domain:apidog.com)"
     ]
   }
 }

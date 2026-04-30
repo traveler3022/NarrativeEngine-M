@@ -211,7 +211,9 @@ export function CampaignHub() {
             toast.success('Campaign saved to Downloads folder');
         } catch (err) {
             if (err instanceof Error && err.message === 'Cancelled') return;
-            toast.error('Export failed');
+            const msg = err instanceof Error ? err.message : String(err);
+            console.error('[export] handler error:', err);
+            toast.error(msg.startsWith('Export failed') ? msg : `Export failed: ${msg}`);
         } finally {
             setIsExporting(null);
         }

@@ -70,29 +70,51 @@ export async function exportBundle(campaignId: string): Promise<CampaignBundle> 
 }
 
 export async function downloadBundle(campaignId: string): Promise<void> {
-    const bundle = await exportBundle(campaignId);
-    const safeName = bundle.campaign.name.replace(/[^a-z0-9]+/gi, '_').toLowerCase();
-    const filename = `${safeName}_${new Date().toISOString().slice(0, 10)}.campaign`;
-    const json = JSON.stringify(bundle);
+    let step: string = 'build-bundle';
+    try {
+        const bundle = await exportBundle(campaignId);
+        const safeName = bundle.campaign.name.replace(/[^a-z0-9]+/gi, '_').toLowerCase();
+        const filename = `${safeName}_${new Date().toISOString().slice(0, 10)}.campaign`;
 
-    if (Capacitor.isNativePlatform()) {
-        // Write to cache first (avoids passing large string over JS bridge)
-        await Filesystem.writeFile({ path: filename, data: json, directory: Directory.Cache, encoding: Encoding.UTF8 });
-        const { uri } = await Filesystem.getUri({ path: filename, directory: Directory.Cache });
-        await SaveFile.copyToDownloads({ uri, filename });
-    } else {
-        // Web/desktop browser: standard blob download
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        step = 'serialize';
+        const json = JSON.stringify(bundle);
+        console.log('[export] bundle size (chars):', json.length, 'filename:', filename);
+
+        if (Capacitor.isNativePlatform()) {
+            // Write in 512 KB chunks to avoid OOM crash on the JS→Native bridge
+            const CHUNK = 512 * 1024;
+            step = 'fs-write';
+            console.log('[export] writing to cache in chunks, total chars:', json.length);
+            await Filesystem.writeFile({ path: filename, data: json.slice(0, CHUNK), directory: Directory.Cache, encoding: Encoding.UTF8 });
+            for (let offset = CHUNK; offset < json.length; offset += CHUNK) {
+                step = `fs-append-${offset}`;
+                await Filesystem.appendFile({ path: filename, data: json.slice(offset, offset + CHUNK), directory: Directory.Cache, encoding: Encoding.UTF8 });
+            }
+
+            step = 'fs-geturi';
+            const { uri } = await Filesystem.getUri({ path: filename, directory: Directory.Cache });
+            console.log('[export] cache uri:', uri);
+
+            step = 'savefile-copy';
+            await SaveFile.copyToDownloads({ uri, filename });
+            console.log('[export] copyToDownloads resolved');
+        } else {
+            step = 'web-blob';
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`[export] failed at step "${step}":`, err);
+        throw new Error(`Export failed at ${step}: ${msg}`);
     }
-
 }
 
 export async function importBundle(bundle: CampaignBundle): Promise<string> {

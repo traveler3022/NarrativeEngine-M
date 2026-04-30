@@ -33,14 +33,6 @@ export async function runTurn(
     callbacks.setPipelinePhase?.('ai-intervention');
     await handleInterventions(state, callbacks, finalInput, abortController);
 
-    const userMsgId = uid();
-    callbacks.addMessage({
-        id: userMsgId,
-        role: 'user',
-        content: finalInput,
-        displayContent: displayInput,
-        timestamp: Date.now()
-    });
     callbacks.setStreaming(true);
     callbacks.setLoadingStatus?.('[1/5] Extracting Lore & Stats...');
 
@@ -49,6 +41,19 @@ export async function runTurn(
 
     callbacks.setPipelinePhase?.('building-prompt');
     const { payloadResult } = gathered;
+
+    // Add the user message to the chat store after context is gathered so the
+    // current turn input is NOT included in fitted history (which snapshots
+    // state.getMessages() inside gatherContext). It is appended directly as the
+    // trailing user message by buildPayload, so it would otherwise appear twice.
+    const userMsgId = uid();
+    callbacks.addMessage({
+        id: userMsgId,
+        role: 'user',
+        content: finalInput,
+        displayContent: displayInput,
+        timestamp: Date.now()
+    });
 
     const payload = payloadResult.messages;
     if (settings.debugMode && callbacks.setLastPayloadTrace) {
