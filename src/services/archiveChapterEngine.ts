@@ -11,25 +11,13 @@ const MAX_CONFIRMED_CHAPTERS = 3;
 export type AutoSealResult = {
     shouldSeal: boolean;
     reason: string;
-    sessionId?: string;
 };
 
 /**
- * Extract SESSION_IDs from header index string.
- * Parses lines like "SESSION_ID: abc-123-def"
- */
-export function extractSessionIds(headerIndex: string): string[] {
-    const matches = headerIndex.match(/SESSION_ID:\s*(\S+)/g) || [];
-    return matches.map(m => m.replace('SESSION_ID:', '').trim());
-}
-
-/**
- * Check if a chapter should be auto-sealed based on scene threshold or session boundary.
- * Returns the most recent sessionId if available (for tracking on the new chapter).
+ * Check if a chapter should be auto-sealed based on scene threshold.
  */
 export function shouldAutoSeal(
     chapters: ArchiveChapter[],
-    headerIndex: string
 ): AutoSealResult {
     const openChapter = chapters.find(c => !c.sealedAt);
     if (!openChapter) {
@@ -45,14 +33,6 @@ export function shouldAutoSeal(
         return { shouldSeal: true, reason: 'scene_threshold' };
     }
 
-    // Check for new SESSION_ID in header index that doesn't match open chapter
-    const sessionIds = extractSessionIds(headerIndex);
-    const lastSessionId = sessionIds[sessionIds.length - 1];
-    
-    if (lastSessionId && openChapter._lastSeenSessionId && lastSessionId !== openChapter._lastSeenSessionId) {
-        return { shouldSeal: true, reason: 'session_boundary', sessionId: lastSessionId };
-    }
-
     return { shouldSeal: false, reason: '' };
 }
 
@@ -62,7 +42,6 @@ export function shouldAutoSeal(
  */
 export function sealChapter(
     chapters: ArchiveChapter[],
-    currentSessionId?: string
 ): { sealedChapter: ArchiveChapter; newOpenChapter: ArchiveChapter } {
     const openChapter = chapters.find(c => !c.sealedAt);
     if (!openChapter) {
@@ -93,31 +72,9 @@ export function sealChapter(
         tone: '',
         themes: [],
         sceneCount: 0,
-        _lastSeenSessionId: currentSessionId,
     };
 
     return { sealedChapter: sealed, newOpenChapter: newOpen };
-}
-
-/**
- * Update the open chapter's _lastSeenSessionId if it hasn't been set yet.
- * Call this when a new chapter is created or when first sessionId is detected.
- */
-export function updateChapterSessionId(
-    chapters: ArchiveChapter[],
-    sessionId: string
-): ArchiveChapter[] {
-    const openChapter = chapters.find(c => !c.sealedAt);
-    if (!openChapter) return chapters;
-    
-    if (!openChapter._lastSeenSessionId) {
-        return chapters.map(c => 
-            c.chapterId === openChapter.chapterId 
-                ? { ...c, _lastSeenSessionId: sessionId }
-                : c
-        );
-    }
-    return chapters;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

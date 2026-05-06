@@ -19,7 +19,8 @@
       "Bash(python -c \"import json; data=json.load\\(open\\('reddit_post.json'\\)\\); post=data[0]['data']['children'][0]['data']; print\\('TITLE:', post['title']\\); print\\(\\); print\\(post['selftext']\\)\")",
       "WebSearch",
       "WebFetch(domain:api-docs.deepseek.com)",
-      "WebFetch(domain:apidog.com)"
+      "WebFetch(domain:apidog.com)",
+      "Bash(npx vitest *)"
     ]
   }
 }

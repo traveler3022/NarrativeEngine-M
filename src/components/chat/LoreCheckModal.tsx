@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, Check, Edit3, AlertTriangle, ShieldCheck, HelpCircle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Check, Edit3, AlertTriangle, ShieldCheck, HelpCircle, Loader2 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { runLoreCheck } from '../../services/loreCheck';
 
@@ -18,6 +18,11 @@ export function LoreCheckModal() {
 
     const [editMode, setEditMode] = useState(false);
     const [draft, setDraft] = useState('');
+
+    const openedAtRef = useRef(0);
+    useEffect(() => {
+        if (open) openedAtRef.current = Date.now();
+    }, [open]);
 
     useEffect(() => {
         if (!open || !selection || result || error) return;
@@ -83,10 +88,15 @@ export function LoreCheckModal() {
         close();
     };
 
+    const handleBackdropClick = () => {
+        if (Date.now() - openedAtRef.current < 350) return;
+        handleClose();
+    };
+
     return (
         <div
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-            onClick={handleClose}
+            className="fixed inset-0 z-[150] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            onClick={handleBackdropClick}
         >
             <div
                 className="bg-void-darker border border-border max-w-2xl w-full max-h-[85vh] overflow-y-auto rounded font-mono text-sm"
@@ -101,7 +111,10 @@ export function LoreCheckModal() {
 
                 <div className="p-4 space-y-4">
                     {loading && (
-                        <div className="text-text-dim text-xs">{status || 'Working...'}</div>
+                        <div className="flex items-center gap-3 py-4">
+                            <Loader2 size={18} className="animate-spin text-terminal" />
+                            <div className="text-text-primary text-sm">{status || 'Working...'}</div>
+                        </div>
                     )}
                     {error && (
                         <div className="text-red-400 text-xs">{error}</div>
@@ -130,6 +143,17 @@ export function LoreCheckModal() {
                                         </span>
                                     ))}
                                 </div>
+                            )}
+
+                            {result.rawResponse && (
+                                <details className="bg-void border border-amber-500/30 rounded">
+                                    <summary className="cursor-pointer p-2 text-[10px] uppercase tracking-widest text-amber-400/80">
+                                        Raw verifier output (debug)
+                                    </summary>
+                                    <pre className="p-2 text-[10px] text-text-dim whitespace-pre-wrap break-words border-t border-amber-500/20 max-h-64 overflow-y-auto">
+                                        {result.rawResponse}
+                                    </pre>
+                                </details>
                             )}
 
                             {result.suggestedRewrite != null && (

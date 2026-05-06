@@ -13,7 +13,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastContainer } from './components/Toast';
 import { MobileNavBar } from './components/MobileNavBar';
 import {
-  loadCampaignState, getLoreChunks, getNPCLedger, loadArchiveIndex,
+    loadCampaignState, getLoreChunks, getNPCLedger, loadArchiveIndex,
   loadChapters, loadSemanticFacts, loadDivergenceRegister,
 } from './store/campaignStore';
 

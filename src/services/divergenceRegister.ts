@@ -14,44 +14,102 @@ export const EMPTY_REGISTER: DivergenceRegister = {
     version: 1,
 };
 
-type ExtractionResult = {
-    importance: number;
-    newEntries: Array<{
-        category: DivergenceCategory;
-        subject: string;
-        divergence: string;
-        supersedes?: string;
-    }>;
+const VALID_CATEGORIES: ReadonlySet<DivergenceCategory> = new Set([
+    'canon_override', 'world_change', 'entity_state', 'player_state', 'obligation',
+]);
+
+const BULLET_RE = /^\s*-?\s*\[\s*([^|\]]+?)\s*\|\s*([^|\]]+?)\s*\|\s*scene\s*:\s*([^|\]]+?)\s*(?:\|\s*supersedes\s*:\s*([^|\]]+?)\s*)?\]\s*(.+?)\s*$/i;
+
+export function stripReasoning(raw: string): string {
+    let clean = raw.replace(/<think[\s\S]*?<\/think\s*>/gi, '');
+    const fence = clean.match(/```(?:\w+)?\s*([\s\S]*?)```/);
+    if (fence) clean = fence[1];
+    return clean.trim();
+}
+
+type ParsedBullet = {
+    category: DivergenceCategory;
+    subject: string;
+    divergence: string;
+    sceneRef: string;
+    supersedes?: string;
+    parseError?: boolean;
 };
+
+export function parseBulletDivergences(raw: string, validSceneIds: string[]): ParsedBullet[] {
+    const cleaned = stripReasoning(raw);
+    const fallbackScene = validSceneIds[0] ?? '000';
+    const sceneSet = new Set(validSceneIds);
+    const out: ParsedBullet[] = [];
+
+    for (const rawLine of cleaned.split(/\r?\n/)) {
+        const line = rawLine.trim();
+        if (!line) continue;
+        if (/^none$/i.test(line)) continue;
+        if (/^(here|the|note|output|entries|new|existing)\b/i.test(line) && !line.includes('[')) continue;
+
+        const m = line.match(BULLET_RE);
+        if (!m) {
+            out.push({
+                category: 'entity_state',
+                subject: line.slice(0, 40),
+                divergence: line,
+                sceneRef: fallbackScene,
+                parseError: true,
+            });
+            continue;
+        }
+        const [, catRaw, subjectRaw, sceneRaw, supersedesRaw, divergenceRaw] = m;
+        const catNorm = catRaw.toLowerCase().replace(/\s+/g, '_') as DivergenceCategory;
+        const category: DivergenceCategory = VALID_CATEGORIES.has(catNorm) ? catNorm : 'entity_state';
+        const sceneRef = sceneSet.has(sceneRaw) ? sceneRaw : fallbackScene;
+        out.push({
+            category,
+            subject: subjectRaw,
+            divergence: divergenceRaw,
+            sceneRef,
+            supersedes: supersedesRaw || undefined,
+        });
+    }
+
+    return out;
+}
 
 function buildExtractionPrompt(
     sceneText: string,
     sceneId: string,
-    currentRegister: DivergenceRegister
+    currentRegister: DivergenceRegister,
+    multiScene?: boolean
 ): string {
     const registerLines = currentRegister.entries.length > 0
         ? currentRegister.entries.map(e =>
             `${e.id} [Scene #${e.sceneRef}, imp:${e.importance}] ${e.category} — ${e.subject}: ${e.divergence}`
         ).join('\n')
         : '(empty)';
-
     const registerTokens = countTokens(registerLines);
 
-    return `EXISTING REGISTER (${registerTokens} tokens):
+    const sceneNote = multiScene
+        ? 'The scene text below contains messages from multiple scenes, marked with [Scene #XX] headers. Use the matching scene number for each fact.'
+        : `Use scene:${sceneId} for every fact unless the text explicitly attributes it to a different scene number.`;
+
+    return `EXISTING REGISTER (${registerTokens} tokens) — facts already captured. Do NOT re-extract these. Only add NEW facts, or use "supersedes:ID" when a new fact updates an existing one above.
 ${registerLines}
 
 NEW SCENE TEXT (Scene #${sceneId}):
 ${sceneText}
 
 TASK:
-1. Rate this scene's importance 1-10.
-2. If importance >= ${IMPORTANCE_GATE}, extract divergences — campaign-altering facts that override training data or establish new world state.
-3. For each new fact: if it updates an existing entry above, return its ID in "supersedes".
-4. Preserve proper nouns exactly as written in the scene.
-5. Categories: canon_override (contradicts source material), world_change (permanent map/world state), entity_state (NPCs, items, factions status), player_state (abilities, titles, curses), obligation (debts, promises, oaths).
+1. Rate this scene's importance 1-10 on the FIRST line as: importance:N
+2. ${sceneNote}
+3. Extract every story-relevant fact that affects future continuity (NPC states, items, locations, relationships, abilities, debuffs, quest progress, obligations, world state, canon overrides).
 
-OUTPUT JSON only:
-{ "importance": <number>, "newEntries": [{ "category": "<category>", "subject": "<entity>", "divergence": "<one-line fact>", "supersedes": "<id or null>" }] }`;
+Categories (use exactly one per line): canon_override, world_change, entity_state, player_state, obligation.
+
+Output format — one divergence per line after the importance line, no JSON, no markdown:
+- [category | subject | scene:NNN] divergence sentence
+- [category | subject | scene:NNN | supersedes:ID] divergence sentence
+
+Preserve proper nouns exactly. If there are NO divergences, output only the importance line.`;
 }
 
 export async function extractDivergences(
@@ -60,35 +118,40 @@ export async function extractDivergences(
     sceneId: string,
     currentRegister: DivergenceRegister,
     options?: { forceExtract?: boolean; multiScene?: boolean }
-): Promise<{ result: ExtractionResult | null; entries: DivergenceEntry[] }> {
-    const prompt = buildExtractionPrompt(sceneText, sceneId, currentRegister);
+): Promise<{ result: { importance: number } | null; entries: DivergenceEntry[] }> {
+    const prompt = buildExtractionPrompt(sceneText, sceneId, currentRegister, options?.multiScene);
 
     try {
         const raw = await llmCall(provider, prompt, { priority: 'low', maxTokens: 800 });
-        const jsonStr = extractJson(raw);
-        const parsed = JSON.parse(jsonStr) as ExtractionResult;
+        const cleaned = stripReasoning(raw);
 
-        if (!parsed || typeof parsed.importance !== 'number') {
-            return { result: null, entries: [] };
+        const impMatch = cleaned.match(/importance\s*:\s*(\d{1,2})/i);
+        const importance = impMatch ? Math.min(10, Math.max(1, parseInt(impMatch[1], 10))) : 5;
+
+        const validIds = options?.multiScene
+            ? Array.from(new Set([sceneId, ...Array.from(cleaned.matchAll(/scene\s*:\s*([0-9a-z_-]+)/gi)).map(m => m[1])]))
+            : [sceneId];
+
+        const parsed = parseBulletDivergences(cleaned, validIds);
+
+        if (!options?.forceExtract && !options?.multiScene && importance < IMPORTANCE_GATE && parsed.length === 0) {
+            return { result: { importance }, entries: [] };
         }
 
-        if (!options?.forceExtract && parsed.importance < IMPORTANCE_GATE && parsed.newEntries.length === 0) {
-            return { result: parsed, entries: [] };
-        }
-
-        const newEntries: DivergenceEntry[] = (parsed.newEntries || []).map(ne => ({
+        const entries: DivergenceEntry[] = parsed.map(ne => ({
             id: `div_${uid()}`,
             category: ne.category,
             subject: ne.subject,
             divergence: ne.divergence,
-            sceneRef: sceneId,
-            linkedSceneIds: [sceneId],
-            importance: parsed.importance,
-            supersedes: ne.supersedes || undefined,
-            source: options?.forceExtract ? 'manual' as const : 'auto' as const,
+            sceneRef: ne.sceneRef || sceneId,
+            linkedSceneIds: [ne.sceneRef || sceneId],
+            importance,
+            supersedes: ne.supersedes,
+            source: options?.forceExtract ? 'manual' : 'auto',
+            parseError: ne.parseError,
         }));
 
-        return { result: parsed, entries: newEntries };
+        return { result: { importance }, entries };
     } catch (err) {
         console.warn('[DivergenceRegister] Extraction failed:', err);
         return { result: null, entries: [] };
@@ -388,19 +451,179 @@ export async function pruneChapterEntries(
     }
 }
 
+function buildBatchExtractionPrompt(
+    scenesText: string,
+    sceneIds: string[],
+    currentRegister: DivergenceRegister
+): string {
+    const registerLines = currentRegister.entries.length > 0
+        ? currentRegister.entries.map(e =>
+            `${e.id} [Scene #${e.sceneRef}, imp:${e.importance}] ${e.category} — ${e.subject}: ${e.divergence}`
+        ).join('\n')
+        : '(empty)';
+    const registerTokens = countTokens(registerLines);
+    const sceneLabel = sceneIds.length === 1 ? `Scene #${sceneIds[0]}` : `Scenes #${sceneIds.join(', #')}`;
+
+    return `EXISTING REGISTER (${registerTokens} tokens) — facts already captured. Do NOT re-extract these. Only add NEW facts, or use "supersedes:ID" when a new fact updates an existing entry above.
+${registerLines}
+
+NEW SCENES TEXT (${sceneLabel}):
+${scenesText}
+
+TASK: Extract every story-relevant fact that affects future continuity from these scenes. Examples: NPC states (alive/dead/wounded/fled), items acquired/lost/traded, locations discovered/destroyed/changed, relationships formed/broken, abilities gained/lost, debuffs or curses applied, quest progress, obligations or oaths made, world state changes, canon overrides.
+
+Categories (use exactly one per line):
+- canon_override — contradicts source material
+- world_change — permanent map / world state
+- entity_state — NPCs, items, factions
+- player_state — abilities, titles, curses
+- obligation — debts, promises, oaths
+
+Output format — one divergence per line, no JSON, no markdown:
+- [category | subject | scene:NNN] divergence sentence
+- [category | subject | scene:NNN | supersedes:ID] divergence sentence
+
+Rules:
+- scene:NNN must be one of: ${sceneIds.join(', ')}.
+- Preserve proper nouns exactly.
+- One sentence per line.
+- If there are NO new divergences, output a single line: NONE`;
+}
+
+export async function extractFromMessageBatch(
+    provider: LLMProvider,
+    messages: ChatMessage[],
+    sceneIdsByMessageId: Record<string, string>,
+    currentRegister: DivergenceRegister,
+    contextLimit: number,
+    signal?: AbortSignal,
+    divergenceScanBudget?: number,
+): Promise<{
+    newEntries: DivergenceEntry[];
+    supersedes: Array<{ oldId: string; newId: string }>;
+    reason?: 'no-scene-mapping';
+    parseFailures: number;
+    chunkCount: number;
+}> {
+    if (messages.length === 0) return { newEntries: [], supersedes: [], parseFailures: 0, chunkCount: 0 };
+
+    const scenesBySceneId = new Map<string, { sceneId: string; parts: string[] }>();
+    for (const msg of messages) {
+        const sceneId = sceneIdsByMessageId[msg.id];
+        if (!sceneId) continue;
+        if (!scenesBySceneId.has(sceneId)) {
+            scenesBySceneId.set(sceneId, { sceneId, parts: [] });
+        }
+        scenesBySceneId.get(sceneId)!.parts.push(`[${msg.role.toUpperCase()}]: ${msg.content}`);
+    }
+
+    if (scenesBySceneId.size === 0) {
+        console.error('[DivergenceRegister] No messages mapped to scene IDs — extraction skipped. ' +
+            `messages=${messages.length}, mappedIds=${Object.keys(sceneIdsByMessageId).length}. ` +
+            'Likely cause: archiveIndex out of sync with chat messages (post-retcon or append failure).');
+        return { newEntries: [], supersedes: [], reason: 'no-scene-mapping' as const, parseFailures: 0, chunkCount: 0 };
+    }
+
+    const sceneEntries = [...scenesBySceneId.values()].map(s => ({
+        sceneId: s.sceneId,
+        text: s.parts.join('\n'),
+    }));
+
+    const defaultBudget = Math.floor(contextLimit * 0.75);
+    const CHUNK_BUDGET = divergenceScanBudget && divergenceScanBudget > 0
+        ? divergenceScanBudget
+        : defaultBudget;
+    const chunks: Array<typeof sceneEntries> = [];
+    let currentChunk: typeof sceneEntries = [];
+    let currentTokens = 0;
+
+    for (const scene of sceneEntries) {
+        const cost = countTokens(scene.text);
+        if (currentTokens + cost > CHUNK_BUDGET && currentChunk.length > 0) {
+            chunks.push(currentChunk);
+            currentChunk = [];
+            currentTokens = 0;
+        }
+        currentChunk.push(scene);
+        currentTokens += cost;
+    }
+    if (currentChunk.length > 0) chunks.push(currentChunk);
+
+    const allNewEntries: DivergenceEntry[] = [];
+    const allSupersedes: Array<{ oldId: string; newId: string }> = [];
+    let parseFailures = 0;
+
+    for (const chunk of chunks) {
+        if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+
+        const combinedText = chunk.map(s => `[Scene #${s.sceneId}]:\n${s.text}`).join('\n\n');
+        const sceneIds = chunk.map(s => s.sceneId);
+        const prompt = buildBatchExtractionPrompt(combinedText, sceneIds, currentRegister);
+
+        try {
+            const raw = await llmCall(provider, prompt, { priority: 'low', maxTokens: 1200, signal });
+            const parsed = parseBulletDivergences(raw, sceneIds);
+            for (const ne of parsed) {
+                const entry: DivergenceEntry = {
+                    id: `div_${uid()}`,
+                    category: ne.category,
+                    subject: ne.subject,
+                    divergence: ne.divergence,
+                    sceneRef: ne.sceneRef,
+                    linkedSceneIds: [...sceneIds],
+                    importance: 5,
+                    supersedes: ne.supersedes,
+                    source: 'auto',
+                    parseError: ne.parseError,
+                };
+                allNewEntries.push(entry);
+                if (ne.supersedes) {
+                    allSupersedes.push({ oldId: ne.supersedes, newId: entry.id });
+                }
+                if (ne.parseError) parseFailures++;
+            }
+        } catch (err) {
+            if ((err as Error).name === 'AbortError') throw err;
+            console.warn('[DivergenceRegister] Batch extraction chunk failed:', err);
+            parseFailures++;
+        }
+    }
+
+    return { newEntries: allNewEntries, supersedes: allSupersedes, parseFailures, chunkCount: chunks.length };
+}
+
 export function buildSceneMap(
     archiveIndex: ArchiveIndexEntry[],
     messages: ChatMessage[]
-): { sceneIdsByMessageId: Record<string, string> } {
+): { sceneIdsByMessageId: Record<string, string>; index: Array<{ sceneId: string; importance?: number }> } {
     const sceneIdsByMessageId: Record<string, string> = {};
-    const sorted = [...archiveIndex].sort((a, b) => parseInt(a.sceneId) - parseInt(b.sceneId));
+    const userMessages = messages.filter(m => m.role === 'user');
+    const pairCount = Math.min(userMessages.length, archiveIndex.length);
+    const userTail = userMessages.slice(-pairCount);
+    const archiveTail = archiveIndex.slice(-pairCount);
+    for (let i = 0; i < pairCount; i++) {
+        sceneIdsByMessageId[userTail[i].id] = archiveTail[i].sceneId;
+    }
 
     for (let i = 0; i < messages.length; i++) {
         const msg = messages[i];
-        const turnIndex = Math.floor(i / 2);
-        const scene = sorted[turnIndex];
-        if (scene) sceneIdsByMessageId[msg.id] = scene.sceneId;
+        if (msg.role === 'assistant' && !sceneIdsByMessageId[msg.id]) {
+            let found = false;
+            for (let j = i - 1; j >= 0; j--) {
+                if (messages[j].role === 'user' && sceneIdsByMessageId[messages[j].id]) {
+                    sceneIdsByMessageId[msg.id] = sceneIdsByMessageId[messages[j].id];
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                sceneIdsByMessageId[msg.id] = '000';
+            }
+        }
     }
 
-    return { sceneIdsByMessageId };
+    return {
+        sceneIdsByMessageId,
+        index: archiveIndex.map(e => ({ sceneId: e.sceneId, importance: e.importance })),
+    };
 }

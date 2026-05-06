@@ -15,8 +15,6 @@ export function ChapterTab() {
         const sysText = [
             context.loreRaw,
             context.rulesRaw,
-            context.canonStateActive ? context.canonState : '',
-            context.headerIndexActive ? context.headerIndex : '',
             context.starterActive ? context.starter : '',
             context.continuePromptActive ? context.continuePrompt : '',
             context.characterProfileActive ? context.characterProfile : '',

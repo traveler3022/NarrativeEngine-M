@@ -52,9 +52,9 @@ describe('runLoreCheck', () => {
         expect(res.suggestedRewrite).toBeNull();
     });
 
-    it('strips <think/> blocks and code fences before parsing', async () => {
+    it('strips <think> blocks and code fences before parsing', async () => {
         (llmCall as any).mockResolvedValue(
-            '<thinkthinking about it</think\n```json\n{"verdict":"consistent","issues":[],"citations":[],"suggestedRewrite":null}\n```'
+            '<think>thinking about it</think>\n```json\n{"verdict":"consistent","issues":[],"citations":[],"suggestedRewrite":null}\n```'
         );
         const res = await runLoreCheck(baseInput());
         expect(res.verdict).toBe('consistent');

@@ -10,15 +10,13 @@ export function TokenGauge() {
         const parts: string[] = [];
         if (context.loreRaw) parts.push(context.loreRaw);
         if (context.rulesRaw) parts.push(context.rulesRaw);
-        if (context.canonStateActive && context.canonState) parts.push(context.canonState);
-        if (context.headerIndexActive && context.headerIndex) parts.push(context.headerIndex);
         if (context.starterActive && context.starter) parts.push(context.starter);
         if (context.continuePromptActive && context.continuePrompt) parts.push(context.continuePrompt);
         if (context.characterProfileActive && context.characterProfile) parts.push(`[CHARACTER PROFILE]\n${context.characterProfile}`);
         if (context.inventoryActive && context.inventory) parts.push(`[PLAYER INVENTORY]\n${context.inventory}`);
         if (condenser.condensedSummary) parts.push(condenser.condensedSummary);
         return parts.join('\n\n');
-    }, [context.loreRaw, context.rulesRaw, context.canonState, context.canonStateActive, context.headerIndex, context.headerIndexActive, context.starter, context.starterActive, context.continuePrompt, context.continuePromptActive, context.characterProfile, context.characterProfileActive, context.inventory, context.inventoryActive, condenser.condensedSummary]);
+    }, [context.loreRaw, context.rulesRaw, context.starter, context.starterActive, context.continuePrompt, context.continuePromptActive, context.characterProfile, context.characterProfileActive, context.inventory, context.inventoryActive, condenser.condensedSummary]);
 
     const systemTokens = useMemo(() => countTokens(systemText), [systemText]);
 

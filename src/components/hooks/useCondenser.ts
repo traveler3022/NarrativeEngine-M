@@ -1,8 +1,10 @@
 import { useState, useRef } from 'react';
-import type { ChatMessage, LLMProvider } from '../../types';
+import type { AppSettings, ChatMessage, LLMProvider } from '../../types';
+import type { SaveProgress } from '../../services/saveFileEngine';
 import { useAppStore } from '../../store/useAppStore';
-import { condenseHistory } from '../../services/condenser';
+import { condenseHistory, getCondenseBudgetRatio } from '../../services/condenser';
 import { runSaveFilePipeline } from '../../services/saveFileEngine';
+import { extractFromMessageBatch, buildSceneMap, mergeEntries } from '../../services/divergenceRegister';
 import { api } from '../../services/apiClient';
 import { toast } from '../Toast';
 
@@ -11,7 +13,7 @@ interface UseCondenserDeps {
     isStreaming: boolean;
     messages: ChatMessage[];
     condenser: { condensedSummary: string; condensedUpToIndex: number; isCondensing: boolean };
-    settings: { contextLimit: number };
+    settings: AppSettings;
     context: any;
     npcLedger: any[];
     setCondensed: (summary: string, upToIndex: number) => void;
@@ -28,41 +30,97 @@ export function useCondenser(deps: UseCondenserDeps) {
     const condenseAbortRef = useRef<AbortController | null>(null);
     const [editingSummary, setEditingSummary] = useState(false);
     const [summaryDraft, setSummaryDraft] = useState('');
-    const [condensePhase, setCondensePhase] = useState<'save' | 'compress' | 'extract' | null>(null);
-    const [saveProgress, setSaveProgress] = useState<{ phase: string; batch: number; totalBatches: number } | null>(null);
+    const [condensePhase, setCondensePhase] = useState<'save' | 'extract' | 'compress' | null>(null);
+    const [saveProgress, setSaveProgress] = useState<SaveProgress | null>(null);
 
     const triggerCondense = async () => {
+        if (deps.settings.enableLegacyCondenser === false) return;
         if (deps.condenser.isCondensing) return;
         deps.setCondensing(true);
         condenseAbortRef.current = new AbortController();
+        const budgetRatio = getCondenseBudgetRatio(deps.settings.condenseAggressiveness);
         try {
             const provider = deps.getActiveSummarizerEndpoint() ?? deps.getActiveStoryEndpoint();
             if (!provider) return;
-            const currentCtx = deps.context;
             const uncondensed = deps.messages.slice(deps.condenser.condensedUpToIndex + 1);
 
             setCondensePhase('save');
             try {
-                const saveResult = await runSaveFilePipeline(provider as LLMProvider, uncondensed, currentCtx);
-                if (saveResult.canonSuccess) deps.updateContext({ canonState: saveResult.canonState });
-                if (saveResult.indexSuccess) deps.updateContext({ headerIndex: saveResult.headerIndex });
+                const saveResult = await runSaveFilePipeline(
+                    provider as LLMProvider,
+                    uncondensed,
+                    undefined,
+                    undefined,
+                    deps.settings.contextLimit,
+                    (p) => setSaveProgress(p),
+                    condenseAbortRef.current.signal
+                );
                 if (saveResult.coreMemorySlots) deps.updateContext({ coreMemorySlots: saveResult.coreMemorySlots });
-            } catch {
-                toast.warning('Save pipeline failed — continuing with condensation');
+            } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                toast.warning(`Save pipeline failed — ${msg}`);
+            }
+
+            setCondensePhase('extract');
+            try {
+                if (deps.activeCampaignId) {
+                    const archiveIndex = await api.archive.getIndex(deps.activeCampaignId);
+                    const { sceneIdsByMessageId } = buildSceneMap(archiveIndex, deps.messages);
+                    const candidateMessages = deps.messages.slice(deps.condenser.condensedUpToIndex + 1);
+                    const extractResult = await extractFromMessageBatch(
+                        provider,
+                        candidateMessages,
+                        sceneIdsByMessageId,
+                        useAppStore.getState().divergenceRegister,
+                        deps.settings.contextLimit,
+                        condenseAbortRef.current.signal,
+                        deps.settings.divergenceScanBudget,
+                    );
+                    if (extractResult.newEntries.length > 0) {
+                        const merged = mergeEntries(
+                            useAppStore.getState().divergenceRegister,
+                            extractResult.newEntries,
+                            extractResult.newEntries[0].sceneRef,
+                        );
+                        useAppStore.getState().setDivergenceRegister(merged);
+                        const { saveDivergenceRegister } = await import('../../store/campaignStore');
+                        await saveDivergenceRegister(deps.activeCampaignId, merged);
+                        const errCount = extractResult.newEntries.filter(e => e.parseError).length;
+                        const okCount = extractResult.newEntries.length - errCount;
+                        if (errCount > 0) {
+                            toast.warning(`Register: +${okCount} ok, ${errCount} parse-error rows added — review them in the panel`);
+                        } else {
+                            toast.success(`Register: +${okCount} divergence${okCount === 1 ? '' : 's'}`);
+                        }
+                        console.log(`[Condenser] Register batch extraction: ${extractResult.newEntries.length} entries (${errCount} parse-error)`);
+                    } else if (extractResult.parseFailures > 0) {
+                        toast.warning(`Register: ${extractResult.parseFailures}/${extractResult.chunkCount} chunks failed — model output unparseable`);
+                    } else if (extractResult.chunkCount > 0) {
+                        toast.info('Register: scan complete, no new divergences');
+                    }
+                    if (extractResult.reason === 'no-scene-mapping') {
+                        toast.warning('Divergence scan skipped — scene mapping out of sync. Check console.');
+                    }
+                }
+            } catch (err) {
+                if ((err as Error).name !== 'AbortError') {
+                    console.error('[Condenser] Register batch extraction failed:', err);
+                    toast.warning('Register extraction failed — continuing with prose condensation');
+                }
             }
 
             setCondensePhase('compress');
-            const freshCtx = deps.context;
             const result = await condenseHistory(
                 provider,
                 deps.messages,
-                freshCtx,
                 deps.condenser.condensedUpToIndex,
                 deps.condenser.condensedSummary,
                 deps.activeCampaignId || '',
                 deps.npcLedger.filter((n: any) => !n.archived).map((n: any) => n.name),
                 deps.settings.contextLimit,
-                condenseAbortRef.current.signal
+                condenseAbortRef.current.signal,
+                budgetRatio,
+                (batch, total) => setSaveProgress({ phase: 'compress', batch, totalBatches: total }),
             );
             deps.setCondensed(result.summary, result.upToIndex);
 
@@ -79,12 +137,14 @@ export function useCondenser(deps: UseCondenserDeps) {
             }
         } finally {
             setCondensePhase(null);
+            setSaveProgress(null);
             deps.setCondensing(false);
             condenseAbortRef.current = null;
         }
     };
 
     const handleRetcon = () => {
+        if (deps.settings.enableLegacyCondenser === false) return;
         if (!confirm('Retcon: Delete all messages and keep only the summary?')) return;
         const sysMsg: ChatMessage = {
             id: Date.now().toString(36),
@@ -102,7 +162,6 @@ export function useCondenser(deps: UseCondenserDeps) {
         condenseAbortRef,
         condensePhase,
         saveProgress,
-        setSaveProgress,
         editingSummary,
         setEditingSummary,
         summaryDraft,

@@ -1,9 +1,31 @@
-import type { ChatMessage, GameContext, LLMProvider, CoreMemorySlot } from '../types';
+import type { ChatMessage, LLMProvider, CoreMemorySlot } from '../types';
 import { countTokens } from './tokenizer';
 import { extractJson } from './payloadBuilder';
 import { llmCall } from '../utils/llmCall';
 
-const BATCH_TOKEN_LIMIT = 100_000; // max tokens per LLM call for save engine
+const PROMPT_OVERHEAD_RESERVE = 4000;
+const BATCH_TIMEOUT_MS = 90_000;
+const MAX_SAVE_PIPELINE_TOKENS = 2_000_000;
+
+function computeBatchLimit(contextLimit: number): number {
+    return Math.max(Math.floor(contextLimit * 0.70) - PROMPT_OVERHEAD_RESERVE, 16_000);
+}
+
+export type SaveProgress = {
+    phase: 'slots' | 'compress';
+    batch: number;
+    totalBatches: number;
+    error?: string;
+};
+
+async function callWithTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+    let timer: ReturnType<typeof setTimeout>;
+    const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} timeout`)), ms);
+    });
+    try { return await Promise.race([p, timeout]); }
+    finally { clearTimeout(timer!); }
+}
 
 function chunkMessagesByTokenBudget(messages: ChatMessage[], budget: number): ChatMessage[][] {
     const chunks: ChatMessage[][] = [];
@@ -24,42 +46,9 @@ function chunkMessagesByTokenBudget(messages: ChatMessage[], budget: number): Ch
     return chunks;
 }
 
-// ─── Header Index Section Headers (from header_index.md template) ───
-const HEADER_INDEX_SECTIONS = [
-    'SECTION 1 — ARC / SESSION HEADER DATABASE',
-    'SECTION 2 — PENDING LOOPS',
-];
+// ─── Core Memory Slots Generator (JSON Slot Format) ───
 
-const HEADER_INDEX_REQUIRED_FIELDS = [
-    'SESSION_ID:',
-    'SCENE_HEADERS:',
-];
-
-// ─── Validators ───
-
-const DASH_VARIANTS = /[\u2014\u2013\u2012\u2010\u00AF\u02D7\u2011\u2043\u2212\u30FC\u2015]/g;
-const REPLACEMENT_CHAR = /\uFFFD/g;
-
-function normalizeForComparison(text: string): string {
-    return text.normalize('NFC').replace(DASH_VARIANTS, '—').replace(REPLACEMENT_CHAR, '—');
-}
-
-function containsNormalized(haystack: string, needle: string): boolean {
-    return normalizeForComparison(haystack).includes(normalizeForComparison(needle));
-}
-
-export function validateHeaderIndex(output: string): { valid: boolean; missing: string[] } {
-    const missing = [
-        ...HEADER_INDEX_SECTIONS.filter((s) => !containsNormalized(output, s)),
-        ...HEADER_INDEX_REQUIRED_FIELDS.filter((f) => !containsNormalized(output, f)),
-    ];
-    return { valid: missing.length === 0, missing };
-}
-
-
-// ─── Canon State Generator (JSON Slot Format) ───
-
-function buildCanonStatePrompt(messages: ChatMessage[], existingSlots?: CoreMemorySlot[]): string {
+function buildCoreMemorySlotsPrompt(messages: ChatMessage[], existingSlots?: CoreMemorySlot[]): string {
     const turns = messages
         .map((m) => `[${m.role.toUpperCase()}]: ${m.content}`)
         .join('\n\n');
@@ -69,7 +58,7 @@ function buildCanonStatePrompt(messages: ChatMessage[], existingSlots?: CoreMemo
         : '[No existing slots — generate fresh]';
 
     return [
-        'You are a TTRPG session state tracker. Generate the CURRENT Canon State as a JSON array of memory slots.',
+        'You are a TTRPG session state tracker. Generate the CURRENT Core Memory Slots as a JSON array of memory slots.',
         '',
         'OUTPUT FORMAT — respond with a JSON array of memory slot objects:',
         '[',
@@ -100,7 +89,7 @@ function buildCanonStatePrompt(messages: ChatMessage[], existingSlots?: CoreMemo
     ].join('\n');
 }
 
-export function validateCanonState(output: string): {
+function validateCoreMemorySlots(output: string): {
     valid: boolean;
     missing: string[];
     slots?: CoreMemorySlot[];
@@ -117,59 +106,69 @@ export function validateCanonState(output: string): {
     }
 }
 
-export async function generateCanonState(
+export async function generateCoreMemorySlots(
     messages: ChatMessage[],
     endpoint: { endpoint: string; apiKey: string; modelName: string },
     existingSlots?: CoreMemorySlot[],
-    countTokensFn?: (text: string) => number
-): Promise<{ canonState: string; slots?: CoreMemorySlot[]; success: boolean }> {
-    // If no countTokens provided, do single-pass (backward compat)
+    countTokensFn?: (text: string) => number,
+    contextLimit?: number,
+    onProgress?: (p: SaveProgress) => void,
+    signal?: AbortSignal
+): Promise<{ slots?: CoreMemorySlot[]; success: boolean }> {
     if (!countTokensFn) {
-        const prompt = buildCanonStatePrompt(messages, existingSlots);
-        console.log(`[SaveFileEngine] Generating Canon State (single-pass)...`, {
+        const prompt = buildCoreMemorySlotsPrompt(messages, existingSlots);
+        console.log(`[SaveFileEngine] Generating Core Memory Slots (single-pass)...`, {
             messages: messages.length,
         });
 
         let output: string;
         try {
-            output = await llmCall(endpoint, prompt);
+            output = await callWithTimeout(llmCall(endpoint, prompt, { signal }), BATCH_TIMEOUT_MS, 'slots single-pass');
         } catch {
-            return { canonState: JSON.stringify(existingSlots || []), slots: existingSlots, success: false };
+            return { slots: existingSlots, success: false };
         }
-        const { valid, slots } = validateCanonState(output);
+        const { valid, slots } = validateCoreMemorySlots(output);
 
         if (valid) {
-            return { canonState: output, slots, success: true };
+            return { slots, success: true };
         }
-        // Return existing if validation fails
-        return { canonState: JSON.stringify(existingSlots || []), slots: existingSlots, success: false };
+        return { slots: existingSlots, success: false };
     }
 
-    // Batch processing
-    const chunks = chunkMessagesByTokenBudget(messages, BATCH_TOKEN_LIMIT);
+    const batchLimit = computeBatchLimit(contextLimit ?? 4096);
+    const chunks = chunkMessagesByTokenBudget(messages, batchLimit);
     let runningSlots: CoreMemorySlot[] = existingSlots ? [...existingSlots] : [];
     let anySuccess = false;
 
     for (let ci = 0; ci < chunks.length; ci++) {
-        const chunk = chunks[ci];
-        const prompt = buildCanonStatePrompt(chunk, runningSlots);
+        if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
 
-        console.log(`[SaveFileEngine] Generating Canon State... (Batch ${ci + 1}/${chunks.length})`, {
+        const chunk = chunks[ci];
+        const prompt = buildCoreMemorySlotsPrompt(chunk, runningSlots);
+
+        onProgress?.({ phase: 'slots', batch: ci + 1, totalBatches: chunks.length });
+        console.log(`[SaveFileEngine] Generating Core Memory Slots... (Batch ${ci + 1}/${chunks.length})`, {
             messages: chunk.length,
             promptTokens: countTokensFn(prompt)
         });
 
         let output: string;
         try {
-            output = await llmCall(endpoint, prompt);
-        } catch {
-            console.warn(`[SaveFileEngine] Canon State batch ${ci + 1} LLM call failed`);
+            output = await callWithTimeout(
+                llmCall(endpoint, prompt, { signal }),
+                BATCH_TIMEOUT_MS,
+                `slots batch ${ci + 1}`
+            );
+        } catch (err) {
+            const isTimeout = err instanceof Error && err.message.includes('timeout');
+            console.warn(`[SaveFileEngine] Core Memory Slots batch ${ci + 1} ${isTimeout ? 'timeout' : 'LLM call failed'}`);
+            onProgress?.({ phase: 'slots', batch: ci + 1, totalBatches: chunks.length, error: isTimeout ? 'timeout' : String(err) });
+            if ((err as DOMException)?.name === 'AbortError') throw err;
             continue;
         }
-        const { valid, slots } = validateCanonState(output);
+        const { valid, slots } = validateCoreMemorySlots(output);
 
         if (valid && slots) {
-            // Merge slots: later batch overrides earlier for same keys
             const slotMap = new Map(runningSlots.map(s => [s.key, s]));
             for (const slot of slots) {
                 slotMap.set(slot.key, slot);
@@ -177,193 +176,14 @@ export async function generateCanonState(
             runningSlots = Array.from(slotMap.values());
             anySuccess = true;
         } else {
-            console.warn(`[SaveFileEngine] Canon State batch ${ci + 1} failed validation`);
+            console.warn(`[SaveFileEngine] Core Memory Slots batch ${ci + 1} failed validation`);
         }
     }
 
     return {
-        canonState: JSON.stringify(runningSlots),
         slots: runningSlots,
         success: anySuccess
     };
-}
-
-// ─── Header Index Generator ───
-
-function buildHeaderIndexPrompt(recentMessages: ChatMessage[], existingHeaderIndex: string): string {
-    const turns = recentMessages
-        .map((m) => `[${m.role.toUpperCase()}]: ${m.content}`)
-        .join('\n\n');
-
-    return [
-        'You are a TTRPG session indexer. Generate NEW scene header entries for the Header Index.',
-        '',
-        'OUTPUT FORMAT — You MUST include BOTH sections with these EXACT headers:',
-        '',
-        '=====================================================================',
-        'SECTION 1 — ARC / SESSION HEADER DATABASE',
-        '=====================================================================',
-        'SESSION_ID: [ARC_SESSION_ID]',
-        'SESSION_TITLE: [title]',
-        '',
-        'SCENE_HEADERS:',
-        '  - SCENE_ID: [unique scene ID]',
-        '    HEADER: [TAG:TAG] factual header',
-        '    THREADS: [THREAD_A], [THREAD_B]',
-        '    DELTA: { Key: +Change }',
-        '',
-        '=====================================================================',
-        'SECTION 2 — PENDING LOOPS (UNRESOLVED THREADS)',
-        '=====================================================================',
-        'LOOP_ID: [THREAD_TAG] Description. (Pressure: Low|Medium|High)',
-        '',
-        'RULES:',
-        '1. For Section 1: output ONLY NEW scene headers from the recent turns',
-        '2. For Section 2: output the COMPLETE current list of unresolved threads',
-        '3. Use SCENE_ID format that follows existing patterns',
-        '4. NO prose — factual index entries only',
-        '5. Each SCENE_HEADERS entry must have SCENE_ID, HEADER, THREADS, and DELTA',
-        '',
-        'EXISTING HEADER INDEX (for reference — do NOT repeat existing SCENE_IDs):',
-        existingHeaderIndex || '[No prior index — generate fresh from turns]',
-        '',
-        'RECENT SESSION TURNS:',
-        turns,
-    ].join('\n');
-}
-
-function splitHeaderIndexSections(text: string): { section1: string; section2: string } {
-    const normalized = normalizeForComparison(text);
-    const s2Regex = /SECTION 2[—–\u2013\u2014\u2015]PENDING LOOPS/;
-    const match = s2Regex.exec(normalized);
-
-    if (!match) {
-        return { section1: text, section2: '' };
-    }
-
-    const s2Pos = match.index;
-    const beforeS2 = text.substring(0, s2Pos);
-    const lastSep = beforeS2.lastIndexOf('=====');
-    const splitPoint = lastSep !== -1 ? lastSep : s2Pos;
-
-    return {
-        section1: text.substring(0, splitPoint).trim(),
-        section2: text.substring(splitPoint).trim(),
-    };
-}
-
-function extractSceneIds(text: string): Set<string> {
-    const ids = new Set<string>();
-    const regex = /SCENE_ID:\s*(\S+)/g;
-    let match;
-    while ((match = regex.exec(text)) !== null) {
-        ids.add(match[1]);
-    }
-    return ids;
-}
-
-export function mergeHeaderIndex(existing: string, llmOutput: string): string {
-    const existingSections = splitHeaderIndexSections(existing);
-    const newSections = splitHeaderIndexSections(llmOutput);
-
-    // Section 1: Append new scene headers (deduplicate by SCENE_ID)
-    const existingIds = extractSceneIds(existingSections.section1);
-    const newS1Lines = newSections.section1.split('\n');
-
-    // Extract only new scene blocks that don't have duplicate SCENE_IDs
-    const newSceneBlocks: string[] = [];
-    let currentBlock: string[] = [];
-    let currentId = '';
-    let inBlock = false;
-
-    for (const line of newS1Lines) {
-        const idMatch = line.match(/SCENE_ID:\s*(\S+)/);
-        if (idMatch) {
-            // Save previous block if it has a new ID
-            if (inBlock && currentBlock.length > 0 && currentId && !existingIds.has(currentId)) {
-                newSceneBlocks.push(currentBlock.join('\n'));
-            }
-            currentBlock = [line];
-            currentId = idMatch[1];
-            inBlock = true;
-        } else if (inBlock) {
-            currentBlock.push(line);
-        }
-    }
-    // Don't forget the last block
-    if (inBlock && currentBlock.length > 0 && currentId && !existingIds.has(currentId)) {
-        newSceneBlocks.push(currentBlock.join('\n'));
-    }
-
-    // Build merged Section 1: existing + new entries appended
-    let mergedSection1 = existingSections.section1;
-    if (!mergedSection1.trim()) {
-        mergedSection1 = newSections.section1;
-    } else if (newSceneBlocks.length > 0) {
-        mergedSection1 = mergedSection1.trimEnd() + '\n\n' + newSceneBlocks.join('\n\n');
-    }
-
-    // Section 2: Full overwrite with new pending loops
-    const mergedSection2 = newSections.section2 || existingSections.section2;
-
-    return mergedSection1 + '\n\n' + mergedSection2;
-}
-
-export async function generateHeaderIndex(
-    provider: LLMProvider,
-    recentMessages: ChatMessage[],
-    existingHeaderIndex: string,
-    maxRetries = 1
-): Promise<{ headerIndex: string; success: boolean }> {
-    const chunks = chunkMessagesByTokenBudget(recentMessages, BATCH_TOKEN_LIMIT);
-
-    let runningIndex = existingHeaderIndex;
-    let anySuccess = false;
-
-    for (let ci = 0; ci < chunks.length; ci++) {
-        const chunk = chunks[ci];
-        let batchSuccess = false;
-
-        for (let attempt = 0; attempt <= maxRetries; attempt++) {
-            const prompt = attempt === 0
-                ? buildHeaderIndexPrompt(chunk, runningIndex)
-                : buildHeaderIndexPrompt(chunk, runningIndex) +
-                  '\n\nPREVIOUS ATTEMPT FAILED VALIDATION. Ensure BOTH sections are present with SCENE_HEADERS entries.';
-
-            console.log(`[SaveFileEngine] Generating Header Index... (Batch ${ci + 1}/${chunks.length}, Attempt ${attempt + 1})`, {
-                messages: chunk.length,
-                promptTokens: countTokens(prompt)
-            });
-
-            let output: string;
-            try {
-                output = await llmCall(provider, prompt);
-            } catch {
-                console.warn(`[SaveFileEngine] Header Index batch ${ci + 1} attempt ${attempt + 1} LLM call failed`);
-                continue;
-            }
-            const { valid } = validateHeaderIndex(output);
-
-            if (valid) {
-                const merged = mergeHeaderIndex(runningIndex, output);
-                const mergedValid = validateHeaderIndex(merged);
-                if (mergedValid.valid) {
-                    runningIndex = merged;
-                    batchSuccess = true;
-                    anySuccess = true;
-                    break;
-                }
-                console.warn(`[SaveFileEngine] Header Index batch ${ci + 1} merged result failed validation:`, mergedValid.missing);
-            }
-            console.warn(`[SaveFileEngine] Header Index batch ${ci + 1} attempt ${attempt + 1} failed validation`);
-        }
-
-        if (!batchSuccess) {
-            console.warn(`[SaveFileEngine] Header Index batch ${ci + 1} failed all retries, continuing with current index`);
-        }
-    }
-
-    return { headerIndex: runningIndex, success: anySuccess };
 }
 
 // ─── Full Pipeline ───
@@ -371,28 +191,25 @@ export async function generateHeaderIndex(
 export async function runSaveFilePipeline(
     provider: LLMProvider,
     recentMessages: ChatMessage[],
-    context: GameContext,
     existingSlots?: CoreMemorySlot[],
-    countTokensFn?: (text: string) => number
+    countTokensFn?: (text: string) => number,
+    contextLimit?: number,
+    onProgress?: (p: SaveProgress) => void,
+    signal?: AbortSignal
 ): Promise<{
-    canonState: string;
-    headerIndex: string;
-    canonSuccess: boolean;
-    indexSuccess: boolean;
     coreMemorySlots?: CoreMemorySlot[];
+    success: boolean;
 }> {
-    // Run canonState and headerIndex in PARALLEL
-    const [canonResult, indexResult] = await Promise.all([
-        generateCanonState(recentMessages, provider, existingSlots, countTokensFn),
-        generateHeaderIndex(provider, recentMessages, context.headerIndex ?? '')
-    ]);
+    const totalTokens = recentMessages.reduce((sum, m) => sum + countTokens(m.content), 0);
+    if (totalTokens > MAX_SAVE_PIPELINE_TOKENS) {
+        throw new Error(`Save pipeline refused: ${totalTokens} tokens exceeds 2M cap. Trim history via Retcon or disable legacy condenser.`);
+    }
+
+    const slotsResult = await generateCoreMemorySlots(recentMessages, provider, existingSlots, countTokensFn, contextLimit, onProgress, signal);
 
     return {
-        canonState: canonResult.canonState,
-        headerIndex: indexResult.headerIndex,
-        canonSuccess: canonResult.success,
-        indexSuccess: indexResult.success,
-        coreMemorySlots: canonResult.slots
+        coreMemorySlots: slotsResult.slots,
+        success: slotsResult.success
     };
 }
 

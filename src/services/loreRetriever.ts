@@ -9,8 +9,6 @@ import type { LoreChunk, ChatMessage } from '../types';
  */
 export function retrieveRelevantLore(
     chunks: LoreChunk[],
-    _canonState: string,
-    _headerIndex: string,
     userMessage: string,
     tokenBudget = 1200,
     recentMessages?: ChatMessage[],

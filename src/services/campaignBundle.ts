@@ -23,6 +23,20 @@ export type CampaignBundle = {
     entities: EntityEntry[];
 };
 
+const READ_CHUNK = 10 * 1024 * 1024;
+
+export async function readFileChunked(file: File): Promise<string> {
+    const chunks: string[] = [];
+    let offset = 0;
+    while (offset < file.size) {
+        const end = Math.min(offset + READ_CHUNK, file.size);
+        const blob = file.slice(offset, end);
+        chunks.push(await blob.text());
+        offset = end;
+    }
+    return chunks.join('');
+}
+
 export async function exportBundle(campaignId: string): Promise<CampaignBundle> {
     const cid = campaignId;
     const [

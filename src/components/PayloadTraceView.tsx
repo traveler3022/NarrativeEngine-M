@@ -3,25 +3,56 @@ import { useAppStore } from '../store/useAppStore';
 import { Activity, Info, ChevronDown, ChevronRight } from 'lucide-react';
 import type { PayloadTrace } from '../types';
 
-const TraceRow: React.FC<{ trace: PayloadTrace }> = ({ trace }) => (
-    <div className={`p-2 border-l-2 ${trace.included ? 'border-terminal/50 bg-terminal/5' : 'border-red-500/50 bg-red-500/5 opacity-60'}`}>
-        <div className="flex justify-between items-start mb-1">
-            <div className="flex flex-col">
-                <span className={`font-bold uppercase tracking-tighter ${trace.included ? 'text-terminal' : 'text-red-400'}`}>
-                    {trace.source}
-                </span>
-                <span className="text-[8px] text-text-dim/70 uppercase">{trace.classification} @ {trace.position || 'N/A'}</span>
+const roleLabel = (role: string) =>
+    role === 'user' ? 'YOU' : role === 'assistant' ? 'GM' : role.toUpperCase();
+
+const TraceRow: React.FC<{ trace: PayloadTrace }> = ({ trace }) => {
+    const [open, setOpen] = useState(false);
+    const hasChildren = trace.childMessages && trace.childMessages.length > 0;
+    return (
+        <div className={`border-l-2 ${trace.included ? 'border-terminal/50 bg-terminal/5' : 'border-red-500/50 bg-red-500/5 opacity-60'}`}>
+            <div
+                className={`p-2 ${hasChildren ? 'cursor-pointer hover:bg-terminal/10' : ''}`}
+                onClick={hasChildren ? () => setOpen(p => !p) : undefined}
+            >
+                <div className="flex justify-between items-start mb-1">
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-1">
+                            {hasChildren && (open
+                                ? <ChevronDown size={10} className="text-terminal/50 shrink-0" />
+                                : <ChevronRight size={10} className="text-terminal/50 shrink-0" />
+                            )}
+                            <span className={`font-bold uppercase tracking-tighter ${trace.included ? 'text-terminal' : 'text-red-400'}`}>
+                                {trace.source}
+                            </span>
+                        </div>
+                        <span className="text-[8px] text-text-dim/70 uppercase">{trace.classification} @ {trace.position || 'N/A'}</span>
+                    </div>
+                    <div className="text-[9px] font-bold text-text-dim">
+                        {trace.tokens} tokens
+                    </div>
+                </div>
+                <div className="flex items-center gap-1 text-text-dim italic">
+                    <Info size={10} />
+                    {trace.reason}
+                </div>
             </div>
-            <div className="text-[9px] font-bold text-text-dim">
-                {trace.tokens} tokens
-            </div>
+            {hasChildren && open && (
+                <div className="border-t border-terminal/10 divide-y divide-terminal/5">
+                    {trace.childMessages!.map((m, i) => (
+                        <div key={i} className="flex items-center gap-2 px-3 py-1 text-[8px]">
+                            <span className={`font-bold shrink-0 ${m.role === 'user' ? 'text-terminal/60' : 'text-sky-400/60'}`}>
+                                {roleLabel(m.role)}
+                            </span>
+                            <span className="text-text-dim/50 truncate flex-1">{m.preview}</span>
+                            <span className="text-text-dim/30 shrink-0">{m.tokens}t</span>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
-        <div className="flex items-center gap-1 text-text-dim italic">
-            <Info size={10} />
-            {trace.reason}
-        </div>
-    </div>
-);
+    );
+};
 
 export const PayloadTraceView: React.FC = () => {
     const { lastPayloadTrace, settings } = useAppStore();

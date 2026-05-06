@@ -12,7 +12,7 @@ import { extractEngineSeeds } from '../services/loreEngineSeeder';
 import { parseNPCsFromLore } from '../services/loreNPCParser';
 import { dedupeNPCLedger, defaultContext } from '../store/slices/campaignSlice';
 import { api } from '../services/apiClient';
-import { downloadBundle, importBundle } from '../services/campaignBundle';
+import { downloadBundle, importBundle, readFileChunked } from '../services/campaignBundle';
 import { toast } from './Toast';
 import type { Campaign } from '../types';
 
@@ -228,7 +228,7 @@ export function CampaignHub() {
         e.target.value = '';
         setIsImporting(true);
         try {
-            const bundle = JSON.parse(await file.text());
+            const bundle = JSON.parse(await readFileChunked(file));
             await importBundle(bundle);
             await refresh();
             toast.success(`"${bundle.campaign?.name ?? 'Campaign'}" imported — rebuilding search index in background`);
@@ -260,7 +260,7 @@ export function CampaignHub() {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-void p-4 md:p-8 relative">
-            <input ref={importInputRef} type="file" accept=".campaign,.json" className="hidden" onChange={handleImportFile} />
+            <input ref={importInputRef} type="file" accept=".campaign, .json, application/json, application/octet-stream, */*" className="hidden" onChange={handleImportFile} />
 
             {/* Settings button */}
             <button

@@ -198,7 +198,7 @@ export async function handlePostTurn(
 async function handleSealChapter(state: TurnState, callbacks: TurnCallbacks, activeCampaignId: string) {
     const currentChapters = state.chapters;
 
-    if (currentChapters.length > 0 && shouldAutoSeal(currentChapters, state.context.headerIndex ?? '').shouldSeal) {
+    if (currentChapters.length > 0 && shouldAutoSeal(currentChapters).shouldSeal) {
         try {
             const result = await sealChapter(currentChapters);
             if (!result) return;

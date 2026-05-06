@@ -34,50 +34,43 @@ export function Header() {
 
     const [loreSel, setLoreSel] = useState<LoreSelectionSnapshot | null>(null);
 
+    const captureSelection = (): LoreSelectionSnapshot | null => {
+        const sel = window.getSelection();
+        if (!sel || sel.isCollapsed || sel.rangeCount === 0) return null;
+        const range = sel.getRangeAt(0);
+        const node = range.commonAncestorContainer;
+        const el = (node.nodeType === 1 ? node as Element : node.parentElement);
+        const bubble = el?.closest('[data-lore-checkable="true"]') as HTMLElement | null;
+        if (!bubble) return null;
+        const messageId = bubble.dataset.messageId;
+        const text = sel.toString().trim();
+        if (!messageId || text.length < 3) return null;
+        const bubbleText = bubble.textContent ?? '';
+        const start = bubbleText.indexOf(text);
+        if (start === -1) return null;
+        return { messageId, text, start, end: start + text.length, bubbleText };
+    };
+
     useEffect(() => {
-        const handle = () => {
-            const sel = window.getSelection();
-            if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
-                setLoreSel(null);
-                return;
-            }
-            const range = sel.getRangeAt(0);
-            const node = range.commonAncestorContainer;
-            const el = (node.nodeType === 1 ? node as Element : node.parentElement);
-            const bubble = el?.closest('[data-lore-checkable="true"]') as HTMLElement | null;
-            if (!bubble) {
-                setLoreSel(null);
-                return;
-            }
-            const messageId = bubble.dataset.messageId;
-            const text = sel.toString().trim();
-            if (!messageId || text.length < 3) {
-                setLoreSel(null);
-                return;
-            }
-            const bubbleText = bubble.textContent ?? '';
-            const start = bubbleText.indexOf(text);
-            if (start === -1) {
-                setLoreSel(null);
-                return;
-            }
-            setLoreSel({ messageId, text, start, end: start + text.length, bubbleText });
-        };
+        const handle = () => setLoreSel(captureSelection());
         document.addEventListener('selectionchange', handle);
         return () => document.removeEventListener('selectionchange', handle);
     }, []);
 
     const handleLoreCheck = (e: React.MouseEvent | React.TouchEvent) => {
         e.preventDefault();
-        if (!loreSel) return;
-        const before = loreSel.bubbleText.slice(Math.max(0, loreSel.start - 200), loreSel.start);
-        const after = loreSel.bubbleText.slice(loreSel.end, Math.min(loreSel.bubbleText.length, loreSel.end + 200));
+        // Re-capture at click time — selection may have been refined via drag handles
+        // and the cached `loreSel` may be momentarily stale or null.
+        const snap = captureSelection() ?? loreSel;
+        if (!snap) return;
+        const before = snap.bubbleText.slice(Math.max(0, snap.start - 200), snap.start);
+        const after = snap.bubbleText.slice(snap.end, Math.min(snap.bubbleText.length, snap.end + 200));
         openLoreCheck({
-            messageId: loreSel.messageId,
-            selectedText: loreSel.text,
-            start: loreSel.start,
-            end: loreSel.end,
-            surroundingContext: `${before}[[HIGHLIGHTED]]${loreSel.text}[[/HIGHLIGHTED]]${after}`,
+            messageId: snap.messageId,
+            selectedText: snap.text,
+            start: snap.start,
+            end: snap.end,
+            surroundingContext: `${before}[[HIGHLIGHTED]]${snap.text}[[/HIGHLIGHTED]]${after}`,
         });
         window.getSelection()?.removeAllRanges();
         setLoreSel(null);
@@ -181,13 +174,12 @@ export function Header() {
             <button
                 onMouseDown={handleLoreCheck}
                 onTouchStart={handleLoreCheck}
-                disabled={!loreSel}
                 className={`transition-colors p-1 touch-btn md:p-1 md:min-h-0 md:min-w-0 ml-1 ${
                     loreSel
                         ? 'text-terminal animate-pulse'
-                        : 'text-text-dim/40 cursor-not-allowed'
+                        : 'text-text-dim hover:text-terminal'
                 }`}
-                title={loreSel ? 'Lore Check selection' : 'Highlight text in a GM message first'}
+                title="Lore Check selection (highlight text in a GM message first)"
                 aria-label="Lore Check selection"
             >
                 <BookCheck size={16} />

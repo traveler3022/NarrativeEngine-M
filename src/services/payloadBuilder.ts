@@ -89,11 +89,7 @@ export function buildPayload(
             lines.join('\n') +
             `\n[END CORE MEMORY]`
         );
-    } else if (context.canonStateActive && context.canonState) {
-        // Legacy fallback for old text-format canon state
-        stableParts.push(context.canonState);
     }
-    if (context.headerIndexActive && context.headerIndex) stableParts.push(context.headerIndex);
     if (context.starterActive && context.starter) stableParts.push(context.starter);
     if (context.continuePromptActive && context.continuePrompt) stableParts.push(context.continuePrompt);
 
@@ -113,12 +109,16 @@ export function buildPayload(
     const stableTokens = countTokens(stableContent);
     addTrace({ source: 'Stable Preamble', classification: 'stable_truth', tokens: stableTokens, reason: 'Rules & Core state', included: true, position: 'system_static' });
 
+    const useLegacyCondenser = settings.enableLegacyCondenser !== false;
+    const VERBATIM_FALLBACK_WINDOW = 16;
+
     let summaryContent = '';
-    if (condensedSummary) {
+    if (useLegacyCondenser && condensedSummary) {
         summaryContent = `[CONDENSED SESSION HISTORY]\n${condensedSummary}\n[END CONDENSED HISTORY]`;
     }
     const summaryTokens = countTokens(summaryContent);
-    addTrace({ source: 'Condensed Summary', classification: 'summary', tokens: summaryTokens, reason: 'Compressed session history', included: !!summaryContent, position: 'system_summary' });
+    const shouldInjectSummary = settings.injectProseSummary !== false;
+    addTrace({ source: 'Condensed Summary', classification: 'summary', tokens: summaryTokens, reason: 'Compressed session history', included: !!summaryContent && shouldInjectSummary, position: 'system_summary' });
 
     let divergenceContent = '';
     if (divergenceRegister && divergenceRegister.entries.length > 0) {
@@ -268,12 +268,14 @@ export function buildPayload(
 
     // --- 6. Fit History ---
     const userTokens = countTokens(userMessage);
-    const reservedTotal = stableTokens + summaryTokens + divergenceTokens + currentWorldTokens + volatileTokens + userTokens;
+    const reservedTotal = stableTokens + (shouldInjectSummary ? summaryTokens : 0) + divergenceTokens + currentWorldTokens + volatileTokens + userTokens;
     const historyBudget = limit - reservedTotal - 200; // Small safety margin of 200 tokens
 
-    const candidateMessages = (condensedSummary && condensedUpToIndex !== undefined && condensedUpToIndex >= 0)
+    const candidateMessages = (useLegacyCondenser && condensedSummary && condensedUpToIndex !== undefined && condensedUpToIndex >= 0)
         ? history.slice(condensedUpToIndex + 1)
-        : history;
+        : useLegacyCondenser
+            ? history
+            : history.slice(-VERBATIM_FALLBACK_WINDOW);
 
     const fitted: OpenAIMessage[] = [];
     let historyUsed = 0;
@@ -313,7 +315,15 @@ export function buildPayload(
     // Protect orphaned tools
     while (fitted.length > 0 && fitted[0].role === 'tool') fitted.shift();
 
-    addTrace({ source: 'Fitted History', classification: 'summary', tokens: historyUsed, reason: `Included ${fitted.length} msgs within ${historyBudget} budget`, included: true, position: 'history' });
+    addTrace({
+        source: 'Fitted History', classification: 'summary', tokens: historyUsed,
+        reason: `Included ${fitted.length} msgs within ${historyBudget} budget`,
+        included: true, position: 'history',
+        childMessages: fitted.map(m => {
+            const text = typeof m.content === 'string' ? m.content : JSON.stringify(m.content) ?? '';
+            return { role: m.role, tokens: countTokens(text), preview: text.slice(0, 80).replace(/\n/g, ' ') };
+        }),
+    });
     addTrace({ source: 'User Message', classification: 'volatile_state', tokens: userTokens, reason: 'Current turn', included: true, position: 'user' });
 
     // --- 7. Depth-Based Scene Note Insertion ---
@@ -337,7 +347,7 @@ export function buildPayload(
     // --- 8. Final Assembly ---
     const messages: OpenAIMessage[] = [];
     if (stableContent) messages.push({ role: 'system', content: stableContent });
-    if (summaryContent) messages.push({ role: 'system', content: summaryContent });
+    if (summaryContent && shouldInjectSummary) messages.push({ role: 'system', content: summaryContent });
     if (divergenceContent) messages.push({ role: 'system', content: divergenceContent });
     if (worldContent || volatileContent) {
         messages.push({ role: 'system', content: [worldContent, volatileContent].filter(Boolean).join('\n\n') });

@@ -27,7 +27,7 @@ public class SaveFilePlugin extends Plugin {
         String filename = call.getString("filename");
 
         if (uriString == null || filename == null) {
-            call.reject("uri and filename are required");
+            call.reject("uri and filename are required");a
             return;
         }
 

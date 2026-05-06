@@ -1,10 +1,9 @@
 import { useState, useRef, useCallback } from 'react';
-import { X, ScrollText, Globe, Zap, Database, BookOpen, Bookmark } from 'lucide-react';
+import { X, ScrollText, Globe, Zap, BookOpen, Bookmark } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { RulesTab } from './context-drawer/RulesTab';
 import { LoreTab } from './context-drawer/LoreTab';
 import { EnginesTab } from './context-drawer/EnginesTab';
-import { SaveFileTab } from './context-drawer/SaveFileTab';
 import { ChapterTab } from './context-drawer/ChapterTab';
 import { BookkeepingTab } from './context-drawer/BookkeepingTab';
 import { ResolvedStatePanel } from './context-drawer/ResolvedStatePanel';
@@ -13,7 +12,6 @@ const TABS = [
   { id: 'sys',     label: 'System',   icon: ScrollText },
   { id: 'world',   label: 'World',    icon: Globe },
   { id: 'eng',     label: 'Engines',  icon: Zap },
-  { id: 'save',    label: 'Save',     icon: Database },
   { id: 'chapters',label: 'Chapters', icon: BookOpen },
   { id: 'chr',     label: 'Bookkeep', icon: Bookmark },
 ] as const;
@@ -70,7 +68,6 @@ export function ContextDrawer() {
       {activeTab === 'sys' && <RulesTab />}
       {activeTab === 'world' && <LoreTab />}
       {activeTab === 'eng' && <EnginesTab />}
-      {activeTab === 'save' && <SaveFileTab />}
       {activeTab === 'chapters' && <ChapterTab />}
       {activeTab === 'chr' && <><ResolvedStatePanel /><BookkeepingTab /></>}
     </>

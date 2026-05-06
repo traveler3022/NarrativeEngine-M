@@ -3,7 +3,7 @@ import { type TurnCallbacks, type TurnState } from './turnTypes';
 export type { TurnCallbacks, TurnState } from './turnTypes';
 import { uid } from '../utils/uid';
 import { sendMessage } from './chatEngine';
-import { shouldCondense, condenseHistory } from './condenser';
+import { shouldCondense, condenseHistory, getCondenseBudgetRatio } from './condenser';
 import { runSaveFilePipeline } from './saveFileEngine';
 import { rollEngines, rollDiceFairness } from './engineRolls';
 import { api } from './apiClient';
@@ -74,10 +74,8 @@ export async function runTurn(
             const uncondensed = currentMsgs.slice(condenser.condensedUpToIndex + 1);
 
             try {
-                const saveResult = await runSaveFilePipeline(currentProvider as LLMProvider, uncondensed, context, undefined, undefined);
-                if (saveResult.canonSuccess) callbacks.updateContext({ canonState: saveResult.canonState });
-                if (saveResult.indexSuccess) callbacks.updateContext({ headerIndex: saveResult.headerIndex });
-                console.log(`[SavePipeline] Canon: ${saveResult.canonSuccess ? '✓' : '✗'}, Index: ${saveResult.indexSuccess ? '✓' : '✗'}`);
+                const saveResult = await runSaveFilePipeline(currentProvider as LLMProvider, uncondensed, undefined, undefined, settings.contextLimit);
+                console.log(`[SavePipeline] Slots: ${saveResult.success ? '✓' : '✗'}`);
 
                 if (saveResult.coreMemorySlots) {
                     callbacks.updateContext({ coreMemorySlots: saveResult.coreMemorySlots });
@@ -86,16 +84,17 @@ export async function runTurn(
                 toast.warning('Save pipeline failed — state not updated');
             }
 
+            const budgetRatio = getCondenseBudgetRatio(settings.condenseAggressiveness);
             const result = await condenseHistory(
                 currentProvider,
                 currentMsgs,
-                context,
                 condenser.condensedUpToIndex,
                 condenser.condensedSummary,
                 activeCampaignId,
                 npcLedger.map(n => n.name),
                 settings.contextLimit,
-                condenseController.signal
+                condenseController.signal,
+                budgetRatio
             );
             callbacks.setCondensed(result.summary, result.upToIndex);
 
@@ -271,7 +270,7 @@ export async function runTurn(
                     );
                 }
 
-                if (settings.autoCondenseEnabled && shouldCondense(allMsgs, settings.contextLimit, condenser.condensedUpToIndex)) {
+                if (settings.autoCondenseEnabled && (settings.enableLegacyCondenser !== false) && shouldCondense(allMsgs, settings.contextLimit, condenser.condensedUpToIndex, getCondenseBudgetRatio(settings.condenseAggressiveness))) {
                     triggerCondense();
                 }
 

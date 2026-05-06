@@ -90,6 +90,9 @@ export const defaultSettings: AppSettings = {
     autoExtractDivergences: true,
     divergenceTokenBudget: 2000,
     autoArchiveStaleNPCsTurns: 15,
+    enableLegacyCondenser: true,
+    injectProseSummary: true,
+    divergenceScanBudget: 0,
 };
 
 export function resolveTheme(theme: 'light' | 'dark' | 'system'): 'light' | 'dark' {
@@ -137,6 +140,9 @@ export function migrateSettings(data: Record<string, unknown>): AppSettings {
             enableDeepArchiveSearch: (raw.enableDeepArchiveSearch as boolean) ?? false,
             autoExtractDivergences: (raw.autoExtractDivergences as boolean) ?? true,
             divergenceTokenBudget: (raw.divergenceTokenBudget as number) ?? 2000,
+            enableLegacyCondenser: (raw.enableLegacyCondenser as boolean) ?? true,
+            injectProseSummary: (raw.injectProseSummary as boolean) ?? true,
+            divergenceScanBudget: (raw.divergenceScanBudget as number) ?? 0,
         };
     }
 
@@ -184,6 +190,9 @@ export function migrateSettings(data: Record<string, unknown>): AppSettings {
         enableDeepArchiveSearch: (raw.enableDeepArchiveSearch as boolean) ?? false,
         autoExtractDivergences: (raw.autoExtractDivergences as boolean) ?? true,
         divergenceTokenBudget: (raw.divergenceTokenBudget as number) ?? 2000,
+        enableLegacyCondenser: (raw.enableLegacyCondenser as boolean) ?? true,
+        injectProseSummary: (raw.injectProseSummary as boolean) ?? true,
+        divergenceScanBudget: (raw.divergenceScanBudget as number) ?? 0,
     };
 }
 

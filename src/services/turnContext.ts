@@ -30,7 +30,7 @@ export async function gatherContext(
     callbacks: TurnCallbacks,
     finalInput: string
 ): Promise<GatheredContext> {
-    const { settings, context, loreChunks, npcLedger, archiveIndex, activeCampaignId } = state;
+    const { settings, loreChunks, npcLedger, archiveIndex, activeCampaignId } = state;
     let semanticArchiveIds: string[] | undefined;
     let semanticLoreIds: string[] | undefined;
 
@@ -52,7 +52,7 @@ export async function gatherContext(
 
     const messages = state.getMessages();
     const relevantLore = loreChunks.length > 0
-        ? retrieveRelevantLore(loreChunks, context.canonState ?? '', context.headerIndex ?? '', finalInput, 1200, messages, semanticLoreIds)
+        ? retrieveRelevantLore(loreChunks, finalInput, 1200, messages, semanticLoreIds)
         : undefined;
 
     let sceneNumber: string | undefined;

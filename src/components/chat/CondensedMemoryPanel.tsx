@@ -142,15 +142,20 @@ export function CondensedMemoryPanel({
                         ) : (
                             <div className="text-[11px] text-text-dim/80 font-mono whitespace-pre-wrap max-h-[200px] overflow-y-auto space-y-0.5">
                                 {reg.entries.map(e => (
-                                    <div key={e.id} className={`flex items-start gap-1 ${e.resolved ? 'line-through opacity-40' : ''}`}>
+                                    <div key={e.id} className={`flex items-start gap-1 ${e.resolved ? 'line-through opacity-40' : ''} ${e.parseError ? 'border border-dashed border-red-500/60 rounded px-1 py-0.5 bg-red-500/5' : ''}`}>
                                         <span className={`text-[9px] shrink-0 mt-0.5 ${
+                                            e.parseError ? 'text-red-400' :
                                             e.category === 'canon_override' ? 'text-red-400' :
                                             e.category === 'world_change' ? 'text-ice' :
                                             e.category === 'entity_state' ? 'text-terminal' :
                                             e.category === 'player_state' ? 'text-emerald-400' :
                                             'text-amber-400'
                                         }`}>
-                                            [{e.category === 'canon_override' ? 'CANON' : e.category === 'world_change' ? 'WORLD' : e.category === 'entity_state' ? 'ENTITY' : e.category === 'player_state' ? 'PLAYER' : 'OBLIG'}]
+                                            [{e.parseError ? 'PARSE ERR' :
+                                              e.category === 'canon_override' ? 'CANON' :
+                                              e.category === 'world_change' ? 'WORLD' :
+                                              e.category === 'entity_state' ? 'ENTITY' :
+                                              e.category === 'player_state' ? 'PLAYER' : 'OBLIG'}]
                                         </span>
                                         <span>{e.subject}: {e.divergence} <span className="text-text-dim/40">[#{e.sceneRef}]{e.source === 'manual' ? ' ⚡' : ''}</span></span>
                                     </div>
