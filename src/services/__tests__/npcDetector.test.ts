@@ -82,6 +82,40 @@ describe('npcDetector', () => {
             expect(names).toContain('Bram');
         });
 
+        it('drops dice mechanics terms that get capitalized', () => {
+            const content = 'Disadvantage Catastrophe! The blade slips. A Normal Failure follows. Triumph eludes you.';
+            const names = extractNPCNames(content);
+            expect(names).not.toContain('Catastrophe');
+            expect(names).not.toContain('Failure');
+            expect(names).not.toContain('Triumph');
+            expect(names).not.toContain('Disadvantage Catastrophe');
+            expect(names).not.toContain('Normal Failure');
+        });
+
+        it('drops common sentence-initial words that get capitalized', () => {
+            const content = 'Two guards stood watch. Not a sound. Every breath was tense. Equipment lay strewn. Academy training kicked in.';
+            const names = extractNPCNames(content);
+            expect(names).not.toContain('Two');
+            expect(names).not.toContain('Not');
+            expect(names).not.toContain('Every');
+            expect(names).not.toContain('Equipment');
+            expect(names).not.toContain('Academy');
+        });
+
+        it('keeps legit multi-word names like Seraphine Thornmere', () => {
+            const content = 'Seraphine Thornmere entered the hall. Dorian Ashworth followed.';
+            const names = extractNPCNames(content);
+            expect(names).toContain('Seraphine Thornmere');
+            expect(names).toContain('Dorian Ashworth');
+        });
+
+        it('deduplicates repeated names within a single response', () => {
+            const content = 'Aldric drew his sword. Aldric struck. Aldric won.';
+            const names = extractNPCNames(content);
+            const aldricCount = names.filter(n => n === 'Aldric').length;
+            expect(aldricCount).toBe(1);
+        });
+
         it('handles multiple names in one passage', () => {
             const content = 'Captain Aldric and Sir Reginald met [Orin] the merchant. Bram served them ale.';
             const names = extractNPCNames(content);

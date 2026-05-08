@@ -6,6 +6,9 @@ import TITLES from '../data/titles.json';
 // Load titles into a Set once
 const TITLES_SET = new Set(TITLES.map(t => t.toLowerCase()));
 
+// Connectives allowed inside multi-word names (skipped during token-blocklist check)
+const NAME_CONNECTIVES = new Set(['of', 'the', 'von', 'de', 'di', 'al', 'el', 'ibn', 'bin']);
+
 /** Extract NPC names from assistant response text using bracket/system tag patterns and prose extraction */
 export function extractNPCNames(content: string, excludeNames: string[] = []): string[] {
     const extractedNames: string[] = [];
@@ -13,14 +16,36 @@ export function extractNPCNames(content: string, excludeNames: string[] = []): s
 
     // Pattern to exclude generic roles like "Guard A" or "Clone 1", and creature types
     const GENERIC_ROLE_PATTERN = /^(guard|scout|merchant|soldier|bandit|thug|villager|citizen|patron|cultist|goblin|orc|skeleton|zombie|enemy|monster|creature|clone|drone|knight|priest|mage|wizard|archer|thief)\s+([a-z0-9]|#\d+)$/i;
-    const NPC_NAME_BLOCKLIST = new Set(["you", "i", "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for", "with", "by", "about", "like", "through", "over", "before", "between", "after", "since", "without", "under", "within", "along", "following", "across", "behind", "beyond", "plus", "except", "up", "out", "around", "down", "off", "above", "near", "she", "he", "it", "they", "them", "then", "suddenly", "meanwhile", "however", "although", "therefore", "otherwise", "inside", "outside", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]);
+    const NPC_NAME_BLOCKLIST = new Set([
+        // articles / connectives / prepositions
+        "you", "i", "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for", "with", "by", "about", "like", "through", "over", "before", "between", "after", "since", "without", "under", "within", "along", "following", "across", "behind", "beyond", "plus", "except", "up", "out", "around", "down", "off", "above", "near",
+        // pronouns
+        "she", "he", "it", "they", "them", "we", "us", "his", "her", "their", "our", "your", "my", "mine",
+        // sentence starters / discourse markers
+        "then", "suddenly", "meanwhile", "however", "although", "therefore", "otherwise", "inside", "outside", "perhaps", "maybe", "indeed", "certainly", "instead", "still", "also", "only", "just", "even", "yet", "soon", "later", "now", "today", "tomorrow", "yesterday", "finally", "eventually", "overall", "overall", "moreover", "furthermore", "nevertheless", "nonetheless", "regardless", "anyway", "anyhow", "besides", "actually", "really", "very", "quite", "rather", "somewhat", "always", "never", "often", "sometimes", "rarely", "seldom", "usually", "occasionally",
+        // weekdays / months
+        "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december",
+        // common sentence-initial nouns/adjectives that get capitalized
+        "every", "each", "all", "some", "any", "no", "none", "many", "few", "several", "most", "more", "less", "much", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "first", "second", "third", "last", "next", "previous", "another", "other", "same", "different",
+        "what", "when", "where", "why", "who", "how", "which", "whose", "that", "this", "these", "those", "here", "there",
+        "wait", "well", "okay", "ok", "yes", "yep", "no", "nope", "sure", "fine", "good", "great", "nice", "bad", "right", "wrong", "true", "false",
+        "not", "yes", "but",
+        // dice / mechanics terms (commonly capitalized in narrative or roll output)
+        "catastrophe", "failure", "success", "triumph", "fumble", "critical", "crit", "advantage", "disadvantage", "normal", "natural", "encounter", "surprise", "world", "event", "skill", "check", "save", "saving", "throw", "roll", "rolls", "dice", "die", "result", "outcome", "modifier", "bonus", "penalty",
+        // narrative meta words frequently capitalized
+        "equipment", "inventory", "scene", "chapter", "act", "session", "turn", "round", "phase", "round", "time", "day", "night", "morning", "afternoon", "evening", "dawn", "dusk", "midnight", "noon",
+        "academy", "adventure", "story", "tale", "narrative", "system",
+    ]);
 
     // Pattern 1 & 2: [Name] or [**Name**] — no colons allowed inside (filters out [SYSTEM: ...])
     const bracketMatches = Array.from(content.matchAll(/\[\*{0,2}([A-Za-z][A-Za-z0-9 _.'-]*[A-Za-z0-9.])\*{0,2}\]/g));
     for (const m of bracketMatches) {
         const raw = m[1].trim();
         if (!isValidCandidate(raw, excludeSet, GENERIC_ROLE_PATTERN, NPC_NAME_BLOCKLIST)) continue;
-        extractedNames.push(stripTitle(raw));
+        const stripped = stripTitle(raw);
+        if (stripped.length === 0) continue;
+        if (!isValidCandidate(stripped, excludeSet, GENERIC_ROLE_PATTERN, NPC_NAME_BLOCKLIST)) continue;
+        extractedNames.push(stripped);
     }
 
     // Pattern 3: [SYSTEM: NPC_ENTRY - NAME]
@@ -28,7 +53,10 @@ export function extractNPCNames(content: string, excludeNames: string[] = []): s
     for (const m of entryMatches) {
         const raw = m[1].trim();
         if (!isValidCandidate(raw, excludeSet, GENERIC_ROLE_PATTERN, NPC_NAME_BLOCKLIST)) continue;
-        extractedNames.push(stripTitle(raw));
+        const stripped = stripTitle(raw);
+        if (stripped.length === 0) continue;
+        if (!isValidCandidate(stripped, excludeSet, GENERIC_ROLE_PATTERN, NPC_NAME_BLOCKLIST)) continue;
+        extractedNames.push(stripped);
     }
 
     // Pattern 4: Prose extraction — capitalized proper nouns
@@ -40,16 +68,26 @@ export function extractNPCNames(content: string, excludeNames: string[] = []): s
     for (const m of proseMatches) {
         const raw = m[1].trim();
 
-        // Strip title first, then validate the result
+        // Strip title first, then validate
         const stripped = stripTitle(raw);
         if (stripped.length === 0) continue;
-
         if (!isValidCandidate(stripped, excludeSet, GENERIC_ROLE_PATTERN, NPC_NAME_BLOCKLIST)) continue;
+
+        // Token-level blocklist check: drop multi-word names where ANY non-connective token is blocklisted.
+        // Catches "Disadvantage Catastrophe", "Normal Failure", "Equipment Locker", etc.
+        const tokens = stripped.split(/\s+/);
+        if (tokens.length > 1) {
+            const hasBadToken = tokens.some(t => {
+                const tl = t.toLowerCase();
+                return !NAME_CONNECTIVES.has(tl) && NPC_NAME_BLOCKLIST.has(tl);
+            });
+            if (hasBadToken) continue;
+        }
 
         extractedNames.push(stripped);
     }
 
-    return extractedNames;
+    return Array.from(new Set(extractedNames));
 }
 
 /** Check if a candidate is valid before adding */
@@ -131,19 +169,29 @@ export async function validateNPCCandidates(
 
     const shortContext = narrativeContext.slice(-1000); // Keep it cheap
 
-    const prompt = `You are a strict data filter for a fantasy RPG. 
-Given a short narrative context and a list of bracketed terms extracted from it, return ONLY the ones that are actual character or NPC names. 
-Exclude skill checks, game mechanics, actions, meta-tags, stats, spell names, locations, and any other non-name terms.
+    const prompt = `You are a strict data filter for a roleplay/RPG NPC ledger.
+
+Return ONLY items from the candidate list that are clearly the proper name of a SPECIFIC PERSON or sentient character (NPC). A valid name refers to an individual addressable as a character: e.g. "Aldric", "Seraphine Thornmere", "Dorian Ashworth".
+
+REJECT everything that is not unambiguously a character's personal name, including:
+- Dice / mechanics terms: Catastrophe, Failure, Success, Triumph, Critical, Advantage, Disadvantage, Normal, Natural, Encounter, Surprise, Skill Check, Save
+- Generic roles or titles WITHOUT a name: Guard, Captain, Soldier, Academy, Equipment, Inventory
+- Locations, factions, organizations, items, spells, abilities
+- Sentence-initial common words capitalized by accident: "Two", "Not", "Every", "Equipment", "Academy", "Adventure"
+- Combined dice/mechanic phrases: "Disadvantage Catastrophe", "Normal Failure"
+- Anything you cannot confidently identify as a person's name from context
+
+When in doubt, REJECT.
 
 [NARRATIVE CONTEXT]
 ${shortContext}
 
-[CANDIDATE NAMES TO FILTER]
+[CANDIDATES]
 ${candidates.join(', ')}
 
-Respond ONLY with a valid JSON array of strings containing the true character names. Make no other commentary.
-If none are character names, respond with [].
-Example: ["Captain Aldric", "Orin"]`;
+Respond ONLY with a valid JSON array of the surviving names exactly as given. No commentary, no explanations.
+If none are valid names, respond with [].
+Example: ["Aldric", "Seraphine Thornmere"]`;
 
     try {
         const raw = await llmCall(provider, prompt, { priority: 'normal', maxTokens: 500 });
