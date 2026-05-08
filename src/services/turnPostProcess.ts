@@ -156,17 +156,19 @@ export async function handlePostTurn(
         const archivedNPCs = npcLedger.filter(n => n.archived);
         const activeNPCs = npcLedger.filter(n => !n.archived);
 
-        // Auto-restore archived NPCs whose names are mentioned in player input
+        // Auto-restore archived NPCs whose names are mentioned in player input or GM response
         if (archivedNPCs.length > 0 && callbacks.restoreNPC) {
-            const toRestore = findArchivedToRestore(displayInput, archivedNPCs);
+            const toRestoreFromPlayer = findArchivedToRestore(displayInput, archivedNPCs);
+            const toRestoreFromGM = lastAssistantContent ? findArchivedToRestore(lastAssistantContent, archivedNPCs) : [];
+            const toRestore = [...new Set([...toRestoreFromPlayer, ...toRestoreFromGM])];
             for (const id of toRestore) {
                 callbacks.restoreNPC(id);
                 const npc = archivedNPCs.find(n => n.id === id);
-                console.log(`[NPC Archive] Restored "${npc?.name}" (mentioned in input)`);
+                console.log(`[NPC Archive] Restored "${npc?.name}" (mentioned in conversation)`);
             }
         }
 
-        const pressureUpdates = scanPressure(displayInput, activeNPCs);
+        const pressureUpdates = scanPressure(displayInput, activeNPCs, lastAssistantContent);
         if (pressureUpdates.length > 0) {
             for (const update of pressureUpdates) {
                 const npc = activeNPCs.find(n => n.id === update.npcId);

@@ -1,5 +1,6 @@
 const DIMS = 384;
-const CALL_TIMEOUT_MS = 30_000;
+const CALL_TIMEOUT_MS = 60_000;
+const BATCH_CALL_TIMEOUT_MS = 30_000;
 
 type WorkerResponse =
     | { type: 'ready'; id: string }
@@ -36,12 +37,12 @@ function getWorker(): Worker {
     return worker;
 }
 
-function request<T>(msg: { type: string; id: string } & Record<string, unknown>): Promise<T> {
+function request<T>(msg: { type: string; id: string } & Record<string, unknown>, timeoutMs?: number): Promise<T> {
     return new Promise<T>((resolve, reject) => {
         const timer = setTimeout(() => {
             pending.delete(msg.id);
             reject(new Error(`[Embedder] Call timed out (${msg.type})`));
-        }, CALL_TIMEOUT_MS);
+        }, timeoutMs ?? CALL_TIMEOUT_MS);
         pending.set(msg.id, { resolve: resolve as (v: unknown) => void, reject, timer });
         getWorker().postMessage(msg);
     });
@@ -67,7 +68,7 @@ export async function embedText(text: string): Promise<Float32Array | null> {
 
 export async function embedBatch(texts: string[]): Promise<(Float32Array | null)[]> {
     try {
-        return await request<(Float32Array | null)[]>({ type: 'embedBatch', id: `batch-${Date.now()}-${Math.random().toString(36).slice(2)}`, texts });
+        return await request<(Float32Array | null)[]>({ type: 'embedBatch', id: `batch-${Date.now()}-${Math.random().toString(36).slice(2)}`, texts }, BATCH_CALL_TIMEOUT_MS);
     } catch (e) {
         console.warn('[Embedder] embedBatch failed:', e);
         return texts.map(() => null);

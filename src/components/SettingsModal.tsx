@@ -352,18 +352,13 @@ export function SettingsModal() {
                   </span>
                 </div>
                 <input
-                  type="range"
+                  type="number"
+                  step={500}
                   min={500}
-                  max={6000}
-                  step={100}
                   value={settings.divergenceTokenBudget ?? 2000}
-                  onChange={(e) => updateSettings({ divergenceTokenBudget: parseInt(e.target.value) })}
-                  className="w-full h-2 bg-border rounded-lg appearance-none cursor-pointer accent-amber-500"
+                  onChange={(e) => updateSettings({ divergenceTokenBudget: Math.max(500, parseInt(e.target.value) || 500) })}
+                  className="w-full bg-void border border-border px-3 py-2 text-[16px] md:text-sm font-mono focus:border-amber-500 focus:outline-none"
                 />
-                <div className="flex justify-between text-[9px] text-text-dim mt-1">
-                  <span>500</span>
-                  <span>6000</span>
-                </div>
               </div>
 
               <div className="mt-4 pt-4 border-t border-border/60">

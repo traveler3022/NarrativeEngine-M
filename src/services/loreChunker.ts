@@ -24,6 +24,10 @@ const STOP_WORDS = new Set([
     'currently', 'known', 'anyone', 'power', 'none', 'variable',
 ]);
 
+const LORE_CHUNK_MAX = 1500;
+const LORE_WINDOW_SIZE = 1000;
+const LORE_WINDOW_STRIDE = 700;
+
 function slugify(text: string): string {
     return text
         .toLowerCase()
@@ -254,6 +258,34 @@ export function chunkLoreFile(markdown: string): LoreChunk[] {
 
     extractLinkedEntities(chunks);
 
-    return chunks;
+    const expanded: LoreChunk[] = [];
+    for (const chunk of chunks) {
+        if (chunk.content.length <= LORE_CHUNK_MAX) {
+            expanded.push(chunk);
+        } else {
+            const windows: string[] = [];
+            let i = 0;
+            while (i < chunk.content.length) {
+                windows.push(chunk.content.slice(i, i + LORE_WINDOW_SIZE));
+                if (i + LORE_WINDOW_SIZE >= chunk.content.length) break;
+                i += LORE_WINDOW_STRIDE;
+            }
+            const parentKeywords = extractTriggerKeywords(chunk.header, chunk.content);
+            for (let wi = 0; wi < windows.length; wi++) {
+                const subContent = windows[wi];
+                const subId = `${chunk.id}#w${wi}`;
+                expanded.push({
+                    ...chunk,
+                    id: subId,
+                    content: subContent,
+                    tokens: countTokens(chunk.header + '\n' + subContent),
+                    triggerKeywords: parentKeywords,
+                    summary: chunk.summary,
+                });
+            }
+        }
+    }
+
+    return expanded;
 }
 

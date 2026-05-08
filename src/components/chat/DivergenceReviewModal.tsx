@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Loader2, Zap, Check, X } from 'lucide-react';
+import { Loader2, Zap, Check } from 'lucide-react';
 import type { ChatMessage, ArchiveIndexEntry, DivergenceRegister, DivergenceEntry, DivergenceCategory, LLMProvider } from '../../types';
 import { extractFromMessageBatch, buildSceneMap } from '../../services/divergenceRegister';
-import { uid } from '../../utils/uid';
+
 import { toast } from '../Toast';
 
 type DivergenceReviewModalProps = {

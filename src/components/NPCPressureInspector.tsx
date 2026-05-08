@@ -13,16 +13,19 @@ function miniSparkline(history: NPCPressureHistory[] | undefined, type: 'ignored
     return bars.join('');
 }
 
-function NPCCard({ npc }: { npc: NPCEntry }) {
+function NPCCard({ npc, archived }: { npc: NPCEntry; archived?: boolean }) {
     const pressure = npc.pressure;
     const hasDrives = !!npc.drives;
     const hasTriggers = !!npc.behavioralTriggers && npc.behavioralTriggers.length > 0;
 
     return (
-        <div className="bg-void border border-border p-2 space-y-1.5">
+        <div className={`bg-void border p-2 space-y-1.5 ${archived ? 'border-text-dim/20 opacity-60' : 'border-border'}`}>
             <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold text-text-primary">{npc.name}</span>
-                <span className="text-[9px] text-text-dim">aff:{npc.affinity}</span>
+                <div className="flex items-center gap-1.5">
+                    {archived && <span className="text-[8px] text-text-dim/50 uppercase bg-white/5 px-1 rounded">archived</span>}
+                    <span className="text-[9px] text-text-dim">aff:{npc.affinity}</span>
+                </div>
             </div>
 
             {hasDrives && (
@@ -70,6 +73,15 @@ function NPCCard({ npc }: { npc: NPCEntry }) {
                     ))}
                 </div>
             )}
+
+            {archived && (
+                <button
+                    onClick={() => useAppStore.getState().restoreNPC(npc.id)}
+                    className="text-[9px] text-emerald-400 hover:text-emerald-300 px-1.5 py-0.5 rounded bg-emerald-500/10"
+                >
+                    Restore
+                </button>
+            )}
         </div>
     );
 }
@@ -80,14 +92,17 @@ export function NPCPressureInspector() {
 
     if (!debugMode) return null;
 
-    const npcsWithPressure = npcLedger.filter(n => n.drives || n.pressure);
-    const npcsWithoutPressure = npcLedger.filter(n => !n.drives && !n.pressure);
+    const activeNPCs = npcLedger.filter(n => !n.archived);
+    const archivedNPCs = npcLedger.filter(n => n.archived);
+    const npcsWithPressure = activeNPCs.filter(n => n.drives || n.pressure);
+    const npcsWithoutPressure = activeNPCs.filter(n => !n.drives && !n.pressure);
+    const archivedWithPressure = archivedNPCs.filter(n => n.drives || n.pressure);
 
     return (
         <details className="border border-border/50 rounded">
             <summary className="cursor-pointer text-[10px] text-terminal/60 hover:text-terminal transition-colors select-none px-2 py-1 flex items-center gap-2">
                 <span className="font-bold uppercase tracking-wider">NPC Pressure Inspector</span>
-                <span className="text-[9px] text-text-dim/40">({npcsWithPressure.length} tracked / {npcLedger.length} total)</span>
+                <span className="text-[9px] text-text-dim/40">({npcsWithPressure.length} tracked / {activeNPCs.length} active{archivedNPCs.length > 0 ? `, ${archivedNPCs.length} archived` : ''})</span>
             </summary>
             <div className="p-2 space-y-2 max-h-96 overflow-y-auto">
                 {npcsWithPressure.length === 0 && (
@@ -100,6 +115,14 @@ export function NPCPressureInspector() {
                     <div className="text-[9px] text-text-dim/30 border-t border-border/20 pt-2">
                         <span className="uppercase tracking-wider">Untracked NPCs:</span>{' '}
                         {npcsWithoutPressure.map(n => n.name).join(', ')}
+                    </div>
+                )}
+                {archivedWithPressure.length > 0 && (
+                    <div className="border-t border-border/20 pt-2 mt-2">
+                        <div className="text-[9px] text-text-dim/50 uppercase tracking-wider mb-1">Archived NPCs</div>
+                        {archivedWithPressure.map(npc => (
+                            <NPCCard key={npc.id} npc={npc} archived />
+                        ))}
                     </div>
                 )}
             </div>

@@ -17,7 +17,7 @@ import { CondensedMemoryPanel } from './chat/CondensedMemoryPanel';
 import { DivergenceReviewModal } from './chat/DivergenceReviewModal';
 import { NPCPressureInspector } from './NPCPressureInspector';
 import { ChatInput } from './chat/ChatInput';
-import { mergeEntries, pruneChapterEntries, mergeSimilarEntries, EMPTY_REGISTER } from '../services/divergenceRegister';
+import { mergeEntries, pruneChapterEntries, pruneAllEntries, mergeSimilarEntries, EMPTY_REGISTER } from '../services/divergenceRegister';
 
 const saveReg = (campaignId: string, reg: DivergenceRegister) => {
     import('../store/campaignStore').then(m => m.saveDivergenceRegister(campaignId, reg)).catch(() => {});
@@ -362,19 +362,35 @@ export function ChatArea() {
     const handleManualPrune = async () => {
         if (!activeCampaignId) return;
         const provider = getActiveUtilityEndpoint();
-        if (!provider) return;
+        if (!provider) {
+            toast.error('No utility endpoint configured for pruning');
+            return;
+        }
 
         const currentReg = useAppStore.getState().divergenceRegister || EMPTY_REGISTER;
-        if (currentReg.entries.length === 0) return;
+        if (currentReg.entries.length === 0) {
+            toast.info('No entries in register to prune');
+            return;
+        }
 
-        const allChapters = await api.chapters.list(activeCampaignId);
-        const lastSealed = [...allChapters].reverse().find(c => c.sealedAt && (c.summary || c.unresolvedThreads?.length));
-        const chapterForPrune = lastSealed || allChapters.find(c => !c.sealedAt) || allChapters[0];
-        if (!chapterForPrune) return;
+        try {
+            const allChapters = await api.chapters.list(activeCampaignId);
+            const lastSealed = [...allChapters].reverse().find(c => c.sealedAt && (c.summary || c.unresolvedThreads?.length));
+            const chapterForPrune = lastSealed || allChapters.find(c => !c.sealedAt) || allChapters[0];
 
-        const pruned = await pruneChapterEntries(provider, chapterForPrune, currentReg, allChapters);
-        setDivergenceRegister(pruned);
-        await saveReg(activeCampaignId, pruned);
+            let pruned: DivergenceRegister;
+            if (chapterForPrune && chapterForPrune.sceneRange) {
+                pruned = await pruneChapterEntries(provider, chapterForPrune, currentReg, allChapters);
+            } else {
+                toast.info('No chapters found — pruning against full register');
+                pruned = await pruneAllEntries(provider, currentReg);
+            }
+            setDivergenceRegister(pruned);
+            await saveReg(activeCampaignId, pruned);
+        } catch (e) {
+            console.error('[ManualPrune] failed', e);
+            toast.error(`Prune failed: ${(e as Error).message || 'Unknown error'}`);
+        }
     };
 
     const handleMergeSimilar = async () => {

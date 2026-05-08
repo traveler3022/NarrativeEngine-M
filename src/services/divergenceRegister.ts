@@ -3,6 +3,7 @@ import { llmCall } from '../utils/llmCall';
 import { uid } from '../utils/uid';
 import { countTokens } from './tokenizer';
 import { extractJson } from './payloadBuilder';
+import { toast } from '../components/Toast';
 
 export const IMPORTANCE_GATE = 7;
 
@@ -19,6 +20,7 @@ const VALID_CATEGORIES: ReadonlySet<DivergenceCategory> = new Set([
 ]);
 
 const BULLET_RE = /^\s*-?\s*\[\s*([^|\]]+?)\s*\|\s*([^|\]]+?)\s*\|\s*scene\s*:\s*([^|\]]+?)\s*(?:\|\s*supersedes\s*:\s*([^|\]]+?)\s*)?\]\s*(.+?)\s*$/i;
+const BULLET_RE_LOOSE = /^\s*-?\s*([a-z_]+)\s*\|\s*([^|]+?)\s*\|\s*scene\s*:\s*([^|]+?)\s*(?:\|\s*supersedes\s*:\s*([^|]+?)\s*)?\|\s*(.+?)\s*$/i;
 
 export function stripReasoning(raw: string): string {
     let clean = raw.replace(/<think[\s\S]*?<\/think\s*>/gi, '');
@@ -46,13 +48,14 @@ export function parseBulletDivergences(raw: string, validSceneIds: string[]): Pa
         const line = rawLine.trim();
         if (!line) continue;
         if (/^none$/i.test(line)) continue;
-        if (/^(here|the|note|output|entries|new|existing)\b/i.test(line) && !line.includes('[')) continue;
+        if (/^\s*importance\s*:\s*\d+\s*$/i.test(line)) continue;
+        if (/^(here|the|note|output|entries|new|existing)\b/i.test(line) && !line.includes('[') && !line.includes('|')) continue;
 
-        const m = line.match(BULLET_RE);
+        const m = line.match(BULLET_RE) ?? line.match(BULLET_RE_LOOSE);
         if (!m) {
             out.push({
                 category: 'entity_state',
-                subject: line.slice(0, 40),
+                subject: '(unparsed)',
                 divergence: line,
                 sceneRef: fallbackScene,
                 parseError: true,
@@ -63,10 +66,21 @@ export function parseBulletDivergences(raw: string, validSceneIds: string[]): Pa
         const catNorm = catRaw.toLowerCase().replace(/\s+/g, '_') as DivergenceCategory;
         const category: DivergenceCategory = VALID_CATEGORIES.has(catNorm) ? catNorm : 'entity_state';
         const sceneRef = sceneSet.has(sceneRaw) ? sceneRaw : fallbackScene;
+        let divergence = divergenceRaw;
+        const firstSentence = divergence.split(/[.!?]\s/)[0];
+        if (firstSentence && firstSentence.length < divergence.length) {
+            divergence = firstSentence.endsWith('.') || firstSentence.endsWith('!') || firstSentence.endsWith('?')
+                ? firstSentence
+                : firstSentence + '.';
+        }
+        const words = divergence.split(/\s+/);
+        if (words.length > 15) {
+            divergence = words.slice(0, 15).join(' ') + '.';
+        }
         out.push({
             category,
             subject: subjectRaw,
-            divergence: divergenceRaw,
+            divergence,
             sceneRef,
             supersedes: supersedesRaw || undefined,
         });
@@ -101,9 +115,18 @@ ${sceneText}
 TASK:
 1. Rate this scene's importance 1-10 on the FIRST line as: importance:N
 2. ${sceneNote}
-3. Extract every story-relevant fact that affects future continuity (NPC states, items, locations, relationships, abilities, debuffs, quest progress, obligations, world state, canon overrides).
+3. Extract only facts that would BREAK A FUTURE SCENE if the AI didn't know them. Skip transient details, emotional narration, momentary states, and anything the archive would already surface. Focus on: permanent NPC state changes, items acquired/lost, location changes, relationship shifts, abilities gained/lost, active obligations, world state changes, canon overrides.
 
 Categories (use exactly one per line): canon_override, world_change, entity_state, player_state, obligation.
+
+STYLE RULES (CRITICAL):
+- Each divergence must be ONE SHORT SENTENCE, maximum 12 words.
+- No compound sentences. No explanations. No "because" or "when" clauses.
+- Subject must be a proper noun or specific entity — never a vague pronoun.
+- WRONG: The player engaged in a lengthy negotiation with the goblin king and eventually convinced him to join forces
+- RIGHT: Goblin King Grak: allied with player
+- WRONG: After the intense battle the party discovered that the eastern gate had been destroyed by siege weapons
+- RIGHT: Eastern gate: DESTROYED by siege
 
 Output format — one divergence per line after the importance line, no JSON, no markdown:
 - [category | subject | scene:NNN] divergence sentence
@@ -361,7 +384,7 @@ function buildPrunePrompt(
         ? chapter.unresolvedThreads.join('\n- ')
         : '(none)';
 
-    return `You are pruning a campaign divergence register after a chapter was sealed.
+    return `You are pruning a campaign divergence register after a chapter was sealed. The register is for PERSISTENT CAMPAIGN TRUTH — facts that would break future scenes if the AI didn't know them. It is NOT a story transcript or a log of good moments. Prune aggressively.
 
 CHAPTER: "${chapter.title}" (Scenes ${chapter.sceneRange[0]}-${chapter.sceneRange[1]})
 SUMMARY: ${chapter.summary || '(no summary yet)'}
@@ -369,25 +392,33 @@ UNRESOLVED THREADS:
 - ${threadLines}
 RECURRING NPCs ACROSS ALL CHAPTERS: ${recurringNpcs.join(', ') || '(none)'}
 
-ENTRIES FROM THIS CHAPTER:
+ENTTRIES FROM THIS CHAPTER:
 ${entryLines}
 
-CLASSIFY each entry as exactly one of:
-- KEEP: Clearly future-relevant (recurring character detail, relationship beat, permanent world change, lore rule, unresolved thread context)
-- PRUNE: Clearly disposable (one-time location the party permanently left, transient action state, entry fully superseded by a newer one)
-- REVIEW: Uncertain — could be a callback opportunity or could be noise. Human decides.
+CLASSIFY each entry:
+- KEEP: If a scene 100 turns from now referenced this without re-explaining it, the reader would be confused. Only permanent truths, lore rules, unresolved plot threads, and major relationship shifts.
+- PRUNE: Everything else. This should be the default. The archive index and vector search will surface story moments when they become relevant.
+- REVIEW: Only when a keep-or-prune decision hinges on information you don't have. Default to PRUNE if you can't articulate a specific future scene that needs this.
 
-DECISION RULES:
-1. KEEP entries about characters who appear in the recurring NPC list
-2. KEEP relationship beats and emotional moments
-3. KEEP permanent world changes, lore, and rules that affect future scenes
-4. KEEP unresolved thread context
-5. PRUNE one-time location descriptions for places the party has permanently left
-6. PRUNE transient momentary states unless they involve a recurring character meaningfully
-7. PRUNE entries fully superseded by a newer entry capturing the final state
-8. When genuinely unsure, classify as REVIEW — a human will decide
+WHAT TO KEEP:
+- Permanent world rules and lore that constrain future storytelling (magic systems, faction politics, historical facts)
+- Unresolved plot threads with named antagonists, mysteries, or ticking clocks
+- Major relationship status changes between recurring characters (alliances formed, betrayals, deaths)
+- New recurring characters being introduced with their core identity (name, role, one defining trait)
+- Active ongoing deceptions, dual identities, or hidden capabilities being maintained
+- Irreversible character transformations (lost limbs, gained powers, broken oaths)
 
-OUTPUT: JSON array only, no other text:
+WHAT TO PRUNE (this is the default — apply these liberally):
+- Transient ambient details: what someone was wearing, how they were standing, the weather, candlelight
+- Play-by-play combat actions: who crawled where, who swung what, who dodged which attack
+- Single-scene emotional micro-beats: a character's expression shifting, a momentary silence, a loaded glance — unless it represents a MAJOR relationship status change
+- Destroyed props and scenery: broken teacups, shattered windows, toppled furniture
+- Scene-setting descriptions: architecture of rooms the party left, landscape features passed through
+- Any entry whose subject is a one-off object, weather event, or unnamed bystander
+- Intermediate states fully superseded by a later entry: if entry A says "X was wounded" and entry B says "X recovered," merge into one final-state entry or prune A
+- Atmospheric NPC mannerisms: how a guard captain looks tired, how a governess twitches — these are NOT campaign facts
+
+OUTPUT: JSON array only, no other text. List EVERY entry. Default to "prune" for anything that isn't clearly essential:
 [{ "id": "...", "verdict": "keep"|"prune"|"review", "reason": "short explanation" }]`;
 }
 
@@ -403,9 +434,26 @@ export async function pruneChapterEntries(
     const prompt = buildPrunePrompt(chapter, chapterEntries, allChapters);
 
     try {
-        const raw = await llmCall(provider, prompt, { priority: 'low', maxTokens: 1000 });
-        const jsonStr = extractJson(raw);
-        const classifications = JSON.parse(jsonStr) as Array<{ id: string; verdict: 'keep' | 'prune' | 'review'; reason: string }>;
+        const outputTokens = Math.min(64000, Math.max(2000, chapterEntries.length * 60));
+        const raw = await llmCall(provider, prompt, { priority: 'low', maxTokens: outputTokens });
+        const cleaned = stripReasoning(raw);
+        const jsonStr = extractJson(cleaned);
+
+        let classifications: Array<{ id: string; verdict: 'keep' | 'prune' | 'review'; reason: string }> = [];
+        try {
+            classifications = JSON.parse(jsonStr) as typeof classifications;
+            if (!Array.isArray(classifications)) classifications = [];
+        } catch {
+            const lines = cleaned.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+            for (const line of lines) {
+                const m = line.match(/\b(div_[a-zA-Z0-9_-]+)\b.*?\b(keep|prune[ds]?|review)\b/i);
+                if (m) {
+                    const rawVerdict = m[2].toLowerCase();
+                    const verdict: 'keep' | 'prune' | 'review' = rawVerdict.startsWith('prune') ? 'prune' : rawVerdict === 'review' ? 'review' : 'keep';
+                    classifications.push({ id: m[1], verdict, reason: 'Parsed from free-text response' });
+                }
+            }
+        }
 
         const classMap = new Map(classifications.map(c => [c.id, c]));
 
@@ -440,6 +488,10 @@ export async function pruneChapterEntries(
 
         console.log(`[DivergencePrune] Chapter ${chapter.chapterId}: ${outsideEntries.length} outside, ${keptEntries.filter(e => !e.reviewFlag).length} kept, ${keptEntries.filter(e => e.reviewFlag).length} flagged for review, ${newPruned.length} pruned`);
 
+        const keptCount = keptEntries.filter(e => !e.reviewFlag).length;
+        const reviewCount = keptEntries.filter(e => e.reviewFlag).length;
+        toast.info(`Pruned ${newPruned.length} entries · ${keptCount} kept · ${reviewCount} flagged for review`);
+
         return {
             entries: merged,
             prunedLog: [...existingPruned, ...newPruned],
@@ -449,6 +501,113 @@ export async function pruneChapterEntries(
         };
     } catch (err) {
         console.warn('[DivergencePrune] Pruning failed, register unchanged:', err);
+        toast.error(`Divergence pruning failed: ${(err as Error).message || 'Unknown error'}`);
+        return register;
+    }
+}
+
+function buildPruneAllPrompt(entries: DivergenceEntry[]): string {
+    const entryLines = entries.map(e =>
+        `${e.id} | ${e.category} | ${e.subject}: ${e.divergence} [Scene #${e.sceneRef}]`
+    ).join('\n');
+
+    return `You are pruning a campaign divergence register. The register holds PERSISTENT CAMPAIGN TRUTH — facts that would break future scenes if the AI didn't know them. It is NOT a story transcript. Prune aggressively.
+
+ENTRIES TO CLASSIFY:
+${entryLines}
+
+CLASSIFY each entry:
+- KEEP: If a scene 100 turns from now referenced this without re-explaining it, the reader would be confused. Only permanent truths, lore rules, unresolved plot threads, and major relationship shifts.
+- PRUNE: Everything else. This should be the default. The archive index and vector search will surface story moments when they become relevant.
+- REVIEW: Only when a keep-or-prune decision hinges on information you don't have. Default to PRUNE if you can't articulate a specific future scene that needs this.
+
+WHAT TO KEEP:
+- Permanent world rules and lore that constrain future storytelling (magic systems, faction politics, historical facts)
+- Unresolved plot threads with named antagonists, mysteries, or ticking clocks
+- Major relationship status changes between recurring characters (alliances formed, betrayals, deaths)
+- New recurring characters being introduced with their core identity (name, role, one defining trait)
+- Active ongoing deceptions, dual identities, or hidden capabilities being maintained
+- Irreversible character transformations (lost limbs, gained powers, broken oaths)
+
+WHAT TO PRUNE (this is the default — apply liberally):
+- Transient ambient details, play-by-play combat actions, single-scene emotional micro-beats
+- Destroyed props, scene-setting descriptions, atmospheric NPC mannerisms
+- Any entry whose subject is a one-off object, weather event, or unnamed bystander
+- Intermediate states fully superseded by a later entry
+
+OUTPUT: JSON array only, no other text. List EVERY entry. Default to "prune" for anything that isn't clearly essential:
+[{ "id": "...", "verdict": "keep"|"prune"|"review", "reason": "short explanation" }]`;
+}
+
+export async function pruneAllEntries(
+    provider: LLMProvider,
+    register: DivergenceRegister
+): Promise<DivergenceRegister> {
+    if (register.entries.length === 0) return register;
+
+    const prompt = buildPruneAllPrompt(register.entries);
+
+    try {
+        const outputTokens = Math.min(64000, Math.max(2000, register.entries.length * 60));
+        const raw = await llmCall(provider, prompt, { priority: 'low', maxTokens: outputTokens });
+        const cleaned = stripReasoning(raw);
+        const jsonStr = extractJson(cleaned);
+
+        let classifications: Array<{ id: string; verdict: 'keep' | 'prune' | 'review'; reason: string }> = [];
+        try {
+            classifications = JSON.parse(jsonStr) as typeof classifications;
+            if (!Array.isArray(classifications)) classifications = [];
+        } catch {
+            const lines = cleaned.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+            for (const line of lines) {
+                const m = line.match(/\b(div_[a-zA-Z0-9_-]+)\b.*?\b(keep|prune[ds]?|review)\b/i);
+                if (m) {
+                    const rawVerdict = m[2].toLowerCase();
+                    const verdict: 'keep' | 'prune' | 'review' = rawVerdict.startsWith('prune') ? 'prune' : rawVerdict === 'review' ? 'review' : 'keep';
+                    classifications.push({ id: m[1], verdict, reason: 'Parsed from free-text response' });
+                }
+            }
+        }
+
+        const classMap = new Map(classifications.map(c => [c.id, c]));
+
+        const keptEntries: DivergenceEntry[] = [];
+        const newPruned: PrunedEntry[] = [];
+
+        for (const entry of register.entries) {
+            const cls = classMap.get(entry.id);
+            if (!cls || cls.verdict === 'keep') {
+                keptEntries.push(entry);
+            } else if (cls.verdict === 'review') {
+                keptEntries.push({ ...entry, reviewFlag: true });
+            } else {
+                newPruned.push({
+                    originalEntry: entry,
+                    prunedAt: Date.now(),
+                    chapterId: 'manual',
+                    verdict: 'auto_pruned',
+                    reason: cls?.reason ?? 'Pruned during manual review',
+                });
+            }
+        }
+
+        const keptCount = keptEntries.filter(e => !e.reviewFlag).length;
+        const reviewCount = keptEntries.filter(e => e.reviewFlag).length;
+
+        console.log(`[DivergencePruneAll] ${keptCount} kept, ${reviewCount} flagged for review, ${newPruned.length} pruned`);
+
+        toast.info(`Pruned ${newPruned.length} entries · ${keptCount} kept · ${reviewCount} flagged for review`);
+
+        return {
+            entries: keptEntries,
+            prunedLog: [...(register.prunedLog ?? []), ...newPruned],
+            lastUpdatedSceneId: register.lastUpdatedSceneId,
+            lastUpdatedAt: Date.now(),
+            version: register.version + 1,
+        };
+    } catch (err) {
+        console.warn('[DivergencePruneAll] Pruning failed, register unchanged:', err);
+        toast.error(`Divergence pruning failed: ${(err as Error).message || 'Unknown error'}`);
         return register;
     }
 }
@@ -472,7 +631,7 @@ ${registerLines}
 NEW SCENES TEXT (${sceneLabel}):
 ${scenesText}
 
-TASK: Extract every story-relevant fact that affects future continuity from these scenes. Examples: NPC states (alive/dead/wounded/fled), items acquired/lost/traded, locations discovered/destroyed/changed, relationships formed/broken, abilities gained/lost, debuffs or curses applied, quest progress, obligations or oaths made, world state changes, canon overrides.
+TASK: Extract only facts that would BREAK A FUTURE SCENE if the AI didn't know them. Skip transient details, emotional narration, momentary states, and anything the archive would surface. Focus on: NPC state changes, items acquired/lost, location changes, relationship shifts, abilities gained/lost, active obligations, world state changes, canon overrides.
 
 Categories (use exactly one per line):
 - canon_override — contradicts source material
@@ -481,6 +640,13 @@ Categories (use exactly one per line):
 - player_state — abilities, titles, curses
 - obligation — debts, promises, oaths
 
+STYLE RULES (CRITICAL):
+- Each divergence must be ONE SHORT SENTENCE, maximum 12 words.
+- No compound sentences. No explanations. No "because" or "when" clauses.
+- Subject must be a proper noun or specific entity — never a vague pronoun.
+- WRONG: The player engaged in a lengthy negotiation with the goblin king and eventually convinced him to join forces
+- RIGHT: Goblin King Grak: allied with player
+
 Output format — one divergence per line, no JSON, no markdown:
 - [category | subject | scene:NNN] divergence sentence
 - [category | subject | scene:NNN | supersedes:ID] divergence sentence
@@ -488,7 +654,7 @@ Output format — one divergence per line, no JSON, no markdown:
 Rules:
 - scene:NNN must be one of: ${sceneIds.join(', ')}.
 - Preserve proper nouns exactly.
-- One sentence per line.
+- One sentence per line, max 12 words.
 - If there are NO new divergences, output a single line: NONE`;
 }
 
@@ -566,6 +732,7 @@ export async function extractFromMessageBatch(
             const raw = await llmCall(provider, prompt, { priority: 'low', maxTokens: 1200, signal });
             const parsed = parseBulletDivergences(raw, sceneIds);
             for (const ne of parsed) {
+                if (ne.parseError) parseFailures++;
                 const entry: DivergenceEntry = {
                     id: `div_${uid()}`,
                     category: ne.category,
@@ -582,7 +749,6 @@ export async function extractFromMessageBatch(
                 if (ne.supersedes) {
                     allSupersedes.push({ oldId: ne.supersedes, newId: entry.id });
                 }
-                if (ne.parseError) parseFailures++;
             }
         } catch (err) {
             if ((err as Error).name === 'AbortError') throw err;

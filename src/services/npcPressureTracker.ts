@@ -58,7 +58,8 @@ export type PressureUpdate = {
 
 export function scanPressure(
     playerInput: string,
-    activeNPCs: NPCEntry[]
+    activeNPCs: NPCEntry[],
+    gmResponse?: string
 ): PressureUpdate[] {
     const updates: PressureUpdate[] = [];
 
@@ -94,6 +95,24 @@ export function scanPressure(
         if (crossesSoftBoundary(playerInput, npc.softBoundaries)) {
             ignoredDelta += 1;
             reasons.push('soft boundary crossed');
+        }
+
+        if (gmResponse) {
+            if (mentionsName(gmResponse, patterns)) {
+                engagedDelta += 0.8;
+                reasons.push('GM mentioned NPC');
+            }
+
+            if (pronounNearName(gmResponse, patterns)) {
+                engagedDelta += 0.3;
+                reasons.push('GM pronoun near NPC name');
+            }
+
+            const gmTrigger = triggersKeyword(gmResponse, npc.behavioralTriggers);
+            if (gmTrigger) {
+                engagedDelta += 0.5;
+                reasons.push(`GM trigger: "${gmTrigger}"`);
+            }
         }
 
         if (ignoredDelta > 0 || engagedDelta > 0) {

@@ -1,6 +1,7 @@
-import type { LoreChunk, NotebookNote } from '../types';
+import type { DiceConfig, LoreChunk, NotebookNote } from '../types';
 import { searchLoreByQuery } from './loreRetriever';
 import { uid } from '../utils/uid';
+import { mapTier } from './diceTier';
 
 const MAX_NOTEBOOK_OPS = 5;
 const MAX_NOTEBOOK_NOTES = 50;
@@ -19,7 +20,11 @@ export type NotebookHandlerResult = {
     updatedNotebook: NotebookNote[];
 };
 
-export const TOOL_DEFINITIONS = [
+export type DiceHandlerResult = {
+    toolResult: string;
+};
+
+const BASE_TOOLS = [
     {
         type: 'function' as const,
         function: {
@@ -59,6 +64,30 @@ export const TOOL_DEFINITIONS = [
         },
     },
 ] as const;
+
+const ROLL_DICE_TOOL = {
+    type: 'function' as const,
+    function: {
+        name: 'roll_dice',
+        description:
+            "Roll dice when the player attempts an action with an uncertain outcome — combat hits, ability/skill checks, saves, contested actions. Do NOT call for descriptive moments, dialogue, or trivial actions. Call BEFORE narrating the outcome, then use the returned tier to shape the narrative.",
+        parameters: {
+            type: 'object' as const,
+            properties: {
+                dice:     { type: 'string' as const, description: "Dice expression: '1d20', '2d6', '1d100', optionally with '+N' or '-N' modifier" },
+                reason:   { type: 'string' as const, description: "Short label, e.g. 'Stealth check vs guard' or 'Longsword attack'" },
+                category: { type: 'string' as const, enum: ['Combat','Perception','Stealth','Social','Movement','Knowledge','Mundane'], description: 'Skill category for tier mapping (used for d20 only)' }
+            },
+            required: ['dice', 'reason']
+        }
+    }
+} as const;
+
+export function getToolDefinitions(opts: { allowDiceTool: boolean }) {
+    return opts.allowDiceTool ? [...BASE_TOOLS, ROLL_DICE_TOOL] : [...BASE_TOOLS];
+}
+
+export const TOOL_DEFINITIONS = BASE_TOOLS;
 
 export function handleLoreTool(
     toolArguments: string,
@@ -106,4 +135,42 @@ export function handleNotebookTool(
     console.log(`[Notebook] Updated: ${currentNotebook.length} notes active (${opsCount} ops)`);
 
     return { toolResult, updatedNotebook: currentNotebook };
+}
+
+function parseAndRoll(expr: string): { total: number; breakdown: string; isD20: boolean } {
+    const match = expr.trim().toLowerCase().match(/^(\d+)d(\d+)([+-]\d+)?$/);
+    if (!match) {
+        const single = Math.floor(Math.random() * 20) + 1;
+        return { total: single, breakdown: `${single}`, isD20: true };
+    }
+    const count = Math.min(parseInt(match[1], 10), 100);
+    const sides = parseInt(match[2], 10);
+    const modifier = match[3] ? parseInt(match[3], 10) : 0;
+    const rolls: number[] = [];
+    for (let i = 0; i < count; i++) rolls.push(Math.floor(Math.random() * sides) + 1);
+    const sum = rolls.reduce((a, b) => a + b, 0);
+    const total = sum + modifier;
+    const breakdown = modifier !== 0 ? `[${rolls.join('+')}]${modifier > 0 ? '+' : ''}${modifier} = ${total}` : `[${rolls.join('+')}] = ${total}`;
+    return { total, breakdown, isD20: sides === 20 && count === 1 };
+}
+
+export function handleDiceTool(
+    toolArguments: string,
+    ctx: { diceConfig?: DiceConfig }
+): DiceHandlerResult {
+    let args: { dice?: string; reason?: string; category?: string } = {};
+    try { args = JSON.parse(toolArguments); } catch { /* ignore */ }
+
+    const { total, breakdown, isD20 } = parseAndRoll(args.dice ?? '1d20');
+    const tier = isD20 ? mapTier(total, ctx.diceConfig) : null;
+
+    const payload: Record<string, unknown> = {
+        dice: args.dice ?? '1d20',
+        reason: args.reason ?? '',
+        result: total,
+        breakdown
+    };
+    if (tier) payload.tier = tier;
+
+    return { toolResult: JSON.stringify(payload) };
 }

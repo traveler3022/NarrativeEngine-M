@@ -83,18 +83,20 @@ export function extractContextActivations(
     const userProperNouns = userMessage.match(/[A-Z][A-Za-z]{1,}(?:\s[A-Z][A-Za-z]{1,})*/g) || [];
     for (const noun of userProperNouns) activations[noun.toLowerCase()] = 1.0;
 
-    const last3 = recentMessages.filter(m => m.role === 'assistant').slice(-3);
-    for (const msg of last3) {
+    const recentWindow = recentMessages.slice(-30);
+    for (let i = 0; i < recentWindow.length; i++) {
+        const msg = recentWindow[i];
+        const turnsBack = recentWindow.length - 1 - i;
+        const weight = Math.max(0.15, Math.pow(0.92, turnsBack));
         const words = (msg.content || '').toLowerCase().match(/[a-z]{2,}/g) || [];
         const properNouns = (msg.content || '').match(/[A-Z][A-Za-z]{1,}(?:\s[A-Z][A-Za-z]{1,})*/g) || [];
-        for (const word of words) { if (!activations[word]) activations[word] = 0.7; }
-        for (const noun of properNouns) { if (!activations[noun.toLowerCase()]) activations[noun.toLowerCase()] = 0.7; }
-    }
-
-    const last10 = recentMessages.slice(-10);
-    for (const msg of last10) {
-        const words = (msg.content || '').toLowerCase().match(/[a-z]{2,}/g) || [];
-        for (const word of words) { if (!activations[word]) activations[word] = 0.3; }
+        for (const word of words) {
+            if (!activations[word] || activations[word] < weight) activations[word] = weight;
+        }
+        for (const noun of properNouns) {
+            const k = noun.toLowerCase();
+            if (!activations[k] || activations[k] < weight) activations[k] = weight;
+        }
     }
 
     if (npcLedger) {

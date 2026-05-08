@@ -12,7 +12,7 @@ import { sanitizePayloadForApi } from './payloadSanitizer';
 import { handleInterventions } from './aiPlayers';
 import { gatherContext } from './turnContext';
 import { handlePostTurn } from './turnPostProcess';
-import { TOOL_DEFINITIONS, handleLoreTool, handleNotebookTool } from './toolHandlers';
+import { getToolDefinitions, handleLoreTool, handleNotebookTool, handleDiceTool } from './toolHandlers';
 
 export async function runTurn(
     state: TurnState,
@@ -129,7 +129,8 @@ export async function runTurn(
         const allowTools = toolCallCount < 2 && apiRetryCount < 2;
         const requestPayload = sanitizePayloadForApi(currentPayload, allowTools, provider?.modelName);
 
-        const tools = allowTools ? [...TOOL_DEFINITIONS] : undefined;
+        const allowDiceTool = context.diceFairnessActive === false;
+        const tools = allowTools ? getToolDefinitions({ allowDiceTool }) : undefined;
 
         const activePreset = settings.presets.find(p => p.id === settings.activePresetId);
         const sampling = activePreset?.sampling;
@@ -248,7 +249,56 @@ export async function runTurn(
                     return;
                 }
 
-                callbacks.setStreaming(false);
+                if (toolCall && toolCall.name === 'roll_dice') {
+                    callbacks.setStreaming(false);
+                    callbacks.updateLastAssistant(finalText);
+
+                    callbacks.updateLastMessage({
+                        tool_calls: [{
+                            id: toolCall.id,
+                            type: 'function' as const,
+                            function: { name: toolCall.name, arguments: toolCall.arguments }
+                        }],
+                        ...(reasoningContent ? { reasoning_content: reasoningContent } : {})
+                    });
+
+                    currentPayload.push({
+                        role: 'assistant',
+                        content: finalText || "",
+                        reasoning_content: reasoningContent || undefined,
+                        tool_calls: [{ id: toolCall.id, type: 'function', function: { name: toolCall.name, arguments: toolCall.arguments } }]
+                    } as unknown as import('./llmService').OpenAIMessage);
+
+                    const { toolResult } = handleDiceTool(toolCall.arguments, { diceConfig: context.diceConfig });
+
+                    const toolMsgId = uid();
+                    callbacks.addMessage({
+                        id: toolMsgId,
+                        role: 'tool' as const,
+                        content: toolResult,
+                        timestamp: Date.now(),
+                        name: toolCall.name,
+                        tool_call_id: toolCall.id
+                    });
+
+                    currentPayload.push({
+                        role: 'tool',
+                        content: toolResult,
+                        name: toolCall.name,
+                        tool_call_id: toolCall.id
+                    } as unknown as import('./llmService').OpenAIMessage);
+
+                    setTimeout(() => {
+                        if (abortController.signal.aborted) {
+                            callbacks.setStreaming(false);
+                            callbacks.setPipelinePhase?.('idle');
+                            callbacks.setStreamingStats?.(null);
+                            return;
+                        }
+                        executeTurn(currentPayload, toolCallCount + 1);
+                    }, 800);
+                    return;
+                }
                 callbacks.onCheckingNotes(false);
                 callbacks.setPipelinePhase?.('post-processing');
                 callbacks.updateLastAssistant(finalText);

@@ -13,6 +13,45 @@ import { recallWithChapterFunnel } from './archiveChapterEngine';
 import { isEmbedderReady } from './embedder';
 import { semanticSearch } from './vectorSearch';
 import { getDivergenceSceneIds } from './divergenceRegister';
+import { rerankCandidates, type RerankCandidate } from './semanticReranker';
+import type { LLMProvider } from '../types';
+import { llmCall } from '../utils/llmCall';
+
+const SEMANTIC_FLOOR_SCENE = 0.30;
+const SEMANTIC_FLOOR_LORE = 0.30;
+
+const CALLBACK_REGEX = /\b(remember|earlier|back when|before|previously|that .*(we|i) (did|met|fought|saw|found|got))\b/i;
+
+async function expandQuery(query: string, npcLedger: import('../types').NPCEntry[], utilityEndpoint: LLMProvider): Promise<string[]> {
+    try {
+        const npcContext = npcLedger.slice(0, 10).map(n => n.name).join(', ');
+        const prompt = `User query: "${query}"
+Known NPCs: ${npcContext}
+Generate 2 alternative phrasings that expand pronouns, add likely entity names from context, and use synonyms. Return ONLY a JSON array of 2 strings. No prose.`;
+
+        const raw = await llmCall(utilityEndpoint, prompt, {
+            temperature: 0.2,
+            priority: 'high',
+            maxTokens: 200,
+        });
+
+        let clean = raw.replace(/<think>[\s\S]*?<\/think>/gi, '');
+        const mdMatch = clean.match(/```(?:json)?\s*([\s\S]*?)```/i);
+        if (mdMatch) clean = mdMatch[1];
+
+        const bracketStart = clean.indexOf('[');
+        const bracketEnd = clean.lastIndexOf(']');
+        if (bracketStart === -1 || bracketEnd === -1) return [query];
+
+        const parsed = JSON.parse(clean.substring(bracketStart, bracketEnd + 1));
+        if (Array.isArray(parsed) && parsed.length >= 2 && parsed.every((x: unknown) => typeof x === 'string')) {
+            return [query, parsed[0], parsed[1]];
+        }
+        return [query];
+    } catch {
+        return [query];
+    }
+}
 
 
 export type GatheredContext = {
@@ -36,9 +75,21 @@ export async function gatherContext(
 
     if (isEmbedderReady() && activeCampaignId) {
         try {
+            let queries = [finalInput];
+            const isCallback = CALLBACK_REGEX.test(finalInput);
+            const isShort = finalInput.trim().split(/\s+/).length < 8;
+            const expansionEndpoint = state.getUtilityEndpoint?.();
+            if ((isCallback || isShort) && expansionEndpoint?.endpoint) {
+                const expanded = await expandQuery(finalInput, npcLedger, expansionEndpoint);
+                queries = expanded;
+                if (expanded.length > 1) {
+                    console.log(`[QueryExpansion] "${finalInput}" → ${expanded.length} variants`);
+                }
+            }
+
             const [sceneIds, loreIds] = await Promise.all([
-                semanticSearch(activeCampaignId, finalInput, 'scene', 20),
-                semanticSearch(activeCampaignId, finalInput, 'lore', 15),
+                semanticSearch(activeCampaignId, queries, 'scene', 40, SEMANTIC_FLOOR_SCENE),
+                semanticSearch(activeCampaignId, queries, 'lore', 25, SEMANTIC_FLOOR_LORE),
             ]);
             semanticArchiveIds = sceneIds;
             semanticLoreIds = loreIds;
@@ -47,6 +98,41 @@ export async function gatherContext(
             if (semanticLoreIds?.length) console.log(`[Semantic] Found ${semanticLoreIds.length} lore candidates`);
         } catch (e) {
             console.warn('[Semantic] Candidate search failed, using keyword fallback:', e);
+        }
+    }
+
+    const rerankerEndpoint = state.getUtilityEndpoint?.();
+    if (rerankerEndpoint?.endpoint && (semanticArchiveIds?.length || semanticLoreIds?.length)) {
+        try {
+            if (semanticArchiveIds && semanticArchiveIds.length >= 5) {
+                const sceneCandidates: RerankCandidate[] = semanticArchiveIds.map(id => {
+                    const idxEntry = archiveIndex.find(e => e.sceneId === id);
+                    return {
+                        id,
+                        summary: idxEntry ? `${idxEntry.userSnippet} — ${idxEntry.keywords.slice(0, 5).join(', ')}` : id,
+                        type: 'scene' as const,
+                    };
+                });
+                const rerankedIds = await rerankCandidates(finalInput, sceneCandidates, rerankerEndpoint, { maxCandidates: 30, topN: 12 });
+                semanticArchiveIds = rerankedIds;
+                console.log(`[Reranker] Scene candidates: ${rerankedIds.length} after rerank`);
+            }
+
+            if (semanticLoreIds && semanticLoreIds.length >= 5) {
+                const loreCandidates: RerankCandidate[] = semanticLoreIds.map(id => {
+                    const chunk = loreChunks.find(c => c.id === id);
+                    return {
+                        id,
+                        summary: chunk ? `${chunk.header} — ${chunk.summary || chunk.content.slice(0, 80)}` : id,
+                        type: 'lore' as const,
+                    };
+                });
+                const rerankedLoreIds = await rerankCandidates(finalInput, loreCandidates, rerankerEndpoint, { maxCandidates: 25, topN: 10 });
+                semanticLoreIds = rerankedLoreIds;
+                console.log(`[Reranker] Lore candidates: ${rerankedLoreIds.length} after rerank`);
+            }
+        } catch (err) {
+            console.warn('[Reranker] Failed, using semantic order:', err);
         }
     }
 

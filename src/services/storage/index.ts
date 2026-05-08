@@ -22,7 +22,7 @@ export const offlineStorage = {
             const { sceneId, sceneNumber, indexEntry, timestamp } = core;
 
             import('../embedder').then(({ embedText }) => {
-                const combinedText = `${userContent}\n${assistantContent}`.slice(0, 500);
+                const combinedText = `${userContent}\n${assistantContent}`;
                 return embedText(combinedText);
             }).then(vec => {
                 if (vec) embeddingStorage.store(cid, sceneId, Array.from(vec), 'scene');
