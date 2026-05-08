@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { chunkLoreFile } from '../loreChunker';
 
-const LORE_CHUNK_MAX = 1500;
+const _LORE_CHUNK_MAX = 1500;
 const LORE_WINDOW_SIZE = 1000;
-const LORE_WINDOW_STRIDE = 700;
+const _LORE_WINDOW_STRIDE = 700;
+void _LORE_CHUNK_MAX; void _LORE_WINDOW_STRIDE;
 
 describe('lore chunker windowing', () => {
     it('splits a 5000-char section into 6+ sub-chunks', () => {

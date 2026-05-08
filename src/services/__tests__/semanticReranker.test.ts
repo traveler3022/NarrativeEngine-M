@@ -34,8 +34,8 @@ describe('semanticReranker', () => {
             llmCall: createMockLlmCall('["scene-3", "scene-fake-999", "scene-7"]'),
         }));
 
-        const { llmCall } = await import('../../utils/llmCall');
-        const mock = vi.spyOn(await import('../../utils/llmCall'), 'llmCall');
+        void await import('../../utils/llmCall');
+        void vi.spyOn(await import('../../utils/llmCall'), 'llmCall');
 
         const inputIds = new Set(candidates.map(c => c.id));
         const response = '["scene-3", "scene-fake-999", "scene-7"]';

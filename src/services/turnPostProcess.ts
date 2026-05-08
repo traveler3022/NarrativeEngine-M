@@ -35,13 +35,18 @@ export async function handlePostTurn(
     const extractedNames = extractNPCNames(lastAssistantContent);
 
     if (callbacks.setSemanticFacts) {
-        try {
-            const freshFacts = await fetchFacts(activeCampaignId);
-            callbacks.setSemanticFacts(freshFacts);
-        } catch {}
+        const cid = activeCampaignId;
+        const cb = callbacks;
+        backgroundQueue.push('Refresh-Facts', async () => {
+            try {
+                const freshFacts = await fetchFacts(cid);
+                cb.setSemanticFacts!(freshFacts);
+            } catch {}
+        }).catch((e) => console.warn('[TurnPostProcess] Refresh-Facts queue push failed:', e));
     }
 
-    await handleSealChapter(state, callbacks, activeCampaignId);
+    backgroundQueue.push('Seal-Chapter', () => handleSealChapter(state, callbacks, activeCampaignId))
+        .catch((e) => console.warn('[TurnPostProcess] Seal-Chapter queue push failed:', e));
 
     if (appendedSceneId) {
         const ratingProvider = state.getFreshProvider();
@@ -94,38 +99,44 @@ export async function handlePostTurn(
     }
 
     if (extractedNames.length > 0) {
-        const provider = state.getFreshAuxiliaryProvider?.() ?? state.getFreshProvider();
-        const validatedNames = provider ?
-            await validateNPCCandidates(provider, extractedNames, lastAssistantContent) :
-            extractedNames;
-
-        if (validatedNames.length > 0) {
-            const { newNames, existingNpcs: existingNpcsToUpdate } = classifyNPCNames(validatedNames, npcLedger);
-            const allMsgs = state.getMessages();
-
-            for (const potentialName of newNames) {
-                console.log(`[NPC Auto-Gen] Spawning profile: "${potentialName}"`);
-                const genProvider = state.getFreshProvider();
-                if (genProvider) {
-                    generateNPCProfile(genProvider, allMsgs, potentialName, callbacks.addNPC).catch((e) => console.warn(`[TurnPostProcess] NPC profile gen failed for "${potentialName}":`, e));
-                }
+        backgroundQueue.push('NPC-Validate', async () => {
+            const aux = state.getFreshAuxiliaryProvider?.();
+            const provider = (aux && aux.modelName) ? aux : state.getFreshProvider();
+            if (aux && !aux.modelName) {
+                console.info('[NPC Validator] auxiliaryAI not configured — falling back to story provider. Configure a cheap model (e.g. Haiku/Flash) as Auxiliary AI for faster NPC validation.');
             }
+            const validatedNames = provider ?
+                await validateNPCCandidates(provider, extractedNames, lastAssistantContent) :
+                extractedNames;
 
-            if (existingNpcsToUpdate.length > 0) {
-                const updateProvider = state.getFreshProvider();
-                if (updateProvider) {
-                    updateExistingNPCs(updateProvider, allMsgs, existingNpcsToUpdate, callbacks.updateNPC).catch((e) => console.warn('[TurnPostProcess] updateExistingNPCs failed:', e));
+            if (validatedNames.length > 0) {
+                const { newNames, existingNpcs: existingNpcsToUpdate } = classifyNPCNames(validatedNames, npcLedger);
+                const allMsgs = state.getMessages();
+
+                for (const potentialName of newNames) {
+                    console.log(`[NPC Auto-Gen] Spawning profile: "${potentialName}"`);
+                    const genProvider = state.getFreshProvider();
+                    if (genProvider) {
+                        generateNPCProfile(genProvider, allMsgs, potentialName, callbacks.addNPC).catch((e) => console.warn(`[TurnPostProcess] NPC profile gen failed for "${potentialName}":`, e));
+                    }
                 }
 
-                const npcsNeedingDrives = existingNpcsToUpdate.filter(n => !n.drives);
-                if (npcsNeedingDrives.length > 0) {
-                    const backfillProvider = state.getFreshProvider();
-                    if (backfillProvider) {
-                        backgroundQueue.push('NPC-Drives-Backfill', () => backfillNPCDrives(backfillProvider, allMsgs, npcsNeedingDrives, callbacks.updateNPC)).catch((e) => console.warn('[TurnPostProcess] NPC drives backfill failed:', e));
+                if (existingNpcsToUpdate.length > 0) {
+                    const updateProvider = state.getFreshProvider();
+                    if (updateProvider) {
+                        updateExistingNPCs(updateProvider, allMsgs, existingNpcsToUpdate, callbacks.updateNPC).catch((e) => console.warn('[TurnPostProcess] updateExistingNPCs failed:', e));
+                    }
+
+                    const npcsNeedingDrives = existingNpcsToUpdate.filter(n => !n.drives);
+                    if (npcsNeedingDrives.length > 0) {
+                        const backfillProvider = state.getFreshProvider();
+                        if (backfillProvider) {
+                            backgroundQueue.push('NPC-Drives-Backfill', () => backfillNPCDrives(backfillProvider, allMsgs, npcsNeedingDrives, callbacks.updateNPC)).catch((e) => console.warn('[TurnPostProcess] NPC drives backfill failed:', e));
+                        }
                     }
                 }
             }
-        }
+        }).catch((e) => console.warn('[TurnPostProcess] NPC-Validate queue push failed:', e));
     }
 
     const turnCount = state.incrementBookkeepingTurnCounter();

@@ -3,25 +3,20 @@ import { extractNPCNames, classifyNPCNames } from '../npcDetector';
 
 describe('npcDetector', () => {
     describe('extractNPCNames', () => {
+        // ── Bracketed patterns ─────────────────────────────────────────────
         it('extracts bracketed names', () => {
             const content = 'The merchant [Orin] approaches.';
             const names = extractNPCNames(content);
             expect(names).toContain('Orin');
         });
 
-        it('extracts prose proper nouns', () => {
-            const content = 'The guard Orin approaches the inn.';
+        it('works with SYSTEM: NPC_ENTRY tags', () => {
+            const content = 'The innkeeper is [SYSTEM: NPC_ENTRY - Bram], a kindly fellow.';
             const names = extractNPCNames(content);
-            expect(names).toContain('Orin');
+            expect(names).toContain('Bram');
         });
 
-        it('filters Guard 1 and Clone A style names', () => {
-            const content = 'Guard 1 attacks Clone A from the shadows.';
-            const names = extractNPCNames(content);
-            expect(names).not.toContain('Guard 1');
-            expect(names).not.toContain('Clone A');
-        });
-
+        // ── Title-prefix pass ──────────────────────────────────────────────
         it('strips leading titles from prose names', () => {
             const content = 'Captain Aldric drew his sword.';
             const names = extractNPCNames(content);
@@ -36,38 +31,11 @@ describe('npcDetector', () => {
             expect(names).toContain('Elara');
         });
 
-        it('keeps names with connectives like "of"', () => {
-            const content = 'Aldric of Westhold arrived.';
+        it('filters Guard 1 and Clone A style names', () => {
+            const content = 'Guard 1 attacks Clone A from the shadows.';
             const names = extractNPCNames(content);
-            expect(names).toContain('Aldric of Westhold');
-        });
-
-        it('drops sentence-initial-only pronouns', () => {
-            const content = 'She turned to leave. Bram watched her go.';
-            const names = extractNPCNames(content);
-            expect(names).not.toContain('She');
-            expect(names).toContain('Bram');
-        });
-
-        it('keeps sentence-initial names that appear elsewhere', () => {
-            const content = 'Suddenly, Bram appeared. Later, Bram fought the dragon.';
-            const names = extractNPCNames(content);
-            expect(names).toContain('Bram');
-        });
-
-        it('drops excluded names', () => {
-            const content = 'Lyra met with Orin at the inn.';
-            const names = extractNPCNames(content, ['Lyra']);
-            expect(names).not.toContain('Lyra');
-            expect(names).toContain('Orin');
-        });
-
-        it('filters common blocklisted words', () => {
-            const content = 'The man and The woman talk. Meanwhile, Orin listens.';
-            const names = extractNPCNames(content);
-            expect(names).not.toContain('The');
-            expect(names).not.toContain('Meanwhile');
-            expect(names).toContain('Orin');
+            expect(names).not.toContain('Guard 1');
+            expect(names).not.toContain('Clone A');
         });
 
         it('drops title-only candidates', () => {
@@ -76,10 +44,100 @@ describe('npcDetector', () => {
             expect(names).not.toContain('Captain');
         });
 
-        it('works with SYSTEM: NPC_ENTRY tags', () => {
-            const content = 'The innkeeper is [SYSTEM: NPC_ENTRY - Bram], a kindly fellow.';
+        it('extracts title-prefixed instructor name and strips title', () => {
+            const content = 'Instructor Roderick Vaul addressed the class.';
             const names = extractNPCNames(content);
+            expect(names).toContain('Roderick Vaul');
+            expect(names).not.toContain('Instructor Roderick Vaul');
+        });
+
+        // ── Speech-tag attribution ─────────────────────────────────────────
+        it('extracts names from speech-tag attribution (name then verb)', () => {
+            const content = '"Stand down," Aldric commanded. Maren whispered a warning.';
+            const names = extractNPCNames(content);
+            expect(names).toContain('Aldric');
+            expect(names).toContain('Maren');
+        });
+
+        it('extracts names from speech-tag attribution (verb then name)', () => {
+            const content = '"Move out," said Aldric. She turned to leave.';
+            const names = extractNPCNames(content);
+            expect(names).toContain('Aldric');
+            expect(names).not.toContain('She');
+        });
+
+        // ── Apposition / introduction ─────────────────────────────────────
+        it('extracts prose proper nouns via role-apposition', () => {
+            const content = 'The guard Orin approaches the inn.';
+            const names = extractNPCNames(content);
+            expect(names).toContain('Orin');
+        });
+
+        it('extracts names from role-apposition patterns', () => {
+            const content = 'The merchant Orin waved. A man named Bram entered.';
+            const names = extractNPCNames(content);
+            expect(names).toContain('Orin');
             expect(names).toContain('Bram');
+        });
+
+        // ── Connective pass ────────────────────────────────────────────────
+        it('keeps names with connectives like "of"', () => {
+            const content = 'Aldric of Westhold arrived.';
+            const names = extractNPCNames(content);
+            expect(names).toContain('Aldric of Westhold');
+        });
+
+        // ── Two-cap-token pass ─────────────────────────────────────────────
+        it('keeps legit multi-word names like Seraphine Thornmere', () => {
+            const content = 'Seraphine Thornmere entered the hall. Dorian Ashworth followed.';
+            const names = extractNPCNames(content);
+            expect(names).toContain('Seraphine Thornmere');
+            expect(names).toContain('Dorian Ashworth');
+        });
+
+        // ── Exclusion / deduplication ──────────────────────────────────────
+        it('drops excluded names', () => {
+            const content = 'The merchant Lyra met the innkeeper Orin at the inn.';
+            const names = extractNPCNames(content, ['Lyra']);
+            expect(names).not.toContain('Lyra');
+            expect(names).toContain('Orin');
+        });
+
+        it('deduplicates repeated names within a single response', () => {
+            const content = '"Forward!" Aldric commanded. Aldric struck. Aldric won.';
+            const names = extractNPCNames(content);
+            const aldricCount = names.filter(n => n === 'Aldric').length;
+            expect(aldricCount).toBe(1);
+        });
+
+        it('handles multiple names in one passage', () => {
+            const content = 'Captain Aldric and Sir Reginald met [Orin] the merchant. "Welcome," Bram said.';
+            const names = extractNPCNames(content);
+            expect(names).toContain('Aldric');
+            expect(names).toContain('Reginald');
+            expect(names).toContain('Orin');
+            expect(names).toContain('Bram');
+        });
+
+        // ── Regression: contractions ───────────────────────────────────────
+        it('drops contractions that get capitalized at sentence start', () => {
+            const content = "That's the plan. You're not ready. It's too late. Haven't you heard? Don't go.";
+            const names = extractNPCNames(content);
+            expect(names).not.toContain("That's");
+            expect(names).not.toContain("You're");
+            expect(names).not.toContain("It's");
+            expect(names).not.toContain("Haven't");
+            expect(names).not.toContain("Don't");
+        });
+
+        // ── Regression: single-word noise ─────────────────────────────────
+        it('drops single capitalized words with no introduction signal', () => {
+            const content = 'Threat approached. Take cover! Squad scattered. Danger lurked.';
+            const names = extractNPCNames(content);
+            expect(names).not.toContain('Threat');
+            expect(names).not.toContain('Take');
+            expect(names).not.toContain('Squad');
+            expect(names).not.toContain('Danger');
         });
 
         it('drops dice mechanics terms that get capitalized', () => {
@@ -102,27 +160,11 @@ describe('npcDetector', () => {
             expect(names).not.toContain('Academy');
         });
 
-        it('keeps legit multi-word names like Seraphine Thornmere', () => {
-            const content = 'Seraphine Thornmere entered the hall. Dorian Ashworth followed.';
+        it('filters common blocklisted words', () => {
+            const content = 'The man and The woman talk. "Well met," said Orin.';
             const names = extractNPCNames(content);
-            expect(names).toContain('Seraphine Thornmere');
-            expect(names).toContain('Dorian Ashworth');
-        });
-
-        it('deduplicates repeated names within a single response', () => {
-            const content = 'Aldric drew his sword. Aldric struck. Aldric won.';
-            const names = extractNPCNames(content);
-            const aldricCount = names.filter(n => n === 'Aldric').length;
-            expect(aldricCount).toBe(1);
-        });
-
-        it('handles multiple names in one passage', () => {
-            const content = 'Captain Aldric and Sir Reginald met [Orin] the merchant. Bram served them ale.';
-            const names = extractNPCNames(content);
-            expect(names).toContain('Aldric');
-            expect(names).toContain('Reginald');
+            expect(names).not.toContain('The');
             expect(names).toContain('Orin');
-            expect(names).toContain('Bram');
         });
     });
 

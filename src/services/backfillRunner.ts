@@ -1,7 +1,7 @@
 import { embeddingStorage, EMBEDDING_VERSION } from './storage/embeddingStorage';
 import { embedText, isEmbedderReady, warmupEmbedder } from './embedder';
 import { getList, k, type SceneRecord } from './storage/_helpers';
-import { offlineStorage } from './storage';
+
 
 export type BackfillProgress = {
     total: number;
@@ -98,7 +98,7 @@ export async function runBackfill(
 async function getLoreChunksForBackfill(_campaignId: string): Promise<Array<{ id: string; content: string }>> {
     try {
         const { chunkLoreFile } = await import('./loreChunker');
-        const { useAppStore } = await import('../store');
+        const { useAppStore } = await import('../store/useAppStore');
         const state = useAppStore.getState();
         const loreRaw = state.context?.loreRaw;
         if (loreRaw) {
