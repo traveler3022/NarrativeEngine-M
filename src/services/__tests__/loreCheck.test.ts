@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { runLoreCheck } from '../loreCheck';
+import { runLoreCheck, buildVerifierPrompt, buildSearchQuery } from '../loreCheck';
 
 vi.mock('../../utils/llmCall', () => ({ llmCall: vi.fn() }));
 vi.mock('../deepArchiveSearch', () => ({ deepArchiveScan: vi.fn(async () => 'mock archive brief') }));
@@ -65,5 +65,87 @@ describe('runLoreCheck', () => {
         (llmCall as any).mockResolvedValue('{"verdict":"consistent","issues":[],"citations":[],"suggestedRewrite":null}');
         await runLoreCheck(baseInput({ sealedChapters: [], archiveIndex: [] }));
         expect(deepArchiveScan).not.toHaveBeenCalled();
+    });
+});
+
+describe('buildSearchQuery', () => {
+    it('returns selectedText alone when no hint', () => {
+        expect(buildSearchQuery('Eldra nodded')).toBe('Eldra nodded');
+    });
+
+    it('appends hint with separator', () => {
+        expect(buildSearchQuery('Eldra nodded', 'she was already dead')).toBe(
+            'Eldra nodded — she was already dead'
+        );
+    });
+
+    it('trims whitespace from hint', () => {
+        expect(buildSearchQuery('Eldra nodded', '  dead  ')).toBe(
+            'Eldra nodded — dead'
+        );
+    });
+
+    it('ignores whitespace-only hint', () => {
+        expect(buildSearchQuery('Eldra nodded', '   ')).toBe('Eldra nodded');
+    });
+});
+
+describe('buildVerifierPrompt', () => {
+    const baseArgs = {
+        selectedText: 'Eldra the dwarf nodded.',
+        surroundingContext: 'previous. Eldra the dwarf nodded. next.',
+        loreText: '### Eldra the Pale\nEldra is a high elf.',
+        archiveText: '(no archived scenes available)',
+    };
+
+    it('omits USER CONCERN block when no hint or categories', () => {
+        const prompt = buildVerifierPrompt(baseArgs);
+        expect(prompt).not.toContain('[USER CONCERN]');
+        expect(prompt).not.toContain('Categories:');
+        expect(prompt).not.toContain('Note:');
+    });
+
+    it('includes USER CONCERN block with categories only', () => {
+        const prompt = buildVerifierPrompt({
+            ...baseArgs,
+            categories: ['wrong-entity', 'contradicts-lore'],
+        });
+        expect(prompt).toContain('[USER CONCERN]');
+        expect(prompt).toContain('Categories: wrong-entity, contradicts-lore');
+        expect(prompt).not.toContain('Note:');
+    });
+
+    it('includes USER CONCERN block with hint only', () => {
+        const prompt = buildVerifierPrompt({
+            ...baseArgs,
+            hint: 'this NPC was already dead',
+        });
+        expect(prompt).toContain('[USER CONCERN]');
+        expect(prompt).toContain('Note: "this NPC was already dead"');
+        expect(prompt).not.toContain('Categories:');
+    });
+
+    it('includes both categories and note in USER CONCERN block', () => {
+        const prompt = buildVerifierPrompt({
+            ...baseArgs,
+            hint: 'she was dead already',
+            categories: ['wrong-fact', 'out-of-character'],
+        });
+        expect(prompt).toContain('[USER CONCERN]');
+        expect(prompt).toContain('Categories: wrong-fact, out-of-character');
+        expect(prompt).toContain('Note: "she was dead already"');
+    });
+
+    it('includes user concern guidance in job description', () => {
+        const prompt = buildVerifierPrompt({
+            ...baseArgs,
+            hint: 'wrong city',
+        });
+        expect(prompt).toContain('If a USER CONCERN is provided, weigh it heavily');
+    });
+
+    it('does not include user concern guidance when no hint/categories', () => {
+        const prompt = buildVerifierPrompt(baseArgs);
+        expect(prompt).not.toContain('If a USER CONCERN is provided');
     });
 });

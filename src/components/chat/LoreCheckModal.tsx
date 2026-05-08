@@ -1,11 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Check, Edit3, AlertTriangle, ShieldCheck, HelpCircle, Loader2 } from 'lucide-react';
+import { X, Check, Edit3, AlertTriangle, ShieldCheck, HelpCircle, Loader2, Search, Zap } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { runLoreCheck } from '../../services/loreCheck';
+import type { LoreCheckCategory } from '../../types';
+
+const CATEGORY_CHIPS: { value: LoreCheckCategory; label: string }[] = [
+    { value: 'wrong-fact', label: 'Wrong fact' },
+    { value: 'contradicts-lore', label: 'Contradicts lore' },
+    { value: 'wrong-entity', label: 'Wrong NPC/place' },
+    { value: 'tone-voice', label: 'Tone/voice' },
+    { value: 'out-of-character', label: 'Out of character' },
+];
+
+type Stage = 'hint' | 'running' | 'done';
 
 export function LoreCheckModal() {
     const open = useAppStore(s => s.loreCheckOpen);
-    const loading = useAppStore(s => s.loreCheckLoading);
     const status = useAppStore(s => s.loreCheckStatus);
     const error = useAppStore(s => s.loreCheckError);
     const result = useAppStore(s => s.loreCheckResult);
@@ -16,23 +26,42 @@ export function LoreCheckModal() {
     const close = useAppStore(s => s.closeLoreCheck);
     const replaceMessageText = useAppStore(s => s.replaceMessageText);
 
+    const [stage, setStage] = useState<Stage>('hint');
+    const [hint, setHint] = useState('');
+    const [categories, setCategories] = useState<LoreCheckCategory[]>([]);
     const [editMode, setEditMode] = useState(false);
     const [draft, setDraft] = useState('');
+    const abortRef = useRef<AbortController | null>(null);
 
     const openedAtRef = useRef(0);
     useEffect(() => {
-        if (open) openedAtRef.current = Date.now();
+        if (open) {
+            openedAtRef.current = Date.now();
+            setStage('hint');
+            setHint('');
+            setCategories([]);
+        }
     }, [open]);
 
-    useEffect(() => {
-        if (!open || !selection || result || error) return;
+    const toggleCategory = (cat: LoreCheckCategory) => {
+        setCategories(prev =>
+            prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
+        );
+    };
+
+    const runCheck = (checkHint?: string, checkCategories?: LoreCheckCategory[]) => {
+        if (!selection) return;
         const ac = new AbortController();
+        abortRef.current = ac;
+        setStage('running');
+
         (async () => {
             try {
                 const state = useAppStore.getState();
                 const utility = state.getActiveUtilityEndpoint();
                 if (!utility) {
                     setError('No Utility AI configured. Set one in Settings \u2192 AI Providers.');
+                    setStage('done');
                     return;
                 }
                 const messages = state.messages;
@@ -43,6 +72,7 @@ export function LoreCheckModal() {
 
                 if (loreChunks.length === 0 && sealedChapters.length === 0) {
                     setError('No lore or archived chapters available to check against.');
+                    setStage('done');
                     return;
                 }
 
@@ -58,17 +88,32 @@ export function LoreCheckModal() {
                     campaignId,
                     onStatus: setStatus,
                     signal: ac.signal,
+                    hint: checkHint,
+                    categories: checkCategories,
                 });
                 setResult(res);
+                setStage('done');
             } catch (err) {
                 if (ac.signal.aborted) return;
                 setError(err instanceof Error ? err.message : 'Lore check failed.');
+                setStage('done');
             }
         })();
-        return () => ac.abort();
-    }, [open, selection, result, error, setError, setResult, setStatus]);
+    };
+
+    const handleGuidedCheck = () => {
+        const effectiveHint = hint.trim() || undefined;
+        const effectiveCategories = categories.length > 0 ? categories : undefined;
+        runCheck(effectiveHint, effectiveCategories);
+    };
+
+    const handleJustCheck = () => {
+        runCheck(undefined, undefined);
+    };
 
     if (!open) return null;
+
+    const loading = stage === 'running';
 
     const verdictMeta = result && {
         consistent:    { color: 'text-emerald-400 border-emerald-500/40', icon: <ShieldCheck size={14} />, label: 'Consistent' },
@@ -83,8 +128,13 @@ export function LoreCheckModal() {
     };
 
     const handleClose = () => {
+        abortRef.current?.abort();
+        abortRef.current = null;
         setEditMode(false);
         setDraft('');
+        setStage('hint');
+        setHint('');
+        setCategories([]);
         close();
     };
 
@@ -92,6 +142,10 @@ export function LoreCheckModal() {
         if (Date.now() - openedAtRef.current < 350) return;
         handleClose();
     };
+
+    const showHintStage = stage === 'hint';
+    const showRunning = loading;
+    const showResult = stage === 'done' && result && verdictMeta;
 
     return (
         <div
@@ -110,16 +164,74 @@ export function LoreCheckModal() {
                 </div>
 
                 <div className="p-4 space-y-4">
-                    {loading && (
+                    {showHintStage && selection && (
+                        <>
+                            <div className="text-[10px] uppercase tracking-widest text-text-dim">Selected text</div>
+                            <div className="bg-void border border-border p-2 text-xs text-text-dim whitespace-pre-wrap max-h-24 overflow-y-auto rounded">
+                                {selection.selectedText}
+                            </div>
+
+                            <div>
+                                <div className="text-[10px] uppercase tracking-widest text-text-dim mb-2">What seems wrong?</div>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {CATEGORY_CHIPS.map(chip => {
+                                        const active = categories.includes(chip.value);
+                                        return (
+                                            <button
+                                                key={chip.value}
+                                                onClick={() => toggleCategory(chip.value)}
+                                                className={`text-[10px] uppercase tracking-wider px-2.5 py-1 rounded border transition-colors ${
+                                                    active
+                                                        ? 'bg-terminal/15 border-terminal/50 text-terminal'
+                                                        : 'border-border text-text-dim hover:text-text-primary hover:border-terminal/30'
+                                                }`}
+                                            >
+                                                {chip.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div>
+                                <textarea
+                                    value={hint}
+                                    onChange={(e) => setHint(e.target.value)}
+                                    placeholder="Optional — what looks wrong? e.g. This NPC was already dead at scene 12"
+                                    className="w-full bg-void border border-border p-2 text-xs font-mono placeholder:text-text-dim/50 focus:outline-none focus:border-terminal/40 rounded"
+                                    rows={2}
+                                />
+                            </div>
+
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleGuidedCheck}
+                                    className="text-[10px] uppercase tracking-widest bg-emerald-500/10 border border-emerald-500 text-emerald-400 px-3 py-1.5 rounded hover:bg-emerald-500/20 flex items-center gap-1.5"
+                                >
+                                    <Search size={10} /> Run guided check
+                                </button>
+                                <button
+                                    onClick={handleJustCheck}
+                                    className="text-[10px] uppercase tracking-widest border border-border text-text-dim px-3 py-1.5 rounded hover:text-text-primary flex items-center gap-1.5"
+                                >
+                                    <Zap size={10} /> Just check it
+                                </button>
+                            </div>
+                        </>
+                    )}
+
+                    {showRunning && (
                         <div className="flex items-center gap-3 py-4">
                             <Loader2 size={18} className="animate-spin text-terminal" />
                             <div className="text-text-primary text-sm">{status || 'Working...'}</div>
                         </div>
                     )}
-                    {error && (
+
+                    {stage === 'done' && error && (
                         <div className="text-red-400 text-xs">{error}</div>
                     )}
-                    {result && verdictMeta && (
+
+                    {showResult && (
                         <>
                             <div className={`inline-flex items-center gap-2 px-2 py-1 border rounded text-[10px] uppercase tracking-widest ${verdictMeta.color}`}>
                                 {verdictMeta.icon}{verdictMeta.label}

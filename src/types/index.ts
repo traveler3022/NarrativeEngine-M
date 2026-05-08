@@ -475,6 +475,8 @@ export type TimelineEvent = {
     source: 'regex' | 'llm' | 'manual';
 };
 
+export type LoreCheckCategory = 'wrong-fact' | 'contradicts-lore' | 'wrong-entity' | 'tone-voice' | 'out-of-character';
+
 export type LoreCheckVerdict = 'consistent' | 'unsupported' | 'contradicts';
 
 export type LoreCheckSelection = {

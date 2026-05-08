@@ -7,6 +7,7 @@ import type {
     LoreCheckResult,
     LoreCheckCitation,
     LoreCheckVerdict,
+    LoreCheckCategory,
 } from '../types';
 import { llmCall } from '../utils/llmCall';
 import { searchLoreByQuery } from './loreRetriever';
@@ -24,18 +25,27 @@ export type LoreCheckInput = {
     campaignId: string;
     onStatus: (msg: string) => void;
     signal?: AbortSignal;
+    hint?: string;
+    categories?: LoreCheckCategory[];
 };
+
+export function buildSearchQuery(selectedText: string, hint?: string): string {
+    const parts = [selectedText, hint?.trim()].filter(Boolean);
+    return parts.join(' — ');
+}
 
 export async function runLoreCheck(input: LoreCheckInput): Promise<LoreCheckResult> {
     const {
         utilityEndpoint, selectedText, surroundingContext,
         messages, targetMessageId, loreChunks,
         archiveIndex, sealedChapters, campaignId,
-        onStatus, signal,
+        onStatus, signal, hint, categories,
     } = input;
 
+    const searchQuery = buildSearchQuery(selectedText, hint);
+
     onStatus('Searching lore...');
-    const loreHits = searchLoreByQuery(loreChunks, selectedText, 1500, 5);
+    const loreHits = searchLoreByQuery(loreChunks, searchQuery, 1500, 5);
 
     onStatus('Scanning archive...');
     const targetIdx = messages.findIndex(m => m.id === targetMessageId);
@@ -52,7 +62,7 @@ export async function runLoreCheck(input: LoreCheckInput): Promise<LoreCheckResu
                 sealedChapters,
                 campaignId,
                 contextSlice,
-                selectedText,
+                searchQuery,
                 1500,
                 onStatus,
             );
@@ -74,6 +84,8 @@ export async function runLoreCheck(input: LoreCheckInput): Promise<LoreCheckResu
         surroundingContext,
         loreText,
         archiveText,
+        hint,
+        categories,
     });
 
     const raw = await llmCall(utilityEndpoint, prompt, {
@@ -86,12 +98,32 @@ export async function runLoreCheck(input: LoreCheckInput): Promise<LoreCheckResu
     return parseVerdict(raw, selectedText);
 }
 
-function buildVerifierPrompt(args: {
+export function buildVerifierPrompt(args: {
     selectedText: string;
     surroundingContext: string;
     loreText: string;
     archiveText: string;
+    hint?: string;
+    categories?: LoreCheckCategory[];
 }): string {
+    const hasConcern = (args.hint?.trim()) || (args.categories && args.categories.length > 0);
+    let userConcernBlock = '';
+    if (hasConcern) {
+        const catList = args.categories?.length ? args.categories.join(', ') : '';
+        const note = args.hint?.trim() ?? '';
+        const parts: string[] = [];
+        if (catList) parts.push(`Categories: ${catList}`);
+        if (note) parts.push(`Note: "${note}"`);
+        userConcernBlock = `
+
+[USER CONCERN]
+${parts.join('\n')}
+
+The user has flagged this sentence specifically because of the concern above.
+Focus your verdict on whether the concern is justified, but you may still flag other clear issues you notice.
+`;
+    }
+
     return `You are a narrative continuity auditor for a tabletop RPG campaign.
 A player has highlighted a sentence written by the GM and wants to know whether it is consistent with established lore and play history.
 
@@ -99,13 +131,13 @@ You will receive:
 - The highlighted SENTENCE
 - The surrounding CONTEXT (sentence before and after, for tone reference only)
 - LORE evidence (canonical world facts written by the player)
-- ARCHIVE evidence (a brief summarizing past scenes from the campaign)
+- ARCHIVE evidence (a brief summarizing past scenes from the campaign)${hasConcern ? '\n- A USER CONCERN describing why they flagged this sentence' : ''}
 
 Your job:
 1. Decide a verdict:
    - "consistent": the sentence is supported (or at least not contradicted) by the evidence.
    - "unsupported": the sentence makes specific factual claims that are not covered by lore or archive — possible hallucination but not a clear contradiction.
-   - "contradicts": the sentence directly contradicts at least one lore entry or archived event.
+   - "contradicts": the sentence directly contradicts at least one lore entry or archived event.${hasConcern ? '\n    If a USER CONCERN is provided, weigh it heavily in your verdict, but don\'t ignore other contradictions.' : ''}
 2. List up to 3 short issues (each one sentence). Empty list if verdict is "consistent".
 3. List the citations you relied on. Use "lore:<exact lore header>" for lore and "scene:<sceneId>" for archive references that appear in the brief. Do NOT invent citations.
 4. If verdict is "contradicts" or "unsupported", produce a SUGGESTED REWRITE that:
@@ -114,7 +146,7 @@ Your job:
    - Does NOT add new events or commitments.
    - If you cannot produce a confident rewrite from evidence, set suggestedRewrite to null.
 5. If verdict is "consistent", set suggestedRewrite to null.
-
+${userConcernBlock}
 Respond with ONLY a single JSON object, no prose, no code fence:
 {
   "verdict": "consistent" | "unsupported" | "contradicts",
