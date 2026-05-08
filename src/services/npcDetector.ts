@@ -1,51 +1,111 @@
 import type { NPCEntry, LLMProvider } from '../types';
 import { llmCall } from '../utils/llmCall';
 import { extractJson } from './payloadBuilder';
+import TITLES from '../data/titles.json';
 
-/** Extract NPC names from assistant response text using bracket/system tag patterns */
-export function extractNPCNames(content: string): string[] {
+// Load titles into a Set once
+const TITLES_SET = new Set(TITLES.map(t => t.toLowerCase()));
+
+/** Extract NPC names from assistant response text using bracket/system tag patterns and prose extraction */
+export function extractNPCNames(content: string, excludeNames: string[] = []): string[] {
     const extractedNames: string[] = [];
+    const excludeSet = new Set(excludeNames.map(n => n.toLowerCase()));
 
-    // Pattern to exclude generic roles like "Guard A" or "Scout 1"
-    const GENERIC_ROLE_PATTERN = /^(guard|scout|merchant|soldier|bandit|thug|villager|citizen|patron|cultist|goblin|orc|skeleton|zombie|enemy|monster|creature)\s+[a-z0-9]$/i;
-    const NPC_NAME_BLOCKLIST = new Set(["you", "i", "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for", "with", "by", "about", "like", "through", "over", "before", "between", "after", "since", "without", "under", "within", "along", "following", "across", "behind", "beyond", "plus", "except", "but", "up", "out", "around", "down", "off", "above", "near"]);
+    // Pattern to exclude generic roles like "Guard A" or "Clone 1", and creature types
+    const GENERIC_ROLE_PATTERN = /^(guard|scout|merchant|soldier|bandit|thug|villager|citizen|patron|cultist|goblin|orc|skeleton|zombie|enemy|monster|creature|clone|drone|knight|priest|mage|wizard|archer|thief)\s+([a-z0-9]|#\d+)$/i;
+    const NPC_NAME_BLOCKLIST = new Set(["you", "i", "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for", "with", "by", "about", "like", "through", "over", "before", "between", "after", "since", "without", "under", "within", "along", "following", "across", "behind", "beyond", "plus", "except", "up", "out", "around", "down", "off", "above", "near", "she", "he", "it", "they", "them", "then", "suddenly", "meanwhile", "however", "although", "therefore", "otherwise", "inside", "outside", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]);
 
     // Pattern 1 & 2: [Name] or [**Name**] — no colons allowed inside (filters out [SYSTEM: ...])
     const bracketMatches = Array.from(content.matchAll(/\[\*{0,2}([A-Za-z][A-Za-z0-9 _.'-]*[A-Za-z0-9.])\*{0,2}\]/g));
     for (const m of bracketMatches) {
         const raw = m[1].trim();
-        // Skip common false positives
-        if (raw.length < 2) continue;
-        if (raw.includes(' ') && raw === raw.toUpperCase()) continue;
-        // Skip blocklisted words
-        if (NPC_NAME_BLOCKLIST.has(raw.toLowerCase())) continue;
-        // Skip generic roles
-        if (GENERIC_ROLE_PATTERN.test(raw)) continue;
-        extractedNames.push(raw);
+        if (!isValidCandidate(raw, excludeSet, GENERIC_ROLE_PATTERN, NPC_NAME_BLOCKLIST)) continue;
+        extractedNames.push(stripTitle(raw));
     }
 
     // Pattern 3: [SYSTEM: NPC_ENTRY - NAME]
     const entryMatches = Array.from(content.matchAll(/\[SYSTEM:\s*NPC_ENTRY\s*[-–—]\s*([A-Za-z][A-Za-z0-9 _'-]*)\]/gi));
     for (const m of entryMatches) {
         const raw = m[1].trim();
-        if (NPC_NAME_BLOCKLIST.has(raw.toLowerCase())) continue;
-        if (GENERIC_ROLE_PATTERN.test(raw)) continue;
-        extractedNames.push(raw);
+        if (!isValidCandidate(raw, excludeSet, GENERIC_ROLE_PATTERN, NPC_NAME_BLOCKLIST)) continue;
+        extractedNames.push(stripTitle(raw));
+    }
+
+    // Pattern 4: Prose extraction - capitalized proper nouns
+    // Matches names like "Orin", "Captain Aldric", "Aldric of Westhold", "Lady Elara"
+    const PROSE_NAME = /\b([A-Z][a-z''-]+(?:\s+(?:of|the|von|de|di|al|el|ibn|bin)\s+[A-Z][a-z''-]+|\s+[A-Z][a-z''-]+){0,3})\b/g;
+    const proseMatches = Array.from(content.matchAll(PROSE_NAME));
+
+    // Track sentence boundaries for the sentence-initial guard
+    const sentenceBoundaries = new Set<number>();
+    for (const match of content.matchAll(/[.!?]\s*/g)) {
+        sentenceBoundaries.add(match.index! + match[0].length);
+    }
+    sentenceBoundaries.add(0); // String start
+
+    for (const m of proseMatches) {
+        const raw = m[1].trim();
+
+        // Strip title first, then validate the result
+        const stripped = stripTitle(raw);
+        if (stripped.length === 0) continue; // Nothing left after stripping title
+
+        if (!isValidCandidate(stripped, excludeSet, GENERIC_ROLE_PATTERN, NPC_NAME_BLOCKLIST)) continue;
+
+        // Cheap sentence-initial guard: skip if ONLY occurrence is at sentence start AND it's a blocklisted word
+        // (e.g., "She", "Then") — but keep legitimate names even if they start a sentence (e.g., "Bram")
+        const escapedName = stripped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const allMatches = Array.from(content.matchAll(new RegExp('\\b' + escapedName + '\\b', 'g')));
+
+        // Check if ANY occurrence is not at sentence start
+        const hasNonSentenceInitialOccurrence = allMatches.some(m => !sentenceBoundaries.has(m.index || 0));
+
+        // Only skip if it ONLY appears at sentence starts AND it's a known blocklisted word (pronoun, etc.)
+        if (allMatches.length === 1 && !hasNonSentenceInitialOccurrence && NPC_NAME_BLOCKLIST.has(stripped.toLowerCase())) continue;
+
+        extractedNames.push(stripped);
     }
 
     return extractedNames;
 }
 
+/** Check if a candidate is valid before adding */
+function isValidCandidate(raw: string, excludeSet: Set<string>, genericPattern: RegExp, blocklist: Set<string>): boolean {
+    if (raw.length < 2) return false;
+    if (raw.includes(' ') && raw === raw.toUpperCase()) return false;
+    if (blocklist.has(raw.toLowerCase())) return false;
+    if (genericPattern.test(raw)) return false;
+    if (excludeSet.has(raw.toLowerCase())) return false;
+    return true;
+}
+
+/** Strip leading title/honorific from a name. "Captain Aldric" → "Aldric", "Lady Elara of Mire" → "Elara of Mire" */
+function stripTitle(raw: string): string {
+    const parts = raw.split(/\s+/);
+    if (parts.length === 0) return raw;
+
+    const firstLower = parts[0].toLowerCase();
+    if (TITLES_SET.has(firstLower)) {
+        const remainder = parts.slice(1).join(' ').trim();
+        return remainder.length > 0 ? remainder : '';
+    }
+
+    return raw;
+}
+
 /** Filter extracted names against existing ledger, return { newNames, existingNpcs } */
 export function classifyNPCNames(
     names: string[],
-    ledger: NPCEntry[]
+    ledger: NPCEntry[],
+    excludeNames: string[] = []
 ): { newNames: string[]; existingNpcs: NPCEntry[] } {
+    const excludeSet = new Set(excludeNames.map(n => n.toLowerCase()));
+
     // Normalize: title-case all-caps single words (e.g., ORIN -> Orin)
     const normalized = names.map(n =>
-        n === n.toUpperCase() ? n.charAt(0).toUpperCase() + n.slice(1).toLowerCase() : n
+        n === n.toUpperCase() && n.length > 1 ? n.charAt(0).toUpperCase() + n.slice(1).toLowerCase() : n
     );
-    const uniqueNames = Array.from(new Set(normalized));
+    const uniqueNames = Array.from(new Set(normalized)).filter(n => !excludeSet.has(n.toLowerCase()));
 
     const newNames: string[] = [];
     const existingNpcs: NPCEntry[] = [];
