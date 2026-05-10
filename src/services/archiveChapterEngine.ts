@@ -2,9 +2,8 @@ import type { ArchiveChapter, ArchiveIndexEntry, ChatMessage, NPCEntry, Semantic
 import { extractContextActivations, expandActivationsWithFacts, retrieveArchiveMemory, fetchArchiveScenes } from './archiveMemory';
 import { llmCall } from '../utils/llmCall';
 
-const AUTO_SEAL_SCENE_THRESHOLD = 25; // ~25 exchanges is a meaningful arc
+const AUTO_SEAL_SCENE_THRESHOLD = 25;
 
-// Phase 3 constants
 const MAX_LLM_ITERATIONS = 5;
 const MAX_CONFIRMED_CHAPTERS = 3;
 
@@ -13,9 +12,6 @@ export type AutoSealResult = {
     reason: string;
 };
 
-/**
- * Check if a chapter should be auto-sealed based on scene threshold.
- */
 export function shouldAutoSeal(
     chapters: ArchiveChapter[],
 ): AutoSealResult {
@@ -24,10 +20,7 @@ export function shouldAutoSeal(
         return { shouldSeal: false, reason: 'no_open_chapter' };
     }
 
-    // Count scenes in open chapter's range
-    const startNum = parseInt(openChapter.sceneRange[0], 10);
-    const endNum = parseInt(openChapter.sceneRange[1], 10);
-    const sceneCount = endNum - startNum + 1;
+    const sceneCount = openChapter.sceneIds?.length ?? 0;
 
     if (sceneCount >= AUTO_SEAL_SCENE_THRESHOLD) {
         return { shouldSeal: true, reason: 'scene_threshold' };
@@ -36,10 +29,6 @@ export function shouldAutoSeal(
     return { shouldSeal: false, reason: '' };
 }
 
-/**
- * Seal the open chapter and create a new open chapter.
- * Returns the sealed chapter and the new open chapter.
- */
 export function sealChapter(
     chapters: ArchiveChapter[],
 ): { sealedChapter: ArchiveChapter; newOpenChapter: ArchiveChapter } {
@@ -48,22 +37,23 @@ export function sealChapter(
         throw new Error('No open chapter to seal');
     }
 
-    // Determine next scene number
-    const lastScene = parseInt(openChapter.sceneRange[1], 10);
-    const nextScene = String(lastScene + 1).padStart(3, '0');
+    const lastScene = openChapter.sceneIds?.length
+        ? openChapter.sceneIds[openChapter.sceneIds.length - 1]
+        : openChapter.sceneRange[1];
+    const nextSceneNum = parseInt(lastScene, 10) + 1;
+    const nextScene = String(nextSceneNum).padStart(3, '0');
 
-    // Seal the open chapter
     const sealed: ArchiveChapter = {
         ...openChapter,
         sealedAt: Date.now(),
     };
 
-    // Create new open chapter
     const nextChapterNum = chapters.length + 1;
     const newOpen: ArchiveChapter = {
         chapterId: `CH${String(nextChapterNum).padStart(2, '0')}`,
         title: 'Open Chapter',
         sceneRange: [nextScene, nextScene],
+        sceneIds: [],
         summary: '',
         keywords: [],
         npcs: [],

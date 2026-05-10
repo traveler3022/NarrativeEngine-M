@@ -13,6 +13,7 @@ import { recallWithChapterFunnel } from './archiveChapterEngine';
 import { isEmbedderReady } from './embedder';
 import { semanticSearch } from './vectorSearch';
 import { getDivergenceSceneIds } from './divergenceRegister';
+import { EMPTY_REGISTER } from './divergenceRegister';
 import { rerankCandidates, type RerankCandidate } from './semanticReranker';
 import type { LLMProvider } from '../types';
 import { llmCall } from '../utils/llmCall';
@@ -183,13 +184,13 @@ export async function gatherContext(
             }
         } catch {
             if (activeCampaignId) {
-                const flatRecall = await recallArchiveScenes(activeCampaignId, archiveIndex, finalInput, messages, 3000, npcLedger, semanticFacts, semanticArchiveIds, getDivergenceSceneIds(state.divergenceRegister ?? { entries: [], prunedLog: [], lastUpdatedSceneId: '', lastUpdatedAt: 0, version: 1 }));
+                const flatRecall = await recallArchiveScenes(activeCampaignId, archiveIndex, finalInput, messages, 3000, npcLedger, semanticFacts, semanticArchiveIds, getDivergenceSceneIds(state.divergenceRegister ?? EMPTY_REGISTER));
                 archiveResult = { scenes: flatRecall || [], usedTokens: 0 };
             }
         }
     } else if (archiveIndex.length > 0 && activeCampaignId) {
         const flatRecall = await recallArchiveScenes(
-            activeCampaignId, archiveIndex, finalInput, messages, 3000, npcLedger, semanticFacts, semanticArchiveIds, getDivergenceSceneIds(state.divergenceRegister ?? { entries: [], prunedLog: [], lastUpdatedSceneId: '', lastUpdatedAt: 0, version: 1 })
+            activeCampaignId, archiveIndex, finalInput, messages, 3000, npcLedger, semanticFacts, semanticArchiveIds, getDivergenceSceneIds(state.divergenceRegister ?? EMPTY_REGISTER)
         );
         archiveResult = { scenes: flatRecall || [], usedTokens: 0 };
     }
@@ -299,7 +300,8 @@ export async function gatherContext(
     const payloadResult = buildPayload(
         settings, state.context, freshMessages, finalInput, condenser.condensedSummary || undefined,
         condenser.condensedUpToIndex, relevantLore, npcLedger, finalArchiveRecall, sceneNumber, recommendedNPCNames, semanticFactText, deepContextSummary,
-        state.divergenceRegister
+        state.divergenceRegister,
+        state.chapters
     );
 
     return { relevantLore, sceneNumber, archiveRecall: finalArchiveRecall, semanticFactText, recommendedNPCNames, deepContextSummary, payloadResult };

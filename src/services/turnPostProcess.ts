@@ -5,7 +5,7 @@ import { extractNPCNames, classifyNPCNames, validateNPCCandidates } from './npcD
 import { api } from './apiClient';
 import { toast } from '../components/Toast';
 import { shouldAutoSeal, sealChapter } from './archiveChapterEngine';
-import { generateChapterSummary } from './saveFileEngine';
+import { sealChapterCombined } from './saveFileEngine';
 import { fetchFacts } from './semanticMemory';
 import { loadChapters } from '../store/campaignStore';
 import { backgroundQueue } from './backgroundQueue';
@@ -13,7 +13,7 @@ import { scanCharacterProfile } from './characterProfileParser';
 import { scanInventory } from './inventoryParser';
 import { rateImportance } from './importanceRater';
 import { scanPressure, buildPressurePatch, shouldArchiveNPC, findArchivedToRestore } from './npcPressureTracker';
-import { extractDivergences, mergeEntries, pruneChapterEntries, EMPTY_REGISTER } from './divergenceRegister';
+import { mergeSealEntries } from './divergenceRegister';
 
 export async function handlePostTurn(
     state: TurnState,
@@ -70,31 +70,6 @@ export async function handlePostTurn(
                     }
                 } catch (e) { console.warn('[TurnPostProcess] Importance rating failed:', e); }
             }).catch((e) => console.warn('[TurnPostProcess] backgroundQueue push failed:', e));
-        }
-    }
-
-    if (appendedSceneId && state.settings.autoExtractDivergences !== false) {
-        const divProvider = state.getFreshProvider();
-        if (divProvider && callbacks.setDivergenceRegister) {
-            const sid = appendedSceneId;
-            const userText = displayInput;
-            const gmText = lastAssistantContent;
-            const currentRegister = state.divergenceRegister || EMPTY_REGISTER;
-            backgroundQueue.push('Divergence-Extract', async () => {
-                try {
-                    const sceneText = `[User]: ${userText.slice(0, 600)}\n[GM]: ${gmText.slice(0, 1200)}`;
-                    const { entries } = await extractDivergences(divProvider, sceneText, sid, currentRegister);
-                    if (entries.length > 0) {
-                        const merged = mergeEntries(currentRegister, entries, sid);
-                        callbacks.setDivergenceRegister!(merged);
-                        const msgId = state.getMessages().slice().reverse().find(m => m.role === 'assistant')?.id;
-                        if (msgId && callbacks.updateMessageDivergence) {
-                            callbacks.updateMessageDivergence(msgId, entries.map(e => e.id));
-                        }
-                        console.log(`[DivergenceRegister] Scene #${sid}: ${entries.length} entries extracted`);
-                    }
-                } catch (e) { console.warn('[TurnPostProcess] Divergence extraction failed:', e); }
-            }).catch((e) => console.warn('[TurnPostProcess] Divergence queue push failed:', e));
         }
     }
 
@@ -223,40 +198,53 @@ async function handleSealChapter(state: TurnState, callbacks: TurnCallbacks, act
             const provider = state.getFreshProvider();
             if (provider) {
                 const allScenes = await api.archive.getIndex(activeCampaignId);
+                const startNum = parseInt(sealed.sceneRange[0], 10);
+                const endNum = parseInt(sealed.sceneRange[1], 10);
                 const chapterScenes = allScenes.filter(s => {
                     const sn = parseInt(s.sceneId);
-                    return sn >= parseInt(sealed.sceneRange[0]) && sn <= parseInt(sealed.sceneRange[1]);
+                    return sn >= startNum && sn <= endNum;
                 });
                 if (chapterScenes.length > 0) {
                     const scenesContent = chapterScenes.map(s => ({ sceneId: s.sceneId, content: s.userSnippet || '' }));
-                    const summary = await generateChapterSummary(provider, scenesContent, sealed.title);
-                    if (summary) {
+                    const sceneIds = sealed.sceneIds?.length
+                        ? sealed.sceneIds
+                        : Array.from({ length: endNum - startNum + 1 }, (_, i) => String(startNum + i).padStart(3, '0'));
+                    const npcLedger = state.npcLedger ?? [];
+                    const npcInfo = npcLedger.map(n => ({
+                        id: n.id,
+                        name: n.name,
+                        aliases: n.aliases ?? '',
+                    }));
+
+                    const sealResult = await sealChapterCombined(
+                        provider,
+                        scenesContent,
+                        sealed.chapterId,
+                        sealed.title,
+                        sceneIds,
+                        npcInfo,
+                    );
+
+                    if (sealResult.summary) {
                         await api.chapters.update(activeCampaignId, sealed.chapterId, {
-                            title: summary.title,
-                            summary: summary.summary,
-                            keywords: summary.keywords,
-                            npcs: summary.npcs,
-                            majorEvents: summary.majorEvents,
-                            unresolvedThreads: summary.unresolvedThreads,
-                            tone: summary.tone,
-                            themes: summary.themes,
+                            title: sealResult.summary.title,
+                            summary: sealResult.summary.summary,
+                            keywords: sealResult.summary.keywords,
+                            npcs: sealResult.summary.npcs,
+                            majorEvents: sealResult.summary.majorEvents,
+                            unresolvedThreads: sealResult.summary.unresolvedThreads,
+                            tone: sealResult.summary.tone,
+                            themes: sealResult.summary.themes,
                         });
                     }
-                }
-            }
 
-            // Prune divergence register entries from the sealed chapter
-            const liveRegister = state.divergenceRegister;
-            if (liveRegister && liveRegister.entries.length > 0 && callbacks.setDivergenceRegister) {
-                try {
-                    const allChaptersNow = await loadChapters(activeCampaignId);
-                    const sealProvider = state.getFreshProvider();
-                    if (sealProvider) {
-                        const pruned = await pruneChapterEntries(sealProvider, sealed, liveRegister, allChaptersNow);
-                        callbacks.setDivergenceRegister(pruned);
-                        console.log(`[DivergenceRegister] Chapter ${sealed.chapterId} sealed: ${liveRegister.entries.length} → ${pruned.entries.length} entries`);
+                    const liveRegister = state.divergenceRegister;
+                    if (sealResult.divergences.length > 0 && liveRegister && callbacks.setDivergenceRegister) {
+                        const merged = mergeSealEntries(liveRegister, sealResult.divergences, sceneIds[sceneIds.length - 1] ?? '000');
+                        callbacks.setDivergenceRegister(merged);
+                        console.log(`[CombinedSeal] Chapter ${sealed.chapterId}: ${sealResult.divergences.length} entries extracted`);
                     }
-                } catch (e) { console.warn('[TurnPostProcess] Chapter divergence prune failed:', e); }
+                }
             }
 
             const updatedChapters = await loadChapters(activeCampaignId);

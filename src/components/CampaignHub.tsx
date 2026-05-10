@@ -202,7 +202,7 @@ export function CampaignHub() {
             semanticFacts: facts,
             chapters: chaps,
             activeCampaignId: campaign.id,
-            divergenceRegister: divReg ?? { entries: [], prunedLog: [], lastUpdatedSceneId: '', lastUpdatedAt: 0, version: 1 },
+            divergenceRegister: divReg ?? { entries: [], chapterToggles: {}, categoryToggles: {}, lastUpdatedSceneId: '', lastUpdatedAt: 0, version: 2 as const },
         });
     };
 

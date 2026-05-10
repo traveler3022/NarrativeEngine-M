@@ -1,5 +1,7 @@
-import { Trash2, Save, Loader2, Sparkles, Users } from 'lucide-react';
-import type { NPCEntry, NPCBehavioralTrigger } from '../../types';
+import { Trash2, Save, Loader2, Sparkles, Users, ScrollText } from 'lucide-react';
+import type { NPCEntry, NPCBehavioralTrigger, DivergenceCategory } from '../../types';
+import { useAppStore } from '../../store/useAppStore';
+import { getEntriesForNpc, CATEGORY_LABELS } from '../../services/divergenceRegister';
 
 type Props = {
     form: Partial<NPCEntry>;
@@ -18,6 +20,7 @@ export function NPCEditForm({
     form, setForm, selectedId, isEditing, isAIUpdating,
     onEdit, onSave, onCancel, onDelete, onAIUpdate,
 }: Props) {
+    const divergenceRegister = useAppStore(s => s.divergenceRegister);
     if (!selectedId && !isEditing) {
         return (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-8 opacity-50 bg-void">
@@ -368,6 +371,39 @@ export function NPCEditForm({
                         ))}
                     </div>
                 </div>
+
+                {selectedId && !isEditing && (() => {
+                    const reg = divergenceRegister;
+                    const events = reg ? getEntriesForNpc(reg, selectedId) : [];
+                    if (events.length === 0) return null;
+                    const CATEGORY_COLORS: Record<DivergenceCategory, string> = {
+                        locations: 'text-blue-400',
+                        npc_events: 'text-terminal',
+                        promises_debts: 'text-amber-400',
+                        world_state: 'text-ice',
+                        party_facts: 'text-emerald-400',
+                        rules_lore: 'text-purple-400',
+                        misc: 'text-text-muted',
+                    };
+                    return (
+                        <div className="bg-void p-4 rounded border border-border space-y-2">
+                            <div className="flex items-center gap-2 text-text-primary font-bold uppercase tracking-widest text-xs">
+                                <ScrollText size={14} /> Events ({events.length})
+                            </div>
+                            <div className="space-y-1 max-h-48 overflow-y-auto">
+                                {events.map(e => (
+                                    <div key={e.id} className="flex items-start gap-1.5 text-[11px]">
+                                        <span className={`shrink-0 mt-0.5 text-[9px] uppercase font-bold ${CATEGORY_COLORS[e.category] ?? 'text-text-dim'}`}>
+                                            {CATEGORY_LABELS[e.category] ?? e.category}
+                                        </span>
+                                        <span className="text-text-secondary min-w-0 flex-1">{e.text}</span>
+                                        <span className="text-text-dim/40 text-[9px] shrink-0">[#{e.sceneRef}]{e.source === 'manual' ? ' ⚡' : ''}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })()}
             </div>
 
             {isEditing && (

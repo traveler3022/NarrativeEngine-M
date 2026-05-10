@@ -121,5 +121,13 @@ export async function saveDivergenceRegister(campaignId: string, register: Diver
 export async function loadDivergenceRegister(campaignId: string): Promise<DivergenceRegister | null> {
     const register = await get(`divergence_${campaignId}`);
     if (!register) return null;
-    return { ...register, prunedLog: register.prunedLog ?? [] };
+    if (!register.version || register.version < 2) {
+        const { migrateV1ToV2 } = await import('../services/divergenceRegister');
+        return migrateV1ToV2(register);
+    }
+    return {
+        ...register,
+        chapterToggles: register.chapterToggles ?? {},
+        categoryToggles: register.categoryToggles ?? {},
+    };
 }

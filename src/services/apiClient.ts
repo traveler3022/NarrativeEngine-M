@@ -22,6 +22,9 @@ export const api = {
         async clear(campaignId: string): Promise<void> {
             await offlineStorage.archive.clear(campaignId);
         },
+        async getScenes(campaignId: string, sceneIds: string[]): Promise<{ sceneId: string; content: string }[]> {
+            return offlineStorage.archive.getScenes(campaignId, sceneIds);
+        },
         async open(_campaignId: string): Promise<void> {
             // No-op on mobile — can't open text editor
         },

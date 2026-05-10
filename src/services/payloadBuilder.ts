@@ -4,6 +4,7 @@ import { countTokens } from './tokenizer';
 import { buildBehaviorDirective, buildDriftAlert } from './npcBehaviorDirective';
 import { minifyLoreChunk, minifyNPC } from './contextMinifier';
 import { renderRegisterForPayload } from './divergenceRegister';
+import type { ArchiveChapter } from '../types';
 
 
 /**
@@ -85,6 +86,7 @@ export function buildPayload(
     semanticFactText?: string,
     deepContextSummary?: string,
     divergenceRegister?: DivergenceRegister,
+    chapters?: ArchiveChapter[],
 ): { messages: OpenAIMessage[]; trace?: PayloadTrace[] } {
     const trace: PayloadTrace[] = [];
     const isDebug = settings.debugMode === true;
@@ -158,7 +160,7 @@ export function buildPayload(
 
     let divergenceContent = '';
     if (divergenceRegister && divergenceRegister.entries.length > 0) {
-        divergenceContent = renderRegisterForPayload(divergenceRegister);
+        divergenceContent = renderRegisterForPayload(divergenceRegister, chapters);
     }
     const divergenceTokens = countTokens(divergenceContent);
     addTrace({ source: 'Divergence Register', classification: 'stable_truth', tokens: divergenceTokens, reason: `Campaign canon overrides (${divergenceRegister?.entries.length ?? 0} entries)`, included: !!divergenceContent, position: 'system_static' });

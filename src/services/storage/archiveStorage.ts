@@ -77,6 +77,7 @@ export const archiveStorage = {
                 ch.invalidated = true;
                 delete ch.sealedAt;
                 ch.sceneCount = fromNum - parseInt(ch.sceneRange[0], 10);
+                ch.sceneIds = (ch.sceneIds ?? []).filter(id => parseInt(id, 10) < fromNum);
                 chaptersRepaired = true;
             }
         }
@@ -89,6 +90,7 @@ export const archiveStorage = {
                 chapterId: `CH${String(nextNum).padStart(2, '0')}`,
                 title: `Chapter ${nextNum}`,
                 sceneRange: [fromSceneId.padStart(3, '0'), fromSceneId.padStart(3, '0')],
+                sceneIds: [],
                 summary: '', keywords: [], npcs: [], majorEvents: [], unresolvedThreads: [],
                 tone: '', themes: [], sceneCount: 0,
             });

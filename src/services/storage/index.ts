@@ -59,6 +59,7 @@ export const offlineStorage = {
                     chapterId: `CH${String(nextNum).padStart(2, '0')}`,
                     title: `Chapter ${nextNum}`,
                     sceneRange: [sceneId, sceneId],
+                    sceneIds: [sceneId],
                     summary: '', keywords: [], npcs: [], majorEvents: [], unresolvedThreads: [],
                     tone: '', themes: [], sceneCount: 1,
                 };
@@ -66,6 +67,8 @@ export const offlineStorage = {
             } else {
                 openChapter.sceneRange[1] = sceneId;
                 openChapter.sceneCount = (openChapter.sceneCount || 0) + 1;
+                if (!openChapter.sceneIds) openChapter.sceneIds = [];
+                openChapter.sceneIds.push(sceneId);
             }
             await setList(k(cid, 'chapters'), chapters);
 

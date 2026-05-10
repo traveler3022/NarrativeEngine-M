@@ -16,6 +16,7 @@ export const chapterStorage = {
             chapterId,
             title: title || `Chapter ${nextNum}`,
             sceneRange: [nextSceneId, nextSceneId],
+            sceneIds: [],
             summary: '', keywords: [], npcs: [], majorEvents: [], unresolvedThreads: [],
             tone: '', themes: [], sceneCount: 0,
         };
@@ -45,6 +46,7 @@ export const chapterStorage = {
             chapterId: `CH${String(nextNum).padStart(2, '0')}`,
             title: 'Open Chapter',
             sceneRange: [nextScene, nextScene],
+            sceneIds: [],
             summary: '', keywords: [], npcs: [], majorEvents: [], unresolvedThreads: [],
             tone: '', themes: [], sceneCount: 0,
         };
@@ -72,6 +74,7 @@ export const chapterStorage = {
             ...chA,
             title: `${chA.title} & ${chB.title}`,
             sceneRange: [chA.sceneRange[0], chB.sceneRange[1]],
+            sceneIds: [...(chA.sceneIds ?? []), ...(chB.sceneIds ?? [])],
             sceneCount: (chA.sceneCount || 0) + (chB.sceneCount || 0),
             keywords: Array.from(new Set([...(chA.keywords || []), ...(chB.keywords || [])])),
             npcs: Array.from(new Set([...(chA.npcs || []), ...(chB.npcs || [])])),
@@ -98,11 +101,13 @@ export const chapterStorage = {
         const chA: ArchiveChapter = {
             ...ch, chapterId: `${ch.chapterId}A`,
             sceneRange: [ch.sceneRange[0], String(splitNum - 1).padStart(3, '0')],
+            sceneIds: (ch.sceneIds ?? []).filter(id => parseInt(id) < splitNum),
             sceneCount: splitNum - startNum, invalidated: true,
         };
         const chB: ArchiveChapter = {
             ...ch, chapterId: `${ch.chapterId}B`,
             sceneRange: [String(splitNum).padStart(3, '0'), ch.sceneRange[1]],
+            sceneIds: (ch.sceneIds ?? []).filter(id => parseInt(id) >= splitNum),
             sceneCount: endNum - splitNum + 1, invalidated: true,
         };
 

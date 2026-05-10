@@ -4,7 +4,6 @@ import type { SaveProgress } from '../../services/saveFileEngine';
 import { useAppStore } from '../../store/useAppStore';
 import { condenseHistory, getCondenseBudgetRatio } from '../../services/condenser';
 import { runSaveFilePipeline } from '../../services/saveFileEngine';
-import { extractFromMessageBatch, buildSceneMap, mergeEntries } from '../../services/divergenceRegister';
 import { api } from '../../services/apiClient';
 import { toast } from '../Toast';
 
@@ -58,54 +57,6 @@ export function useCondenser(deps: UseCondenserDeps) {
             } catch (err) {
                 const msg = err instanceof Error ? err.message : String(err);
                 toast.warning(`Save pipeline failed — ${msg}`);
-            }
-
-            setCondensePhase('extract');
-            try {
-                if (deps.activeCampaignId) {
-                    const archiveIndex = await api.archive.getIndex(deps.activeCampaignId);
-                    const { sceneIdsByMessageId } = buildSceneMap(archiveIndex, deps.messages);
-                    const candidateMessages = deps.messages.slice(deps.condenser.condensedUpToIndex + 1);
-                    const extractResult = await extractFromMessageBatch(
-                        provider,
-                        candidateMessages,
-                        sceneIdsByMessageId,
-                        useAppStore.getState().divergenceRegister,
-                        deps.settings.contextLimit,
-                        condenseAbortRef.current.signal,
-                        deps.settings.divergenceScanBudget,
-                    );
-                    if (extractResult.newEntries.length > 0) {
-                        const merged = mergeEntries(
-                            useAppStore.getState().divergenceRegister,
-                            extractResult.newEntries,
-                            extractResult.newEntries[0].sceneRef,
-                        );
-                        useAppStore.getState().setDivergenceRegister(merged);
-                        const { saveDivergenceRegister } = await import('../../store/campaignStore');
-                        await saveDivergenceRegister(deps.activeCampaignId, merged);
-                        const errCount = extractResult.newEntries.filter(e => e.parseError).length;
-                        const okCount = extractResult.newEntries.length - errCount;
-                        if (errCount > 0) {
-                            toast.warning(`Register: +${okCount} ok, ${errCount} parse-error rows added — review them in the panel`);
-                        } else {
-                            toast.success(`Register: +${okCount} divergence${okCount === 1 ? '' : 's'}`);
-                        }
-                        console.log(`[Condenser] Register batch extraction: ${extractResult.newEntries.length} entries (${errCount} parse-error)`);
-                    } else if (extractResult.parseFailures > 0) {
-                        toast.warning(`Register: ${extractResult.parseFailures}/${extractResult.chunkCount} chunks failed — model output unparseable`);
-                    } else if (extractResult.chunkCount > 0) {
-                        toast.info('Register: scan complete, no new divergences');
-                    }
-                    if (extractResult.reason === 'no-scene-mapping') {
-                        toast.warning('Divergence scan skipped — scene mapping out of sync. Check console.');
-                    }
-                }
-            } catch (err) {
-                if ((err as Error).name !== 'AbortError') {
-                    console.error('[Condenser] Register batch extraction failed:', err);
-                    toast.warning('Register extraction failed — continuing with prose condensation');
-                }
             }
 
             setCondensePhase('compress');

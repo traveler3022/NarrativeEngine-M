@@ -1,29 +1,29 @@
 import { useState } from 'react';
-import { X, Loader2, Edit2, Check, RotateCcw, FileText, List, AlertTriangle, Archive, Plus, Scissors, Combine } from 'lucide-react';
-import type { CondenserState, DivergenceCategory, DivergenceEntry, DivergenceRegister, LLMProvider } from '../../types';
-import { countRegisterTokens, compressRegister, EMPTY_REGISTER } from '../../services/divergenceRegister';
-import { QuestPanel } from './QuestPanel';
-import { DivergenceEntryModal } from './DivergenceEntryModal';
-
-const CATEGORIES: DivergenceCategory[] = ['canon_override', 'world_change', 'entity_state', 'player_state', 'obligation'];
+import { X, Edit2, Check, Pin, PinOff, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import type { CondenserState, DivergenceCategory, DivergenceEntry, DivergenceRegister, ArchiveChapter } from '../../types';
+import { countRegisterTokens, EMPTY_REGISTER, CATEGORY_LABELS } from '../../services/divergenceRegister';
 
 const CATEGORY_COLORS: Record<DivergenceCategory, string> = {
-    canon_override: 'text-red-400',
-    world_change: 'text-ice',
-    entity_state: 'text-terminal',
-    player_state: 'text-emerald-400',
-    obligation: 'text-amber-400',
+    locations: 'text-blue-400',
+    npc_events: 'text-terminal',
+    promises_debts: 'text-amber-400',
+    world_state: 'text-ice',
+    party_facts: 'text-emerald-400',
+    rules_lore: 'text-purple-400',
+    misc: 'text-text-muted',
 };
 
 const CATEGORY_DOTS: Record<DivergenceCategory, string> = {
-    canon_override: 'bg-red-400',
-    world_change: 'bg-blue-400',
-    entity_state: 'bg-purple-400',
-    player_state: 'bg-green-400',
-    obligation: 'bg-amber-400',
+    locations: 'bg-blue-400',
+    npc_events: 'bg-green-400',
+    promises_debts: 'bg-amber-400',
+    world_state: 'bg-cyan-400',
+    party_facts: 'bg-emerald-400',
+    rules_lore: 'bg-purple-400',
+    misc: 'bg-gray-400',
 };
 
-type Tab = 'summary' | 'register' | 'review' | 'pruned';
+type Tab = 'facts' | 'review';
 
 type CondensedMemoryPanelProps = {
     condenser: CondenserState;
@@ -38,17 +38,15 @@ type CondensedMemoryPanelProps = {
     onRetcon: () => void;
     onReset: () => void;
     divergenceRegister?: DivergenceRegister;
-    onSetDivergenceRegister?: (reg: DivergenceRegister) => void;
+    chapters?: ArchiveChapter[];
     tokenBudget?: number;
-    provider?: LLMProvider;
-    onSaveDivergence?: () => void;
     onDeleteDivergence?: (id: string) => void;
-    onEditDivergence?: (id: string, patch: Partial<DivergenceEntry>) => void;
     onConfirmReviewEntry?: (id: string) => void;
     onDeleteReviewedEntry?: (id: string) => void;
-    onRestorePrunedEntry?: (prunedIndex: number) => void;
-    onManualPrune?: () => Promise<void>;
-    onMergeSimilar?: () => Promise<void>;
+    onToggleChapter?: (chapterId: string, on: boolean) => void;
+    onToggleCategory?: (chapterId: string, category: DivergenceCategory, on: boolean) => void;
+    onPinFact?: (entryId: string) => void;
+    onEditFactText?: (entryId: string, text: string) => void;
 };
 
 export function CondensedMemoryPanel({
@@ -64,359 +62,288 @@ export function CondensedMemoryPanel({
     onRetcon,
     onReset,
     divergenceRegister,
-    onSetDivergenceRegister,
+    chapters,
     tokenBudget = 2000,
-    provider,
-    onSaveDivergence,
     onDeleteDivergence,
-    onEditDivergence,
     onConfirmReviewEntry,
     onDeleteReviewedEntry,
-    onRestorePrunedEntry,
-    onManualPrune,
-    onMergeSimilar,
+    onToggleChapter,
+    onToggleCategory,
+    onPinFact,
+    onEditFactText,
 }: CondensedMemoryPanelProps) {
-    const hasSummary = !!condenser.condensedSummary;
-    const [tab, setTab] = useState<Tab>(hasSummary ? 'summary' : 'register');
-    const [compressing, setCompressing] = useState(false);
-    const [showManualModal, setShowManualModal] = useState(false);
-    const [pruneLoading, setPruneLoading] = useState(false);
-    const [mergeLoading, setMergeLoading] = useState(false);
+    const [tab, setTab] = useState<Tab>('facts');
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [editCat, setEditCat] = useState<DivergenceCategory>('entity_state');
-    const [editSubject, setEditSubject] = useState('');
-    const [editDivergence, setEditDivergence] = useState('');
-    const [editSceneRef, setEditSceneRef] = useState('');
+    const [editText, setEditText] = useState('');
+    const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
+    const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
     if (!showCondensedPanel) return null;
 
     const reg = divergenceRegister ?? EMPTY_REGISTER;
     const regTokens = countRegisterTokens(reg);
     const entries = reg.entries;
-    const prunedLog = reg.prunedLog ?? [];
-    const reviewCount = entries.filter(e => e.reviewFlag).length;
+    const reviewEntries = entries.filter(e => e.reviewFlag);
 
-    const handleCompress = async () => {
-        if (!provider || !onSetDivergenceRegister) return;
-        if (regTokens <= tokenBudget) return;
-        setCompressing(true);
-        try {
-            const compressed = await compressRegister(provider, reg, tokenBudget);
-            onSetDivergenceRegister(compressed);
-            onSaveDivergence?.();
-        } catch (err) {
-            console.warn('[CondensedMemoryPanel] Compression failed:', err);
+    const pinnedEntries = entries.filter(e => e.pinned);
+    const unpinnedEntries = entries.filter(e => !e.pinned);
+
+    const byChapter = new Map<string, DivergenceEntry[]>();
+    for (const e of unpinnedEntries) {
+        if (!byChapter.has(e.chapterId)) byChapter.set(e.chapterId, []);
+        byChapter.get(e.chapterId)!.push(e);
+    }
+
+    const chapterTitleMap = new Map<string, string>();
+    if (chapters) {
+        for (const ch of chapters) {
+            chapterTitleMap.set(ch.chapterId, ch.title);
         }
-        setCompressing(false);
-    };
+    }
 
-    const handleResolveObligation = (id: string) => {
-        if (!onSetDivergenceRegister) return;
-        const updated = {
-            ...reg,
-            entries: reg.entries.map(e => e.id === id ? { ...e, resolved: true } : e),
-            lastUpdatedAt: Date.now(),
-        };
-        onSetDivergenceRegister(updated);
-        onSaveDivergence?.();
-    };
+    const activeCount = entries.filter(e => {
+        if (e.pinned) return true;
+        const chapterOn = reg.chapterToggles[e.chapterId] !== false;
+        if (!chapterOn) return false;
+        const catToggles = reg.categoryToggles[e.chapterId];
+        if (catToggles && catToggles[e.category] === false) return false;
+        return true;
+    }).length;
+    const pinnedCount = pinnedEntries.length;
 
-    const handleAddManualEntry = (entry: DivergenceEntry) => {
-        if (!onSetDivergenceRegister) return;
-        const updated = {
-            ...reg,
-            entries: [...reg.entries, entry].sort((a, b) => parseInt(a.sceneRef) - parseInt(b.sceneRef)),
-            lastUpdatedAt: Date.now(),
-        };
-        onSetDivergenceRegister(updated);
-        onSaveDivergence?.();
-    };
-
-    const startEdit = (e: DivergenceEntry) => {
+    const handleStartEdit = (e: DivergenceEntry) => {
         setEditingId(e.id);
-        setEditCat(e.category);
-        setEditSubject(e.subject);
-        setEditDivergence(e.divergence);
-        setEditSceneRef(e.sceneRef);
+        setEditText(e.text);
     };
 
-    const cancelEdit = () => {
+    const handleSaveEdit = () => {
+        if (!editingId || !onEditFactText) return;
+        onEditFactText(editingId, editText);
         setEditingId(null);
-    };
-
-    const saveEdit = () => {
-        if (!editingId || !onEditDivergence) return;
-        onEditDivergence(editingId, {
-            category: editCat,
-            subject: editSubject,
-            divergence: editDivergence,
-            sceneRef: editSceneRef,
-        });
-        setEditingId(null);
-    };
-
-    const handlePrune = async () => {
-        if (!onManualPrune) return;
-        setPruneLoading(true);
-        try {
-            await onManualPrune();
-        } catch (e) {
-            console.error('[ManualPrune] failed', e);
-        }
-        setPruneLoading(false);
-    };
-
-    const handleMerge = async () => {
-        if (!onMergeSimilar) return;
-        setMergeLoading(true);
-        try {
-            await onMergeSimilar();
-        } catch (e) {
-            console.error('[MergeSimilar] failed', e);
-        }
-        setMergeLoading(false);
+        setEditText('');
     };
 
     return (
-        <div className="px-2 md:px-4 pb-1">
-            <div className="bg-void-lighter border border-terminal/20 rounded p-3">
-                <div className="flex items-center justify-between mb-2">
+        <div className="px-2 md:px-4 pb-safe">
+            <div className="bg-void-lighter border border-terminal/20 rounded p-3 pt-2 safe-top">
+                <div className="flex items-center justify-between mb-2 min-h-[32px]">
                     <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
                         <button
-                            onClick={() => setTab('summary')}
-                            className={`flex items-center gap-0.5 text-[9px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${tab === 'summary' ? 'text-terminal bg-terminal/10' : 'text-text-dim'}`}
+                            onClick={() => setTab('facts')}
+                            className={`flex items-center gap-0.5 text-[9px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${tab === 'facts' ? 'text-amber-400 bg-amber-500/10' : 'text-text-dim'}`}
                         >
-                            <FileText size={9} />
-                            {hasSummary ? 'Sum' : '-'}
+                            Facts ({activeCount})
                         </button>
-                        <button
-                            onClick={() => setTab('register')}
-                            className={`flex items-center gap-0.5 text-[9px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${tab === 'register' ? 'text-amber-400 bg-amber-500/10' : 'text-text-dim'}`}
-                        >
-                            <List size={9} />
-                            Reg
-                            {entries.length > 0 && <span className="text-[7px] bg-amber-500/30 px-0.5 rounded">{entries.length}</span>}
-                        </button>
-                        <button
-                            onClick={() => setTab('review')}
-                            className={`flex items-center gap-0.5 text-[9px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${tab === 'review' ? 'text-amber-400 bg-amber-500/10' : 'text-text-dim'}`}
-                        >
-                            <AlertTriangle size={9} />
-                            Rev
-                            {reviewCount > 0 && <span className="text-[7px] bg-red-500/40 px-0.5 rounded">{reviewCount}</span>}
-                        </button>
-                        {prunedLog.length > 0 && (
+                        {reviewEntries.length > 0 && (
                             <button
-                                onClick={() => setTab('pruned')}
-                                className={`flex items-center gap-0.5 text-[9px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${tab === 'pruned' ? 'text-amber-400 bg-amber-500/10' : 'text-text-dim'}`}
+                                onClick={() => setTab('review')}
+                                className={`flex items-center gap-0.5 text-[9px] uppercase tracking-widest font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${tab === 'review' ? 'text-amber-400 bg-amber-500/10' : 'text-text-dim'}`}
                             >
-                                <Archive size={9} />
-                                Prun({prunedLog.length})
+                                <AlertTriangle size={9} />
+                                Rev ({reviewEntries.length})
                             </button>
                         )}
                     </div>
-                    <button onClick={onToggle} className="text-[9px] text-text-dim hover:underline px-1"><X size={10} /></button>
+                    <button onClick={onToggle} className="flex items-center justify-center w-8 h-8 text-text-dim hover:text-text-primary rounded hover:bg-white/5"><X size={14} /></button>
                 </div>
 
-                {tab === 'register' && (
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between text-[9px] text-text-dim">
-                            <span>{regTokens}/{tokenBudget} tkns {regTokens <= tokenBudget ? '(ok)' : '(over)'}</span>
-                            <span>{entries.length} entries</span>
-                        </div>
-                        <div className="flex items-center gap-1 flex-wrap">
-                            <button onClick={() => setShowManualModal(true)} className="flex items-center gap-0.5 text-[9px] text-emerald-400 hover:underline px-1">
-                                <Plus size={9} /> Add
-                            </button>
-                            {provider && onManualPrune && (
-                                <button onClick={handlePrune} disabled={pruneLoading || entries.length === 0} className="flex items-center gap-0.5 text-[9px] text-purple-400 hover:underline px-1 disabled:opacity-40">
-                                    {pruneLoading ? <Loader2 size={9} className="animate-spin" /> : <Scissors size={9} />}
-                                    Prune
-                                </button>
-                            )}
-                            {provider && onMergeSimilar && (
-                                <button onClick={handleMerge} disabled={mergeLoading || entries.length < 2} className="flex items-center gap-0.5 text-[9px] text-cyan-400 hover:underline px-1 disabled:opacity-40">
-                                    {mergeLoading ? <Loader2 size={9} className="animate-spin" /> : <Combine size={9} />}
-                                    Merge
-                                </button>
-                            )}
-                            {compressing ? (
-                                <Loader2 size={9} className="animate-spin text-amber-400" />
-                            ) : (
-                                <button
-                                    onClick={handleCompress}
-                                    disabled={regTokens <= tokenBudget || !provider}
-                                    className="text-[9px] text-terminal hover:underline px-1 disabled:opacity-40"
-                                    title={regTokens <= tokenBudget ? `Register is ${regTokens}/${tokenBudget} tokens — no compression needed` : 'Compress register'}
-                                >
-                                    AI Summary
-                                </button>
-                            )}
-                        </div>
+                <div className="text-[9px] text-text-dim mb-2">
+                    {regTokens}/{tokenBudget} tkns · {activeCount} active{pinnedCount > 0 ? ` · ${pinnedCount} pinned` : ''}
+                </div>
 
-                        {entries.length === 0 ? (
-                            <div className="text-[11px] text-text-dim/50 italic py-4 text-center">
-                                No divergences tracked yet. Use ⚡ on GM messages to tag them.
-                            </div>
-                        ) : (
-                            <div className="text-[11px] text-text-dim/80 font-mono whitespace-pre-wrap max-h-[250px] overflow-y-auto space-y-1">
-                                {entries.filter(e => !e.reviewFlag && (e.category !== 'obligation' || e.resolved)).map(e => (
-                                    editingId === e.id ? (
-                                        <div key={e.id} className="bg-void border border-amber-500/30 p-2 rounded space-y-1.5">
-                                            <div className="flex gap-1.5">
-                                                <select
-                                                    value={editCat}
-                                                    onChange={ev => setEditCat(ev.target.value as DivergenceCategory)}
-                                                    className="bg-void border border-white/10 text-text-primary text-[10px] px-1 py-0.5 rounded outline-none"
-                                                >
-                                                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                                                </select>
-                                                <input
-                                                    value={editSceneRef}
-                                                    onChange={ev => setEditSceneRef(ev.target.value)}
-                                                    className="bg-void border border-white/10 text-text-primary text-[10px] px-1 py-0.5 rounded outline-none w-14"
-                                                    placeholder="Scene"
-                                                />
-                                            </div>
-                                            <input
-                                                value={editSubject}
-                                                onChange={ev => setEditSubject(ev.target.value)}
-                                                className="w-full bg-void border border-white/10 text-text-primary text-[10px] px-1 py-0.5 rounded outline-none"
-                                                placeholder="Subject"
-                                            />
-                                            <textarea
-                                                value={editDivergence}
-                                                onChange={ev => setEditDivergence(ev.target.value)}
-                                                className="w-full bg-void border border-white/10 text-text-primary text-[10px] px-1 py-0.5 rounded outline-none resize-y min-h-[28px] max-h-[60px]"
-                                                placeholder="Divergence"
-                                                rows={2}
-                                            />
-                                            <div className="flex gap-1.5 justify-end">
-                                                <button onClick={saveEdit} className="flex items-center gap-0.5 text-[9px] text-emerald-400 hover:text-emerald-300 px-1.5 py-0.5 rounded bg-emerald-500/10">
-                                                    <Check size={9} /> Save
+                {tab === 'facts' && (
+                    <div className="space-y-3 max-h-[50vh] overflow-y-auto">
+                        {pinnedEntries.length > 0 && (
+                            <div className="space-y-1">
+                                <div className="text-[9px] uppercase font-bold text-amber-400 tracking-wider flex items-center gap-1">
+                                    <Pin size={9} /> Pinned
+                                </div>
+                                {pinnedEntries.map(e => (
+                                    <div key={e.id} className="flex items-start gap-1 text-[11px] text-text-primary">
+                                        <span className={`shrink-0 mt-0.5 w-1.5 h-1.5 rounded-full ${CATEGORY_DOTS[e.category]}`} />
+                                        <span className="min-w-0 flex-1">
+                                            <span className={`${CATEGORY_COLORS[e.category]} text-[9px] uppercase`}>{CATEGORY_LABELS[e.category]}</span>
+                                            {' '}{e.text}
+                                            <span className="text-text-dim/40 text-[9px]"> [#{e.sceneRef}]{e.source === 'manual' ? ' ⚡' : ''}</span>
+                                        </span>
+                                        <span className="flex items-center gap-0.5 shrink-0">
+                                            {onPinFact && (
+                                                <button onClick={() => onPinFact(e.id)} className="text-amber-400 p-0.5" title="Unpin">
+                                                    <PinOff size={9} />
                                                 </button>
-                                                <button onClick={cancelEdit} className="flex items-center gap-0.5 text-[9px] text-text-dim hover:text-red-400 px-1.5 py-0.5 rounded bg-white/5">
-                                                    <X size={9} /> Cancel
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div key={e.id} className={`flex items-start gap-1 ${e.resolved ? 'line-through opacity-40' : ''} ${e.parseError ? 'border border-dashed border-red-500/60 rounded px-1 py-0.5 bg-red-500/5' : ''}`}>
-                                            <span className={`shrink-0 mt-0.5 w-1.5 h-1.5 rounded-full ${CATEGORY_DOTS[e.category]}`} title={e.category} />
-                                            <span className="min-w-0 flex-1">
-                                                {e.parseError && <span className="text-red-400 font-bold mr-1 text-[9px]">[ERR]</span>}
-                                                <span className={`${CATEGORY_COLORS[e.category]}`}><span className="text-[9px] uppercase">{e.category === 'canon_override' ? 'CANON' : e.category === 'world_change' ? 'WORLD' : e.category === 'entity_state' ? 'ENTITY' : e.category === 'player_state' ? 'PLAYER' : 'OBLIG'}</span></span>
-                                                {' '}<span className="text-text-primary">{e.subject}: {e.divergence}</span>
-                                                <span className="text-text-dim/40 text-[9px]"> [#{e.sceneRef}]{e.source === 'manual' ? ' ⚡' : ''}</span>
-                                            </span>
-                                            {(onEditDivergence || onDeleteDivergence) && (
-                                                <span className="flex items-center gap-0.5 shrink-0">
-                                                    {onEditDivergence && (
-                                                        <button onClick={() => startEdit(e)} className="text-text-dim hover:text-amber-400 p-0.5" title="Edit">
-                                                            <Edit2 size={9} />
-                                                        </button>
-                                                    )}
-                                                    {onDeleteDivergence && (
-                                                        <button onClick={() => onDeleteDivergence(e.id)} className="text-text-dim hover:text-red-400 p-0.5" title="Delete">
-                                                            <X size={10} />
-                                                        </button>
-                                                    )}
-                                                </span>
                                             )}
-                                        </div>
-                                    )
+                                            {onDeleteDivergence && (
+                                                <button onClick={() => onDeleteDivergence(e.id)} className="text-text-dim hover:text-red-400 p-0.5" title="Delete">
+                                                    <X size={9} />
+                                                </button>
+                                            )}
+                                        </span>
+                                    </div>
                                 ))}
                             </div>
                         )}
 
-                        <QuestPanel entries={entries} onResolve={handleResolveObligation} />
+                        {[...byChapter.entries()].map(([chapterId, chapterEntries]) => {
+                            const chapterTitle = chapterTitleMap.get(chapterId) ?? chapterId;
+                            const chapterOn = reg.chapterToggles[chapterId] !== false;
+                            const isExpanded = expandedChapter === chapterId;
+
+                            const catGroups = new Map<DivergenceCategory, DivergenceEntry[]>();
+                            for (const e of chapterEntries) {
+                                if (!catGroups.has(e.category)) catGroups.set(e.category, []);
+                                catGroups.get(e.category)!.push(e);
+                            }
+
+                            return (
+                                <div key={chapterId} className="border border-border/30 rounded">
+                                    <button
+                                        className="w-full flex items-center justify-between px-2 py-1.5 text-left"
+                                        onClick={() => setExpandedChapter(isExpanded ? null : chapterId)}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            {onToggleChapter && (
+                                                <input
+                                                    type="checkbox"
+                                                    checked={chapterOn}
+                                                    onChange={(ev) => { ev.stopPropagation(); onToggleChapter(chapterId, !chapterOn); }}
+                                                    className="w-3 h-3 accent-terminal"
+                                                    onClick={(ev) => ev.stopPropagation()}
+                                                />
+                                            )}
+                                            <span className="text-[11px] font-bold text-text-primary">{chapterTitle}</span>
+                                            <span className="text-[9px] text-text-dim">{chapterEntries.length} facts</span>
+                                        </div>
+                                        {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                                    </button>
+
+                                    {isExpanded && [...catGroups.entries()].map(([cat, catEntries]) => {
+                                        const catKey = `${chapterId}-${cat}`;
+                                        const catExpanded = expandedCategory === catKey;
+
+                                        return (
+                                            <div key={cat} className="border-t border-border/20">
+                                                <button
+                                                    className="w-full flex items-center justify-between px-3 py-1 text-left"
+                                                    onClick={() => setExpandedCategory(catExpanded ? null : catKey)}
+                                                >
+                                                    <div className="flex items-center gap-1.5">
+                                                        {onToggleCategory && (
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={reg.categoryToggles[chapterId]?.[cat] !== false}
+                                                                onChange={(ev) => { ev.stopPropagation(); onToggleCategory(chapterId, cat, reg.categoryToggles[chapterId]?.[cat] !== false); }}
+                                                                className="w-2.5 h-2.5 accent-terminal"
+                                                                onClick={(ev) => ev.stopPropagation()}
+                                                            />
+                                                        )}
+                                                        <span className={`text-[9px] uppercase font-bold ${CATEGORY_COLORS[cat]}`}>{CATEGORY_LABELS[cat]}</span>
+                                                        <span className="text-[8px] text-text-dim">{catEntries.length}</span>
+                                                    </div>
+                                                    {catExpanded ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+                                                </button>
+
+                                                {catExpanded && (
+                                                    <div className="px-3 pb-1.5 space-y-0.5">
+                                                        {catEntries.map(e => (
+                                                            editingId === e.id ? (
+                                                                <div key={e.id} className="bg-void border border-amber-500/30 p-1.5 rounded space-y-1">
+                                                                    <textarea
+                                                                        value={editText}
+                                                                        onChange={ev => setEditText(ev.target.value)}
+                                                                        className="w-full bg-void border border-white/10 text-text-primary text-[10px] px-1 py-0.5 rounded outline-none resize-y min-h-[24px] max-h-[48px]"
+                                                                        rows={2}
+                                                                    />
+                                                                    <div className="flex gap-1.5 justify-end">
+                                                                        <button onClick={handleSaveEdit} className="flex items-center gap-0.5 text-[9px] text-emerald-400 hover:text-emerald-300 px-1">
+                                                                            <Check size={8} /> Save
+                                                                        </button>
+                                                                        <button onClick={() => setEditingId(null)} className="text-[9px] text-text-dim hover:text-red-400 px-1">
+                                                                            Cancel
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <div key={e.id} className="flex items-start gap-1 text-[11px] text-text-secondary">
+                                                                    <span className={`shrink-0 mt-0.5 w-1.5 h-1.5 rounded-full ${CATEGORY_DOTS[e.category]}`} />
+                                                                    <span className="min-w-0 flex-1">
+                                                                        {e.text}
+                                                                        <span className="text-text-dim/40 text-[9px]"> [#{e.sceneRef}]{e.source === 'manual' ? ' ⚡' : ''}</span>
+                                                                    </span>
+                                                                    <span className="flex items-center gap-0.5 shrink-0">
+                                                                        {onPinFact && (
+                                                                            <button onClick={() => onPinFact(e.id)} className="text-text-muted hover:text-amber-400 p-0.5" title="Pin">
+                                                                                <Pin size={9} />
+                                                                            </button>
+                                                                        )}
+                                                                        <button onClick={() => handleStartEdit(e)} className="text-text-muted hover:text-amber-400 p-0.5" title="Edit">
+                                                                            <Edit2 size={9} />
+                                                                        </button>
+                                                                        {onDeleteDivergence && (
+                                                                            <button onClick={() => onDeleteDivergence(e.id)} className="text-text-muted hover:text-red-400 p-0.5" title="Delete">
+                                                                                <X size={9} />
+                                                                            </button>
+                                                                        )}
+                                                                    </span>
+                                                                </div>
+                                                            )
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })}
+
+                        {entries.length === 0 && (
+                            <div className="text-[11px] text-text-dim/50 italic py-4 text-center">
+                                No established facts yet. Facts are extracted when chapters seal.
+                            </div>
+                        )}
                     </div>
                 )}
 
                 {tab === 'review' && (
-                    <div className="space-y-2">
-                        <span className="text-[9px] text-text-dim uppercase tracking-wider">
-                            {reviewCount} entries flagged for review — keep or delete each one.
-                        </span>
-                        {reviewCount === 0 ? (
+                    <div className="space-y-1.5 max-h-[40vh] overflow-y-auto">
+                        {reviewEntries.length === 0 ? (
                             <p className="text-[10px] text-text-dim italic py-4 text-center">No entries flagged for review.</p>
                         ) : (
-                            <div className="space-y-1.5 max-h-[250px] overflow-y-auto">
-                                {entries.filter(e => e.reviewFlag).map(e => (
-                                    <div key={e.id} className="bg-red-900/20 border border-red-500/60 p-1.5 rounded">
-                                        <div className="flex items-start gap-1.5 text-[10px]">
-                                            <span className={`shrink-0 mt-0.5 w-1.5 h-1.5 rounded-full ${CATEGORY_DOTS[e.category]}`} title={e.category} />
-                                            <div className="min-w-0 flex-1">
-                                                <span className="text-red-400 font-bold text-[9px] mr-1">[REVIEW]</span>
-                                                <span className="text-text-primary">{e.subject}: {e.divergence}</span>
-                                                <span className="text-text-dim ml-1 text-[9px]">[#{e.sceneRef}]</span>
-                                                {e.parseError && <span className="text-red-400 font-bold ml-1 text-[9px]">[ERR]</span>}
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 mt-1.5 ml-3.5">
-                                            <span className="text-[8px] text-red-400/70 italic">keep or delete?</span>
-                                            {onConfirmReviewEntry && (
-                                                <button
-                                                    onClick={() => onConfirmReviewEntry(e.id)}
-                                                    className="flex items-center gap-0.5 text-[9px] text-emerald-400 hover:text-emerald-300 px-1.5 py-0.5 rounded bg-emerald-500/10"
-                                                >
-                                                    <Check size={8} /> Keep
-                                                </button>
-                                            )}
-                                            {onDeleteReviewedEntry && (
-                                                <button
-                                                    onClick={() => onDeleteReviewedEntry(e.id)}
-                                                    className="flex items-center gap-0.5 text-[9px] text-red-400 hover:text-red-300 px-1.5 py-0.5 rounded bg-red-500/10"
-                                                >
-                                                    <X size={8} /> Delete
-                                                </button>
+                            reviewEntries.map(e => (
+                                <div key={e.id} className="bg-amber-900/20 border border-amber-500/40 p-1.5 rounded">
+                                    <div className="flex items-start gap-1.5 text-[10px]">
+                                        <span className={`shrink-0 mt-0.5 w-1.5 h-1.5 rounded-full ${CATEGORY_DOTS[e.category]}`} />
+                                        <div className="min-w-0 flex-1">
+                                            <span className="text-amber-400 font-bold text-[9px] mr-1">[REVIEW]</span>
+                                            <span className="text-text-primary">{e.text}</span>
+                                            <span className="text-text-dim ml-1 text-[9px]">[#{e.sceneRef}]</span>
+                                            {e.unrecognizedNpcNames && e.unrecognizedNpcNames.length > 0 && (
+                                                <div className="text-[9px] text-amber-300 mt-0.5">
+                                                    Unrecognized: {e.unrecognizedNpcNames.join(', ')}
+                                                </div>
                                             )}
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {tab === 'pruned' && (
-                    <div className="space-y-2">
-                        <span className="text-[9px] text-text-dim uppercase tracking-wider">
-                            {prunedLog.length} pruned entries — not sent to AI. Tap restore to move back.
-                        </span>
-                        {prunedLog.length === 0 ? (
-                            <p className="text-[10px] text-text-dim italic py-4 text-center">No pruned entries yet. Entries appear here after chapter seal pruning.</p>
-                        ) : (
-                            <div className="space-y-1.5 max-h-[250px] overflow-y-auto">
-                                {prunedLog.map((p, idx) => (
-                                    <div key={idx} className="flex items-start gap-1.5 text-[10px] p-1 rounded bg-white/[0.02] border border-white/5">
-                                        <span className={`shrink-0 mt-0.5 w-1.5 h-1.5 rounded-full ${p.verdict === 'auto_pruned' ? 'bg-gray-500' : 'bg-red-500'}`} title={p.verdict} />
-                                        <div className="min-w-0 flex-1">
-                                            <span className="text-text-primary/60">{p.originalEntry.subject}: {p.originalEntry.divergence}</span>
-                                            <span className="text-text-dim ml-1 text-[9px]">[#{p.originalEntry.sceneRef}]</span>
-                                            <div className="text-[8px] text-text-dim/60 mt-0.5">
-                                                {p.verdict === 'auto_pruned' ? `Auto-pruned (CH ${p.chapterId})` : 'User deleted after review'}
-                                                {p.reason && ` — ${p.reason}`}
-                                            </div>
-                                        </div>
-                                        {onRestorePrunedEntry && (
-                                            <button
-                                                onClick={() => onRestorePrunedEntry(idx)}
-                                                className="text-text-dim hover:text-emerald-400 p-1 shrink-0"
-                                                title="Restore entry"
-                                            >
-                                                <RotateCcw size={10} />
+                                    <div className="flex items-center gap-1.5 mt-1 ml-3.5">
+                                        {onConfirmReviewEntry && (
+                                            <button onClick={() => onConfirmReviewEntry(e.id)} className="flex items-center gap-0.5 text-[9px] text-emerald-400 hover:text-emerald-300 px-1.5 py-0.5 rounded bg-emerald-500/10">
+                                                <Check size={8} /> Keep
+                                            </button>
+                                        )}
+                                        {onDeleteReviewedEntry && (
+                                            <button onClick={() => onDeleteReviewedEntry(e.id)} className="flex items-center gap-0.5 text-[9px] text-red-400 hover:text-red-300 px-1.5 py-0.5 rounded bg-red-500/10">
+                                                <X size={8} /> Delete
                                             </button>
                                         )}
                                     </div>
-                                ))}
-                            </div>
+                                </div>
+                            ))
                         )}
                     </div>
                 )}
 
-                {tab === 'summary' && (
-                    <div>
+                {tab === 'facts' && (
+                    <div className="mt-2 border-t border-border/20 pt-2">
                         {editingSummary ? (
                             <textarea value={summaryDraft} onChange={e => onSetDraft(e.target.value)} className="w-full bg-void border border-border rounded px-2 py-1 text-xs text-text-primary font-mono resize-y min-h-[60px] max-h-[200px]" />
                         ) : (
@@ -424,7 +351,7 @@ export function CondensedMemoryPanel({
                                 {condenser.condensedSummary || <span className="italic opacity-50">No condensed summary yet</span>}
                             </div>
                         )}
-                        <div className="flex gap-2 mt-2">
+                        <div className="flex gap-2 mt-1">
                             {editingSummary ? (
                                 <>
                                     <button onClick={onSaveEdit} className="text-[9px] text-terminal hover:underline px-1">Save</button>
@@ -441,14 +368,6 @@ export function CondensedMemoryPanel({
                     </div>
                 )}
             </div>
-
-            {showManualModal && (
-                <DivergenceEntryModal
-                    onAdd={handleAddManualEntry}
-                    onClose={() => setShowManualModal(false)}
-                    provider={provider}
-                />
-            )}
         </div>
     );
 }

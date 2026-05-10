@@ -177,41 +177,34 @@ export type GameContext = {
 
 
 export type DivergenceCategory =
-    | 'canon_override'
-    | 'world_change'
-    | 'entity_state'
-    | 'player_state'
-    | 'obligation';
+    | 'locations'
+    | 'npc_events'
+    | 'promises_debts'
+    | 'world_state'
+    | 'party_facts'
+    | 'rules_lore'
+    | 'misc';
 
 export type DivergenceEntry = {
     id: string;
-    category: DivergenceCategory;
-    subject: string;
-    divergence: string;
-    sceneRef: string;
-    linkedSceneIds: string[];
-    importance: number;
-    supersedes?: string;
-    resolved?: boolean;
-    source: 'auto' | 'manual';
-    parseError?: boolean;
-    reviewFlag?: boolean;
-};
-
-export type PrunedEntry = {
-    originalEntry: DivergenceEntry;
-    prunedAt: number;
     chapterId: string;
-    verdict: 'auto_pruned' | 'user_deleted_review';
-    reason: string;
+    category: DivergenceCategory;
+    text: string;
+    sceneRef: string;
+    npcIds: string[];
+    pinned: boolean;
+    source: 'auto' | 'manual';
+    reviewFlag?: boolean;
+    unrecognizedNpcNames?: string[];
 };
 
 export type DivergenceRegister = {
     entries: DivergenceEntry[];
-    prunedLog: PrunedEntry[];
+    chapterToggles: Record<string, boolean>;
+    categoryToggles: Record<string, Record<DivergenceCategory, boolean>>;
     lastUpdatedSceneId: string;
     lastUpdatedAt: number;
-    version: number;
+    version: 2;
 };
 
 export type ChatMessage = {
@@ -401,6 +394,7 @@ export type ArchiveChapter = {
     chapterId: string;
     title: string;
     sceneRange: [string, string];
+    sceneIds: string[];
     summary: string;
     keywords: string[];
     npcs: string[];

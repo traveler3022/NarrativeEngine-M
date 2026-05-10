@@ -2,40 +2,37 @@ import { useState } from 'react';
 import { Zap, Loader2 } from 'lucide-react';
 import type { DivergenceCategory, DivergenceEntry } from '../../types';
 import { uid } from '../../utils/uid';
-import { structureManualEntry } from '../../services/divergenceRegister';
+import { DIVERGENCE_CATEGORIES, CATEGORY_LABELS } from '../../services/divergenceRegister';
 import type { LLMProvider } from '../../types';
 
 type DivergenceEntryModalProps = {
     onAdd: (entry: DivergenceEntry) => void;
     onClose: () => void;
     provider?: LLMProvider;
+    chapterId?: string;
 };
 
-const CATEGORIES: { value: DivergenceCategory; label: string }[] = [
-    { value: 'canon_override', label: 'Canon Override' },
-    { value: 'world_change', label: 'World Change' },
-    { value: 'entity_state', label: 'NPC / Entity State' },
-    { value: 'player_state', label: 'Player State' },
-    { value: 'obligation', label: 'Obligation' },
-];
+const CATEGORIES: { value: DivergenceCategory; label: string }[] = DIVERGENCE_CATEGORIES.map(c => ({
+    value: c,
+    label: CATEGORY_LABELS[c] ?? c,
+}));
 
-export function DivergenceEntryModal({ onAdd, onClose, provider }: DivergenceEntryModalProps) {
-    const [subject, setSubject] = useState('');
-    const [divergence, setDivergence] = useState('');
-    const [category, setCategory] = useState<DivergenceCategory>('entity_state');
+export function DivergenceEntryModal({ onAdd, onClose, provider, chapterId = 'manual' }: DivergenceEntryModalProps) {
+    const [text, setText] = useState('');
+    const [category, setCategory] = useState<DivergenceCategory>('npc_events');
     const [freeText, setFreeText] = useState('');
     const [structuring, setStructuring] = useState(false);
 
     const handleSubmit = () => {
-        if (!subject.trim() || !divergence.trim()) return;
+        if (!text.trim()) return;
         onAdd({
             id: `div_${uid()}`,
+            chapterId,
             category,
-            subject: subject.trim(),
-            divergence: divergence.trim(),
+            text: text.trim(),
             sceneRef: 'manual',
-            linkedSceneIds: ['manual'],
-            importance: 7,
+            npcIds: [],
+            pinned: false,
             source: 'manual',
         });
         onClose();
@@ -45,12 +42,20 @@ export function DivergenceEntryModal({ onAdd, onClose, provider }: DivergenceEnt
         if (!freeText.trim() || !provider) return;
         setStructuring(true);
         try {
-            const result = await structureManualEntry(provider, freeText);
-            if (result) {
-                setSubject(result.subject);
-                setDivergence(result.divergence);
-                setCategory(result.category);
-            }
+            const { llmCall } = await import('../../utils/llmCall');
+            const { extractJson } = await import('../../services/payloadBuilder');
+            const prompt = `A player described a campaign fact in free text. Convert it to a structured fact.
+
+Player text: "${freeText}"
+
+Category options: ${DIVERGENCE_CATEGORIES.join(', ')}
+
+Output JSON only: { "category": "<category>", "text": "<one-line factual statement, max 15 words>" }`;
+            const raw = await llmCall(provider, prompt, { priority: 'low', maxTokens: 200 });
+            const jsonStr = extractJson(raw);
+            const result = JSON.parse(jsonStr);
+            if (result.text) setText(result.text);
+            if (result.category) setCategory(result.category as DivergenceCategory);
         } catch {}
         setStructuring(false);
     };
@@ -60,28 +65,17 @@ export function DivergenceEntryModal({ onAdd, onClose, provider }: DivergenceEnt
             <div className="bg-surface border border-border rounded p-4 w-[90vw] max-w-md space-y-3" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center gap-2 mb-2">
                     <Zap size={14} className="text-amber-400" />
-                    <span className="text-[10px] text-amber-400 uppercase tracking-widest font-bold">Add Divergence</span>
+                    <span className="text-[10px] text-amber-400 uppercase tracking-widest font-bold">Add Fact</span>
                 </div>
 
                 <div>
-                    <label className="block text-[10px] text-text-dim uppercase tracking-wider mb-1">Subject</label>
+                    <label className="block text-[10px] text-text-dim uppercase tracking-wider mb-1">Fact</label>
                     <input
                         type="text"
-                        value={subject}
-                        onChange={e => setSubject(e.target.value)}
+                        value={text}
+                        onChange={e => setText(e.target.value)}
                         className="w-full bg-void border border-border px-3 py-2 text-sm text-text-primary focus:border-amber-400 focus:outline-none"
-                        placeholder="Goblin King Grak"
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-[10px] text-text-dim uppercase tracking-wider mb-1">Divergence</label>
-                    <input
-                        type="text"
-                        value={divergence}
-                        onChange={e => setDivergence(e.target.value)}
-                        className="w-full bg-void border border-border px-3 py-2 text-sm text-text-primary focus:border-amber-400 focus:outline-none"
-                        placeholder="Now allied with player"
+                        placeholder="Goblin King Grak allied with the player"
                     />
                 </div>
 
@@ -122,10 +116,10 @@ export function DivergenceEntryModal({ onAdd, onClose, provider }: DivergenceEnt
                 <div className="flex gap-2 pt-2">
                     <button
                         onClick={handleSubmit}
-                        disabled={!subject.trim() || !divergence.trim()}
+                        disabled={!text.trim()}
                         className="flex-1 bg-amber-500/20 text-amber-400 py-2 text-[11px] uppercase tracking-wider border border-amber-500/30 rounded hover:bg-amber-500/30 disabled:opacity-40"
                     >
-                        Add Entry
+                        Add Fact
                     </button>
                     <button
                         onClick={onClose}
