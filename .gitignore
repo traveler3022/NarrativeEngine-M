@@ -23,3 +23,7 @@ data
 *.njsproj
 *.sln
 *.sw?
+
+.claude/
+.opencode/
+reddit_post.json

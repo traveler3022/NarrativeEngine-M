@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { X, ScrollText, Globe, Zap, BookOpen, Bookmark } from 'lucide-react';
+import { X, ScrollText, Globe, Zap, BookOpen, Bookmark, Brain } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { RulesTab } from './context-drawer/RulesTab';
 import { LoreTab } from './context-drawer/LoreTab';
@@ -7,13 +7,15 @@ import { EnginesTab } from './context-drawer/EnginesTab';
 import { ChapterTab } from './context-drawer/ChapterTab';
 import { BookkeepingTab } from './context-drawer/BookkeepingTab';
 import { ResolvedStatePanel } from './context-drawer/ResolvedStatePanel';
+import { MemoryTab } from './context-drawer/MemoryTab';
 
 const TABS = [
-  { id: 'sys',     label: 'System',   icon: ScrollText },
-  { id: 'world',   label: 'World',    icon: Globe },
-  { id: 'eng',     label: 'Engines',  icon: Zap },
-  { id: 'chapters',label: 'Chapters', icon: BookOpen },
-  { id: 'chr',     label: 'Bookkeep', icon: Bookmark },
+  { id: 'sys',      label: 'System',   icon: ScrollText },
+  { id: 'world',    label: 'World',    icon: Globe },
+  { id: 'mem',      label: 'Memory',   icon: Brain },
+  { id: 'eng',      label: 'Engines',  icon: Zap },
+  { id: 'chapters', label: 'Chapters', icon: BookOpen },
+  { id: 'chr',      label: 'Bookkeep', icon: Bookmark },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -67,6 +69,7 @@ export function ContextDrawer() {
     <>
       {activeTab === 'sys' && <RulesTab />}
       {activeTab === 'world' && <LoreTab />}
+      {activeTab === 'mem' && <MemoryTab />}
       {activeTab === 'eng' && <EnginesTab />}
       {activeTab === 'chapters' && <ChapterTab />}
       {activeTab === 'chr' && <><ResolvedStatePanel /><BookkeepingTab /></>}

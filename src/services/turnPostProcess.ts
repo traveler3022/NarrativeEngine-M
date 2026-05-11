@@ -1,11 +1,11 @@
-import type { NPCEntry } from '../types';
+import type { NPCEntry, ArchiveChapter, DivergenceEntry, LLMProvider } from '../types';
 import type { TurnCallbacks, TurnState } from './turnTypes';
 import { generateNPCProfile, updateExistingNPCs, backfillNPCDrives } from './chatEngine';
 import { extractNPCNames, classifyNPCNames, validateNPCCandidates } from './npcDetector';
 import { api } from './apiClient';
 import { toast } from '../components/Toast';
 import { shouldAutoSeal, sealChapter } from './archiveChapterEngine';
-import { sealChapterCombined } from './saveFileEngine';
+import { sealChapterCombined, type ChapterSummaryOutput } from './saveFileEngine';
 import { fetchFacts } from './semanticMemory';
 import { loadChapters } from '../store/campaignStore';
 import { backgroundQueue } from './backgroundQueue';
@@ -14,6 +14,42 @@ import { scanInventory } from './inventoryParser';
 import { rateImportance } from './importanceRater';
 import { scanPressure, buildPressurePatch, shouldArchiveNPC, findArchivedToRestore } from './npcPressureTracker';
 import { mergeSealEntries } from './divergenceRegister';
+
+export type CombinedSealResult = {
+    summary: ChapterSummaryOutput | null;
+    divergences: DivergenceEntry[];
+    divergenceParseError?: boolean;
+};
+
+export async function runCombinedSeal(
+    activeCampaignId: string,
+    chapter: ArchiveChapter,
+    provider: LLMProvider,
+    npcLedger: NPCEntry[],
+): Promise<CombinedSealResult> {
+    const allScenes = await api.archive.getIndex(activeCampaignId);
+    const startNum = parseInt(chapter.sceneRange[0], 10);
+    const endNum = parseInt(chapter.sceneRange[1], 10);
+    const chapterScenes = allScenes.filter(s => {
+        const sn = parseInt(s.sceneId);
+        return sn >= startNum && sn <= endNum;
+    });
+    if (chapterScenes.length === 0) {
+        return { summary: null, divergences: [] };
+    }
+
+    const scenesContent = chapterScenes.map(s => ({ sceneId: s.sceneId, content: s.userSnippet || '' }));
+    const sceneIds = chapter.sceneIds?.length
+        ? chapter.sceneIds
+        : Array.from({ length: endNum - startNum + 1 }, (_, i) => String(startNum + i).padStart(3, '0'));
+    const npcInfo = npcLedger.map(n => ({
+        id: n.id,
+        name: n.name,
+        aliases: n.aliases ?? '',
+    }));
+
+    return sealChapterCombined(provider, scenesContent, chapter.chapterId, chapter.title, sceneIds, npcInfo);
+}
 
 export async function handlePostTurn(
     state: TurnState,
@@ -195,55 +231,37 @@ async function handleSealChapter(state: TurnState, callbacks: TurnCallbacks, act
             await api.chapters.update(activeCampaignId, sealed.chapterId, sealed);
             await api.chapters.create(activeCampaignId);
 
+            if (sealed.invalidated) {
+                console.warn(`[SealChapter] Chapter ${sealed.chapterId} is marked invalidated — proceeding with seal normally`);
+            }
+
             const provider = state.getFreshProvider();
             if (provider) {
-                const allScenes = await api.archive.getIndex(activeCampaignId);
-                const startNum = parseInt(sealed.sceneRange[0], 10);
-                const endNum = parseInt(sealed.sceneRange[1], 10);
-                const chapterScenes = allScenes.filter(s => {
-                    const sn = parseInt(s.sceneId);
-                    return sn >= startNum && sn <= endNum;
-                });
-                if (chapterScenes.length > 0) {
-                    const scenesContent = chapterScenes.map(s => ({ sceneId: s.sceneId, content: s.userSnippet || '' }));
+                const sealResult = await runCombinedSeal(activeCampaignId, sealed, provider, state.npcLedger ?? []);
+
+                if (sealResult.summary) {
+                    await api.chapters.update(activeCampaignId, sealed.chapterId, {
+                        title: sealResult.summary.title,
+                        summary: sealResult.summary.summary,
+                        keywords: sealResult.summary.keywords,
+                        npcs: sealResult.summary.npcs,
+                        majorEvents: sealResult.summary.majorEvents,
+                        unresolvedThreads: sealResult.summary.unresolvedThreads,
+                        tone: sealResult.summary.tone,
+                        themes: sealResult.summary.themes,
+                    });
+                }
+
+                const liveRegister = state.divergenceRegister;
+                if (sealResult.divergences.length > 0 && liveRegister && callbacks.setDivergenceRegister) {
                     const sceneIds = sealed.sceneIds?.length
                         ? sealed.sceneIds
-                        : Array.from({ length: endNum - startNum + 1 }, (_, i) => String(startNum + i).padStart(3, '0'));
-                    const npcLedger = state.npcLedger ?? [];
-                    const npcInfo = npcLedger.map(n => ({
-                        id: n.id,
-                        name: n.name,
-                        aliases: n.aliases ?? '',
-                    }));
-
-                    const sealResult = await sealChapterCombined(
-                        provider,
-                        scenesContent,
-                        sealed.chapterId,
-                        sealed.title,
-                        sceneIds,
-                        npcInfo,
-                    );
-
-                    if (sealResult.summary) {
-                        await api.chapters.update(activeCampaignId, sealed.chapterId, {
-                            title: sealResult.summary.title,
-                            summary: sealResult.summary.summary,
-                            keywords: sealResult.summary.keywords,
-                            npcs: sealResult.summary.npcs,
-                            majorEvents: sealResult.summary.majorEvents,
-                            unresolvedThreads: sealResult.summary.unresolvedThreads,
-                            tone: sealResult.summary.tone,
-                            themes: sealResult.summary.themes,
-                        });
-                    }
-
-                    const liveRegister = state.divergenceRegister;
-                    if (sealResult.divergences.length > 0 && liveRegister && callbacks.setDivergenceRegister) {
-                        const merged = mergeSealEntries(liveRegister, sealResult.divergences, sceneIds[sceneIds.length - 1] ?? '000');
-                        callbacks.setDivergenceRegister(merged);
-                        console.log(`[CombinedSeal] Chapter ${sealed.chapterId}: ${sealResult.divergences.length} entries extracted`);
-                    }
+                        : [sealed.sceneRange[1]];
+                    const merged = mergeSealEntries(liveRegister, sealResult.divergences, sceneIds[sceneIds.length - 1] ?? '000');
+                    callbacks.setDivergenceRegister(merged);
+                    console.log(`[CombinedSeal] Chapter ${sealed.chapterId}: ${sealResult.divergences.length} entries extracted`);
+                } else if (sealResult.divergenceParseError) {
+                    toast.warning('Chapter sealed but divergence facts failed to parse');
                 }
             }
 

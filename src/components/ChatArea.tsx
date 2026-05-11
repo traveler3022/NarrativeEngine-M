@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { 
     Save, Loader2, Zap, Scroll, Trash2, Square,
-    ChevronDown, ChevronUp, X
+    ChevronDown, X
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
-import type { PipelinePhase, StreamingStats, ChatMessage, DivergenceRegister } from '../types';
+import type { PipelinePhase, StreamingStats } from '../types';
 import { runTurn } from '../services/turnOrchestrator';
 import { GenerationProgress } from './GenerationProgress';
 import { useMessageEditor } from './hooks/useMessageEditor';
@@ -13,13 +13,9 @@ import { api } from '../services/apiClient';
 import { set } from 'idb-keyval';
 import { toast } from './Toast';
 import { MessageBubble } from './chat/MessageBubble';
-import { CondensedMemoryPanel } from './chat/CondensedMemoryPanel';
+
 import { NPCPressureInspector } from './NPCPressureInspector';
 import { ChatInput } from './chat/ChatInput';
-
-const saveReg = (campaignId: string, reg: DivergenceRegister) => {
-    import('../store/campaignStore').then(m => m.saveDivergenceRegister(campaignId, reg)).catch(() => {});
-};
 
 export function ChatArea() {
     const {
@@ -55,16 +51,8 @@ export function ChatArea() {
         setTimeline,
         deepArmed,
         setDeepArmed,
-        divergenceRegister,
         setDivergenceRegister,
         updateMessageDivergence,
-        confirmReviewEntry,
-        deleteReviewedEntry,
-        toggleDivergenceChapter,
-        toggleDivergenceCategory,
-        pinDivergenceFact,
-        editDivergenceFact,
-        deleteDivergenceFact,
     } = useAppStore();
 
     const [input, setInput] = useState('');
@@ -74,7 +62,7 @@ export function ChatArea() {
     const [loadingStatus, setLoadingStatus] = useState<string | null>(null);
     const [forcedAIs, setForcedAIs] = useState<('enemy' | 'neutral' | 'ally')[]>([]);
     const [showScrollFab, setShowScrollFab] = useState(false);
-    const [showCondensedPanel, setShowCondensedPanel] = useState(false);
+
     const [streamingStats, setStreamingStatsLocal] = useState<StreamingStats | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const streamStartRef = useRef<number>(0);
@@ -191,11 +179,6 @@ export function ChatArea() {
         condenseAbortRef,
         condensePhase,
         saveProgress,
-        editingSummary,
-        setEditingSummary,
-        summaryDraft,
-        setSummaryDraft,
-        handleRetcon,
     } = useCondenser({
         activeCampaignId,
         isStreaming,
@@ -299,34 +282,7 @@ export function ChatArea() {
         }
     };
 
-    const handleTagDivergence = (_msg: ChatMessage) => {
-        // Per-turn extraction replaced by seal-time extraction; kept as button placeholder
-        toast.info('Facts are now extracted automatically when chapters seal.');
-    };
 
-    const handleDeleteDivergence = (id: string) => {
-        deleteDivergenceFact(id);
-        if (activeCampaignId) {
-            const updated = useAppStore.getState().divergenceRegister;
-            saveReg(activeCampaignId, updated);
-        }
-    };
-
-    const handleConfirmReviewEntry = (id: string) => {
-        confirmReviewEntry(id);
-        if (activeCampaignId) {
-            const updated = useAppStore.getState().divergenceRegister;
-            saveReg(activeCampaignId, updated);
-        }
-    };
-
-    const handleDeleteReviewedEntry = (id: string) => {
-        deleteReviewedEntry(id);
-        if (activeCampaignId) {
-            const updated = useAppStore.getState().divergenceRegister;
-            saveReg(activeCampaignId, updated);
-        }
-    };
 
     const visibleMessages = messages.filter(msg => msg.role !== 'tool').slice(-visibleCount);
 
@@ -382,7 +338,6 @@ export function ChatArea() {
                         onDelete={deleteMessage}
                         showReasoning={settings.showReasoning ?? false}
                         debugMode={settings.debugMode ?? false}
-                        onTagDivergence={handleTagDivergence}
                     />
                 ))}
 
@@ -408,37 +363,11 @@ export function ChatArea() {
                         <Zap size={13} /> CONDENSE
                     </button>
                 ))}
-                <button onClick={() => setShowCondensedPanel(p => !p)} className={`flex items-center gap-1.5 bg-void border ${showCondensedPanel ? 'border-terminal text-terminal' : 'border-ice/30 text-ice'} text-[10px] uppercase tracking-wider px-3 py-1.5 min-h-[40px] rounded transition-all`}>
-                    {showCondensedPanel ? <ChevronUp size={13} /> : <ChevronDown size={13} />} MEMORY
-                </button>
-
-                <button onClick={() => api.archive.open(activeCampaignId || '')} className="flex items-center gap-1.5 bg-void border border-ice/30 text-ice text-[10px] uppercase tracking-wider px-3 py-1.5 min-h-[40px] rounded ml-auto transition-all hover:bg-ice/5"><Scroll size={13} /> ARCHIVE</button>
+<button onClick={() => api.archive.open(activeCampaignId || '')} className="flex items-center gap-1.5 bg-void border border-ice/30 text-ice text-[10px] uppercase tracking-wider px-3 py-1.5 min-h-[40px] rounded ml-auto transition-all hover:bg-ice/5"><Scroll size={13} /> ARCHIVE</button>
                 <button onClick={handleClearArchive} disabled={!activeCampaignId} className="flex items-center gap-1.5 bg-void border border-red-500/20 text-red-500/60 hover:text-red-500 text-[10px] uppercase tracking-wider px-3 py-1.5 min-h-[40px] rounded transition-all hover:bg-red-500/5 hover:border-red-500/40"><Trash2 size={13} /> CLEAR</button>
             </div>
 
-            <CondensedMemoryPanel
-                condenser={condenser}
-                editingSummary={editingSummary}
-                summaryDraft={summaryDraft}
-                showCondensedPanel={showCondensedPanel}
-                onToggle={() => setShowCondensedPanel(false)}
-                onStartEdit={() => { setSummaryDraft(condenser.condensedSummary); setEditingSummary(true); }}
-                onCancelEdit={() => setEditingSummary(false)}
-                onSaveEdit={() => { setCondensed(summaryDraft, condenser.condensedUpToIndex); setEditingSummary(false); }}
-                onSetDraft={setSummaryDraft}
-                onRetcon={handleRetcon}
-                onReset={() => { resetCondenser(); setEditingSummary(false); }}
-                divergenceRegister={divergenceRegister}
-                chapters={useAppStore.getState().chapters}
-                tokenBudget={settings.divergenceTokenBudget ?? 2000}
-                onDeleteDivergence={handleDeleteDivergence}
-                onConfirmReviewEntry={handleConfirmReviewEntry}
-                onDeleteReviewedEntry={handleDeleteReviewedEntry}
-                onToggleChapter={(chapterId, on) => toggleDivergenceChapter(chapterId, on)}
-                onToggleCategory={(chapterId, category, on) => toggleDivergenceCategory(chapterId, category, on)}
-                onPinFact={(entryId) => pinDivergenceFact(entryId)}
-                onEditFactText={(entryId, text) => editDivergenceFact(entryId, text)}
-            />
+
 
             <NPCPressureInspector />
 

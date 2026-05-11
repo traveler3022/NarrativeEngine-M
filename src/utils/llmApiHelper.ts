@@ -1,6 +1,34 @@
-import type { LLMProvider, ApiFormat, SamplingConfig } from '../types';
+import type { LLMProvider, ApiFormat, SamplingConfig, ThinkingEffort } from '../types';
 
 type AnyProvider = LLMProvider;
+
+const OPENAI_EFFORT_MAP: Record<Exclude<ThinkingEffort, 'off'>, string> = {
+    low: 'low',
+    medium: 'medium',
+    high: 'high',
+    max: 'xhigh',
+};
+
+const DEEPSEEK_EFFORT_MAP: Record<Exclude<ThinkingEffort, 'off'>, string> = {
+    low: 'high',
+    medium: 'high',
+    high: 'high',
+    max: 'max',
+};
+
+const CLAUDE_BUDGET_MAP: Record<Exclude<ThinkingEffort, 'off'>, number> = {
+    low: 2048,
+    medium: 8192,
+    high: 16384,
+    max: 32768,
+};
+
+const GEMINI_LEVEL_MAP: Record<Exclude<ThinkingEffort, 'off'>, string> = {
+    low: 'LOW',
+    medium: 'MEDIUM',
+    high: 'HIGH',
+    max: 'HIGH',
+};
 
 export function getApiFormat(provider: AnyProvider): ApiFormat {
     return provider.apiFormat || 'openai';
@@ -211,6 +239,12 @@ export function buildChatBody(
         if (options?.sampling?.top_k !== undefined) body.top_k = options.sampling.top_k;
 
         if (options?.tools && options.tools.length > 0) body.tools = options.tools;
+
+        const effort = provider.thinkingEffort;
+        if (effort && effort !== 'off') {
+            body.thinking = { type: 'enabled', budget_tokens: CLAUDE_BUDGET_MAP[effort] };
+        }
+
         return body;
     }
 
@@ -229,6 +263,12 @@ export function buildChatBody(
         if (options?.sampling?.top_k !== undefined) genConfig.topK = options.sampling.top_k;
         if (options?.sampling?.frequency_penalty !== undefined) genConfig.frequencyPenalty = options.sampling.frequency_penalty;
         if (options?.sampling?.presence_penalty !== undefined) genConfig.presencePenalty = options.sampling.presence_penalty;
+
+        const effort = provider.thinkingEffort;
+        if (effort && effort !== 'off') {
+            genConfig.thinkingConfig = { thinkingLevel: GEMINI_LEVEL_MAP[effort] };
+        }
+
         body.generationConfig = genConfig;
 
         if (options?.tools && options.tools.length > 0) {
@@ -265,6 +305,21 @@ export function buildChatBody(
 
     if (!isOllama && options?.tools && options.tools.length > 0) {
         body.tools = options.tools;
+    }
+
+    const effort = provider.thinkingEffort;
+    if (effort && effort !== 'off') {
+        if (isOllama) {
+            body.think = effort;
+        } else {
+            const isDeepSeek = /deepseek/i.test(provider.endpoint);
+            if (isDeepSeek) {
+                body.reasoning_effort = DEEPSEEK_EFFORT_MAP[effort];
+                body.thinking = { type: 'enabled' };
+            } else {
+                body.reasoning_effort = OPENAI_EFFORT_MAP[effort];
+            }
+        }
     }
 
     return body;

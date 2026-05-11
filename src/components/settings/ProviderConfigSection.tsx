@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, Loader2, CheckCircle, XCircle } from 'lucide-react';
-import type { AIPreset, LLMProvider, ApiFormat } from '../../types';
+import type { AIPreset, LLMProvider, ApiFormat, ThinkingEffort } from '../../types';
 
 type ProviderKey = 'storyAI' | 'summarizerAI' | 'utilityAI' | 'auxiliaryAI' | 'enemyAI' | 'neutralAI' | 'allyAI';
 
@@ -121,6 +121,23 @@ export function ProviderConfigSection({
                         >
                             <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${config.streamingEnabled !== false ? 'translate-x-5' : 'translate-x-0'}`} />
                         </button>
+                    </div>
+
+                    <div>
+                        <label className="block text-[11px] text-text-dim uppercase tracking-wider mb-1" title="Requests reasoning from the model when supported. 'Max' maps to xhigh on OpenAI, max on DeepSeek V4, HIGH on Gemini.">
+                            Thinking effort
+                        </label>
+                        <select
+                            value={config.thinkingEffort || 'off'}
+                            onChange={(e) => onUpdateEndpoint(section, 'thinkingEffort', e.target.value === 'off' ? undefined : (e.target.value as ThinkingEffort))}
+                            className="w-full bg-surface border border-border px-3 py-3 md:py-2 text-[16px] md:text-sm text-text-primary focus:border-terminal focus:outline-none appearance-none"
+                        >
+                            <option value="off">Off</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="max">Max</option>
+                        </select>
                     </div>
 
                     <div className="pt-2">

@@ -1,9 +1,30 @@
 import type { ArchiveChapter } from '../../types';
 import { getList, setList, k, type SceneRecord } from './_helpers';
 
+export function backfillSceneIds(chapters: ArchiveChapter[]): { chapters: ArchiveChapter[]; changed: boolean } {
+    let changed = false;
+    const result = chapters.map(ch => {
+        if (ch.sceneIds && ch.sceneIds.length > 0) return ch;
+        const start = parseInt(ch.sceneRange[0], 10);
+        const end = parseInt(ch.sceneRange[1], 10);
+        if (isNaN(start) || isNaN(end) || end < start) return { ...ch, sceneIds: [] as string[] };
+        const sceneIds: string[] = [];
+        for (let i = start; i <= end; i++) sceneIds.push(String(i).padStart(3, '0'));
+        changed = true;
+        return { ...ch, sceneIds };
+    });
+    return { chapters: result, changed };
+}
+
 export const chapterStorage = {
     async list(cid: string): Promise<ArchiveChapter[]> {
-        return getList(k(cid, 'chapters'));
+        const chapters = await getList<ArchiveChapter>(k(cid, 'chapters'));
+        const { chapters: backfilled, changed } = backfillSceneIds(chapters);
+        if (changed) {
+            await setList(k(cid, 'chapters'), backfilled);
+            console.log(`[ChapterStorage] Backfilled sceneIds for ${backfilled.filter(c => c.sceneIds && c.sceneIds.length > 0 && !(chapters.find(o => o.chapterId === c.chapterId)?.sceneIds?.length)).length} legacy chapter(s)`);
+        }
+        return backfilled;
     },
 
     async create(cid: string, title?: string): Promise<ArchiveChapter> {

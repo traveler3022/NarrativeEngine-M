@@ -1,11 +1,14 @@
 export type ApiFormat = 'openai' | 'ollama' | 'claude' | 'gemini';
 
+export type ThinkingEffort = 'off' | 'low' | 'medium' | 'high' | 'max';
+
 export type LLMProvider = {
     endpoint: string;
     apiKey: string;
     modelName: string;
     streamingEnabled?: boolean;
     apiFormat?: ApiFormat;
+    thinkingEffort?: ThinkingEffort;
     id?: string;    // only present in saved presets / legacy migrations
     label?: string; // only present in saved presets / legacy migrations
 };

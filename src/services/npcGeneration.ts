@@ -3,6 +3,38 @@ import { llmCall } from '../utils/llmCall';
 import { extractJson } from './payloadBuilder';
 import { uid } from '../utils/uid';
 
+const RETRY_SUFFIX = '\n\nIMPORTANT: Your previous response was not valid JSON. Respond with ONLY valid JSON. No markdown fences, no comments, no trailing commas, no extra text before or after the JSON.';
+
+async function llmParseJson<T>(
+    provider: LLMProvider,
+    prompt: string,
+    contextLabel: string,
+): Promise<T | null> {
+    const firstResponse = await llmCall(provider, prompt, { priority: 'low' });
+    if (!firstResponse) return null;
+
+    const firstClean = extractJson(firstResponse);
+    try {
+        return JSON.parse(firstClean) as T;
+    } catch (firstErr) {
+        console.warn(`[${contextLabel}] First parse failed, retrying with stricter prompt...`, firstErr);
+        console.warn(`[${contextLabel}] Raw JSON was:`, firstClean);
+
+        const retryPrompt = `${prompt}\n\nYour previous response was:\n${firstResponse}\n${RETRY_SUFFIX}`;
+        const retryResponse = await llmCall(provider, retryPrompt, { priority: 'low' });
+        if (!retryResponse) return null;
+
+        const retryClean = extractJson(retryResponse);
+        try {
+            return JSON.parse(retryClean) as T;
+        } catch (retryErr) {
+            console.error(`[${contextLabel}] Retry parse also failed:`, retryErr);
+            console.error(`[${contextLabel}] Retry raw JSON:`, retryClean);
+            return null;
+        }
+    }
+}
+
 export async function generateNPCProfile(
     provider: LLMProvider,
     history: ChatMessage[],
@@ -46,50 +78,41 @@ The JSON must perfectly match this structure:
 
         const fullPrompt = `${systemPrompt}\n\nRECENT CHAT HISTORY:\n${recentHistory}\n\nGenerate the JSON profile for "${npcName}".`;
 
-        const fullJsonStr = await llmCall(provider, fullPrompt, { priority: 'low' });
+        const parsed = await llmParseJson<Record<string, unknown>>(provider, fullPrompt, 'NPC Generator');
 
-        if (fullJsonStr) {
-            const cleanStr = extractJson(fullJsonStr);
+        if (parsed) {
+            const newEntry: NPCEntry = {
+                id: uid(),
+                name: (parsed.name as string) || npcName,
+                aliases: (parsed.aliases as string) || '',
+                status: (parsed.status as string) || 'Alive',
+                faction: (parsed.faction as string) || 'Unknown',
+                storyRelevance: (parsed.storyRelevance as string) || 'Unknown',
+                appearance: '',
+                disposition: (parsed.disposition as string) || 'Neutral',
+                goals: (parsed.goals as string) || 'Unknown',
+                voice: (parsed.voice as string) || '',
+                personality: (parsed.personality as string) || (parsed.disposition as string) || 'Unknown',
+                exampleOutput: (parsed.exampleOutput as string) || '',
+                affinity: 50,
+                drives: parsed.drives ? {
+                    coreWant: ((parsed.drives as Record<string, string>).coreWant) || '',
+                    sessionWant: ((parsed.drives as Record<string, string>).sessionWant) || '',
+                    sceneWant: ((parsed.drives as Record<string, string>).sceneWant) || '',
+                } : undefined,
+                behavioralTriggers: Array.isArray(parsed.behavioralTriggers)
+                    ? parsed.behavioralTriggers.filter((t: Record<string, unknown>) => t.keyword && t.shift).map((t: Record<string, unknown>) => ({ keyword: String(t.keyword), shift: String(t.shift) }))
+                    : undefined,
+                hardBoundaries: Array.isArray(parsed.hardBoundaries)
+                    ? parsed.hardBoundaries.map(String).filter(Boolean)
+                    : undefined,
+                softBoundaries: Array.isArray(parsed.softBoundaries)
+                    ? parsed.softBoundaries.map(String).filter(Boolean)
+                    : undefined,
+            };
 
-            try {
-                const parsed = JSON.parse(cleanStr);
-
-                const newEntry: NPCEntry = {
-                    id: uid(),
-                    name: parsed.name || npcName,
-                    aliases: parsed.aliases || '',
-                    status: parsed.status || 'Alive',
-                    faction: parsed.faction || 'Unknown',
-                    storyRelevance: parsed.storyRelevance || 'Unknown',
-                    appearance: '',
-                    disposition: parsed.disposition || 'Neutral',
-                    goals: parsed.goals || 'Unknown',
-                    voice: parsed.voice || '',
-                    personality: parsed.personality || parsed.disposition || 'Unknown',
-                    exampleOutput: parsed.exampleOutput || '',
-                    affinity: 50,
-                    drives: parsed.drives ? {
-                        coreWant: parsed.drives.coreWant || '',
-                        sessionWant: parsed.drives.sessionWant || '',
-                        sceneWant: parsed.drives.sceneWant || '',
-                    } : undefined,
-                    behavioralTriggers: Array.isArray(parsed.behavioralTriggers)
-                        ? parsed.behavioralTriggers.filter((t: Record<string, unknown>) => t.keyword && t.shift).map((t: Record<string, unknown>) => ({ keyword: String(t.keyword), shift: String(t.shift) }))
-                        : undefined,
-                    hardBoundaries: Array.isArray(parsed.hardBoundaries)
-                        ? parsed.hardBoundaries.map(String).filter(Boolean)
-                        : undefined,
-                    softBoundaries: Array.isArray(parsed.softBoundaries)
-                        ? parsed.softBoundaries.map(String).filter(Boolean)
-                        : undefined,
-                };
-
-                addNPCToStore(newEntry);
-                console.log(`[NPC Generator] Successfully generated and added profile for: ${newEntry.name}`);
-
-            } catch (parseErr) {
-                console.error('[NPC Generator] Failed to parse generated JSON:', parseErr, '\nRaw String:', cleanStr);
-            }
+            addNPCToStore(newEntry);
+            console.log(`[NPC Generator] Successfully generated and added profile for: ${newEntry.name}`);
         }
 
     } catch (err) {
@@ -171,68 +194,63 @@ Example of an NPC whose scene context shifted:
 RESPOND ONLY WITH VALID JSON.`;
 
     try {
-        const fullJsonStr = await llmCall(provider, prompt, { priority: 'low' });
+        const parsed = await llmParseJson<{ updates?: Array<{ name?: string; changes?: Record<string, unknown> }> }>(provider, prompt, 'NPC Updater');
 
-        if (fullJsonStr) {
-            const cleanStr = extractJson(fullJsonStr);
-            const parsed = JSON.parse(cleanStr);
+        if (parsed?.updates && Array.isArray(parsed.updates)) {
+            for (const update of parsed.updates) {
+                if (!update.name || !update.changes) continue;
 
-            if (parsed.updates && Array.isArray(parsed.updates)) {
-                for (const update of parsed.updates) {
-                    if (!update.name || !update.changes) continue;
+                const targetNpc = npcsToCheck.find(n =>
+                    n.name.toLowerCase() === update.name!.toLowerCase() ||
+                    (n.aliases && n.aliases.toLowerCase().includes(update.name!.toLowerCase()))
+                );
 
-                    const targetNpc = npcsToCheck.find(n =>
-                        n.name.toLowerCase() === update.name.toLowerCase() ||
-                        (n.aliases && n.aliases.toLowerCase().includes(update.name.toLowerCase()))
-                    );
+                if (targetNpc) {
+                    const changes = { ...update.changes };
 
-                    if (targetNpc) {
-                        const changes = { ...update.changes };
+                    const hasPersonalityChange = changes.personality !== undefined || changes.voice !== undefined;
+                    const hasAffinityChange = changes.affinity !== undefined;
 
-                        const hasPersonalityChange = changes.personality !== undefined || changes.voice !== undefined;
-                        const hasAffinityChange = changes.affinity !== undefined;
-
-                        if (hasPersonalityChange || hasAffinityChange) {
-                            changes.previousSnapshot = {
-                                personality: targetNpc.personality || targetNpc.disposition || '',
-                                voice: targetNpc.voice || '',
-                                affinity: targetNpc.affinity,
-                            };
-                            changes.shiftTurnCount = 0;
-                        } else if (targetNpc.shiftTurnCount !== undefined && targetNpc.shiftTurnCount < 3) {
-                            changes.shiftTurnCount = (targetNpc.shiftTurnCount || 0) + 1;
-                        }
-
-                        if (changes.drives && typeof changes.drives === 'object') {
-                            const existingDrives = targetNpc.drives || { coreWant: '', sessionWant: '', sceneWant: '' };
-                            changes.drives = {
-                                coreWant: changes.drives.coreWant || existingDrives.coreWant,
-                                sessionWant: changes.drives.sessionWant || existingDrives.sessionWant,
-                                sceneWant: changes.drives.sceneWant || existingDrives.sceneWant,
-                            };
-                        }
-
-                        if (Array.isArray(changes.behavioralTriggers)) {
-                            changes.behavioralTriggers = changes.behavioralTriggers
-                                .filter((t: Record<string, unknown>) => t.keyword && t.shift)
-                                .map((t: Record<string, unknown>) => ({ keyword: String(t.keyword), shift: String(t.shift) }));
-                        }
-
-                        if (Array.isArray(changes.hardBoundaries)) {
-                            changes.hardBoundaries = changes.hardBoundaries.map(String).filter(Boolean);
-                        }
-
-                        if (Array.isArray(changes.softBoundaries)) {
-                            changes.softBoundaries = changes.softBoundaries.map(String).filter(Boolean);
-                        }
-
-                        updateNPCStore(targetNpc.id, changes);
-                        console.log(`[NPC Updater] Applied changes to ${targetNpc.name}:`, changes);
+                    if (hasPersonalityChange || hasAffinityChange) {
+                        changes.previousSnapshot = {
+                            personality: targetNpc.personality || targetNpc.disposition || '',
+                            voice: targetNpc.voice || '',
+                            affinity: targetNpc.affinity,
+                        };
+                        changes.shiftTurnCount = 0;
+                    } else if (targetNpc.shiftTurnCount !== undefined && targetNpc.shiftTurnCount < 3) {
+                        changes.shiftTurnCount = (targetNpc.shiftTurnCount || 0) + 1;
                     }
+
+                    if (changes.drives && typeof changes.drives === 'object') {
+                        const existingDrives = targetNpc.drives || { coreWant: '', sessionWant: '', sceneWant: '' };
+                        changes.drives = {
+                            coreWant: (changes.drives as Record<string, string>).coreWant || existingDrives.coreWant,
+                            sessionWant: (changes.drives as Record<string, string>).sessionWant || existingDrives.sessionWant,
+                            sceneWant: (changes.drives as Record<string, string>).sceneWant || existingDrives.sceneWant,
+                        };
+                    }
+
+                    if (Array.isArray(changes.behavioralTriggers)) {
+                        changes.behavioralTriggers = changes.behavioralTriggers
+                            .filter((t: Record<string, unknown>) => t.keyword && t.shift)
+                            .map((t: Record<string, unknown>) => ({ keyword: String(t.keyword), shift: String(t.shift) }));
+                    }
+
+                    if (Array.isArray(changes.hardBoundaries)) {
+                        changes.hardBoundaries = changes.hardBoundaries.map(String).filter(Boolean);
+                    }
+
+                    if (Array.isArray(changes.softBoundaries)) {
+                        changes.softBoundaries = changes.softBoundaries.map(String).filter(Boolean);
+                    }
+
+                    updateNPCStore(targetNpc.id, changes);
+                    console.log(`[NPC Updater] Applied changes to ${targetNpc.name}:`, changes);
                 }
-            } else {
-                console.log(`[NPC Updater] No updates required.`);
             }
+        } else {
+            console.log(`[NPC Updater] No updates required.`);
         }
     } catch (err) {
         console.error('[NPC Updater] Failed to parse generated JSON or fatal error:', err);
@@ -277,17 +295,14 @@ RESPOND ONLY WITH VALID JSON. NO MARKDOWN FORMATTING. NO EXPLANATIONS.
 }`;
 
         try {
-            const fullJsonStr = await llmCall(provider, prompt, { priority: 'low' });
+            const parsed = await llmParseJson<Record<string, unknown>>(provider, prompt, `NPC Drives Backfill/${npc.name}`);
 
-            if (fullJsonStr) {
-                const cleanStr = extractJson(fullJsonStr);
-                const parsed = JSON.parse(cleanStr);
-
+            if (parsed) {
                 const patch: Partial<NPCEntry> = {
                     drives: {
-                        coreWant: parsed.coreWant || `${npc.name} wants to prove their worth`,
-                        sessionWant: parsed.sessionWant || `${npc.name} is looking for opportunity`,
-                        sceneWant: parsed.sceneWant || `${npc.name} is observing the situation`,
+                        coreWant: (parsed.coreWant as string) || `${npc.name} wants to prove their worth`,
+                        sessionWant: (parsed.sessionWant as string) || `${npc.name} is looking for opportunity`,
+                        sceneWant: (parsed.sceneWant as string) || `${npc.name} is observing the situation`,
                     },
                     behavioralTriggers: Array.isArray(parsed.behavioralTriggers)
                         ? parsed.behavioralTriggers.filter((t: Record<string, unknown>) => t.keyword && t.shift).map((t: Record<string, unknown>) => ({ keyword: String(t.keyword), shift: String(t.shift) }))

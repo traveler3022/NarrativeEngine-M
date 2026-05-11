@@ -439,6 +439,7 @@ SUMMARY RULES:
 export type CombinedSealResult = {
     summary: ChapterSummaryOutput | null;
     divergences: DivergenceEntry[];
+    divergenceParseError?: boolean;
 };
 
 export function parseCombinedSealOutput(
@@ -451,12 +452,13 @@ export function parseCombinedSealOutput(
     const jsonStr = extractJson(cleaned);
 
     let parsed: { summary?: unknown; divergences?: unknown };
+    let divergenceParseError = false;
     try {
         parsed = JSON.parse(jsonStr);
     } catch {
         console.warn('[CombinedSeal] JSON parse failed, attempting summary-only fallback');
         const summaryOnly = parseChapterSummaryOutput(raw);
-        return { summary: summaryOnly, divergences: [] };
+        return { summary: summaryOnly, divergences: [], divergenceParseError: true };
     }
 
     let summary: ChapterSummaryOutput | null = null;
@@ -536,9 +538,11 @@ export function parseCombinedSealOutput(
                 });
             }
         }
+    } else {
+        divergenceParseError = true;
     }
 
-    return { summary, divergences: entries };
+    return { summary, divergences: entries, divergenceParseError: divergenceParseError || undefined };
 }
 
 export async function sealChapterCombined(
@@ -548,7 +552,7 @@ export async function sealChapterCombined(
     chapterTitle: string,
     sceneIds: string[],
     npcLedger: { id: string; name: string; aliases: string }[],
-    maxRetries = 1
+    maxRetries = 2
 ): Promise<CombinedSealResult> {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         const prompt = buildCombinedSealPrompt(scenes, chapterTitle, sceneIds, npcLedger);
@@ -563,11 +567,15 @@ export async function sealChapterCombined(
         const output = await llmCall(provider, prompt, { priority: 'low', maxTokens: 2000 });
         const result = parseCombinedSealOutput(output, chapterId, sceneIds, npcLedger);
 
-        if (result.summary || result.divergences.length > 0) {
+        if (result.summary && !result.divergenceParseError) {
             return result;
+        }
+        if (result.summary && result.divergenceParseError) {
+            console.warn(`[CombinedSeal] Attempt ${attempt + 1}: summary OK but divergence parse failed — retrying divergences`);
+            continue;
         }
         console.warn(`[CombinedSeal] Attempt ${attempt + 1} produced no usable output`);
     }
 
-    return { summary: null, divergences: [] };
+    return { summary: null, divergences: [], divergenceParseError: true };
 }

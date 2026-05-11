@@ -4,7 +4,7 @@ android {
     namespace = "com.nexus.aigm"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.nexus.aigm.experimental"
+        applicationId "com.nexus.aigm"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

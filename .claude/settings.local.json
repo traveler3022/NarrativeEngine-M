@@ -20,7 +20,11 @@
       "WebSearch",
       "WebFetch(domain:api-docs.deepseek.com)",
       "WebFetch(domain:apidog.com)",
-      "Bash(npx vitest *)"
+      "Bash(npx vitest *)",
+      "Bash(npm test *)",
+      "Bash(git commit -m 'feat: NPC ledger prose extraction — capture names from narrative, strip titles, validate with Haiku *)",
+      "Bash(git commit -m 'feat: auxiliaryAI provider for cheap NPC validation + npcDetector cleanup *)",
+      "Bash(find \"D:/Games/AI DM Project/Pure Magic/arkanus_world.md\" -printf \"%s\\\\n\" 2>nul; wc -l \"D:/Games/AI DM Project/Pure Magic/arkanus_world.md\")"
     ]
   }
 }

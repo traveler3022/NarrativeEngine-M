@@ -15,7 +15,12 @@ export function parseNPCsFromLore(chunks: LoreChunk[]): NPCEntry[] {
 
     for (const chunk of characterChunks) {
         let name = chunk.header.replace(/\[CHUNK:\s*[A-Z_]+[—\-\s]*\]/i, '').trim();
-        name = name.split(/[—–-]/)[0].trim();
+        const doubleDashMatch = name.match(/^[A-Z][A-Z_\s]*--\s*(.+)/);
+        if (doubleDashMatch) {
+            name = doubleDashMatch[1].trim();
+        } else {
+            name = name.split(/[—–]/)[0].trim();
+        }
         if (!name) continue;
 
         const body = chunk.content;
@@ -43,20 +48,22 @@ export function parseNPCsFromLore(chunks: LoreChunk[]): NPCEntry[] {
             return isNaN(n) ? fallback : n;
         };
 
+        const disposition = get('Disposition') || '';
+
         npcs.push({
             id: uid(),
             name,
             aliases: get('Aliases'),
             appearance: getAny(['Appearance', 'VisualForAI']),
-            disposition: get('Disposition'),
+            disposition,
             goals: get('Goals'),
             faction: get('Faction'),
             storyRelevance: get('StoryRelevance'),
             status: (get('Status') as NPCEntry['status']) || 'Alive',
             affinity: getNum('Affinity', 50),
-            voice: get('Voice'),
-            personality: get('Personality'),
-            exampleOutput: get('ExampleOutput') || get('Example'),
+            voice: getAny(['Voice', 'Speech Pattern', 'Voice & Speech Pattern']),
+            personality: getAny(['Personality', 'Personality Traits']) || disposition,
+            exampleOutput: getAny(['Example Output', 'Example Dialogue', 'Example Line']),
         });
     }
 

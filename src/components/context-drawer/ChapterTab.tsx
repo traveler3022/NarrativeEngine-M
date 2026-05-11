@@ -5,7 +5,8 @@ import { api } from '../../services/apiClient';
 import { ChapterCard } from './ChapterCard';
 import { toast } from '../Toast';
 import { countTokens } from '../../services/tokenizer';
-import { generateChapterSummary } from '../../services/saveFileEngine';
+import { runCombinedSeal } from '../../services/turnPostProcess';
+import { mergeSealEntries } from '../../services/divergenceRegister';
 import type { ArchiveChapter } from '../../types';
 
 export function ChapterTab() {
@@ -117,50 +118,51 @@ export function ChapterTab() {
             const provider = useAppStore.getState().getActiveUtilityEndpoint()
                 ?? useAppStore.getState().getActiveStoryEndpoint();
             if (!provider) {
-                toast.error('No AI provider available to generate summary');
+                toast.error('No AI provider available');
                 return;
             }
 
-            const startNum = parseInt(chapter.sceneRange[0], 10);
-            const endNum = parseInt(chapter.sceneRange[1], 10);
-            const sceneIds = Array.from(
-                { length: endNum - startNum + 1 },
-                (_, i) => String(startNum + i).padStart(3, '0')
-            );
+            const npcLedger = useAppStore.getState().npcLedger ?? [];
+            const sealResult = await runCombinedSeal(activeCampaignId, chapter, provider, npcLedger);
 
-            const allScenes = await api.archive.getIndex(activeCampaignId);
-            const chapterIndexEntries = allScenes.filter(s => sceneIds.includes(s.sceneId));
-            const scenesContent = chapterIndexEntries.map(s => ({
-                sceneId: s.sceneId,
-                content: s.userSnippet || '',
-            }));
-
-            if (scenesContent.length === 0) {
-                toast.error('No scenes found for this chapter');
-                return;
-            }
-
-            const summary = await generateChapterSummary(provider, scenesContent, chapter.title);
-            if (summary) {
+            if (sealResult.summary) {
                 await api.chapters.update(activeCampaignId, chapter.chapterId, {
-                    title: summary.title,
-                    summary: summary.summary,
-                    keywords: summary.keywords,
-                    npcs: summary.npcs,
-                    majorEvents: summary.majorEvents,
-                    unresolvedThreads: summary.unresolvedThreads,
-                    tone: summary.tone,
-                    themes: summary.themes,
+                    title: sealResult.summary.title,
+                    summary: sealResult.summary.summary,
+                    keywords: sealResult.summary.keywords,
+                    npcs: sealResult.summary.npcs,
+                    majorEvents: sealResult.summary.majorEvents,
+                    unresolvedThreads: sealResult.summary.unresolvedThreads,
+                    tone: sealResult.summary.tone,
+                    themes: sealResult.summary.themes,
                     invalidated: false,
                 });
-                await refreshChapters();
-                toast.success(`Summary regenerated for ${chapter.title}`);
+            }
+
+            if (sealResult.divergences.length > 0) {
+                const liveRegister = useAppStore.getState().divergenceRegister;
+                if (liveRegister) {
+                    const sceneIds = chapter.sceneIds?.length
+                        ? chapter.sceneIds
+                        : [chapter.sceneRange[1]];
+                    const merged = mergeSealEntries(liveRegister, sealResult.divergences, sceneIds[sceneIds.length - 1] ?? '000');
+                    useAppStore.getState().setDivergenceRegister(merged);
+                    toast.info(`${sealResult.divergences.length} divergence facts extracted`);
+                }
+            } else if (sealResult.divergenceParseError) {
+                toast.warning('Chapter sealed but divergence facts failed to parse — try regenerating later');
+            }
+
+            await refreshChapters();
+
+            if (sealResult.summary) {
+                toast.success(`Regenerated ${chapter.title}`);
             } else {
-                toast.error(`Failed to generate summary for ${chapter.title}`);
+                toast.error(`Failed to regenerate ${chapter.title}`);
             }
         } catch (err) {
             console.error(err);
-            toast.error(`Failed to regenerate summary for ${chapter.title}`);
+            toast.error(`Failed to regenerate ${chapter.title}`);
         } finally {
             setIsRegenerating(prev => prev === chapter.chapterId ? null : prev);
         }
