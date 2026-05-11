@@ -64,7 +64,7 @@ export function NPCEditForm({
     };
 
     return (
-        <div className="flex-1 overflow-y-auto flex flex-col p-6 sm:p-8">
+        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col p-6 sm:p-8">
             <div className="flex justify-between items-start mb-5">
                 <div>
                     <h2 className="text-xl font-bold text-text-primary tracking-wide uppercase">

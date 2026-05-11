@@ -531,6 +531,13 @@
   }
 }
 
+/* ── NPC Ledger scroll container ── */
+.npc-ledger-scroll {
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
 /* ── NPC Detail Push Animation ── */
 .npc-detail-push {
   animation: slide-in-right 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;

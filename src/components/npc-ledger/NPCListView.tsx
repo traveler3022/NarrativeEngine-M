@@ -13,7 +13,7 @@ type Props = {
 
 export function NPCListView({ npcLedger, selectedId, selectMode, checkedIds, onSelect, onToggleCheck, onDelete }: Props) {
     return (
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div className="p-2 space-y-1">
             {npcLedger.length === 0 && (
                 <p className="text-text-dim text-xs text-center p-4 italic opacity-50">No records found.</p>
             )}

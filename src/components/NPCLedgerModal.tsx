@@ -183,7 +183,7 @@ export function NPCLedgerModal() {
         <input ref={importRef} type="file" accept=".json" className="hidden" onChange={handleImportFile} />
 
         {/* Navigation / List Side */}
-        <div className={`flex flex-col w-full h-full border-r border-border bg-void-lighter transition-transform duration-300 ${showDetail ? 'hidden md:flex md:w-80' : 'flex'}`}>
+        <div className={`flex flex-col min-h-0 w-full h-full border-r border-border bg-void-lighter transition-transform duration-300 ${showDetail ? 'hidden md:flex md:w-80' : 'flex'}`}>
           <div className="mobile-page-header safe-top px-4 py-3 border-b border-border bg-void">
             <button onClick={handleClose} className="back-btn -ml-2">
               <ArrowLeft size={24} />
@@ -233,7 +233,7 @@ export function NPCLedgerModal() {
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto npc-ledger-scroll">
             {viewMode === 'list'
               ? <NPCListView npcLedger={activeNPCList} selectedId={selectedId} selectMode={selectMode} checkedIds={checkedIds} onSelect={handleSelect} onToggleCheck={(id) => setCheckedIds(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; })} onDelete={handleDelete} />
               : <NPCGalleryView npcLedger={activeNPCList} selectedId={selectedId} selectMode={selectMode} checkedIds={checkedIds} onSelect={handleSelect} onToggleCheck={(id) => setCheckedIds(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; })} onDelete={handleDelete} />
@@ -261,7 +261,7 @@ export function NPCLedgerModal() {
         </div>
 
         {/* Detail Side */}
-        <div className={`flex-1 flex flex-col bg-surface transition-transform duration-300 ${!showDetail ? 'hidden md:flex' : 'flex'}`}>
+        <div className={`flex-1 min-h-0 flex flex-col bg-surface transition-transform duration-300 ${!showDetail ? 'hidden md:flex' : 'flex'}`}>
           {/* Detail Header (Mobile) */}
           <div className="mobile-page-header md:hidden px-4 py-3 border-b border-border bg-void">
             <button onClick={handleBackToList} className="back-btn -ml-2">

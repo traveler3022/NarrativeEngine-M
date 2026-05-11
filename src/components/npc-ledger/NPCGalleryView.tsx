@@ -13,7 +13,7 @@ type Props = {
 
 export function NPCGalleryView({ npcLedger, selectedId, selectMode, checkedIds, onSelect, onToggleCheck, onDelete }: Props) {
     return (
-        <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-3">
+            <div className="p-4 grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-3">
             {npcLedger.length === 0 && (
                 <p className="text-text-dim text-xs text-center p-4 italic opacity-50 col-span-full">No records found.</p>
             )}
