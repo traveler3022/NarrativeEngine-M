@@ -1,4 +1,4 @@
-import type { ChatMessage, LLMProvider, CoreMemorySlot } from '../types';
+import type { ChatMessage, LLMProvider, CoreMemorySlot, ThinkingEffort } from '../types';
 import { countTokens } from './tokenizer';
 import { extractJson } from './payloadBuilder';
 import { llmCall } from '../utils/llmCall';
@@ -351,6 +351,8 @@ import { uid } from '../utils/uid';
 
 const COMBINED_SEAL_TOKEN_BUDGET = 12000;
 
+const SEAL_MAX_TOKENS = 32000;
+
 function buildCombinedSealPrompt(
     scenes: { sceneId: string; content: string }[],
     chapterTitle: string,
@@ -433,7 +435,9 @@ SUMMARY RULES:
 3. Major events are plot-critical beats only (not every combat round)
 4. Unresolved threads are open plot hooks, promises, or mysteries
 5. Title should be 2-5 words, evocative
-6. Summary should read like a campaign journal entry, not a list`;
+6. Summary should read like a campaign journal entry, not a list
+
+Respond with ONE JSON object only. No prose, no markdown fences, no second object, no reasoning before or after.`;
 }
 
 export type CombinedSealResult = {
@@ -449,17 +453,34 @@ export function parseCombinedSealOutput(
     npcLedger: { id: string; name: string; aliases: string }[]
 ): CombinedSealResult {
     const cleaned = stripReasoning(raw);
-    const jsonStr = extractJson(cleaned);
+    let jsonStr = extractJson(cleaned);
 
     let parsed: { summary?: unknown; divergences?: unknown };
     let divergenceParseError = false;
     try {
         parsed = JSON.parse(jsonStr);
-    } catch {
-        console.warn('[CombinedSeal] JSON parse failed, attempting summary-only fallback');
-        const summaryOnly = parseChapterSummaryOutput(raw);
-        return { summary: summaryOnly, divergences: [], divergenceParseError: true };
+    } catch (e) {
+        console.warn('[CombinedSeal] JSON parse failed on extractJson output, attempting split-object recovery', e);
+        const splitMatch = jsonStr.match(/\}\s*\{/);
+        if (splitMatch && splitMatch.index !== undefined) {
+            const first = jsonStr.slice(0, splitMatch.index + 1);
+            const second = jsonStr.slice(splitMatch.index + 1);
+            try {
+                const firstObj = JSON.parse(first);
+                const secondObj = JSON.parse(second) as Record<string, unknown>;
+                parsed = { ...firstObj, ...secondObj };
+                console.log('[CombinedSeal] Split-object recovery succeeded');
+            } catch {
+                const summaryOnly = parseChapterSummaryOutput(raw);
+                return { summary: summaryOnly, divergences: [], divergenceParseError: true };
+            }
+        } else {
+            const summaryOnly = parseChapterSummaryOutput(raw);
+            return { summary: summaryOnly, divergences: [], divergenceParseError: true };
+        }
     }
+
+    console.log('[CombinedSeal] Parsed keys:', Object.keys(parsed as object).join(', '), ', divergences type:', typeof (parsed as Record<string, unknown>).divergences);
 
     let summary: ChapterSummaryOutput | null = null;
     if (parsed.summary && typeof parsed.summary === 'object') {
@@ -470,7 +491,13 @@ export function parseCombinedSealOutput(
 
     const entries: DivergenceEntry[] = [];
     if (parsed.divergences && typeof parsed.divergences === 'object') {
-        const divObj = parsed.divergences as Record<string, unknown[]>;
+        const divRaw = parsed.divergences as Record<string, unknown[]>;
+        const divObj: Record<string, unknown[]> = {};
+        for (const [key, val] of Object.entries(divRaw)) {
+            const normalized = key.trim().toLowerCase().replace(/[\s-]+/g, '_');
+            divObj[normalized] = val as unknown[];
+        }
+
         const sceneSet = new Set(sceneIds);
         const fallbackScene = sceneIds[0] ?? '000';
         const npcNameMap = new Map<string, string>();
@@ -554,6 +581,11 @@ export async function sealChapterCombined(
     npcLedger: { id: string; name: string; aliases: string }[],
     maxRetries = 2
 ): Promise<CombinedSealResult> {
+    const sealEffort: ThinkingEffort = 'off';
+    const maxTokens = SEAL_MAX_TOKENS;
+
+    console.log(`[CombinedSeal] Config: maxTokens=${maxTokens}, thinkingEffort=${sealEffort}, provider.effort=${provider.thinkingEffort ?? 'none'}, apiFormat=${provider.apiFormat ?? 'openai'}`);
+
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         const prompt = buildCombinedSealPrompt(scenes, chapterTitle, sceneIds, npcLedger);
         const label = attempt === 0 ? '' : ' (retry)';
@@ -564,7 +596,19 @@ export async function sealChapterCombined(
             promptTokens: countTokens(prompt),
         });
 
-        const output = await llmCall(provider, prompt, { priority: 'low', maxTokens: 2000 });
+        let output: string;
+        try {
+            output = await llmCall(provider, prompt, { priority: 'low', maxTokens, thinkingEffort: sealEffort });
+        } catch (err) {
+            console.error(`[CombinedSeal] LLM call failed on attempt ${attempt + 1}:`, err);
+            if (attempt < maxRetries) continue;
+            return { summary: null, divergences: [], divergenceParseError: true };
+        }
+
+        const head = output.slice(0, 200);
+        const tail = output.length > 200 ? output.slice(-200) : '';
+        console.warn(`[CombinedSeal] Output length=${output.length}, head=${JSON.stringify(head)}, tail=${JSON.stringify(tail)}`);
+
         const result = parseCombinedSealOutput(output, chapterId, sceneIds, npcLedger);
 
         if (result.summary && !result.divergenceParseError) {

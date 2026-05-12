@@ -1,4 +1,4 @@
-import type { LLMProvider } from '../types';
+import type { LLMProvider, ThinkingEffort } from '../types';
 import { getQueueForEndpoint, type LLMCallPriority } from '../services/llmRequestQueue';
 import { getApiFormat, getChatUrl, buildChatHeaders, buildChatBody, extractContent } from './llmApiHelper';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
@@ -16,16 +16,18 @@ export async function llmCall(
         maxTokens?: number;
         temperature?: number;
         priority?: LLMCallPriority;
+        thinkingEffort?: ThinkingEffort;
     }
 ): Promise<string> {
     const url = getChatUrl(provider);
     const headers = buildChatHeaders(provider);
     const format = getApiFormat(provider);
+    const resolvedEffort = opts?.thinkingEffort !== undefined ? opts.thinkingEffort : provider.thinkingEffort;
 
     const body = buildChatBody(
         provider,
         [{ role: 'user', content: prompt }],
-        { stream: false, max_tokens: opts?.maxTokens }
+        { stream: false, max_tokens: opts?.maxTokens, thinkingEffort: resolvedEffort }
     );
 
     if (opts?.temperature !== undefined) body.temperature = opts.temperature;
@@ -59,7 +61,7 @@ export async function llmCall(
                 if (nativeRetryable) {
                     queue.onRateLimitHit();
                     if (attempt === MAX_RETRIES) {
-                        throw new Error(`LLM API error ${nativeRes.status} (retries exhausted)`);
+                        throw new Error(`LLM API error ${nativeRes.status} (retries exhausted, max_tokens=${opts?.maxTokens ?? 'default'}, thinkingEffort=${resolvedEffort ?? 'default'})`);
                     }
                     console.warn(
                         `[LLMQueue] Native ${nativeRes.status} (attempt ${attempt + 1}/${MAX_RETRIES + 1}, priority=${priority}). ` +
@@ -70,7 +72,7 @@ export async function llmCall(
                 }
 
                 if (nativeRes.status < 200 || nativeRes.status >= 300) {
-                    throw new Error(`LLM API error ${nativeRes.status}: ${JSON.stringify(nativeRes.data)}`);
+                    throw new Error(`LLM API error ${nativeRes.status}: ${JSON.stringify(nativeRes.data)} (max_tokens=${opts?.maxTokens ?? 'default'}, thinkingEffort=${resolvedEffort ?? 'default'})`);
                 }
 
                 return extractContent(nativeRes.data, provider);
@@ -104,7 +106,7 @@ export async function llmCall(
             queue.releaseSlot();
             if (!res.ok) {
                 const errBody = await res.text();
-                throw new Error(`LLM API error ${res.status}: ${errBody}`);
+                throw new Error(`LLM API error ${res.status}: ${errBody} (max_tokens=${opts?.maxTokens ?? 'default'}, thinkingEffort=${resolvedEffort ?? 'default'})`);
             }
             const data = await res.json();
             return extractContent(data, provider);
@@ -115,7 +117,7 @@ export async function llmCall(
 
         if (attempt === MAX_RETRIES) {
             const errBody = await res.text();
-            throw new Error(`LLM API error ${res.status} (retries exhausted): ${errBody}`);
+            throw new Error(`LLM API error ${res.status} (retries exhausted): ${errBody} (max_tokens=${opts?.maxTokens ?? 'default'}, thinkingEffort=${resolvedEffort ?? 'default'})`);
         }
 
         const retryAfter = res.headers.get('Retry-After');

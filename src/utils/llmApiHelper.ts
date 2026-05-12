@@ -16,7 +16,7 @@ const DEEPSEEK_EFFORT_MAP: Record<Exclude<ThinkingEffort, 'off'>, string> = {
     max: 'max',
 };
 
-const CLAUDE_BUDGET_MAP: Record<Exclude<ThinkingEffort, 'off'>, number> = {
+export const CLAUDE_BUDGET_MAP: Record<Exclude<ThinkingEffort, 'off'>, number> = {
     low: 2048,
     medium: 8192,
     high: 16384,
@@ -218,7 +218,7 @@ function transformOllamaMessages(
 export function buildChatBody(
     provider: AnyProvider,
     messages: { role: string; content: string | null; name?: string; tool_calls?: unknown[]; tool_call_id?: string; reasoning_content?: string }[],
-    options?: { stream?: boolean; max_tokens?: number; temperature?: number; tools?: unknown[]; sampling?: SamplingConfig }
+    options?: { stream?: boolean; max_tokens?: number; temperature?: number; tools?: unknown[]; sampling?: SamplingConfig; thinkingEffort?: ThinkingEffort }
 ): Record<string, unknown> {
     const format = getApiFormat(provider);
     const stream = options?.stream ?? false;
@@ -240,7 +240,7 @@ export function buildChatBody(
 
         if (options?.tools && options.tools.length > 0) body.tools = options.tools;
 
-        const effort = provider.thinkingEffort;
+        const effort = options?.thinkingEffort !== undefined ? options.thinkingEffort : provider.thinkingEffort;
         if (effort && effort !== 'off') {
             body.thinking = { type: 'enabled', budget_tokens: CLAUDE_BUDGET_MAP[effort] };
         }
@@ -264,7 +264,7 @@ export function buildChatBody(
         if (options?.sampling?.frequency_penalty !== undefined) genConfig.frequencyPenalty = options.sampling.frequency_penalty;
         if (options?.sampling?.presence_penalty !== undefined) genConfig.presencePenalty = options.sampling.presence_penalty;
 
-        const effort = provider.thinkingEffort;
+        const effort = options?.thinkingEffort !== undefined ? options.thinkingEffort : provider.thinkingEffort;
         if (effort && effort !== 'off') {
             genConfig.thinkingConfig = { thinkingLevel: GEMINI_LEVEL_MAP[effort] };
         }
@@ -307,7 +307,7 @@ export function buildChatBody(
         body.tools = options.tools;
     }
 
-    const effort = provider.thinkingEffort;
+    const effort = options?.thinkingEffort !== undefined ? options.thinkingEffort : provider.thinkingEffort;
     if (effort && effort !== 'off') {
         if (isOllama) {
             body.think = effort;

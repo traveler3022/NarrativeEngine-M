@@ -47,8 +47,11 @@ export function coerceCategory(raw: string): DivergenceCategory {
 }
 
 export function stripReasoning(raw: string): string {
-    let clean = raw.replace(/<think[\s\S]*?<\/think\s*>/gi, '');
-    const fence = clean.match(/```(?:\w+)?\s*([\s\S]*?)```/);
+    let clean = raw
+        .replace(/<think[\s\S]*?<\/think\s*>/gi, '')
+        .replace(/<reasoning[\s\S]*?<\/reasoning\s*>/gi, '')
+        .replace(/<reflection[\s\S]*?<\/reflection\s*>/gi, '');
+    const fence = clean.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (fence) clean = fence[1];
     return clean.trim();
 }
