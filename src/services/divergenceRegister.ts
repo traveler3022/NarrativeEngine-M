@@ -1,4 +1,4 @@
-import type { LLMProvider, DivergenceEntry, DivergenceRegister, DivergenceCategory, ArchiveChapter } from '../types';
+import type { LLMProvider, DivergenceEntry, DivergenceRegister, DivergenceCategory, ArchiveChapter, NPCEntry } from '../types';
 import { llmCall } from '../utils/llmCall';
 import { uid } from '../utils/uid';
 import { countTokens } from './tokenizer';
@@ -250,7 +250,9 @@ export function mergeSealEntries(
 
 export function renderRegisterForPayload(
     register: DivergenceRegister,
-    chapters?: ArchiveChapter[]
+    chapters?: ArchiveChapter[],
+    onStageNpcIds?: string[],
+    npcLedger?: NPCEntry[],
 ): string {
     if (register.entries.length === 0) return '';
 
@@ -273,40 +275,103 @@ export function renderRegisterForPayload(
 
     if (activeEntries.length === 0) return '';
 
+    const onStageSet = new Set(onStageNpcIds ?? []);
+    const offStageSet = new Set<string>();
+    if (npcLedger && onStageSet.size > 0) {
+        for (const n of npcLedger) {
+            if (!n.archived && !onStageSet.has(n.id)) {
+                offStageSet.add(n.id);
+            }
+        }
+    }
+
     const byChapter = new Map<string, DivergenceEntry[]>();
     for (const e of activeEntries) {
         if (!byChapter.has(e.chapterId)) byChapter.set(e.chapterId, []);
         byChapter.get(e.chapterId)!.push(e);
     }
 
-    const sections: string[] = [];
-
-    for (const [chapterId, chapterEntries] of byChapter) {
-        const title = chapterTitleMap.get(chapterId) ?? `Chapter ${chapterId}`;
+    const renderEntries = (entries: DivergenceEntry[]): string => {
         const byCategory = new Map<DivergenceCategory, DivergenceEntry[]>();
-        for (const e of chapterEntries) {
+        for (const e of entries) {
             if (!byCategory.has(e.category)) byCategory.set(e.category, []);
             byCategory.get(e.category)!.push(e);
         }
 
         const catSections: string[] = [];
-        for (const [cat, entries] of byCategory) {
+        for (const [cat, catEntries] of byCategory) {
             const label = CATEGORY_LABELS[cat] ?? cat.toUpperCase();
-            const lines = entries.map(e => {
+            const lines = catEntries.map(e => {
                 const pin = e.pinned ? ' ★' : '';
                 const manual = e.source === 'manual' ? ' ⚡' : '';
                 return `• ${e.text}${pin}${manual}`;
             });
             catSections.push(`${label}:\n${lines.join('\n')}`);
         }
+        return catSections.join('\n\n');
+    };
 
-        sections.push(`${title}:\n${catSections.join('\n\n')}`);
+    // If no on-stage partition or no off-stage NPCs, render as before (single block)
+    if (onStageSet.size === 0 || offStageSet.size === 0) {
+        const sections: string[] = [];
+        for (const [chapterId, chapterEntries] of byChapter) {
+            const title = chapterTitleMap.get(chapterId) ?? `Chapter ${chapterId}`;
+            sections.push(`${title}:\n${renderEntries(chapterEntries)}`);
+        }
+        const pinnedCount = register.entries.filter(e => e.pinned).length;
+        const banner = `${activeEntries.length} active facts across ${byChapter.size} chapters${pinnedCount > 0 ? ` · ${pinnedCount} pinned` : ''}`;
+        return `[ESTABLISHED FACTS]\n[${banner}]\nThese facts are TRUE in this campaign.\n\n${sections.join('\n\n')}\n[END ESTABLISHED FACTS]`;
     }
 
+    // ── Partitioned rendering ──
+    // On-stage NPCs: see all facts (knownBy undefined = broadcast, always included)
+    // Off-stage NPCs: only see facts where knownBy is undefined (broadcast) OR knownBy includes them
+    const onStageEntries = activeEntries;
+    const offStageEntries = activeEntries.filter(e => {
+        if (e.knownBy === undefined) return true; // broadcast
+        return e.knownBy.some(id => offStageSet.has(id));
+    });
+
+    const sections: string[] = [];
+    for (const [chapterId, chapterEntries] of byChapter) {
+        const title = chapterTitleMap.get(chapterId) ?? `Chapter ${chapterId}`;
+        sections.push(`${title}:\n${renderEntries(chapterEntries)}`);
+    }
     const pinnedCount = register.entries.filter(e => e.pinned).length;
     const banner = `${activeEntries.length} active facts across ${byChapter.size} chapters${pinnedCount > 0 ? ` · ${pinnedCount} pinned` : ''}`;
 
-    return `[ESTABLISHED FACTS]\n[${banner}]\nThese facts are TRUE in this campaign.\n\n${sections.join('\n\n')}\n[END ESTABLISHED FACTS]`;
+    // If off-stage is the same as full list, no partitioning needed
+    if (offStageEntries.length === activeEntries.length) {
+        return `[ESTABLISHED FACTS]\n[${banner}]\nThese facts are TRUE in this campaign.\n\n${sections.join('\n\n')}\n[END ESTABLISHED FACTS]`;
+    }
+
+    // Partitioned: separate blocks
+    const onStageSections: string[] = [];
+    const onStageByChapter = new Map<string, DivergenceEntry[]>();
+    for (const e of onStageEntries) {
+        if (!onStageByChapter.has(e.chapterId)) onStageByChapter.set(e.chapterId, []);
+        onStageByChapter.get(e.chapterId)!.push(e);
+    }
+    for (const [chapterId, chapterEntries] of onStageByChapter) {
+        const title = chapterTitleMap.get(chapterId) ?? `Chapter ${chapterId}`;
+        onStageSections.push(`${title}:\n${renderEntries(chapterEntries)}`);
+    }
+
+    const offStageSections: string[] = [];
+    const offStageByChapter = new Map<string, DivergenceEntry[]>();
+    for (const e of offStageEntries) {
+        if (!offStageByChapter.has(e.chapterId)) offStageByChapter.set(e.chapterId, []);
+        offStageByChapter.get(e.chapterId)!.push(e);
+    }
+    for (const [chapterId, chapterEntries] of offStageByChapter) {
+        const title = chapterTitleMap.get(chapterId) ?? `Chapter ${chapterId}`;
+        offStageSections.push(`${title}:\n${renderEntries(chapterEntries)}`);
+    }
+
+    const onStageBanner = `${onStageEntries.length} facts (on-stage view · all)`;
+    const offStageBanner = `${offStageEntries.length} facts (off-stage view · bounded)`;
+
+    return `[ESTABLISHED FACTS — ON-STAGE]\n[${onStageBanner}]\n${onStageSections.join('\n\n')}\n[END ON-STAGE FACTS]\n\n[ESTABLISHED FACTS — OFF-STAGE]\n[${offStageBanner}]\n${offStageSections.join('\n\n')}\n[END OFF-STAGE FACTS]`;
 }
 
 export function countRegisterTokens(register: DivergenceRegister): number {

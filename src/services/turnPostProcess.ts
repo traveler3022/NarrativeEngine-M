@@ -1,4 +1,4 @@
-import type { NPCEntry, ArchiveChapter, DivergenceEntry, LLMProvider } from '../types';
+import type { NPCEntry, ArchiveChapter, ArchiveIndexEntry, DivergenceEntry, LLMProvider, WitnessSource } from '../types';
 import type { TurnCallbacks, TurnState } from './turnTypes';
 import { generateNPCProfile, updateExistingNPCs, backfillNPCDrives } from './chatEngine';
 import { extractNPCNames, classifyNPCNames, validateNPCCandidates } from './npcDetector';
@@ -15,18 +15,63 @@ import { scanInventory } from './inventoryParser';
 import { rateImportance } from './importanceRater';
 import { scanPressure, buildPressurePatch, shouldArchiveNPC, findArchivedToRestore } from './npcPressureTracker';
 import { mergeSealEntries } from './divergenceRegister';
+import { llmCall } from '../utils/llmCall';
+import { extractJson } from './payloadBuilder';
 
 export type CombinedSealResult = {
     summary: ChapterSummaryOutput | null;
     divergences: DivergenceEntry[];
     divergenceParseError?: boolean;
+    witnessCorrections?: Record<string, string[]>;
 };
+
+const PRESENT_HEADER_RE = /👥\s*\[Present\]\s*[:\-–—]?\s*(.+?)(?:\n|$)/i;
+
+export function parsePresentHeader(gmText: string): string[] {
+    const match = gmText.match(PRESENT_HEADER_RE);
+    if (!match) return [];
+    const raw = match[1].trim();
+    return raw
+        .split(/[,;]\s*/)
+        .map(n => n.trim())
+        .filter(n => n.length > 0 && n.length < 40);
+}
+
+export function resolveNPCIds(names: string[], ledger: NPCEntry[]): string[] {
+    const { existingNpcs } = classifyNPCNames(names, ledger);
+    return existingNpcs.map(n => n.id);
+}
+
+async function auxWitnessFallback(gmText: string, ledger: NPCEntry[], provider: LLMProvider): Promise<string[]> {
+    const roster = ledger.map(n => `- ${n.name} (id: ${n.id}${n.aliases ? ', aka: ' + n.aliases : ''})`).join('\n');
+    const prompt = `You are an NPC presence classifier. Given the GM narration below, list the canonical NPC IDs of characters who are PHYSICALLY PRESENT in the scene (not just mentioned).
+
+NPC LEDGER:
+${roster || '(none)'}
+
+GM NARRATION:
+${gmText.slice(0, 2000)}
+
+Return ONLY a JSON array of NPC IDs, e.g. ["npc_1", "npc_3"]. If no NPCs are physically present, return [].`;
+
+    try {
+        const raw = await llmCall(provider, prompt, { priority: 'low', maxTokens: 200, thinkingEffort: 'off' });
+        const cleaned = extractJson(raw.trim());
+        const parsed = JSON.parse(cleaned);
+        if (Array.isArray(parsed)) {
+            const knownIds = new Set(ledger.map(n => n.id));
+            return parsed.filter((id: unknown) => typeof id === 'string' && knownIds.has(id));
+        }
+    } catch {}
+    return [];
+}
 
 export async function runCombinedSeal(
     activeCampaignId: string,
     chapter: ArchiveChapter,
     provider: LLMProvider,
     npcLedger: NPCEntry[],
+    archiveIndex?: ArchiveIndexEntry[],
 ): Promise<CombinedSealResult> {
     const allScenes = await api.archive.getIndex(activeCampaignId);
     const startNum = parseInt(chapter.sceneRange[0], 10);
@@ -49,7 +94,15 @@ export async function runCombinedSeal(
         aliases: n.aliases ?? '',
     }));
 
-    return sealChapterCombined(provider, scenesContent, chapter.chapterId, chapter.title, sceneIds, npcInfo);
+    // Build witness data for the seal prompt
+    const indexEntries = archiveIndex
+        ? archiveIndex.filter(e => {
+            const sn = parseInt(e.sceneId);
+            return sn >= startNum && sn <= endNum;
+        }).map(e => ({ sceneId: e.sceneId, npcsWitnessed: e.npcsWitnessed }))
+        : undefined;
+
+    return sealChapterCombined(provider, scenesContent, chapter.chapterId, chapter.title, sceneIds, npcInfo, indexEntries);
 }
 
 export async function handlePostTurn(
@@ -78,6 +131,21 @@ export async function handlePostTurn(
 
     const extractedNames = extractNPCNames(lastAssistantContent);
 
+    // ── Update on-stage NPC tracking from 👥 [Present] header ──
+    const presentHeaderNames = parsePresentHeader(lastAssistantContent);
+    if (presentHeaderNames.length > 0) {
+        const onStageIds = resolveNPCIds(presentHeaderNames, npcLedger);
+        callbacks.setOnStageNpcIds?.(onStageIds);
+        console.log(`[OnStage] Updated from 👥 header: ${onStageIds.join(', ')}`);
+    } else {
+        // Header empty — derive from body extract for continuity
+        const { existingNpcs: bodyNpcs } = classifyNPCNames(extractedNames, npcLedger);
+        if (bodyNpcs.length > 0) {
+            const bodyIds = bodyNpcs.map(n => n.id);
+            callbacks.setOnStageNpcIds?.(bodyIds);
+        }
+    }
+
     if (callbacks.setSemanticFacts) {
         const cid = activeCampaignId;
         const cb = callbacks;
@@ -93,28 +161,78 @@ export async function handlePostTurn(
         .catch((e) => console.warn('[TurnPostProcess] Seal-Chapter queue push failed:', e));
 
     if (appendedSceneId) {
+        const sceneId = appendedSceneId;
+        const userText = displayInput;
+        const gmText = lastAssistantContent;
+        const npcLedgerSnap = npcLedger;
+        const cid = activeCampaignId;
         const ratingProvider = state.getFreshProvider();
-        if (ratingProvider) {
-            const sceneId = appendedSceneId;
-            const userText = displayInput;
-            const gmText = lastAssistantContent;
-            const recentMsgs = state.getMessages();
-            const cid = activeCampaignId;
-            backgroundQueue.push('Importance-Rate', async () => {
+
+        // Pre-compute witness data synchronously so it's captured before the
+        // background task fires — avoids racing against message state changes.
+        const headerNames = parsePresentHeader(gmText);
+        const headerIds = resolveNPCIds(headerNames, npcLedgerSnap);
+
+        // ── Fused index patch (importance + witness in one read/write) ──
+        backgroundQueue.push('Index-Patch', async () => {
+            let changed = false;
+            let index = await api.archive.getIndex(cid);
+            const entry = index.find(e => e.sceneId === sceneId);
+            if (!entry) return;
+
+            // (a) Importance rating
+            if (ratingProvider) {
                 try {
+                    const recentMsgs = state.getMessages();
                     const llmImportance = await rateImportance(ratingProvider, userText, gmText, recentMsgs);
-                    const index = await api.archive.getIndex(cid);
-                    const entry = index.find(e => e.sceneId === sceneId);
-                    if (entry && llmImportance !== entry.importance) {
+                    if (llmImportance !== entry.importance) {
                         entry.importance = llmImportance;
-                        const { offlineStorage } = await import('./storage');
-                        await offlineStorage.archive.updateIndex(cid, index);
-                        callbacks.setArchiveIndex([...index]);
+                        changed = true;
                         console.log(`[ImportanceRater] Scene #${sceneId}: heuristic→${entry.importance} → LLM→${llmImportance}`);
                     }
                 } catch (e) { console.warn('[TurnPostProcess] Importance rating failed:', e); }
-            }).catch((e) => console.warn('[TurnPostProcess] backgroundQueue push failed:', e));
-        }
+            }
+
+            // (b) Witness capture
+            if (headerIds.length > 0) {
+                entry.npcsWitnessed = headerIds;
+                entry.witnessSource = 'header' as WitnessSource;
+                changed = true;
+                console.log(`[Witness] Scene #${sceneId}: header parse → ${headerIds.join(', ')}`);
+            } else {
+                let resolvedIds: string[] = [];
+                let source: WitnessSource = 'empty';
+
+                const auxProvider = state.getFreshAuxiliaryProvider?.();
+                if (auxProvider?.endpoint) {
+                    try {
+                        const auxIds = await auxWitnessFallback(gmText, npcLedgerSnap, auxProvider);
+                        if (auxIds.length > 0) {
+                            resolvedIds = auxIds;
+                            source = 'aux_fallback';
+                        }
+                    } catch { /* aux failed, fall through */ }
+                }
+
+                if (resolvedIds.length === 0) {
+                    const bodyNames = extractNPCNames(gmText);
+                    const { existingNpcs } = classifyNPCNames(bodyNames, npcLedgerSnap);
+                    resolvedIds = existingNpcs.map(n => n.id);
+                    source = resolvedIds.length > 0 ? 'body_fallback' : 'empty';
+                }
+
+                entry.npcsWitnessed = resolvedIds.length > 0 ? resolvedIds : undefined;
+                entry.witnessSource = source;
+                changed = true;
+                console.log(`[Witness] Scene #${sceneId}: ${source} → ${resolvedIds.join(', ') || '(empty)'}`);
+            }
+
+            if (changed) {
+                const { offlineStorage } = await import('./storage');
+                await offlineStorage.archive.updateIndex(cid, index);
+                callbacks.setArchiveIndex([...index]);
+            }
+        }).catch((e) => console.warn('[TurnPostProcess] Index-Patch queue push failed:', e));
     }
 
     if (extractedNames.length > 0) {
@@ -245,7 +363,7 @@ async function handleSealChapter(state: TurnState, callbacks: TurnCallbacks, act
 
             const provider = state.getFreshProvider();
             if (provider) {
-                const sealResult = await runCombinedSeal(activeCampaignId, sealed, provider, state.npcLedger ?? []);
+                const sealResult = await runCombinedSeal(activeCampaignId, sealed, provider, state.npcLedger ?? [], state.archiveIndex);
 
                 if (sealResult.summary) {
                     await api.chapters.update(activeCampaignId, sealed.chapterId, {
@@ -258,6 +376,34 @@ async function handleSealChapter(state: TurnState, callbacks: TurnCallbacks, act
                         tone: sealResult.summary.tone,
                         themes: sealResult.summary.themes,
                     });
+                }
+
+                // ── Apply witness corrections from seal audit ──
+                if (sealResult.witnessCorrections && Object.keys(sealResult.witnessCorrections).length > 0) {
+                    try {
+                        const index = await api.archive.getIndex(activeCampaignId);
+                        let corrected = false;
+                        for (const entry of index) {
+                            const corrections = sealResult.witnessCorrections[entry.sceneId];
+                            if (corrections) {
+                                const npcLedger = state.npcLedger ?? [];
+                                const validIds = corrections.filter(id =>
+                                    npcLedger.some(n => n.id === id)
+                                );
+                                if (validIds.length > 0) {
+                                    entry.npcsWitnessed = validIds;
+                                    entry.witnessSource = 'seal_correction' as WitnessSource;
+                                    corrected = true;
+                                }
+                            }
+                        }
+                        if (corrected) {
+                            const { offlineStorage } = await import('./storage');
+                            await offlineStorage.archive.updateIndex(activeCampaignId, index);
+                            callbacks.setArchiveIndex([...index]);
+                            console.log(`[CombinedSeal] Applied witness corrections for ${Object.keys(sealResult.witnessCorrections).length} scenes`);
+                        }
+                    } catch (e) { console.warn('[CombinedSeal] Failed to apply witness corrections:', e); }
                 }
 
                 const liveRegister = state.divergenceRegister;

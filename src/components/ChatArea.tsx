@@ -119,6 +119,7 @@ export function ChatArea() {
             clearPinnedChapters: () => useAppStore.getState().clearPinnedChapters(),
             deepContextSearch: useDeepScan,
             divergenceRegister: useAppStore.getState().divergenceRegister,
+            onStageNpcIds: useAppStore.getState().onStageNpcIds,
         }, {
             onCheckingNotes: setIsCheckingNotes,
             addMessage,
@@ -142,6 +143,7 @@ export function ChatArea() {
             setStreamingStats: (stats: StreamingStats | null) => useAppStore.getState().setStreamingStats(stats),
             setDivergenceRegister: (reg) => { setDivergenceRegister(reg); if (activeCampaignId) import('../store/campaignStore').then(m => m.saveDivergenceRegister(activeCampaignId, reg)); },
             updateMessageDivergence: updateMessageDivergence,
+            setOnStageNpcIds: (ids) => useAppStore.getState().setOnStageNpcIds(ids),
         }, abortControllerRef.current!);
 
         setForcedAIs([]);

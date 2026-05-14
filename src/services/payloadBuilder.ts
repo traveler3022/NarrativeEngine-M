@@ -1,4 +1,4 @@
-import type { AppSettings, ChatMessage, GameContext, LoreChunk, NPCEntry, ArchiveScene, PayloadTrace, DivergenceRegister } from '../types';
+import type { AppSettings, ChatMessage, GameContext, LoreChunk, NPCEntry, ArchiveScene, PayloadTrace, DivergenceRegister, ArchiveIndexEntry } from '../types';
 import type { OpenAIMessage } from './llmService';
 import { countTokens } from './tokenizer';
 import { buildBehaviorDirective, buildDriftAlert } from './npcBehaviorDirective';
@@ -80,11 +80,14 @@ export function buildPayload(
     relevantLore?: LoreChunk[],
     npcLedger?: NPCEntry[],
     archiveRecall?: ArchiveScene[],
+    onStageNpcIds?: string[],
+    sceneNumber?: string,
     recommendedNPCNames?: string[],
     semanticFactText?: string,
     deepContextSummary?: string,
     divergenceRegister?: DivergenceRegister,
     chapters?: ArchiveChapter[],
+    archiveIndex?: ArchiveIndexEntry[],
 ): { messages: OpenAIMessage[]; trace?: PayloadTrace[] } {
     const trace: PayloadTrace[] = [];
     const isDebug = settings.debugMode === true;
@@ -108,6 +111,7 @@ export function buildPayload(
 
     // --- 2. Calculate Stable Truth & Summary (High Priority) ---
     const stableParts: string[] = [];
+    if (sceneNumber) stableParts.push(`[CURRENT SCENE: #${sceneNumber}]`);
     if (context.rulesRaw) {
         let rules = context.rulesRaw;
         if (context.diceFairnessActive === false) {
@@ -136,7 +140,7 @@ export function buildPayload(
 
     let divergenceContent = '';
     if (divergenceRegister && divergenceRegister.entries.length > 0) {
-        divergenceContent = renderRegisterForPayload(divergenceRegister, chapters);
+        divergenceContent = renderRegisterForPayload(divergenceRegister, chapters, onStageNpcIds, npcLedger);
     }
     const divergenceTokens = countTokens(divergenceContent);
     addTrace({ source: 'Divergence Register', classification: 'stable_truth', tokens: divergenceTokens, reason: `Campaign canon overrides (${divergenceRegister?.entries.length ?? 0} entries)`, included: !!divergenceContent, position: 'system_static' });
@@ -151,14 +155,51 @@ export function buildPayload(
             .filter(m => m.role === 'assistant' && typeof m.content === 'string' && m.content.length > 20)
             .map(m => m.content as string);
 
-        const filteredRecall = archiveRecall.filter(scene => {
+        let filteredRecall = archiveRecall.filter(scene => {
             if (activeAssistantContents.some(asst => scene.content.includes(asst))) return false;
             return true;
         });
 
+        // ── Perception-bounded archive recall ──
+        // If npcsWitnessed is set on any index entry and npcLedger is available,
+        // filter out scenes that no active NPC witnessed.
+        // Scenes with undefined npcsWitnessed are broadcast (legacy continuity).
+        if (archiveIndex && archiveIndex.length > 0) {
+            const currentActiveIds = new Set<string>();
+            if (npcLedger) {
+                for (const n of npcLedger) {
+                    if (!n.archived) currentActiveIds.add(n.id);
+                }
+            }
+            const onStageSet = new Set(onStageNpcIds ?? []);
+
+            if (currentActiveIds.size > 0) {
+                const indexMap = new Map(archiveIndex.map(e => [e.sceneId, e]));
+                const hasAnyWitnessData = archiveIndex.some(e => e.npcsWitnessed !== undefined);
+
+                if (hasAnyWitnessData) {
+                    filteredRecall = filteredRecall.filter(scene => {
+                        const idxEntry = indexMap.get(scene.sceneId);
+                        if (!idxEntry) return true; // no index data → keep
+                        if (idxEntry.npcsWitnessed === undefined) return true; // broadcast → keep
+
+                        // On-stage NPCs: they have the author's broadcast view, keep scenes they witnessed
+                        for (const wId of idxEntry.npcsWitnessed) {
+                            if (onStageSet.has(wId)) return true;
+                        }
+                        // Off-stage active NPCs: keep only if they witnessed this scene
+                        for (const wId of idxEntry.npcsWitnessed) {
+                            if (currentActiveIds.has(wId)) return true;
+                        }
+                        return false;
+                    });
+                }
+            }
+        }
+
         if (filteredRecall.length > 0) {
             const text = `[ARCHIVE RECALL — VERBATIM PAST SCENES]\n${filteredRecall.map(s => `[SCENE #${s.sceneId}]\n${s.content}`).join('\n\n')}\n[END ARCHIVE RECALL]`;
-            worldBlocks.push({ source: 'Archive Recall', content: text, tokens: countTokens(text), reason: `Verbatim history (${filteredRecall.length} scenes)` });
+            worldBlocks.push({ source: 'Archive Recall', content: text, tokens: countTokens(text), reason: `Verbatim history (${filteredRecall.length} scenes${archiveIndex?.some(e => e.npcsWitnessed !== undefined) ? ', perception-bounded' : ''})` });
         }
     }
 
@@ -240,9 +281,10 @@ export function buildPayload(
         }
 
         if (activeNPCs.length > 0) {
+            const onStageSet = new Set(onStageNpcIds ?? []);
             const npcText = `[ACTIVE NPC CONTEXT]\n${activeNPCs.map(npc => {
                 // Minified base line (compact single-line format)
-                let line = minifyNPC(npc);
+                let line = minifyNPC(npc, onStageSet.size > 0 && !onStageSet.has(npc.id));
                 const directive = buildBehaviorDirective(npc);
                 if (directive) line += ` | ${directive}`;
                 const drift = buildDriftAlert(npc);

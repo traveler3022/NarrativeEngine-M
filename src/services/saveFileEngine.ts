@@ -147,7 +147,8 @@ function buildCombinedSealPrompt(
     scenes: { sceneId: string; content: string }[],
     chapterTitle: string,
     sceneIds: string[],
-    npcLedger: { id: string; name: string; aliases: string }[]
+    npcLedger: { id: string; name: string; aliases: string }[],
+    indexEntries?: { sceneId: string; npcsWitnessed?: string[] }[]
 ): string {
     const truncated = truncateScenesToBudget(scenes, COMBINED_SEAL_TOKEN_BUDGET);
     const sceneContent = truncated.map(s => `--- SCENE ${s.sceneId} ---\n${s.content}`).join('\n\n');
@@ -160,6 +161,36 @@ function buildCombinedSealPrompt(
         `### ${c.toUpperCase()}\nDefinition: ${CATEGORY_DEFINITIONS[c]}\nOutput: JSON array for this slot, or [] if empty.`
     ).join('\n\n');
 
+    // Build per-scene witness audit table if index data is available
+    let witnessAuditSection = '';
+    if (indexEntries && indexEntries.length > 0) {
+        const entriesWithWitness = indexEntries.filter(e => e.npcsWitnessed && e.npcsWitnessed.length > 0);
+        if (entriesWithWitness.length > 0) {
+            const rows = entriesWithWitness.map(e =>
+                `Scene ${e.sceneId}: ${e.npcsWitnessed!.join(', ') || '(none recorded)'}`
+            ).join('\n');
+            witnessAuditSection = `
+AUDIT — PER-SCENE NPC WITNESSES (pre-capture):
+The following per-scene witness data was captured during play. Review it for accuracy.
+If you find that a scene's witnesses are incorrect (NPCs listed who were NOT present, or NPCs present who are NOT listed),
+provide corrections in the "witness_corrections" field.
+
+${rows}`;
+        }
+    }
+
+    const knownByExample = `     "locations": [
+         { "text": "Eastern gate destroyed by siege", "sceneRef": "014", "npcIds": [], "unrecognizedNpcNames": [] }
+     ]`;
+
+    const knownByRules = `
+KNOWNBY RULES:
+- knownBy: list the canonical NPC IDs of characters who WITNESSED or could reasonably know this fact.
+- For rules_lore and locations categories, knownBy should be omitted or null (broadcast knowledge — everyone can know).
+- For npc_events, promises_debts, party_facts, world_state, and misc: list only NPCs who were present or directly informed.
+- If the fact is public knowledge (announced publicly, observed by all present), list all witnesses.
+- If unsure who knows, omit knownBy (treated as broadcast).`;
+
     return `You are a TTRPG campaign archivist. Perform TWO tasks in a single response:
 
 TASK 1 — Generate a structured chapter summary.
@@ -170,7 +201,7 @@ SCENE IDs IN THIS CHAPTER: ${sceneIds.join(', ')}
 
 NPC LEDGER (resolve names to IDs):
 ${npcList || '(no NPCs in ledger)'}
-
+${witnessAuditSection}
 SCENE CONTENT:
 ${sceneContent}
 
@@ -190,17 +221,15 @@ The "summary" value must be this JSON shape:
 
 The "divergences" value must be an object with one key per category slot. Each value is an array of fact objects, or [] if empty. Example:
 {
-    "locations": [
-        { "text": "Eastern gate destroyed by siege", "sceneRef": "014", "npcIds": [], "unrecognizedNpcNames": [] }
-    ],
-    "npc_events": [
-        { "text": "Grak allied with the player", "sceneRef": "018", "npcIds": ["npc_42"], "unrecognizedNpcNames": [] }
-    ],
-    "promises_debts": [],
-    "world_state": [],
-    "party_facts": [],
-    "rules_lore": [],
-    "misc": []
+${knownByExample},
+     "npc_events": [
+         { "text": "Grak allied with the player", "sceneRef": "018", "npcIds": ["npc_42"], "knownBy": ["npc_42", "npc_5"], "unrecognizedNpcNames": [] }
+     ],
+     "promises_debts": [],
+     "world_state": [],
+     "party_facts": [],
+     "rules_lore": [],
+     "misc": []
 }
 
 Category definitions:
@@ -211,13 +240,20 @@ ${divergenceSlots}
 Definition: ${CATEGORY_DEFINITIONS.misc}
 Output: JSON array for this slot, or [] if empty.
 
+${knownByRules}
+
 DIVERGENCE EXTRACTION RULES:
 - Each fact is ONE SHORT SENTENCE, max 15 words. No compound sentences, no explanations.
 - sceneRef must be one of: ${sceneIds.join(', ')}
 - npcIds: list the NPC ledger IDs mentioned. If a name appears that is NOT in the ledger, put it in unrecognizedNpcNames instead.
 - Focus on: permanent changes, new information, relationship shifts, acquisitions, losses, oaths, regime changes.
 - Skip transient details, emotional narration, momentary states, and anything the archive would already surface.
-- If a slot is empty, output [] for that slot.
+- If a slot is empty, output [] for that slot.${witnessAuditSection ? `
+
+WITNESS CORRECTIONS:
+If you found errors in the per-scene witness data above, include a "witness_corrections" key at the top level of the divergences object:
+"witness_corrections": { "014": ["npc_5", "npc_7"], "022": ["npc_42"] }
+This maps scene IDs to the CORRECT list of NPC IDs who were physically present in that scene. Only include scenes where you disagree with the pre-captured data.` : ''}
 
 SUMMARY RULES:
 1. Keywords should be distinctive nouns/places/factions — not generic words
@@ -234,6 +270,7 @@ export type CombinedSealResult = {
     summary: ChapterSummaryOutput | null;
     divergences: DivergenceEntry[];
     divergenceParseError?: boolean;
+    witnessCorrections?: Record<string, string[]>;
 };
 
 export function parseCombinedSealOutput(
@@ -341,6 +378,28 @@ export function parseCombinedSealOutput(
 
                 const hasReviewFlag = stillUnrecognized.length > 0;
 
+                // ── knownBy extraction ──
+                let knownBy: string[] | undefined;
+                const rawKnownBy = rawItem.knownBy;
+                if (Array.isArray(rawKnownBy)) {
+                    const resolvedKnownBy: string[] = [];
+                    for (const kb of rawKnownBy) {
+                        if (typeof kb !== 'string') continue;
+                        const matched = npcNameMap.get(kb.toLowerCase()) ?? (npcLedger.some(n => n.id === kb) ? kb : null);
+                        if (matched && !resolvedKnownBy.includes(matched)) {
+                            resolvedKnownBy.push(matched);
+                        }
+                    }
+                    if (resolvedKnownBy.length > 0) {
+                        knownBy = resolvedKnownBy;
+                    }
+                }
+                // Broadcast categories: knownBy stays undefined for rules_lore and locations
+                const broadcastCategories: Set<string> = new Set(['rules_lore', 'locations']);
+                if (broadcastCategories.has(coerceCategory(category))) {
+                    knownBy = undefined;
+                }
+
                 entries.push({
                     id: `div_${uid()}`,
                     chapterId,
@@ -348,6 +407,7 @@ export function parseCombinedSealOutput(
                     text,
                     sceneRef,
                     npcIds: resolvedNpcIds,
+                    knownBy,
                     pinned: false,
                     source: 'auto',
                     reviewFlag: hasReviewFlag || undefined,
@@ -359,7 +419,23 @@ export function parseCombinedSealOutput(
         divergenceParseError = true;
     }
 
-    return { summary, divergences: entries, divergenceParseError: divergenceParseError || undefined };
+    // ── Extract witness_corrections from seal output ──
+    let witnessCorrections: Record<string, string[]> | undefined;
+    const rawCorrections = (parsed as Record<string, unknown>)['witness_corrections'];
+    if (rawCorrections && typeof rawCorrections === 'object' && !Array.isArray(rawCorrections)) {
+        const corrections: Record<string, string[]> = {};
+        for (const [sceneId, value] of Object.entries(rawCorrections as Record<string, unknown>)) {
+            if (Array.isArray(value) && value.every((v: unknown) => typeof v === 'string')) {
+                corrections[sceneId] = value as string[];
+            }
+        }
+        if (Object.keys(corrections).length > 0) {
+            witnessCorrections = corrections;
+            console.log(`[CombinedSeal] Extracted witness corrections for ${Object.keys(corrections).length} scenes`);
+        }
+    }
+
+    return { summary, divergences: entries, divergenceParseError: divergenceParseError || undefined, witnessCorrections };
 }
 
 export async function sealChapterCombined(
@@ -369,6 +445,7 @@ export async function sealChapterCombined(
     chapterTitle: string,
     sceneIds: string[],
     npcLedger: { id: string; name: string; aliases: string }[],
+    indexEntries?: { sceneId: string; npcsWitnessed?: string[] }[],
     maxRetries = 2
 ): Promise<CombinedSealResult> {
     const sealEffort: ThinkingEffort = 'off';
@@ -377,7 +454,7 @@ export async function sealChapterCombined(
     console.log(`[CombinedSeal] Config: maxTokens=${maxTokens}, thinkingEffort=${sealEffort}, provider.effort=${provider.thinkingEffort ?? 'none'}, apiFormat=${provider.apiFormat ?? 'openai'}`);
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        const prompt = buildCombinedSealPrompt(scenes, chapterTitle, sceneIds, npcLedger);
+        const prompt = buildCombinedSealPrompt(scenes, chapterTitle, sceneIds, npcLedger, indexEntries);
         const label = attempt === 0 ? '' : ' (retry)';
 
         console.log(`[CombinedSeal] Generating summary + divergences${label}...`, {

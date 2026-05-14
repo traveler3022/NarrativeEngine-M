@@ -50,6 +50,8 @@ The door swings open on a dusty study. A letter rests on the desk, its seal alre
 ### NPC ENGINE
 
 **FIREWALL:** NPCs act only on directly perceived info (sight/sound/established history). Verify unobstructed perception before triggering reaction. No omniscience. No proactive solutions to unknown problems.
+**PERCEPTION LEDGER:** Each active NPC is partitioned ON-STAGE or OFF-STAGE. Off-stage NPCs operate from KNOWLEDGE FROZEN — their archive recall and fact list are canonical. They cannot reference, react to, or hint at any event or fact outside it.
+**NO CUTAWAY LEAK:** If this turn depicts a new event (a fact not previously in any off-stage NPC's bounded view), you may not voice any off-stage NPC in this response. Their reaction belongs to the scene where they encounter the information.
 **GROUNDING:** NPCs react to own perception — including anxieties and ambitions — not to plot needs.
 **FLAVOR:** Apply culturally specific speech patterns where natural and setting-appropriate.
 **RESOLUTION:** NPC wins a conflict → acts immediately. No post-victory holding.

@@ -36,6 +36,7 @@ export type TurnCallbacks = {
     updateMessageDivergence?: (messageId: string, divergenceIds: string[]) => void;
     archiveNPC?: (id: string, turn: number, reason: string) => void;
     restoreNPC?: (id: string) => void;
+    setOnStageNpcIds?: (ids: string[]) => void;
 };
 
 export type TurnState = {
@@ -66,4 +67,5 @@ export type TurnState = {
     clearPinnedChapters: () => void;
     deepContextSearch?: boolean;
     divergenceRegister?: DivergenceRegister;
+    onStageNpcIds?: string[];
 };

@@ -222,6 +222,10 @@ export type CampaignSlice = {
     pinChapter: (chapterId: string) => void;
     clearPinnedChapters: () => void;
 
+    // On-stage NPC tracking (perception bounding)
+    onStageNpcIds: string[];
+    setOnStageNpcIds: (ids: string[]) => void;
+
     // Auto Bookkeeping
     bookkeepingTurnCounter: number;
     autoBookkeepingInterval: number;
@@ -386,6 +390,10 @@ export const createCampaignSlice: StateCreator<CampaignDeps, [], [], CampaignSli
         return { pinnedChapterIds: pinned };
     }) as any,
     clearPinnedChapters: () => set({ pinnedChapterIds: [] } as Partial<CampaignDeps>),
+
+    // On-stage NPC tracking
+    onStageNpcIds: [],
+    setOnStageNpcIds: (ids) => set({ onStageNpcIds: ids } as Partial<CampaignDeps>),
 
     // Auto Bookkeeping
     bookkeepingTurnCounter: 0,

@@ -190,6 +190,7 @@ export type DivergenceEntry = {
     text: string;
     sceneRef: string;
     npcIds: string[];
+    knownBy?: string[]; // NPC IDs that witnessed or know this fact; undefined = broadcast
     pinned: boolean;
     enabled?: boolean;
     source: 'auto' | 'manual';
@@ -226,11 +227,15 @@ export type ChatMessage = {
 };
 
 /** Search index entry — one per scene, auto-built by server on every turn. */
+export type WitnessSource = 'header' | 'aux_fallback' | 'body_fallback' | 'seal_correction' | 'empty';
+
 export type ArchiveIndexEntry = {
     sceneId: string;         // zero-padded, e.g. "014" — matches ## SCENE header in .archive.md
     timestamp: number;
     keywords: string[];      // proper nouns, quoted strings, [MEMORABLE:] tags
     npcsMentioned: string[]; // NPC names detected in the scene
+    npcsWitnessed?: string[]; // NPC IDs physically present/witnessing the scene
+    witnessSource?: WitnessSource; // how npcsWitnessed was determined
     userSnippet: string;     // first ~100 chars of user message (human-readable preview)
     keywordStrengths?: Record<string, number>;
     npcStrengths?: Record<string, number>;

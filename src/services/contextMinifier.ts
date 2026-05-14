@@ -132,11 +132,12 @@ export function minifyLoreChunk(chunk: LoreChunk): string {
  * Before: [ASH HUANG (None)] Alive | Affinity: 50/100 (Neutral) | Asian male... | Goals: ...
  * After:  ASH_HUANG Alive aff:50 | Asian male... | panicked | Gim:... Glr:... | 6/5/10/1/7/6
  */
-export function minifyNPC(npc: NPCEntry): string {
+export function minifyNPC(npc: NPCEntry, offStage?: boolean): string {
     const aliases = npc.aliases ? `(${npc.aliases})` : '';
     const name = npc.name.toUpperCase();
     const status = npc.status || 'Alive';
     const aff = npc.affinity ?? 50;
+    const frozenTag = offStage ? ' [KNOWLEDGE FROZEN]' : '';
 
     const appearance = (npc.appearance || '?').length > 80
         ? (npc.appearance || '?').substring(0, 80) + '…'
@@ -148,5 +149,5 @@ export function minifyNPC(npc: NPCEntry): string {
 
     const goals = npc.goals || '?';
 
-    return `[${name}${aliases}] ${status} aff:${aff} | ${appearance} | ${personality} | ${goals}`;
+    return `[${name}${aliases}]${frozenTag} ${status} aff:${aff} | ${appearance} | ${personality} | ${goals}`;
 }
