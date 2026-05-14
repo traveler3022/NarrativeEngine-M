@@ -55,9 +55,6 @@ export type AIPreset = {
     summarizerAI: LLMProvider;
     utilityAI?: LLMProvider; // Context recommender — optional, fallback to substring scan if empty
     auxiliaryAI?: LLMProvider; // Cheap classifier for NPC validation etc — optional, fallback to storyAI
-    enemyAI?: LLMProvider;
-    neutralAI?: LLMProvider;
-    allyAI?: LLMProvider;
     sampling?: SamplingConfig;
 };
 
@@ -154,19 +151,6 @@ export type GameContext = {
     encounterConfig?: EncounterConfig;
     notebook: NotebookNote[];
     notebookActive: boolean;
-    // --- AI Players (Enemy, Neutral, Ally) ---
-    worldVibe: string; // Global genre constraints (e.g. "Low fantasy, no magic")
-    enemyPlayerActive: boolean;
-    neutralPlayerActive: boolean;
-    allyPlayerActive: boolean;
-    enemyPlayerPrompt: string;
-    neutralPlayerPrompt: string;
-    allyPlayerPrompt: string;
-    interventionChance: number; // 0-100%
-    enemyCooldown: number;
-    neutralCooldown: number;
-    allyCooldown: number;
-    interventionQueue: ('enemy' | 'neutral' | 'ally')[];
     canonState?: string;
     canonStateActive?: boolean;
     headerIndex?: string;

@@ -72,9 +72,6 @@ export const defaultPreset: AIPreset = {
     },
     utilityAI: { endpoint: '', apiKey: '', modelName: '' },
     auxiliaryAI: { endpoint: '', apiKey: '', modelName: '' },
-    enemyAI: { endpoint: '', apiKey: '', modelName: '' },
-    neutralAI: { endpoint: '', apiKey: '', modelName: '' },
-    allyAI: { endpoint: '', apiKey: '', modelName: '' }
 };
 
 export const defaultSettings: AppSettings = {
@@ -126,9 +123,13 @@ export function migrateSettings(data: Record<string, unknown>): AppSettings {
 
     // Already migrated -- has presets array
     if (Array.isArray(raw.presets) && raw.presets.length > 0) {
+        const cleanedPresets = (raw.presets as any[]).map(p => {
+            const { enemyAI: _e, neutralAI: _n, allyAI: _a, ...rest } = p;
+            return rest as AIPreset;
+        });
         return {
-            presets: raw.presets as AIPreset[],
-            activePresetId: (raw.activePresetId as string) || (raw.presets as AIPreset[])[0].id,
+            presets: cleanedPresets,
+            activePresetId: (raw.activePresetId as string) || cleanedPresets[0].id,
             contextLimit: (raw.contextLimit as number) ?? 4096,
             autoCondenseEnabled: (raw.autoCondenseEnabled as boolean) ?? true,
             condenseAggressiveness: (raw.condenseAggressiveness as AppSettings['condenseAggressiveness']) ?? 'balanced',
@@ -171,9 +172,6 @@ export function migrateSettings(data: Record<string, unknown>): AppSettings {
         summarizerAI: { ...migratedStoryProvider },
         utilityAI: { endpoint: '', apiKey: '', modelName: '' },
         auxiliaryAI: { endpoint: '', apiKey: '', modelName: '' },
-        enemyAI: { endpoint: '', apiKey: '', modelName: '' },
-        neutralAI: { endpoint: '', apiKey: '', modelName: '' },
-        allyAI: { endpoint: '', apiKey: '', modelName: '' }
     };
 
     return {
@@ -346,20 +344,5 @@ export const createSettingsSlice: StateCreator<SettingsSlice & { activeCampaignI
     getActiveAuxiliaryEndpoint: () => {
         const preset = get().getActivePreset();
         return preset?.auxiliaryAI;
-    },
-
-    getActiveEnemyEndpoint: () => {
-        const preset = get().getActivePreset();
-        return preset?.enemyAI;
-    },
-
-    getActiveNeutralEndpoint: () => {
-        const preset = get().getActivePreset();
-        return preset?.neutralAI;
-    },
-
-    getActiveAllyEndpoint: () => {
-        const preset = get().getActivePreset();
-        return preset?.allyAI;
     },
 });

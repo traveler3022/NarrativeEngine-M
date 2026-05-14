@@ -12,16 +12,14 @@ import { ProviderConfigSection } from './settings/ProviderConfigSection';
 export function SettingsModal() {
   const { settings, updateSettings, settingsOpen, toggleSettings, addPreset, updatePreset, removePreset, setMobileView } = useAppStore();
   const [activeTab, setActiveTab] = useState(settings.presets[0]?.id || '');
-  const [testingSection, setTestingSection] = useState<'storyAI' | 'summarizerAI' | 'utilityAI' | 'auxiliaryAI' | 'enemyAI' | 'neutralAI' | 'allyAI' | null>(null);
+  const [testingSection, setTestingSection] = useState<'storyAI' | 'summarizerAI' | 'utilityAI' | 'auxiliaryAI' | null>(null);
   const [testResults, setTestResults] = useState<Record<string, { ok: boolean; detail: string } | null>>({});
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     storyAI: true,
     summarizerAI: false,
     utilityAI: false,
-    enemyAI: false,
-    neutralAI: false,
-    allyAI: false,
+    auxiliaryAI: false,
   });
 
   const handleClose = () => {
@@ -33,7 +31,7 @@ export function SettingsModal() {
 
   const activePreset = settings.presets.find((p) => p.id === activeTab) || settings.presets[0];
 
-  const handleTest = async (section: 'storyAI' | 'summarizerAI' | 'utilityAI' | 'auxiliaryAI' | 'enemyAI' | 'neutralAI' | 'allyAI') => {
+  const handleTest = async (section: 'storyAI' | 'summarizerAI' | 'utilityAI' | 'auxiliaryAI') => {
     if (!activePreset) return;
     const config = activePreset[section];
     if (!config || !config.endpoint) return;
@@ -57,9 +55,6 @@ export function SettingsModal() {
       storyAI: { endpoint: 'http://localhost:11434/v1', apiKey: '', modelName: 'llama3', apiFormat: 'openai' },
       summarizerAI: { endpoint: 'http://localhost:11434/v1', apiKey: '', modelName: 'llama3', apiFormat: 'openai' },
       utilityAI: { endpoint: '', apiKey: '', modelName: '' },
-      enemyAI: { endpoint: '', apiKey: '', modelName: '' },
-      neutralAI: { endpoint: '', apiKey: '', modelName: '' },
-      allyAI: { endpoint: '', apiKey: '', modelName: '' }
     };
     addPreset(newPreset);
     setActiveTab(newPreset.id);
@@ -78,13 +73,13 @@ export function SettingsModal() {
     updatePreset(activePreset.id, { name });
   };
 
-  const handleUpdateEndpoint = (section: 'storyAI' | 'summarizerAI' | 'utilityAI' | 'auxiliaryAI' | 'enemyAI' | 'neutralAI' | 'allyAI', field: keyof LLMProvider, value: string | boolean | undefined) => {
+  const handleUpdateEndpoint = (section: 'storyAI' | 'summarizerAI' | 'utilityAI' | 'auxiliaryAI', field: keyof LLMProvider, value: string | boolean | undefined) => {
     if (!activePreset) return;
     const updatedConfig = { ...activePreset[section], [field]: value };
     updatePreset(activePreset.id, { [section]: updatedConfig });
   };
 
-  const handleApiFormatChange = (section: 'storyAI' | 'summarizerAI' | 'utilityAI' | 'auxiliaryAI' | 'enemyAI' | 'neutralAI' | 'allyAI', newFormat: ApiFormat) => {
+  const handleApiFormatChange = (section: 'storyAI' | 'summarizerAI' | 'utilityAI' | 'auxiliaryAI', newFormat: ApiFormat) => {
     if (!activePreset) return;
     const config = activePreset[section] ?? { endpoint: '', apiKey: '', modelName: '' };
     let endpoint = (config.endpoint || '').replace(/\/+$/, '');
@@ -99,7 +94,7 @@ export function SettingsModal() {
     updatePreset(activePreset.id, { [section]: updatedConfig });
   };
 
-  const handleEndpointBlur = (section: 'storyAI' | 'summarizerAI' | 'utilityAI' | 'auxiliaryAI' | 'enemyAI' | 'neutralAI' | 'allyAI', endpoint: string) => {
+  const handleEndpointBlur = (section: 'storyAI' | 'summarizerAI' | 'utilityAI' | 'auxiliaryAI', endpoint: string) => {
     if (!activePreset || !endpoint) return;
     const detected = detectFormatFromEndpoint(endpoint);
     if (!detected) return;
@@ -117,7 +112,7 @@ export function SettingsModal() {
     setExpanded(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
-  const renderProviderConfig = (section: 'storyAI' | 'summarizerAI' | 'utilityAI' | 'auxiliaryAI' | 'enemyAI' | 'neutralAI' | 'allyAI', title: string) => {
+  const renderProviderConfig = (section: 'storyAI' | 'summarizerAI' | 'utilityAI' | 'auxiliaryAI', title: string) => {
     return (
       <ProviderConfigSection
         section={section}
@@ -212,9 +207,6 @@ export function SettingsModal() {
               {renderProviderConfig('summarizerAI', 'Summarizer & Context AI')}
               {renderProviderConfig('utilityAI', 'Utility AI (Context Recommender)')}
               {renderProviderConfig('auxiliaryAI', 'Auxiliary AI (NPC Validator — use Haiku/Flash)')}
-              {renderProviderConfig('enemyAI', 'Enemy AI (Adversarial Player)')}
-              {renderProviderConfig('neutralAI', 'Neutral AI (Chaos/Environmental)')}
-              {renderProviderConfig('allyAI', 'Ally AI (Beneficial Player)')}
 
               <SamplingPanel
                 preset={activePreset}

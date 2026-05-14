@@ -6,7 +6,6 @@ import { shouldCondense, computeTrimIndex, getCondenseBudgetRatio } from './cond
 import { rollEngines, rollDiceFairness } from './engineRolls';
 import { toast } from '../components/Toast';
 import { sanitizePayloadForApi } from './payloadSanitizer';
-import { handleInterventions } from './aiPlayers';
 import { gatherContext } from './turnContext';
 import { handlePostTurn } from './turnPostProcess';
 import { getToolDefinitions, handleLoreTool, handleNotebookTool, handleDiceTool } from './toolHandlers';
@@ -26,9 +25,6 @@ export async function runTurn(
     finalInput += engineResult.appendToInput;
     callbacks.updateContext(engineResult.updatedDCs);
     finalInput += rollDiceFairness(context);
-
-    callbacks.setPipelinePhase?.('ai-intervention');
-    await handleInterventions(state, callbacks, finalInput, abortController);
 
     callbacks.setStreaming(true);
     callbacks.setLoadingStatus?.('[1/5] Extracting Lore & Stats...');

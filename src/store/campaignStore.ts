@@ -46,9 +46,19 @@ export async function saveCampaignState(campaignId: string, state: CampaignState
     await set(`state_${campaignId}`, state);
 }
 
+const AI_PLAYER_CONTEXT_KEYS = [
+    'worldVibe', 'enemyPlayerActive', 'neutralPlayerActive', 'allyPlayerActive',
+    'enemyPlayerPrompt', 'neutralPlayerPrompt', 'allyPlayerPrompt',
+    'interventionChance', 'enemyCooldown', 'neutralCooldown', 'allyCooldown', 'interventionQueue',
+] as const;
+
 export async function loadCampaignState(campaignId: string): Promise<CampaignState | null> {
     const state = await get(`state_${campaignId}`);
-    return state || null;
+    if (!state) return null;
+    if (state.context) {
+        for (const key of AI_PLAYER_CONTEXT_KEYS) delete (state.context as any)[key];
+    }
+    return state;
 }
 
 // ─── Lore Chunks ───

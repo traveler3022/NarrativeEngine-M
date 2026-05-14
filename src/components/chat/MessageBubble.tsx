@@ -22,10 +22,6 @@ export function MessageBubble({ msg, isStreaming, isLastMessage, onEdit, onRegen
     const cleanContent = thinkMatch ? markdownContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim() : markdownContent;
     if (thinkMatch) thinkingBlock = thinkMatch[1].trim();
 
-    const isEnemy = msg.name === 'AI_ENEMY';
-    const isNeutral = msg.name === 'AI_NEUTRAL';
-    const isAlly = msg.name === 'AI_ALLY';
-
     const parsedArgs = (msg as { parsedArgs?: { summary?: unknown } }).parsedArgs;
     const hasSummary = !!(parsedArgs?.summary && Array.isArray(parsedArgs.summary));
     const hasDebugPayload = !!(debugMode && msg.debugPayload);
@@ -35,9 +31,6 @@ export function MessageBubble({ msg, isStreaming, isLastMessage, onEdit, onRegen
             <div className={`max-w-[95%] md:max-w-[75%] px-3 md:px-4 py-2 md:py-3 text-sm font-mono leading-relaxed relative ${
                 msg.role === 'user' ? 'bg-terminal/8 border-l-2 border-terminal text-text-primary' :
                 msg.role === 'system' ? 'bg-ember/8 border-l-2 border-ember text-ember/80' :
-                isEnemy ? 'bg-red-500/5 border-l-2 border-red-500 text-text-primary' :
-                isNeutral ? 'bg-amber-500/5 border-l-2 border-amber-500 text-text-primary' :
-                isAlly ? 'bg-emerald-500/5 border-l-2 border-emerald-500 text-text-primary' :
                 'bg-void-lighter border-l-2 border-border text-text-primary'
             }`}>
                 {msg.divergenceIds && msg.divergenceIds.length > 0 && (
@@ -72,7 +65,7 @@ export function MessageBubble({ msg, isStreaming, isLastMessage, onEdit, onRegen
 
                 <div className="flex items-center gap-2 mb-1">
                     <span className={`text-[10px] uppercase tracking-widest ${msg.role === 'user' ? 'text-terminal' : msg.role === 'system' ? 'text-ember' : 'text-ice'}`}>
-                        {msg.role === 'user' ? '► YOU' : msg.role === 'system' ? '◆ SYS' : isEnemy ? '◇ [ENEMY]' : isNeutral ? '◇ [NEUTRAL]' : isAlly ? '◇ [ALLY]' : '◇ GM'}
+                        {msg.role === 'user' ? '► YOU' : msg.role === 'system' ? '◆ SYS' : '◇ GM'}
                     </span>
                     <span className="text-[9px] text-text-dim">{new Date(msg.timestamp).toLocaleTimeString()}</span>
                 </div>

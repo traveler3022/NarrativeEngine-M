@@ -122,11 +122,6 @@ export function buildPayload(
     if (context.starterActive && context.starter) stableParts.push(context.starter);
     if (context.continuePromptActive && context.continuePrompt) stableParts.push(context.continuePrompt);
 
-    // AI Player Adjudication instruction
-    if (context.enemyPlayerActive || context.neutralPlayerActive || context.allyPlayerActive) {
-        stableParts.push("ADJUDICATOR MODE: You may see messages from [AI_ENEMY], [AI_NEUTRAL], or [AI_ALLY]. These are independent narrative agents. You ARE the final adjudicator: synthesize their actions and the user's intent into a single, cohesive narrative resolution for the turn.");
-    }
-
     // Only inject if using a known reasoning/thinking model (DeepSeek-R1, Qwen QwQ, etc.)
     const modelName = (settings as any).presets?.find?.((p: any) => p.id === (settings as any).activePresetId)?.storyAI?.modelName ?? '';
     const isReasoningModel = /deepseek-r|qwq|qwen.*think|r1/i.test(modelName);

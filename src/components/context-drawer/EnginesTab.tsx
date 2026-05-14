@@ -340,64 +340,6 @@ export function EnginesTab() {
                         ))}
                     </div>
                 </div>
-                {/* AI Agents Engine */}
-                <div className="space-y-2">
-                    <div className="text-[10px] text-danger uppercase tracking-wider font-bold border-b border-danger/20 pb-1 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-danger" />
-                            AI Agents (Autonomous)
-                        </div>
-                    </div>
-                    <div className="bg-void border border-border p-3 space-y-4">
-                        {[
-                            { id: 'enemy', label: 'Enemy Agent', activeKey: 'enemyPlayerActive' as const, color: 'text-red-500' },
-                            { id: 'neutral', label: 'Neutral Agent', activeKey: 'neutralPlayerActive' as const, color: 'text-amber-500' },
-                            { id: 'ally', label: 'Ally Agent', activeKey: 'allyPlayerActive' as const, color: 'text-emerald-500' },
-                        ].map((agent) => (
-                            <div key={agent.id} className="space-y-2 pb-2 border-b border-border/10 last:border-0 last:pb-0">
-                                <div className="flex items-center justify-between">
-                                    <span className={`text-[10px] uppercase tracking-widest font-bold ${agent.color}`}>
-                                        {agent.label}
-                                    </span>
-                                    <Toggle 
-                                        active={context[agent.activeKey] ?? false} 
-                                        onChange={() => updateContext({ [agent.activeKey]: !(context[agent.activeKey] ?? false) })} 
-                                    />
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div className="flex flex-col">
-                                        <label className="text-[9px] text-text-dim uppercase tracking-wider mb-1">Intervention %</label>
-                                        <input
-                                            type="number"
-                                            min={0}
-                                            max={100}
-                                            value={context.interventionChance ?? 5}
-                                            onChange={(e) => {
-                                                const val = parseInt(e.target.value);
-                                                updateContext({ interventionChance: isNaN(val) ? 5 : val });
-                                            }}
-                                            className="w-full bg-surface border border-border px-2 py-1 text-[16px] md:text-[11px] font-mono text-text-primary focus:border-terminal outline-none min-h-[44px] md:min-h-0"
-                                        />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <label className="text-[9px] text-text-dim uppercase tracking-wider mb-1">Cooldown (Turns)</label>
-                                        <input
-                                            type="number"
-                                            min={1}
-                                            value={agent.id === 'enemy' ? context.enemyCooldown : agent.id === 'neutral' ? context.neutralCooldown : context.allyCooldown}
-                                            onChange={(e) => {
-                                                const val = parseInt(e.target.value);
-                                                const key = agent.id === 'enemy' ? 'enemyCooldown' : agent.id === 'neutral' ? 'neutralCooldown' : 'allyCooldown';
-                                                updateContext({ [key]: isNaN(val) ? 3 : val });
-                                            }}
-                                            className="w-full bg-surface border border-border px-2 py-1 text-[16px] md:text-[11px] font-mono text-text-primary focus:border-terminal outline-none min-h-[44px] md:min-h-0"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
             </div>
         </div>
     );
