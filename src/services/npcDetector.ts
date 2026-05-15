@@ -27,10 +27,29 @@ const NPC_NAME_BLOCKLIST = new Set([
     // narrative meta words
     "equipment", "inventory", "scene", "chapter", "act", "session", "turn", "round", "phase", "time", "day", "night", "morning", "afternoon", "evening", "dawn", "dusk", "midnight", "noon",
     "academy", "adventure", "story", "tale", "narrative", "system",
+    // structures & locations (common nouns capitalized in titles)
+    "gate", "wall", "hall", "tower", "bridge", "mouth", "square", "market",
+    "outpost", "garrison", "district", "quarter", "road", "path", "bay",
+    "canal", "harbor", "harbour", "port", "keep", "fortress", "castle",
+    "temple", "shrine", "chapel", "tavern", "inn", "manor", "estate",
+    "forest", "mountain", "valley", "river", "lake", "sea", "ocean",
+    "north", "south", "east", "west", "northern", "southern", "eastern", "western",
+    "upper", "lower", "old", "new", "great", "grand",
 ]);
 
 // Contraction suffix pattern — straight and curly apostrophes
 const CONTRACTION_SUFFIX_RE = /['’](s|re|t|ve|ll|d|m)$/i;
+
+// Structural/location words that invalidate two-word candidates even if not in the general blocklist
+const STRUCTURAL_WORDS = new Set([
+    "gate", "wall", "hall", "tower", "bridge", "mouth", "square", "market",
+    "outpost", "garrison", "district", "quarter", "road", "path", "bay",
+    "canal", "harbor", "harbour", "port", "keep", "fortress", "castle",
+    "temple", "shrine", "chapel", "tavern", "inn", "manor", "estate",
+    "forest", "mountain", "valley", "river", "lake", "sea", "ocean",
+    "north", "south", "east", "west", "northern", "southern", "eastern", "western",
+    "upper", "lower", "old", "new", "great", "grand",
+]);
 
 // Bounded speech attribution verbs
 const SPEECH_VERBS = 'said|asked|whispered|shouted|replied|muttered|growled|spoke|called|answered|continued|added|cried|yelled|barked|snapped|hissed|murmured|breathed|intoned|declared|announced|exclaimed|demanded|ordered|commanded|pleaded|begged|insisted|admitted|confessed|offered|suggested|noted|observed|remarked|commented|explained|stated';
@@ -113,6 +132,7 @@ export function extractNPCNames(content: string, excludeNames: string[] = []): s
         if (
             !CONTRACTION_SUFFIX_RE.test(a) && !CONTRACTION_SUFFIX_RE.test(b) &&
             !NPC_NAME_BLOCKLIST.has(a.toLowerCase()) && !NPC_NAME_BLOCKLIST.has(b.toLowerCase()) &&
+            !STRUCTURAL_WORDS.has(a.toLowerCase()) && !STRUCTURAL_WORDS.has(b.toLowerCase()) &&
             !TITLES_SET.has(a.toLowerCase()) && !TITLES_SET.has(b.toLowerCase())
         ) {
             tryAdd(`${a} ${b}`);
@@ -199,12 +219,15 @@ export async function validateNPCCandidates(
 
     const prompt = `You are a strict data filter for a roleplay/RPG NPC ledger.
 
-Return ONLY items from the candidate list that are clearly the proper name of a SPECIFIC PERSON or sentient character (NPC). A valid name refers to an individual addressable as a character: e.g. "Aldric", "Seraphine Thornmere", "Dorian Ashworth".
+Return ONLY items from the candidate list that are clearly the proper name of a SPECIFIC PERSON or sentient character (NPC). Each surviving candidate MUST be answerable to "is this the personal name of a specific individual person/being who could be addressed in dialogue?"
+
+A valid name refers to an individual addressable as a character: e.g. "Aldric", "Seraphine Thornmere", "Dorian Ashworth".
 
 REJECT everything that is not unambiguously a character's personal name, including:
 - Dice / mechanics terms: Catastrophe, Failure, Success, Triumph, Critical, Advantage, Disadvantage, Normal, Natural, Encounter, Surprise, Skill Check, Save
 - Generic roles or titles WITHOUT a name: Guard, Captain, Soldier, Academy, Equipment, Inventory
 - Locations, factions, organizations, items, spells, abilities
+- Compound location names like "Main Gate", "Iron Mouth", "North Bridge" — these are NEVER valid even if capitalized in prose
 - Sentence-initial common words capitalized by accident: "Two", "Not", "Every", "Equipment", "Academy", "Adventure"
 - Combined dice/mechanic phrases: "Disadvantage Catastrophe", "Normal Failure"
 - Anything you cannot confidently identify as a person's name from context
@@ -235,8 +258,9 @@ Example: ["Aldric", "Seraphine Thornmere"]`;
             }
         }
     } catch (err) {
-        console.warn(`[NPC Validator] API validation failed, falling back to raw candidates:`, err);
+        console.warn(`[NPC Validator] API failure — rejecting all candidates this pass:`, err);
+        return [];
     }
 
-    return candidates;
+    return [];
 }

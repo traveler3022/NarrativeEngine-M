@@ -2,6 +2,8 @@ import type { LLMProvider, ChatMessage, NPCEntry } from '../types';
 import { llmCall } from '../utils/llmCall';
 import { extractJson } from './payloadBuilder';
 import { uid } from '../utils/uid';
+import { embedText } from './embedder';
+import { embeddingStorage } from './storage/embeddingStorage';
 
 const RETRY_SUFFIX = '\n\nIMPORTANT: Your previous response was not valid JSON. Respond with ONLY valid JSON. No markdown fences, no comments, no trailing commas, no extra text before or after the JSON.';
 
@@ -35,11 +37,55 @@ async function llmParseJson<T>(
     }
 }
 
+function checkNameCollision(name: string, aliasesRaw: string, ledger: NPCEntry[]): boolean {
+    const normalize = (s: string) => s.toLowerCase().trim();
+    const newTokens = [normalize(name), ...aliasesRaw.split(',').map(a => normalize(a)).filter(Boolean)];
+    for (const existing of ledger) {
+        const existingTokens = [normalize(existing.name), ...(existing.aliases || '').split(',').map(a => normalize(a)).filter(Boolean)];
+        for (const nt of newTokens) {
+            for (const et of existingTokens) {
+                if (nt === et) return true;
+            }
+        }
+    }
+    return false;
+}
+
+export function buildNPCEmbeddingText(npc: NPCEntry): string {
+    const parts = [
+        npc.name,
+        npc.aliases ? `aliases: ${npc.aliases}` : '',
+        npc.faction ? `faction: ${npc.faction}` : '',
+        npc.tier ? `tier: ${npc.tier}` : '',
+        npc.appearance ? `appearance: ${npc.appearance}` : '',
+        npc.personality ? `personality: ${npc.personality}` : '',
+        npc.voice ? `voice: ${npc.voice}` : '',
+        npc.goals ? `goals: ${npc.goals}` : '',
+        npc.storyRelevance ? `storyRelevance: ${npc.storyRelevance}` : '',
+    ].filter(Boolean);
+    return parts.join('; ');
+}
+
+export async function embedAndStoreNPC(campaignId: string, npc: NPCEntry): Promise<void> {
+    try {
+        const text = buildNPCEmbeddingText(npc);
+        if (!text) return;
+        const vector = await embedText(text);
+        if (vector) {
+            await embeddingStorage.store(campaignId, npc.id, Array.from(vector), 'npc');
+        }
+    } catch (e) {
+        console.warn(`[NPC Embed] Failed to embed ${npc.name}:`, e);
+    }
+}
+
 export async function generateNPCProfile(
     provider: LLMProvider,
     history: ChatMessage[],
     npcName: string,
-    addNPCToStore: (npc: NPCEntry) => void
+    addNPCToStore: (npc: NPCEntry) => void,
+    existingLedger?: NPCEntry[],
+    campaignId?: string
 ): Promise<void> {
     try {
         console.log(`[NPC Generator] Initiating background profile generation for: ${npcName}`);
@@ -61,8 +107,9 @@ The JSON must perfectly match this structure:
   "storyRelevance": "String (Why this NPC matters to the current story)",
   "disposition": "String (current mood/attitude: Helpful, Hostile, Suspicious, etc)",
   "goals": "String (Core motive)",
-  "voice": "String — describe HOW this NPC speaks: sentence length, vocabulary level, verbal quirks, catchphrases, accent notes. Be specific.",
-  "personality": "String — core personality traits in plain language. What drives them? How do they treat others? What do they fear?",
+   "voice": "String — describe HOW this NPC speaks: sentence length, vocabulary level, verbal quirks, catchphrases, accent notes. Be specific.",
+   "appearance": "String — physical description grounded in the RECENT CHAT HISTORY. Quote details mentioned in prose (hair color, clothing, distinguishing marks). If the chat history does not describe them, write a minimal trope-appropriate description and mark it as inferred with prefix '[inferred] '.",
+   "personality": "String — core personality traits in plain language. What drives them? How do they treat others? What do they fear?",
   "exampleOutput": "String — one line of in-character dialogue that demonstrates their voice and personality. Include a brief action in brackets if needed.",
   "drives": {
     "coreWant": "String — one sentence: a deep character truth this NPC carries (NOT a goal). Example: 'to be seen as capable, not just loyal'",
@@ -72,8 +119,9 @@ The JSON must perfectly match this structure:
   "behavioralTriggers": [
     { "keyword": "String — a word or phrase that, when it appears in player input or narrative, activates this trigger", "shift": "String — a PHYSICAL or VERBAL behavioral shift (NOT an emotion). Good: 'crosses arms, answers in single syllables'. Bad: 'becomes angry'." }
   ],
-  "hardBoundaries": ["String — something this NPC will never do. Example: 'will not betray her sister'"],
-  "softBoundaries": ["String — something this NPC dislikes but may tolerate under pressure. Example: 'dislikes being excluded from plans'"]
+   "hardBoundaries": ["String — something this NPC will never do. Example: 'will not betray her sister'"],
+   "softBoundaries": ["String — something this NPC dislikes but may tolerate under pressure. Example: 'dislikes being excluded from plans'"],
+   "tier": "String — one of: 'recurring' (named character likely to return), 'oneshot' (named but scene-bound), 'walkon' (background, minor speaking role). Default 'oneshot' if uncertain."
 }`;
 
         const fullPrompt = `${systemPrompt}\n\nRECENT CHAT HISTORY:\n${recentHistory}\n\nGenerate the JSON profile for "${npcName}".`;
@@ -81,38 +129,64 @@ The JSON must perfectly match this structure:
         const parsed = await llmParseJson<Record<string, unknown>>(provider, fullPrompt, 'NPC Generator');
 
         if (parsed) {
+            let finalParsed = parsed;
+            const resolvedName = (parsed.name as string) || npcName;
+            const resolvedAliases = (parsed.aliases as string) || '';
+
+            if (existingLedger && existingLedger.length > 0 && checkNameCollision(resolvedName, resolvedAliases, existingLedger)) {
+                console.warn(`[NPC Generator] Name collision detected: "${resolvedName}" already exists in ledger. Re-prompting for disambiguation.`);
+                const retryPrompt = `${systemPrompt}\n\nRECENT CHAT HISTORY:\n${recentHistory}\n\nName "${resolvedName}" is already used by an existing NPC. Pick a different name (consider regional/family disambiguators) and re-emit the JSON. Generate the JSON profile for "${npcName}" with a unique name.`;
+                const retryParsed = await llmParseJson<Record<string, unknown>>(provider, retryPrompt, 'NPC Generator (name retry)');
+
+                if (retryParsed && !checkNameCollision((retryParsed.name as string) || resolvedName, (retryParsed.aliases as string) || '', existingLedger)) {
+                    finalParsed = retryParsed;
+                    console.log(`[NPC Generator] Name disambiguated to: "${(retryParsed.name as string) || resolvedName}"`);
+                } else {
+                    const disambiguated = resolvedName + ' the Younger';
+                    console.warn(`[NPC Generator] Re-prompt also collided. Appending disambiguator: "${disambiguated}"`);
+                    finalParsed = { ...parsed, name: disambiguated };
+                }
+            }
+
+            const validTiers = new Set(['recurring', 'oneshot', 'walkon']);
+            const rawTier = (finalParsed.tier as string) || '';
             const newEntry: NPCEntry = {
                 id: uid(),
-                name: (parsed.name as string) || npcName,
-                aliases: (parsed.aliases as string) || '',
-                status: (parsed.status as string) || 'Alive',
-                faction: (parsed.faction as string) || 'Unknown',
-                storyRelevance: (parsed.storyRelevance as string) || 'Unknown',
-                appearance: '',
-                disposition: (parsed.disposition as string) || 'Neutral',
-                goals: (parsed.goals as string) || 'Unknown',
-                voice: (parsed.voice as string) || '',
-                personality: (parsed.personality as string) || (parsed.disposition as string) || 'Unknown',
-                exampleOutput: (parsed.exampleOutput as string) || '',
+                name: (finalParsed.name as string) || npcName,
+                aliases: (finalParsed.aliases as string) || '',
+                status: (finalParsed.status as string) || 'Alive',
+                faction: (finalParsed.faction as string) || 'Unknown',
+                storyRelevance: (finalParsed.storyRelevance as string) || 'Unknown',
+                appearance: (finalParsed.appearance as string) || '',
+                disposition: (finalParsed.disposition as string) || 'Neutral',
+                goals: (finalParsed.goals as string) || 'Unknown',
+                voice: (finalParsed.voice as string) || '',
+                personality: (finalParsed.personality as string) || (finalParsed.disposition as string) || 'Unknown',
+                exampleOutput: (finalParsed.exampleOutput as string) || '',
                 affinity: 50,
-                drives: parsed.drives ? {
-                    coreWant: ((parsed.drives as Record<string, string>).coreWant) || '',
-                    sessionWant: ((parsed.drives as Record<string, string>).sessionWant) || '',
-                    sceneWant: ((parsed.drives as Record<string, string>).sceneWant) || '',
+                drives: finalParsed.drives ? {
+                    coreWant: ((finalParsed.drives as Record<string, string>).coreWant) || '',
+                    sessionWant: ((finalParsed.drives as Record<string, string>).sessionWant) || '',
+                    sceneWant: ((finalParsed.drives as Record<string, string>).sceneWant) || '',
                 } : undefined,
-                behavioralTriggers: Array.isArray(parsed.behavioralTriggers)
-                    ? parsed.behavioralTriggers.filter((t: Record<string, unknown>) => t.keyword && t.shift).map((t: Record<string, unknown>) => ({ keyword: String(t.keyword), shift: String(t.shift) }))
+                behavioralTriggers: Array.isArray(finalParsed.behavioralTriggers)
+                    ? finalParsed.behavioralTriggers.filter((t: Record<string, unknown>) => t.keyword && t.shift).map((t: Record<string, unknown>) => ({ keyword: String(t.keyword), shift: String(t.shift) }))
                     : undefined,
-                hardBoundaries: Array.isArray(parsed.hardBoundaries)
-                    ? parsed.hardBoundaries.map(String).filter(Boolean)
+                hardBoundaries: Array.isArray(finalParsed.hardBoundaries)
+                    ? finalParsed.hardBoundaries.map(String).filter(Boolean)
                     : undefined,
-                softBoundaries: Array.isArray(parsed.softBoundaries)
-                    ? parsed.softBoundaries.map(String).filter(Boolean)
+                softBoundaries: Array.isArray(finalParsed.softBoundaries)
+                    ? finalParsed.softBoundaries.map(String).filter(Boolean)
                     : undefined,
+                tier: validTiers.has(rawTier) ? rawTier as NPCEntry['tier'] : 'oneshot',
             };
 
             addNPCToStore(newEntry);
-            console.log(`[NPC Generator] Successfully generated and added profile for: ${newEntry.name}`);
+            console.log(`[NPC Generator] Successfully generated and added profile for: ${newEntry.name} (tier=${newEntry.tier})`);
+
+            if (campaignId) {
+                embedAndStoreNPC(campaignId, newEntry).catch((e) => console.warn(`[NPC Generator] Embedding failed for ${newEntry.name}:`, e));
+            }
         }
 
     } catch (err) {
@@ -124,7 +198,8 @@ export async function updateExistingNPCs(
     provider: LLMProvider,
     history: ChatMessage[],
     npcsToCheck: NPCEntry[],
-    updateNPCStore: (id: string, updates: Partial<NPCEntry>) => void
+    updateNPCStore: (id: string, updates: Partial<NPCEntry>) => void,
+    campaignId?: string
 ) {
     if (!npcsToCheck.length) return;
 
@@ -172,10 +247,14 @@ ${npcDatas}
 If NO changes occurred for ANY of these NPCs, respond EXACTLY with:
 {"updates": []}
 
-If ANY changes occurred, respond with a JSON object containing an "updates" array. Each update must include the basic "name" and ANY attributes that have fundamentally changed (status, disposition, goals, personality, voice, affinity, faction, storyRelevance, drives). DO NOT include attributes that stayed the same.
+If ANY changes occurred, respond with a JSON object containing an "updates" array. Each update must include the basic "name" and ANY attributes that have fundamentally changed (status, disposition, goals, personality, voice, appearance, affinity, faction, storyRelevance, drives). DO NOT include attributes that stayed the same.
 Valid statuses: Alive, Deceased, Missing, Unknown.
 Note: "affinity" is a 0-100 scale of how much they like the player (0=Nemesis, 50=Neutral, 100=Ally). Update this if the player did something to gain or lose favor.
 Do NOT change personality or voice unless the scene contains a genuinely transformative event for this character.
+
+APPEARANCE UPDATE RULES:
+- "appearance" should only be updated if the prose explicitly describes a CHANGE to the NPC's physical state (e.g., they received a new scar, changed clothing, aged). Do NOT update appearance just because the AI re-describes them — preserve the original canonical description.
+- If appearance is currently blank or "[inferred]" and the new prose provides concrete details, update it with those grounded details.
 
 DRIVES UPDATE RULES:
 - "drives" is an object with "coreWant", "sessionWant", and "sceneWant".

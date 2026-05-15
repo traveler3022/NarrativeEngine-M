@@ -136,6 +136,7 @@ export async function handlePostTurn(
     if (presentHeaderNames.length > 0) {
         const onStageIds = resolveNPCIds(presentHeaderNames, npcLedger);
         callbacks.setOnStageNpcIds?.(onStageIds);
+        console.log(`[NPC] present-header parsed=[${onStageIds.join(',')}] source=header`);
         console.log(`[OnStage] Updated from 👥 header: ${onStageIds.join(', ')}`);
     } else {
         // Header empty — derive from body extract for continuity
@@ -143,6 +144,9 @@ export async function handlePostTurn(
         if (bodyNpcs.length > 0) {
             const bodyIds = bodyNpcs.map(n => n.id);
             callbacks.setOnStageNpcIds?.(bodyIds);
+            console.log(`[NPC] present-header parsed=[${bodyIds.join(',')}] source=body_fallback`);
+        } else {
+            console.log(`[NPC] present-header parsed=[] source=empty`);
         }
     }
 
@@ -254,14 +258,14 @@ export async function handlePostTurn(
                     console.log(`[NPC Auto-Gen] Spawning profile: "${potentialName}"`);
                     const genProvider = state.getFreshProvider();
                     if (genProvider) {
-                        generateNPCProfile(genProvider, allMsgs, potentialName, callbacks.addNPC).catch((e) => console.warn(`[TurnPostProcess] NPC profile gen failed for "${potentialName}":`, e));
+                        generateNPCProfile(genProvider, allMsgs, potentialName, callbacks.addNPC, npcLedger, activeCampaignId).catch((e) => console.warn(`[TurnPostProcess] NPC profile gen failed for "${potentialName}":`, e));
                     }
                 }
 
                 if (existingNpcsToUpdate.length > 0) {
                     const updateProvider = state.getFreshProvider();
                     if (updateProvider) {
-                        updateExistingNPCs(updateProvider, allMsgs, existingNpcsToUpdate, callbacks.updateNPC).catch((e) => console.warn('[TurnPostProcess] updateExistingNPCs failed:', e));
+                        updateExistingNPCs(updateProvider, allMsgs, existingNpcsToUpdate, callbacks.updateNPC, activeCampaignId).catch((e) => console.warn('[TurnPostProcess] updateExistingNPCs failed:', e));
                     }
 
                     const npcsNeedingDrives = existingNpcsToUpdate.filter(n => !n.drives);

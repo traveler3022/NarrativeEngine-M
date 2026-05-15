@@ -1,6 +1,8 @@
 import { embeddingStorage, EMBEDDING_VERSION } from './storage/embeddingStorage';
 import { embedText, isEmbedderReady, warmupEmbedder } from './embedder';
 import { getList, k, type SceneRecord } from './storage/_helpers';
+import { buildNPCEmbeddingText } from './npcGeneration';
+import type { NPCEntry } from '../types';
 
 
 export type BackfillProgress = {
@@ -141,4 +143,49 @@ export async function backfillScenes(
             await new Promise(r => setTimeout(r, 0));
         }
     }
+}
+
+export async function backfillNPCs(
+    campaignId: string,
+    npcLedger: NPCEntry[],
+    onProgress?: (progress: BackfillProgress) => void
+): Promise<void> {
+    if (!isEmbedderReady()) {
+        await warmupEmbedder();
+        if (!isEmbedderReady()) return;
+    }
+
+    const existingNpcEmbeds = await embeddingStorage.getAll(campaignId, 'npc');
+    const embeddedIds = new Set(existingNpcEmbeds.map(e => e.id));
+
+    const toEmbed = npcLedger.filter(npc => !embeddedIds.has(npc.id));
+
+    if (toEmbed.length === 0) {
+        console.log('[Backfill] All NPC embeddings up to date');
+        return;
+    }
+
+    console.log(`[Backfill] ${toEmbed.length} NPCs need embedding`);
+
+    let done = 0;
+    for (const npc of toEmbed) {
+        const text = buildNPCEmbeddingText(npc);
+        if (!text) {
+            done++;
+            continue;
+        }
+        const vector = await embedText(text);
+        if (vector) {
+            await embeddingStorage.store(campaignId, npc.id, Array.from(vector), 'npc');
+        }
+
+        done++;
+        onProgress?.({ total: toEmbed.length, done, current: `npc:${npc.name}` });
+
+        if (done % 10 === 0) {
+            await new Promise(r => setTimeout(r, 0));
+        }
+    }
+
+    console.log(`[Backfill] NPC backfill complete. Embedded ${done} NPCs.`);
 }

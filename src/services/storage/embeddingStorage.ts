@@ -9,7 +9,7 @@ export type EmbeddingRecord = {
 };
 
 export const embeddingStorage = {
-    async store(campaignId: string, id: string, vector: number[], type: 'scene' | 'lore'): Promise<void> {
+    async store(campaignId: string, id: string, vector: number[], type: 'scene' | 'lore' | 'npc'): Promise<void> {
         const record: EmbeddingRecord = {
             vector,
             version: EMBEDDING_VERSION,
@@ -18,7 +18,7 @@ export const embeddingStorage = {
         await idbSet(`nn_embed_${campaignId}_${type}_${id}`, record);
     },
 
-    async getRecord(campaignId: string, id: string, type: 'scene' | 'lore'): Promise<EmbeddingRecord | null> {
+    async getRecord(campaignId: string, id: string, type: 'scene' | 'lore' | 'npc'): Promise<EmbeddingRecord | null> {
         const entry = await idbGet(`nn_embed_${campaignId}_${type}_${id}`) as EmbeddingRecord | null;
         return entry ?? null;
     },
@@ -30,9 +30,9 @@ export const embeddingStorage = {
         return loreEntry?.vector ?? null;
     },
 
-    async getAll(campaignId: string, type?: 'scene' | 'lore'): Promise<Array<{ id: string; vector: number[] }>> {
+    async getAll(campaignId: string, type?: 'scene' | 'lore' | 'npc'): Promise<Array<{ id: string; vector: number[] }>> {
         const results: Array<{ id: string; vector: number[] }> = [];
-        const types = type ? [type] : ['scene', 'lore'] as const;
+        const types = type ? [type] : ['scene', 'lore', 'npc'] as const;
         for (const t of types) {
             const prefix = `nn_embed_${campaignId}_${t}_`;
             const allKeys = await import('idb-keyval').then(m => m.keys());
@@ -47,9 +47,9 @@ export const embeddingStorage = {
         return results;
     },
 
-    async getAllWithVersion(campaignId: string, type?: 'scene' | 'lore'): Promise<Array<{ id: string; vector: number[]; version: number; type: 'scene' | 'lore' }>> {
-        const results: Array<{ id: string; vector: number[]; version: number; type: 'scene' | 'lore' }> = [];
-        const types = type ? [type] : ['scene', 'lore'] as const;
+    async getAllWithVersion(campaignId: string, type?: 'scene' | 'lore' | 'npc'): Promise<Array<{ id: string; vector: number[]; version: number; type: 'scene' | 'lore' | 'npc' }>> {
+        const results: Array<{ id: string; vector: number[]; version: number; type: 'scene' | 'lore' | 'npc' }> = [];
+        const types = type ? [type] : ['scene', 'lore', 'npc'] as const;
         for (const t of types) {
             const prefix = `nn_embed_${campaignId}_${t}_`;
             const allKeys = await import('idb-keyval').then(m => m.keys());
@@ -70,6 +70,7 @@ export const embeddingStorage = {
     async delete(campaignId: string, id: string): Promise<void> {
         await idbDel(`nn_embed_${campaignId}_scene_${id}`).catch(() => {});
         await idbDel(`nn_embed_${campaignId}_lore_${id}`).catch(() => {});
+        await idbDel(`nn_embed_${campaignId}_npc_${id}`).catch(() => {});
     },
 
     async deleteAll(campaignId: string): Promise<void> {
@@ -82,7 +83,7 @@ export const embeddingStorage = {
         }
     },
 
-    async deleteByTypeAndId(campaignId: string, type: 'scene' | 'lore', id: string): Promise<void> {
+    async deleteByTypeAndId(campaignId: string, type: 'scene' | 'lore' | 'npc', id: string): Promise<void> {
         await idbDel(`nn_embed_${campaignId}_${type}_${id}`).catch(() => {});
     },
 };

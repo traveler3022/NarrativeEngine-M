@@ -2,6 +2,24 @@ import type { StateCreator } from 'zustand';
 import type { GameContext, ChatMessage, CondenserState, LoreChunk, ArchiveIndexEntry, NPCEntry, ArchiveChapter, SemanticFact, TimelineEvent, EntityEntry } from '../../types';
 import { toast } from '../../components/Toast';
 import { debouncedSaveSettings } from './settingsSlice';
+import { embedText } from '../../services/embedder';
+import { embeddingStorage } from '../../services/storage/embeddingStorage';
+
+const NPC_EMBED_FIELDS: (keyof NPCEntry)[] = ['name', 'aliases', 'faction', 'tier', 'appearance', 'personality', 'voice', 'goals', 'storyRelevance'];
+
+function npcEmbedText(npc: NPCEntry): string {
+    return [
+        npc.name,
+        npc.aliases ? `aliases: ${npc.aliases}` : '',
+        npc.faction ? `faction: ${npc.faction}` : '',
+        npc.tier ? `tier: ${npc.tier}` : '',
+        npc.appearance ? `appearance: ${npc.appearance}` : '',
+        npc.personality ? `personality: ${npc.personality}` : '',
+        npc.voice ? `voice: ${npc.voice}` : '',
+        npc.goals ? `goals: ${npc.goals}` : '',
+        npc.storyRelevance ? `storyRelevance: ${npc.storyRelevance}` : '',
+    ].filter(Boolean).join('; ');
+}
 import {
     DEFAULT_SURPRISE_TYPES, DEFAULT_SURPRISE_TONES,
     DEFAULT_ENCOUNTER_TYPES, DEFAULT_ENCOUNTER_TONES,
@@ -314,13 +332,25 @@ export const createCampaignSlice: StateCreator<CampaignDeps, [], [], CampaignSli
         return { npcLedger: deduped };
     }),
     updateNPC: (id, patch) => set((s) => {
+        const oldNpc = s.npcLedger.find(n => n.id === id);
         const newLedger = s.npcLedger.map(n => n.id === id ? { ...n, ...patch } : n);
         debouncedSaveNPCLedger(s.activeCampaignId, newLedger);
+        if (oldNpc && s.activeCampaignId && NPC_EMBED_FIELDS.some(f => f in patch)) {
+            const updatedNpc = { ...oldNpc, ...patch };
+            const cId = s.activeCampaignId;
+            embedText(npcEmbedText(updatedNpc))
+                .then(vec => vec && embeddingStorage.store(cId, id, Array.from(vec), 'npc'))
+                .catch(e => console.warn(`[NPC] Re-embed failed for ${updatedNpc.name}:`, e));
+        }
         return { npcLedger: newLedger };
     }),
     removeNPC: (id) => set((s) => {
         const newLedger = s.npcLedger.filter(n => n.id !== id);
         debouncedSaveNPCLedger(s.activeCampaignId, newLedger);
+        if (s.activeCampaignId) {
+            embeddingStorage.deleteByTypeAndId(s.activeCampaignId, 'npc', id)
+                .catch(e => console.warn('[NPC] Vector delete failed:', e));
+        }
         return { npcLedger: newLedger };
     }),
     archiveNPC: (id, turn, reason) => set((s) => {

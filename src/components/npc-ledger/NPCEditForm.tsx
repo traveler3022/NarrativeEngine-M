@@ -106,7 +106,7 @@ export function NPCEditForm({
                             className="w-full bg-void border border-border rounded px-3 py-2.5 md:py-2 text-[16px] md:text-sm text-text-primary placeholder:text-text-dim/50 disabled:opacity-70 disabled:bg-surface disabled:border-transparent focus:outline-none focus:border-terminal min-h-[48px] md:min-h-0"
                         />
                     </div>
-                    <div className="w-1/3">
+                    <div className="w-1/4">
                         <label className="block text-text-dim text-[10px] uppercase tracking-wider mb-1">Status</label>
                         <select
                             value={form.status || 'Alive'}
@@ -119,6 +119,19 @@ export function NPCEditForm({
                             <option value="Missing">Missing</option>
                             <option value="Unknown">Unknown</option>
                             <option value="In Custody">In Custody</option>
+                        </select>
+                    </div>
+                    <div className="w-1/4">
+                        <label className="block text-text-dim text-[10px] uppercase tracking-wider mb-1">Tier</label>
+                        <select
+                            value={form.tier || 'oneshot'}
+                            onChange={e => setForm({ ...form, tier: e.target.value as 'recurring' | 'oneshot' | 'walkon' })}
+                            disabled={!isEditing}
+                            className="w-full bg-void border border-border rounded px-3 py-2.5 md:py-2 text-[16px] md:text-sm text-text-primary disabled:opacity-70 disabled:bg-surface disabled:border-transparent outline-none focus:border-terminal transition-colors min-h-[48px] md:min-h-0"
+                        >
+                            <option value="recurring">Recurring</option>
+                            <option value="oneshot">One-shot</option>
+                            <option value="walkon">Walk-on</option>
                         </select>
                     </div>
                 </div>

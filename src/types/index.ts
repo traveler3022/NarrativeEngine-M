@@ -330,6 +330,7 @@ export type NPCEntry = {
     archived?: boolean;
     archivedAtTurn?: number;
     archivedReason?: string;
+    tier?: 'recurring' | 'oneshot' | 'walkon';
 };
 
 

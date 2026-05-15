@@ -220,9 +220,6 @@ export type SettingsSlice = {
     getActiveSummarizerEndpoint: () => LLMProvider | undefined;
     getActiveUtilityEndpoint: () => LLMProvider | undefined;
     getActiveAuxiliaryEndpoint: () => LLMProvider | undefined;
-    getActiveEnemyEndpoint: () => LLMProvider | undefined;
-    getActiveNeutralEndpoint: () => LLMProvider | undefined;
-    getActiveAllyEndpoint: () => LLMProvider | undefined;
 };
 
 // ── Slice creator ──────────────────────────────────────────────────────

@@ -8,6 +8,8 @@ import { offlineStorage } from './storage';
 import { recommendContext } from './contextRecommender';
 import { deepArchiveScan } from './deepArchiveSearch';
 import { queryFacts, formatFactsForContext } from './semanticMemory';
+import { semanticSearch } from './vectorSearch';
+import { isEmbedderReady } from './embedder';
 import { formatResolvedForContext } from './timelineResolver';
 import { recallWithChapterFunnel } from './archiveChapterEngine';
 import { isEmbedderReady } from './embedder';
@@ -295,6 +297,23 @@ export async function gatherContext(
     const freshMessages = state.getMessages();
     callbacks.setLoadingStatus?.('[5/5] Architecting AI Prompt...');
 
+    let semanticallyRecalledNpcIds: string[] = [];
+    if (isEmbedderReady() && npcLedger && npcLedger.length > 0 && activeCampaignId) {
+        try {
+            const recentContext = freshMessages.slice(-3).map(m => m.content || '').filter(Boolean);
+            const queryTexts = [...recentContext, finalInput].filter(t => t.length > 0).slice(-4);
+            if (queryTexts.length > 0) {
+                const hits = await semanticSearch(activeCampaignId, queryTexts, 'npc', 5, 0.4);
+                if (hits && hits.length > 0) {
+                    semanticallyRecalledNpcIds = hits;
+                    console.log(`[NPC] semantic recall hits=[${hits.join(',')}] query="${finalInput.slice(0, 60)}..."`);
+                }
+            }
+        } catch (e) {
+            console.warn('[TurnContext] NPC semantic recall failed:', e);
+        }
+    }
+
     const { condenser } = state;
 
     const payloadResult = buildPayload(
@@ -302,7 +321,8 @@ export async function gatherContext(
         condenser.condensedUpToIndex, relevantLore, npcLedger, finalArchiveRecall, state.onStageNpcIds, sceneNumber, recommendedNPCNames, semanticFactText, deepContextSummary,
         state.divergenceRegister,
         state.chapters,
-        state.archiveIndex
+        state.archiveIndex,
+        semanticallyRecalledNpcIds
     );
 
     return { relevantLore, sceneNumber, archiveRecall: finalArchiveRecall, semanticFactText, recommendedNPCNames, deepContextSummary, payloadResult };

@@ -88,6 +88,7 @@ export function buildPayload(
     divergenceRegister?: DivergenceRegister,
     chapters?: ArchiveChapter[],
     archiveIndex?: ArchiveIndexEntry[],
+    semanticallyRecalledNpcIds?: string[],
 ): { messages: OpenAIMessage[]; trace?: PayloadTrace[] } {
     const trace: PayloadTrace[] = [];
     const isDebug = settings.debugMode === true;
@@ -255,7 +256,6 @@ export function buildPayload(
 
         if (recommendedNPCNames && recommendedNPCNames.length > 0) {
             // ── Utility AI Recommender mode ──
-            // Use the pre-computed list from contextRecommender.ts
             const recommendedSet = new Set(recommendedNPCNames.map(n => n.toLowerCase()));
             activeNPCs = nonArchivedLedger.filter(npc => {
                 if (!npc.name || loreHeadersSet.has(npc.name.toLowerCase())) return false;
@@ -263,7 +263,9 @@ export function buildPayload(
                 const allNames = [npc.name.toLowerCase(), ...aliases];
                 return allNames.some(n => recommendedSet.has(n));
             });
-            console.log(`[PayloadBuilder] NPC selection via UtilityAI recommender: ${activeNPCs.length} active.`);
+            const matched = activeNPCs.map(n => n.name);
+            const omitted = nonArchivedLedger.length - activeNPCs.length;
+            console.log(`[NPC] path=recommender total=${nonArchivedLedger.length} matched=[${matched.join(',')}] omitted=${omitted} (archived/lore-collision)`);
         } else {
             // ── Legacy substring scan mode ──
             const scanHistory = history.slice(-10).map(m => m.content || '').join(' ') + ' ' + userMessage;
@@ -273,6 +275,46 @@ export function buildPayload(
                 const patterns = [npc.name.toLowerCase(), ...aliases];
                 return patterns.some(p => scanHistory.toLowerCase().includes(p));
             });
+            const matched = activeNPCs.map(n => n.name);
+            const omitted = nonArchivedLedger.length - activeNPCs.length;
+            console.log(`[NPC] path=fallback total=${nonArchivedLedger.length} matched=[${matched.join(',')}] omitted=${omitted} (archived/lore-collision)`);
+        }
+
+        if (activeNPCs.length === 0) {
+            const path = (recommendedNPCNames && recommendedNPCNames.length > 0) ? 'recommender' : 'fallback';
+            console.log(`[NPC] no NPCs included this turn — path=${path} candidates=${nonArchivedLedger.length}`);
+        }
+
+        // ── Cap active NPCs, on-stage entries protected ──
+        const MAX_TOTAL_NPCS = 10;
+        if (activeNPCs.length > MAX_TOTAL_NPCS) {
+            const onStageIds = new Set(onStageNpcIds ?? []);
+            const onStage = activeNPCs.filter(n => onStageIds.has(n.id));
+            const offStage = activeNPCs.filter(n => !onStageIds.has(n.id));
+            const prioritized = [...onStage, ...offStage];
+            const dropped = prioritized.slice(MAX_TOTAL_NPCS).map(n => n.name);
+            activeNPCs = prioritized.slice(0, MAX_TOTAL_NPCS);
+            console.log(`[NPC] capped to ${MAX_TOTAL_NPCS} (dropped: [${dropped.join(',')}])`);
+        }
+
+        // ── Merge semantic recall hits ──
+        if (semanticallyRecalledNpcIds && semanticallyRecalledNpcIds.length > 0) {
+            const existingIds = new Set(activeNPCs.map(n => n.id));
+            const recalled: NPCEntry[] = [];
+            for (const id of semanticallyRecalledNpcIds) {
+                if (existingIds.has(id)) continue;
+                if (activeNPCs.length + recalled.length >= MAX_TOTAL_NPCS) break;
+                const npc = nonArchivedLedger.find(n => n.id === id);
+                if (npc) {
+                    (npc as any).recalledByEmbedding = true;
+                    recalled.push(npc);
+                }
+            }
+            if (recalled.length > 0) {
+                activeNPCs.push(...recalled);
+                const recalledNames = recalled.map(n => `${n.name} (semantic)`);
+                console.log(`[NPC] semantic callback added: [${recalledNames.join(',')}]`);
+            }
         }
 
         if (activeNPCs.length > 0) {

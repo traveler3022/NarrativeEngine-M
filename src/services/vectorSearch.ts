@@ -33,7 +33,7 @@ function dedupeSubChunks(hits: SearchHit[]): SearchHit[] {
 export async function searchVectors(
     campaignId: string,
     queryVectors: number[][],
-    type: 'scene' | 'lore',
+    type: 'scene' | 'lore' | 'npc',
     topK = 20,
     minScore = 0
 ): Promise<SearchHit[]> {
@@ -61,7 +61,7 @@ export async function searchVectors(
 export async function semanticSearch(
     campaignId: string,
     queries: string[],
-    type: 'scene' | 'lore',
+    type: 'scene' | 'lore' | 'npc',
     topK?: number,
     minScore?: number
 ): Promise<string[] | undefined> {

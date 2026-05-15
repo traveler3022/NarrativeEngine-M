@@ -23,11 +23,22 @@ export type RecommenderResult = {
  */
 function buildNPCRoster(ledger: NPCEntry[]): string {
     if (ledger.length === 0) return 'No NPCs in ledger.';
-    return ledger.map(npc => {
+    const MAX_ROSTER = 30;
+    const recurring = ledger.filter(npc => npc.tier === 'recurring');
+    const others = ledger.filter(npc => npc.tier !== 'recurring');
+    const othersCount = Math.max(0, MAX_ROSTER - recurring.length);
+    const rotationIndex = Math.floor(Date.now() / 60000) % (others.length > othersCount ? others.length - othersCount + 1 : 1);
+    const rotatedOthers = others.slice(rotationIndex, rotationIndex + othersCount);
+    if (rotatedOthers.length < othersCount) {
+        rotatedOthers.push(...others.slice(0, othersCount - rotatedOthers.length));
+    }
+    const roster = [...recurring, ...rotatedOthers];
+    return roster.map(npc => {
         const parts = [npc.name];
         if (npc.aliases) parts.push(`(aka ${npc.aliases})`);
         if (npc.faction) parts.push(`[${npc.faction}]`);
         if (npc.status) parts.push(`— ${npc.status}`);
+        if (npc.tier) parts.push(`[${npc.tier}]`);
         return parts.join(' ');
     }).join('\n');
 }
@@ -99,6 +110,7 @@ export async function recommendContext(
     userMessage: string,
     pinnedChapters?: ArchiveChapter[]
 ): Promise<RecommenderResult> {
+    const startTime = Date.now();
     const npcRoster = buildNPCRoster(npcLedger);
     const loreIndex = buildLoreIndex(loreChunks);
     const conversation = buildConversationExcerpt(messages, userMessage);
@@ -122,10 +134,17 @@ Respond with the JSON object now:`;
 
     console.log(`[ContextRecommender] Sending recommendation request to ${utilityEndpoint.modelName}...`);
 
-    const rawContent = await llmCall(utilityEndpoint, userContent, {
-        temperature: 0.1,
-        priority: 'high',
-    });
+    let rawContent: string;
+    try {
+        rawContent = await llmCall(utilityEndpoint, userContent, {
+            temperature: 0.1,
+            priority: 'high',
+        });
+    } catch (err) {
+        const elapsed = Date.now() - startTime;
+        console.warn(`[NPC] recommender failed — falling back to substring scan (elapsed=${elapsed}ms)`, err);
+        throw err;
+    }
 
     // Parse the JSON response — handle <think> blocks and markdown wrapping
     let cleanContent = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, '');
@@ -148,6 +167,8 @@ Respond with the JSON object now:`;
     };
 
     console.log(`[ContextRecommender] Recommended ${result.relevantNPCNames.length} NPCs, ${result.relevantLoreIds.length} lore entries.`);
+    const elapsed = Date.now() - startTime;
+    console.log(`[NPC] recommender returned=[${result.relevantNPCNames.join(',')}] roster_size=${npcLedger.length} elapsed=${elapsed}ms`);
 
     return result;
 }
