@@ -199,7 +199,7 @@ export async function updateExistingNPCs(
     history: ChatMessage[],
     npcsToCheck: NPCEntry[],
     updateNPCStore: (id: string, updates: Partial<NPCEntry>) => void,
-    campaignId?: string
+    _campaignId?: string
 ) {
     if (!npcsToCheck.length) return;
 

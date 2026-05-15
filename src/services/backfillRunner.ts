@@ -11,7 +11,7 @@ export type BackfillProgress = {
     current: string;
 };
 
-let backfillCursor: { campaignId: string; type: 'scene' | 'lore'; index: number } | null = null;
+let backfillCursor: { campaignId: string; type: 'scene' | 'lore' | 'npc'; index: number } | null = null;
 
 function setBackfillCursor(cursor: typeof backfillCursor) {
     backfillCursor = cursor;

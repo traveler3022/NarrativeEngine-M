@@ -12,8 +12,6 @@ import { semanticSearch } from './vectorSearch';
 import { isEmbedderReady } from './embedder';
 import { formatResolvedForContext } from './timelineResolver';
 import { recallWithChapterFunnel } from './archiveChapterEngine';
-import { isEmbedderReady } from './embedder';
-import { semanticSearch } from './vectorSearch';
 import { getDivergenceSceneIds } from './divergenceRegister';
 import { EMPTY_REGISTER } from './divergenceRegister';
 import { rerankCandidates, type RerankCandidate } from './semanticReranker';
