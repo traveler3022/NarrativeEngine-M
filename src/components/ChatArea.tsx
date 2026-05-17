@@ -53,6 +53,8 @@ export function ChatArea() {
         setDeepArmed,
         setDivergenceRegister,
         updateMessageDivergence,
+        pendingArcSeed,
+        setPendingArcSeed,
     } = useAppStore();
 
     const [input, setInput] = useState('');
@@ -86,10 +88,14 @@ export function ChatArea() {
             resetTextareaHeight();
         }
 
+        const arcSeed = useAppStore.getState().pendingArcSeed;
+        if (arcSeed) setPendingArcSeed(null);
+        const llmInput = arcSeed ? `${textToUse}\n\n[SYS: Introduce this arc naturally going forward — ${arcSeed}]` : textToUse;
+
         abortControllerRef.current = new AbortController();
 
         await runTurn({
-            input: textToUse,
+            input: llmInput,
             displayInput: textToUse,
             settings,
             context,
@@ -339,6 +345,13 @@ export function ChatArea() {
                 </div>
             )}
 
+            {pendingArcSeed && (
+                <div className="px-2 md:px-4 py-1 flex items-center gap-2 bg-amber-500/10 border-t border-amber-500/20">
+                    <span className="text-[9px] uppercase tracking-widest text-amber-400 font-bold flex-1 truncate">⚡ Arc queued — fires on next send</span>
+                    <button onClick={() => setPendingArcSeed(null)} className="text-amber-400/60 hover:text-amber-400 shrink-0"><X size={12} /></button>
+                </div>
+            )}
+
             <ChatInput
                 input={input}
                 isStreaming={isStreaming}
@@ -355,7 +368,7 @@ export function ChatArea() {
                 <button onClick={() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' })} className="fixed bottom-[calc(160px+env(safe-area-inset-bottom))] right-4 z-50 w-10 h-10 rounded-full bg-terminal text-surface shadow-lg flex items-center justify-center"><ChevronDown size={20} /></button>
             )}
 
-            <CreateTroubleModal onSelect={(opt) => handleSend(opt)} />
+            <CreateTroubleModal onSelect={(opt) => { setPendingArcSeed(opt); }} />
         </div>
     );
 }

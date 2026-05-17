@@ -26,6 +26,8 @@ export type UISlice = {
     troubleLoading: boolean;
     openTroubleModal: (options: string[]) => void;
     closeTroubleModal: () => void;
+    pendingArcSeed: string | null;
+    setPendingArcSeed: (seed: string | null) => void;
 };
 
 export const createUISlice: StateCreator<UISlice, [], [], UISlice> = (set) => ({
@@ -52,4 +54,6 @@ export const createUISlice: StateCreator<UISlice, [], [], UISlice> = (set) => ({
     troubleLoading: false,
     openTroubleModal: (options) => set({ troubleModalOpen: true, troubleOptions: options, troubleLoading: false }),
     closeTroubleModal: () => set({ troubleModalOpen: false, troubleOptions: [], troubleLoading: false }),
+    pendingArcSeed: null,
+    setPendingArcSeed: (seed) => set({ pendingArcSeed: seed }),
 });
