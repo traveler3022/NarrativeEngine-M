@@ -157,6 +157,24 @@ export async function handlePostTurn(
     backgroundQueue.push('Seal-Chapter', () => handleSealChapter(state, callbacks, activeCampaignId))
         .catch((e) => console.warn('[TurnPostProcess] Seal-Chapter queue push failed:', e));
 
+    queueIndexPatch(state, callbacks, appendedSceneId, displayInput, lastAssistantContent, npcLedger, activeCampaignId);
+
+    queueNPCValidation(state, callbacks, extractedNames, npcLedger, lastAssistantContent, activeCampaignId);
+
+    runBookkeepingScans(state, callbacks, appendedSceneId);
+
+    runNPCPressureScan(state, callbacks, npcLedger, displayInput, lastAssistantContent);
+}
+
+function queueIndexPatch(
+    state: TurnState,
+    callbacks: TurnCallbacks,
+    appendedSceneId: string | undefined,
+    displayInput: string,
+    lastAssistantContent: string,
+    npcLedger: NPCEntry[],
+    activeCampaignId: string
+): void {
     if (appendedSceneId) {
         const sceneId = appendedSceneId;
         const userText = displayInput;
@@ -231,7 +249,16 @@ export async function handlePostTurn(
             }
         }).catch((e) => console.warn('[TurnPostProcess] Index-Patch queue push failed:', e));
     }
+}
 
+function queueNPCValidation(
+    state: TurnState,
+    callbacks: TurnCallbacks,
+    extractedNames: string[],
+    npcLedger: NPCEntry[],
+    lastAssistantContent: string,
+    activeCampaignId: string
+): void {
     if (extractedNames.length > 0) {
         backgroundQueue.push('NPC-Validate', async () => {
             const aux = state.getFreshAuxiliaryProvider?.();
@@ -272,7 +299,13 @@ export async function handlePostTurn(
             }
         }).catch((e) => console.warn('[TurnPostProcess] NPC-Validate queue push failed:', e));
     }
+}
 
+function runBookkeepingScans(
+    state: TurnState,
+    callbacks: TurnCallbacks,
+    appendedSceneId: string | undefined
+): void {
     const turnCount = state.incrementBookkeepingTurnCounter();
     if (turnCount >= state.autoBookkeepingInterval && appendedSceneId) {
         state.resetBookkeepingTurnCounter();
@@ -291,7 +324,15 @@ export async function handlePostTurn(
             }).catch((e) => console.warn('[TurnPostProcess] Inventory scan failed:', e));
         }
     }
+}
 
+function runNPCPressureScan(
+    state: TurnState,
+    callbacks: TurnCallbacks,
+    npcLedger: NPCEntry[],
+    displayInput: string,
+    lastAssistantContent: string
+): void {
     if (npcLedger && npcLedger.length > 0) {
         const archiveIndex = state.archiveIndex;
         const sceneNumber = archiveIndex.length > 0
