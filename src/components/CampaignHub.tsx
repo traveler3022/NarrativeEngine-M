@@ -3,15 +3,13 @@ import { Plus, Trash2, Play, Clock, BookOpen, Pencil, Settings, Download, Upload
 import { useAppStore } from '../store/useAppStore';
 import {
     listCampaigns, deleteCampaign, loadCampaignState,
-    saveCampaign, saveCampaignState, saveLoreChunks, getLoreChunks,
-    getNPCLedger, saveNPCLedger, loadArchiveIndex, loadChapters, loadSemanticFacts,
-    loadDivergenceRegister
+    saveCampaign, saveCampaignState, saveLoreChunks,
+    getNPCLedger, saveNPCLedger,
 } from '../store/campaignStore';
 import { chunkLoreFile } from '../services/loreChunker';
 import { extractEngineSeeds } from '../services/loreEngineSeeder';
 import { parseNPCsFromLore } from '../services/loreNPCParser';
 import { dedupeNPCLedger, defaultContext } from '../store/slices/campaignSlice';
-import { EMPTY_REGISTER } from '../services/divergenceRegister';
 import { api } from '../services/apiClient';
 import { downloadBundle, importBundle, readFileChunked } from '../services/campaignBundle';
 import { toast } from './Toast';
@@ -188,32 +186,9 @@ export function CampaignHub() {
     };
 
     const handleSelectCampaign = async (campaign: Campaign) => {
-        const now = new Date().getTime();
-        const updatedCampaign = { ...campaign, lastPlayedAt: now };
+        const updatedCampaign = { ...campaign, lastPlayedAt: Date.now() };
         await saveCampaign(updatedCampaign);
-
-        const state = await loadCampaignState(campaign.id);
-        const chunks = await getLoreChunks(campaign.id);
-        const npcs = await getNPCLedger(campaign.id);
-        const archiveIndex = await loadArchiveIndex(campaign.id);
-        const divReg = await loadDivergenceRegister(campaign.id);
-        const [facts, chaps] = await Promise.all([
-            loadSemanticFacts(campaign.id).catch(() => []),
-            loadChapters(campaign.id).catch(() => []),
-        ]);
-
-        useAppStore.setState({
-            context: { ...defaultContext, ...(state?.context ?? {}) },
-            messages: state?.messages ?? [],
-            condenser: state?.condenser ?? DEFAULT_CONDENSER,
-            loreChunks: chunks,
-            npcLedger: npcs,
-            archiveIndex,
-            semanticFacts: facts,
-            chapters: chaps,
-            activeCampaignId: campaign.id,
-            divergenceRegister: divReg ?? { ...EMPTY_REGISTER },
-        });
+        await useAppStore.getState().setActiveCampaign(campaign.id);
     };
 
     const handleExport = async (campaignId: string, e: React.MouseEvent) => {

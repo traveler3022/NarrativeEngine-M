@@ -1,10 +1,11 @@
 import type { StateCreator } from 'zustand';
-import type { GameContext, ChatMessage, CondenserState, LoreChunk, ArchiveIndexEntry, NPCEntry, ArchiveChapter, SemanticFact, TimelineEvent, EntityEntry } from '../../types';
+import type { GameContext, ChatMessage, CondenserState, LoreChunk, ArchiveIndexEntry, NPCEntry, ArchiveChapter, SemanticFact, TimelineEvent, EntityEntry, DivergenceRegister } from '../../types';
 import { toast } from '../../components/Toast';
 import { debouncedSaveSettings } from './settingsSlice';
 import { embedText } from '../../services/embedder';
 import { embeddingStorage } from '../../services/storage/embeddingStorage';
 import { buildNPCEmbeddingText } from '../../services/npcGeneration';
+import { EMPTY_REGISTER } from '../../services/divergenceRegister';
 
 const NPC_EMBED_FIELDS: (keyof NPCEntry)[] = ['name', 'aliases', 'faction', 'tier', 'appearance', 'personality', 'voice', 'goals', 'storyRelevance'];
 import {
@@ -174,7 +175,7 @@ export const defaultContext: GameContext = {
 
 export type CampaignSlice = {
     activeCampaignId: string | null;
-    setActiveCampaign: (id: string | null) => void;
+    setActiveCampaign: (id: string | null) => Promise<void>;
     loreChunks: LoreChunk[];
     setLoreChunks: (chunks: LoreChunk[]) => void;
     updateLoreChunk: (id: string, patch: Partial<LoreChunk>) => void;
@@ -233,6 +234,7 @@ type CampaignDeps = CampaignSlice & {
     settings: import('../../types').AppSettings;
     messages: ChatMessage[];
     condenser: CondenserState;
+    divergenceRegister: DivergenceRegister;
 };
 
 // ── Slice creator ──────────────────────────────────────────────────────
@@ -240,10 +242,6 @@ type CampaignDeps = CampaignSlice & {
 export const createCampaignSlice: StateCreator<CampaignDeps, [], [], CampaignSlice> = (set, get) => ({
     activeCampaignId: null,
     setActiveCampaign: async (id) => {
-        set({ activeCampaignId: id } as Partial<CampaignDeps>);
-        const s = get();
-        debouncedSaveSettings(s.settings, id);
-        
         import('../../services/backgroundQueue').then(({ backgroundQueue }) => {
             backgroundQueue.clear('Campaign switched');
         }).catch(() => {});
@@ -253,42 +251,71 @@ export const createCampaignSlice: StateCreator<CampaignDeps, [], [], CampaignSli
             autoBackupTimer = null;
         }
 
-        if (id) {
-            try {
-                const { loadChapters, loadSemanticFacts, loadTimeline, loadEntities } = await import('../../store/campaignStore');
-                const [chapters, facts, timeline, entities] = await Promise.all([
-                    loadChapters(id),
-                    loadSemanticFacts(id),
-                    loadTimeline(id).catch(() => []),
-                    loadEntities(id).catch(() => []),
-                ]);
-                set({ chapters, semanticFacts: facts, timeline, entities } as Partial<CampaignDeps>);
-            } catch (err) {
-                console.warn('[Campaign] Failed to load chapters/facts:', err);
-            }
+        debouncedSaveSettings(get().settings, id);
 
-            import('../../services/embedder').then(({ warmupEmbedder }) => {
-                return warmupEmbedder();
-            }).then(() => {
-                console.log('[Embedder] Model warmed up and ready');
-            }).catch(e => {
-                console.warn('[Embedder] Warmup failed, semantic search will use keyword fallback:', e);
-            });
-
-            autoBackupTimer = setInterval(async () => {
-                const state = get();
-                if (!state.activeCampaignId) return;
-                try {
-                    const { offlineStorage } = await import('../../services/storage');
-                    await offlineStorage.backup.create(state.activeCampaignId, {
-                        trigger: 'auto',
-                        isAuto: true,
-                    });
-                } catch (e) {
-                    console.warn('[Auto-Backup] Failed:', e);
-                }
-            }, 10 * 60 * 1000);
+        if (!id) {
+            set({ activeCampaignId: null } as Partial<CampaignDeps>);
+            return;
         }
+
+        // Canonical campaign-load path. Hydrate every campaign-scoped slice, then
+        // commit it together with activeCampaignId in a single set() so consumers
+        // never observe a campaign id without its data.
+        const {
+            loadCampaignState, getLoreChunks, getNPCLedger, loadArchiveIndex,
+            loadDivergenceRegister, loadChapters, loadSemanticFacts, loadTimeline, loadEntities,
+        } = await import('../../store/campaignStore');
+
+        const [campaignState, loreChunks, npcLedger, archiveIndex, divReg] = await Promise.all([
+            loadCampaignState(id),
+            getLoreChunks(id),
+            getNPCLedger(id),
+            loadArchiveIndex(id),
+            loadDivergenceRegister(id),
+        ]);
+        const [chapters, semanticFacts, timeline, entities] = await Promise.all([
+            loadChapters(id).catch(() => []),
+            loadSemanticFacts(id).catch(() => []),
+            loadTimeline(id).catch(() => []),
+            loadEntities(id).catch(() => []),
+        ]);
+
+        set({
+            activeCampaignId: id,
+            context: { ...defaultContext, ...(campaignState?.context ?? {}) },
+            messages: campaignState?.messages ?? [],
+            condenser: campaignState?.condenser ?? { condensedUpToIndex: -1 },
+            loreChunks,
+            npcLedger,
+            archiveIndex,
+            divergenceRegister: divReg ?? { ...EMPTY_REGISTER },
+            chapters,
+            semanticFacts,
+            timeline,
+            entities,
+        } as Partial<CampaignDeps>);
+
+        import('../../services/embedder').then(({ warmupEmbedder }) => {
+            return warmupEmbedder();
+        }).then(() => {
+            console.log('[Embedder] Model warmed up and ready');
+        }).catch(e => {
+            console.warn('[Embedder] Warmup failed, semantic search will use keyword fallback:', e);
+        });
+
+        autoBackupTimer = setInterval(async () => {
+            const state = get();
+            if (!state.activeCampaignId) return;
+            try {
+                const { offlineStorage } = await import('../../services/storage');
+                await offlineStorage.backup.create(state.activeCampaignId, {
+                    trigger: 'auto',
+                    isAuto: true,
+                });
+            } catch (e) {
+                console.warn('[Auto-Backup] Failed:', e);
+            }
+        }, 10 * 60 * 1000);
     },
     loreChunks: [],
     setLoreChunks: (chunks) => set({ loreChunks: chunks } as Partial<CampaignDeps>),
