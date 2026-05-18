@@ -333,14 +333,25 @@ export async function gatherContext(
 
     const { condenser } = state;
 
-    const payloadResult = buildPayload(
-        settings, state.context, freshMessages, finalInput,
-        condenser.condensedUpToIndex, relevantLore, npcLedger, finalArchiveRecall, state.onStageNpcIds, sceneNumber, recommendedNPCNames, semanticFactText, deepContextSummary,
-        state.divergenceRegister,
-        state.chapters,
-        state.archiveIndex,
-        semanticallyRecalledNpcIds
-    );
+    const payloadResult = buildPayload({
+        settings,
+        context: state.context,
+        history: freshMessages,
+        userMessage: finalInput,
+        condensedUpToIndex: condenser.condensedUpToIndex,
+        relevantLore,
+        npcLedger,
+        archiveRecall: finalArchiveRecall,
+        onStageNpcIds: state.onStageNpcIds,
+        sceneNumber,
+        recommendedNPCNames,
+        semanticFactText,
+        deepContextSummary,
+        divergenceRegister: state.divergenceRegister,
+        chapters: state.chapters,
+        archiveIndex: state.archiveIndex,
+        semanticallyRecalledNpcIds,
+    });
 
     return { relevantLore, sceneNumber, archiveRecall: finalArchiveRecall, semanticFactText, recommendedNPCNames, deepContextSummary, payloadResult };
 }

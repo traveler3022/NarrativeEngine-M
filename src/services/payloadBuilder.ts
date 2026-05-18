@@ -71,39 +71,140 @@ function swapActionResolutionForToolMode(rules: string): string {
     return rules.substring(0, idx) + TOOL_MODE_ACTION_RESOLUTION + rules.substring(endIdx);
 }
 
-export function buildPayload(
-    settings: AppSettings,
-    context: GameContext,
-    history: ChatMessage[],
-    userMessage: string,
-    condensedUpToIndex?: number,
-    relevantLore?: LoreChunk[],
-    npcLedger?: NPCEntry[],
-    archiveRecall?: ArchiveScene[],
-    onStageNpcIds?: string[],
-    sceneNumber?: string,
-    recommendedNPCNames?: string[],
-    semanticFactText?: string,
-    deepContextSummary?: string,
-    divergenceRegister?: DivergenceRegister,
-    chapters?: ArchiveChapter[],
-    archiveIndex?: ArchiveIndexEntry[],
-    semanticallyRecalledNpcIds?: string[],
-): { messages: OpenAIMessage[]; trace?: PayloadTrace[] } {
-    const trace: PayloadTrace[] = [];
-    const isDebug = settings.debugMode === true;
-    const limit = settings.contextLimit || 8192;
-
-    // --- 1. Define Budgets (ST-inspired proportionality) ---
+function computeBudgets(limit: number, hasDeepContext: boolean): { stable: number; summary: number; world: number; volatile: number } {
     // When deep context summary is present, expand world budget at expense of stable/volatile.
-    const hasDeepContext = !!deepContextSummary;
-    const budgetMap = {
+    return {
         stable:   Math.floor(limit * (hasDeepContext ? 0.15 : 0.25)),
         summary:  Math.floor(limit * 0.10),
         world:    Math.floor(limit * (hasDeepContext ? 0.60 : 0.40)),
         volatile: Math.floor(limit * (hasDeepContext ? 0.07 : 0.10)),
         // History + User message take the remainder
     };
+}
+
+function fitHistory(
+    history: ChatMessage[],
+    condensedUpToIndex: number | undefined,
+    userMessage: string,
+    reservedTokens: number,
+    limit: number,
+): { fitted: OpenAIMessage[]; historyUsed: number; userTokens: number; historyBudget: number } {
+    const userTokens = countTokens(userMessage);
+    const reservedTotal = reservedTokens + userTokens;
+    const historyBudget = limit - reservedTotal - 200; // Small safety margin of 200 tokens
+
+    const candidateMessages = (condensedUpToIndex !== undefined && condensedUpToIndex >= 0)
+        ? history.slice(condensedUpToIndex + 1)
+        : history;
+
+    const fitted: OpenAIMessage[] = [];
+    let historyUsed = 0;
+    for (let i = candidateMessages.length - 1; i >= 0; i--) {
+        const msg = candidateMessages[i];
+
+        // Skip completed tool-call exchanges — only the final narrative response matters.
+        // reasoning_content overhead is not needed in fitted history.
+        if (msg.role === 'tool') continue;
+        if (msg.role === 'assistant' && Array.isArray((msg as any).tool_calls) && (msg as any).tool_calls.length > 0) continue;
+        if ((msg as any).name === 'scene-marker') continue;
+
+        let content = msg.content ?? null;
+        if (msg.role === 'user' && typeof content === 'string') {
+            content = content.replace(/\n?\[(?:DICE OUTCOMES:|SURPRISE EVENT:|ENCOUNTER EVENT:|WORLD_EVENT:)[^\]]*\]/g, '');
+        }
+        // Strip in-band <think> blocks from assistant content — reasoning is
+        // per-turn and not useful in long-term history (same as reasoning_content).
+        if (msg.role === 'assistant' && typeof content === 'string') {
+            content = content.replace(/<think>[\s\S]*?<\/think>\s*/gi, '').trim() || content;
+        }
+
+        const textToEstimate = content || '';
+        const cost = countTokens(textToEstimate);
+        if (historyUsed + cost > historyBudget) break;
+
+        const openAIMsg: OpenAIMessage = {
+            role: msg.role as 'system' | 'user' | 'assistant' | 'tool',
+            content
+        };
+        if (msg.name) openAIMsg.name = msg.name;
+        if (msg.tool_call_id) openAIMsg.tool_call_id = msg.tool_call_id;
+
+        fitted.unshift(openAIMsg);
+        historyUsed += cost;
+    }
+
+    // Protect orphaned tools
+    while (fitted.length > 0 && fitted[0].role === 'tool') fitted.shift();
+
+    return { fitted, historyUsed, userTokens, historyBudget };
+}
+
+function spliceSceneNote(context: GameContext, fitted: OpenAIMessage[]): PayloadTrace | null {
+    if (!context.sceneNoteActive || !context.sceneNote) return null;
+
+    const noteText = `[SCENE NOTE: VOLATILE GUIDANCE]\n${context.sceneNote}`;
+    const noteMsg: OpenAIMessage = { role: 'system', content: noteText };
+    const depth = context.sceneNoteDepth ?? 3;
+
+    // Splice into fitted history
+    if (fitted.length > 0) {
+        const index = Math.max(0, fitted.length - depth);
+        fitted.splice(index, 0, noteMsg);
+        return { source: 'Scene Note (Depth)', classification: 'scene_local', tokens: countTokens(noteText), reason: `Injected at depth ${depth}`, included: true, position: `history_at_${depth}` };
+    }
+
+    // Fallback to end of system prompt if no history
+    fitted.push(noteMsg);
+    return { source: 'Scene Note (Fallback)', classification: 'scene_local', tokens: countTokens(noteText), reason: 'Injected after system (no history)', included: true, position: 'dynamic_suffix' };
+}
+
+export interface BuildPayloadOptions {
+    settings: AppSettings;
+    context: GameContext;
+    history: ChatMessage[];
+    userMessage: string;
+    condensedUpToIndex?: number;
+    relevantLore?: LoreChunk[];
+    npcLedger?: NPCEntry[];
+    archiveRecall?: ArchiveScene[];
+    onStageNpcIds?: string[];
+    sceneNumber?: string;
+    recommendedNPCNames?: string[];
+    semanticFactText?: string;
+    deepContextSummary?: string;
+    divergenceRegister?: DivergenceRegister;
+    chapters?: ArchiveChapter[];
+    archiveIndex?: ArchiveIndexEntry[];
+    semanticallyRecalledNpcIds?: string[];
+}
+
+export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessage[]; trace?: PayloadTrace[] } {
+    const {
+        settings,
+        context,
+        history,
+        userMessage,
+        condensedUpToIndex,
+        relevantLore,
+        npcLedger,
+        archiveRecall,
+        onStageNpcIds,
+        sceneNumber,
+        recommendedNPCNames,
+        semanticFactText,
+        deepContextSummary,
+        divergenceRegister,
+        chapters,
+        archiveIndex,
+        semanticallyRecalledNpcIds,
+    } = opts;
+
+    const trace: PayloadTrace[] = [];
+    const isDebug = settings.debugMode === true;
+    const limit = settings.contextLimit || 8192;
+
+    // --- 1. Define Budgets (ST-inspired proportionality) ---
+    const budgetMap = computeBudgets(limit, !!deepContextSummary);
 
     // Helper to log to trace if debug
     const addTrace = (t: PayloadTrace) => {
@@ -356,52 +457,13 @@ export function buildPayload(
     addTrace({ source: 'Profile/Inventory', classification: 'volatile_state', tokens: volatileTokens, reason: 'Player state', included: true, position: 'system_dynamic' });
 
     // --- 6. Fit History ---
-    const userTokens = countTokens(userMessage);
-    const reservedTotal = stableTokens + divergenceTokens + currentWorldTokens + volatileTokens + userTokens;
-    const historyBudget = limit - reservedTotal - 200; // Small safety margin of 200 tokens
-
-    const candidateMessages = (condensedUpToIndex !== undefined && condensedUpToIndex >= 0)
-        ? history.slice(condensedUpToIndex + 1)
-        : history;
-
-    const fitted: OpenAIMessage[] = [];
-    let historyUsed = 0;
-    for (let i = candidateMessages.length - 1; i >= 0; i--) {
-        const msg = candidateMessages[i];
-
-        // Skip completed tool-call exchanges — only the final narrative response matters.
-        // reasoning_content overhead is not needed in fitted history.
-        if (msg.role === 'tool') continue;
-        if (msg.role === 'assistant' && Array.isArray((msg as any).tool_calls) && (msg as any).tool_calls.length > 0) continue;
-        if ((msg as any).name === 'scene-marker') continue;
-
-        let content = msg.content ?? null;
-        if (msg.role === 'user' && typeof content === 'string') {
-            content = content.replace(/\n?\[(?:DICE OUTCOMES:|SURPRISE EVENT:|ENCOUNTER EVENT:|WORLD_EVENT:)[^\]]*\]/g, '');
-        }
-        // Strip in-band <think> blocks from assistant content — reasoning is
-        // per-turn and not useful in long-term history (same as reasoning_content).
-        if (msg.role === 'assistant' && typeof content === 'string') {
-            content = content.replace(/<think>[\s\S]*?<\/think>\s*/gi, '').trim() || content;
-        }
-
-        const textToEstimate = content || '';
-        const cost = countTokens(textToEstimate);
-        if (historyUsed + cost > historyBudget) break;
-
-        const openAIMsg: OpenAIMessage = {
-            role: msg.role as 'system' | 'user' | 'assistant' | 'tool',
-            content
-        };
-        if (msg.name) openAIMsg.name = msg.name;
-        if (msg.tool_call_id) openAIMsg.tool_call_id = msg.tool_call_id;
-
-        fitted.unshift(openAIMsg);
-        historyUsed += cost;
-    }
-
-    // Protect orphaned tools
-    while (fitted.length > 0 && fitted[0].role === 'tool') fitted.shift();
+    const { fitted, historyUsed, userTokens, historyBudget } = fitHistory(
+        history,
+        condensedUpToIndex,
+        userMessage,
+        stableTokens + divergenceTokens + currentWorldTokens + volatileTokens,
+        limit,
+    );
 
     addTrace({
         source: 'Fitted History', classification: 'summary', tokens: historyUsed,
@@ -415,22 +477,8 @@ export function buildPayload(
     addTrace({ source: 'User Message', classification: 'volatile_state', tokens: userTokens, reason: 'Current turn', included: true, position: 'user' });
 
     // --- 7. Depth-Based Scene Note Insertion ---
-    if (context.sceneNoteActive && context.sceneNote) {
-        const noteText = `[SCENE NOTE: VOLATILE GUIDANCE]\n${context.sceneNote}`;
-        const noteMsg: OpenAIMessage = { role: 'system', content: noteText };
-        const depth = context.sceneNoteDepth ?? 3;
-
-        // Splice into fitted history
-        if (fitted.length > 0) {
-            const index = Math.max(0, fitted.length - depth);
-            fitted.splice(index, 0, noteMsg);
-            addTrace({ source: 'Scene Note (Depth)', classification: 'scene_local', tokens: countTokens(noteText), reason: `Injected at depth ${depth}`, included: true, position: `history_at_${depth}` });
-        } else {
-            // Fallback to end of system prompt if no history
-            fitted.push(noteMsg);
-            addTrace({ source: 'Scene Note (Fallback)', classification: 'scene_local', tokens: countTokens(noteText), reason: 'Injected after system (no history)', included: true, position: 'dynamic_suffix' });
-        }
-    }
+    const sceneNoteTrace = spliceSceneNote(context, fitted);
+    if (sceneNoteTrace) addTrace(sceneNoteTrace);
 
     // --- 8. Final Assembly ---
     const messages: OpenAIMessage[] = [];
