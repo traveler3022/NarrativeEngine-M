@@ -273,6 +273,124 @@ export type CombinedSealResult = {
     witnessCorrections?: Record<string, string[]>;
 };
 
+function buildDivergenceEntries(
+    divObj: Record<string, unknown[]>,
+    sceneIds: string[],
+    npcLedger: { id: string; name: string; aliases: string }[],
+    chapterId: string
+): DivergenceEntry[] {
+    const entries: DivergenceEntry[] = [];
+    const sceneSet = new Set(sceneIds);
+    const fallbackScene = sceneIds[0] ?? '000';
+    const npcNameMap = new Map<string, string>();
+    for (const npc of npcLedger) {
+        npcNameMap.set(npc.name.toLowerCase(), npc.id);
+        if (npc.aliases) {
+            for (const alias of npc.aliases.split(',')) {
+                npcNameMap.set(alias.trim().toLowerCase(), npc.id);
+            }
+        }
+    }
+
+    for (const category of DIVERGENCE_CATEGORIES) {
+        const slotArr = divObj[category];
+        if (!Array.isArray(slotArr)) continue;
+
+        for (const item of slotArr) {
+            if (!item || typeof item !== 'object') continue;
+            const rawItem = item as Record<string, unknown>;
+            const text = typeof rawItem.text === 'string' ? rawItem.text.trim() : '';
+            if (!text) continue;
+
+            const sceneRef = typeof rawItem.sceneRef === 'string' && sceneSet.has(rawItem.sceneRef)
+                ? rawItem.sceneRef
+                : fallbackScene;
+
+            const rawNpcIds: string[] = Array.isArray(rawItem.npcIds) ? rawItem.npcIds.filter((id): id is string => typeof id === 'string') : [];
+            const resolvedNpcIds: string[] = [];
+            const unrecognized: string[] = Array.isArray(rawItem.unrecognizedNpcNames)
+                ? rawItem.unrecognizedNpcNames.filter((n): n is string => typeof n === 'string')
+                : [];
+
+            for (const id of rawNpcIds) {
+                const found = npcLedger.some(n => n.id === id);
+                if (found) {
+                    resolvedNpcIds.push(id);
+                } else {
+                    unrecognized.push(id);
+                }
+            }
+
+            const stillUnrecognized: string[] = [];
+            for (const name of unrecognized) {
+                const matched = npcNameMap.get(name.toLowerCase());
+                if (matched && !resolvedNpcIds.includes(matched)) {
+                    resolvedNpcIds.push(matched);
+                } else {
+                    stillUnrecognized.push(name);
+                }
+            }
+
+            const hasReviewFlag = stillUnrecognized.length > 0;
+
+            // ── knownBy extraction ──
+            let knownBy: string[] | undefined;
+            const rawKnownBy = rawItem.knownBy;
+            if (Array.isArray(rawKnownBy)) {
+                const resolvedKnownBy: string[] = [];
+                for (const kb of rawKnownBy) {
+                    if (typeof kb !== 'string') continue;
+                    const matched = npcNameMap.get(kb.toLowerCase()) ?? (npcLedger.some(n => n.id === kb) ? kb : null);
+                    if (matched && !resolvedKnownBy.includes(matched)) {
+                        resolvedKnownBy.push(matched);
+                    }
+                }
+                if (resolvedKnownBy.length > 0) {
+                    knownBy = resolvedKnownBy;
+                }
+            }
+            // Broadcast categories: knownBy stays undefined for rules_lore and locations
+            const broadcastCategories: Set<string> = new Set(['rules_lore', 'locations']);
+            if (broadcastCategories.has(coerceCategory(category))) {
+                knownBy = undefined;
+            }
+
+            entries.push({
+                id: `div_${uid()}`,
+                chapterId,
+                category: coerceCategory(category),
+                text,
+                sceneRef,
+                npcIds: resolvedNpcIds,
+                knownBy,
+                pinned: false,
+                source: 'auto',
+                reviewFlag: hasReviewFlag || undefined,
+                unrecognizedNpcNames: stillUnrecognized.length > 0 ? stillUnrecognized : undefined,
+            });
+        }
+    }
+
+    return entries;
+}
+
+function extractWitnessCorrections(parsed: object): Record<string, string[]> | undefined {
+    const rawCorrections = (parsed as Record<string, unknown>)['witness_corrections'];
+    if (rawCorrections && typeof rawCorrections === 'object' && !Array.isArray(rawCorrections)) {
+        const corrections: Record<string, string[]> = {};
+        for (const [sceneId, value] of Object.entries(rawCorrections as Record<string, unknown>)) {
+            if (Array.isArray(value) && value.every((v: unknown) => typeof v === 'string')) {
+                corrections[sceneId] = value as string[];
+            }
+        }
+        if (Object.keys(corrections).length > 0) {
+            console.log(`[CombinedSeal] Extracted witness corrections for ${Object.keys(corrections).length} scenes`);
+            return corrections;
+        }
+    }
+    return undefined;
+}
+
 export function parseCombinedSealOutput(
     raw: string,
     chapterId: string,
@@ -316,7 +434,7 @@ export function parseCombinedSealOutput(
         summary = parseChapterSummaryOutput(raw);
     }
 
-    const entries: DivergenceEntry[] = [];
+    let entries: DivergenceEntry[] = [];
     if (parsed.divergences && typeof parsed.divergences === 'object') {
         const divRaw = parsed.divergences as Record<string, unknown[]>;
         const divObj: Record<string, unknown[]> = {};
@@ -324,116 +442,12 @@ export function parseCombinedSealOutput(
             const normalized = key.trim().toLowerCase().replace(/[\s-]+/g, '_');
             divObj[normalized] = val as unknown[];
         }
-
-        const sceneSet = new Set(sceneIds);
-        const fallbackScene = sceneIds[0] ?? '000';
-        const npcNameMap = new Map<string, string>();
-        for (const npc of npcLedger) {
-            npcNameMap.set(npc.name.toLowerCase(), npc.id);
-            if (npc.aliases) {
-                for (const alias of npc.aliases.split(',')) {
-                    npcNameMap.set(alias.trim().toLowerCase(), npc.id);
-                }
-            }
-        }
-
-        for (const category of DIVERGENCE_CATEGORIES) {
-            const slotArr = divObj[category];
-            if (!Array.isArray(slotArr)) continue;
-
-            for (const item of slotArr) {
-                if (!item || typeof item !== 'object') continue;
-                const rawItem = item as Record<string, unknown>;
-                const text = typeof rawItem.text === 'string' ? rawItem.text.trim() : '';
-                if (!text) continue;
-
-                const sceneRef = typeof rawItem.sceneRef === 'string' && sceneSet.has(rawItem.sceneRef)
-                    ? rawItem.sceneRef
-                    : fallbackScene;
-
-                const rawNpcIds: string[] = Array.isArray(rawItem.npcIds) ? rawItem.npcIds.filter((id): id is string => typeof id === 'string') : [];
-                const resolvedNpcIds: string[] = [];
-                const unrecognized: string[] = Array.isArray(rawItem.unrecognizedNpcNames)
-                    ? rawItem.unrecognizedNpcNames.filter((n): n is string => typeof n === 'string')
-                    : [];
-
-                for (const id of rawNpcIds) {
-                    const found = npcLedger.some(n => n.id === id);
-                    if (found) {
-                        resolvedNpcIds.push(id);
-                    } else {
-                        unrecognized.push(id);
-                    }
-                }
-
-                const stillUnrecognized: string[] = [];
-                for (const name of unrecognized) {
-                    const matched = npcNameMap.get(name.toLowerCase());
-                    if (matched && !resolvedNpcIds.includes(matched)) {
-                        resolvedNpcIds.push(matched);
-                    } else {
-                        stillUnrecognized.push(name);
-                    }
-                }
-
-                const hasReviewFlag = stillUnrecognized.length > 0;
-
-                // ── knownBy extraction ──
-                let knownBy: string[] | undefined;
-                const rawKnownBy = rawItem.knownBy;
-                if (Array.isArray(rawKnownBy)) {
-                    const resolvedKnownBy: string[] = [];
-                    for (const kb of rawKnownBy) {
-                        if (typeof kb !== 'string') continue;
-                        const matched = npcNameMap.get(kb.toLowerCase()) ?? (npcLedger.some(n => n.id === kb) ? kb : null);
-                        if (matched && !resolvedKnownBy.includes(matched)) {
-                            resolvedKnownBy.push(matched);
-                        }
-                    }
-                    if (resolvedKnownBy.length > 0) {
-                        knownBy = resolvedKnownBy;
-                    }
-                }
-                // Broadcast categories: knownBy stays undefined for rules_lore and locations
-                const broadcastCategories: Set<string> = new Set(['rules_lore', 'locations']);
-                if (broadcastCategories.has(coerceCategory(category))) {
-                    knownBy = undefined;
-                }
-
-                entries.push({
-                    id: `div_${uid()}`,
-                    chapterId,
-                    category: coerceCategory(category),
-                    text,
-                    sceneRef,
-                    npcIds: resolvedNpcIds,
-                    knownBy,
-                    pinned: false,
-                    source: 'auto',
-                    reviewFlag: hasReviewFlag || undefined,
-                    unrecognizedNpcNames: stillUnrecognized.length > 0 ? stillUnrecognized : undefined,
-                });
-            }
-        }
+        entries = buildDivergenceEntries(divObj, sceneIds, npcLedger, chapterId);
     } else {
         divergenceParseError = true;
     }
 
-    // ── Extract witness_corrections from seal output ──
-    let witnessCorrections: Record<string, string[]> | undefined;
-    const rawCorrections = (parsed as Record<string, unknown>)['witness_corrections'];
-    if (rawCorrections && typeof rawCorrections === 'object' && !Array.isArray(rawCorrections)) {
-        const corrections: Record<string, string[]> = {};
-        for (const [sceneId, value] of Object.entries(rawCorrections as Record<string, unknown>)) {
-            if (Array.isArray(value) && value.every((v: unknown) => typeof v === 'string')) {
-                corrections[sceneId] = value as string[];
-            }
-        }
-        if (Object.keys(corrections).length > 0) {
-            witnessCorrections = corrections;
-            console.log(`[CombinedSeal] Extracted witness corrections for ${Object.keys(corrections).length} scenes`);
-        }
-    }
+    const witnessCorrections = extractWitnessCorrections(parsed);
 
     return { summary, divergences: entries, divergenceParseError: divergenceParseError || undefined, witnessCorrections };
 }
