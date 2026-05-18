@@ -165,6 +165,13 @@ export const defaultContext: GameContext = {
         why: [...DEFAULT_WORLD_WHY],
         what: [...DEFAULT_WORLD_WHAT],
     },
+    npcIntroConfig: {
+        initialDC: 196,
+        dcReduction: 2,
+        characters: [],
+    },
+    npcIntroEngineActive: true,
+    npcIntroDC: 196,
     notebook: [],
     notebookActive: true,
     inventoryLastScene: 'Never',

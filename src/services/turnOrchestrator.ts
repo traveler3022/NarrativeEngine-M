@@ -4,6 +4,7 @@ import { uid } from '../utils/uid';
 import { sendMessage } from './chatEngine';
 import { shouldCondense, computeTrimIndex, getCondenseBudgetRatio } from './condenser';
 import { rollEngines, rollDiceFairness } from './engineRolls';
+import { rollCharacterIntroEngine } from './charIntroEngine';
 import { toast } from '../components/Toast';
 import { sanitizePayloadForApi } from './payloadSanitizer';
 import { gatherContext } from './turnContext';
@@ -25,6 +26,22 @@ export async function runTurn(
     finalInput += engineResult.appendToInput;
     callbacks.updateContext(engineResult.updatedDCs);
     finalInput += rollDiceFairness(context);
+
+    // Async character introduction engine (Phase 4)
+    const seenNpcNames = npcLedger
+        .filter(npc => (npc.pressure?.engaged ?? 0) > 0)
+        .map(npc => npc.name);
+    const recentMessages = state.messages.slice(-10);
+    const utilityProvider = state.getUtilityEndpoint?.();
+    try {
+        const { tag: introTag, newDC: newIntroDC } = await rollCharacterIntroEngine(
+            context, seenNpcNames, recentMessages, utilityProvider
+        );
+        if (introTag) finalInput += `\n${introTag}`;
+        callbacks.updateContext({ npcIntroDC: newIntroDC });
+    } catch (err) {
+        console.warn('[TurnOrchestrator] Character intro engine failed:', err);
+    }
 
     callbacks.setStreaming(true);
     callbacks.setLoadingStatus?.('[1/5] Extracting Lore & Stats...');

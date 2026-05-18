@@ -147,6 +147,11 @@ export function CampaignHub() {
                             why: seeds.worldWhy.length > 0 ? seeds.worldWhy : (ctx.worldEventConfig?.why ?? []),
                             what: seeds.worldWhat.length > 0 ? seeds.worldWhat : (ctx.worldEventConfig?.what ?? []),
                         },
+                        npcIntroConfig: {
+                            initialDC: ctx.npcIntroConfig?.initialDC ?? 196,
+                            dcReduction: ctx.npcIntroConfig?.dcReduction ?? 2,
+                            characters: seeds.characterIntros.length > 0 ? seeds.characterIntros : (ctx.npcIntroConfig?.characters ?? []),
+                        },
                     },
                     messages: existingState?.messages ?? [],
                     condenser: existingState?.condenser ?? DEFAULT_CONDENSER,

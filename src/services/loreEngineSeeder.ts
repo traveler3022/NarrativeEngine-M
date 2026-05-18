@@ -1,4 +1,4 @@
-import type { LoreChunk, EngineSeed } from '../types';
+import type { LoreChunk, EngineSeed, CharacterIntroEntry } from '../types';
 
 const CATEGORY_PREFIXES = [
     'CHARACTER', 'FACTION', 'NPC', 'HERO', 'VILLAIN',
@@ -28,6 +28,7 @@ export function extractEngineSeeds(chunks: LoreChunk[]): EngineSeed {
         worldWhere: [],
         worldWhy: [],
         worldWhat: [],
+        characterIntros: [],
     };
 
     const whoSet = new Set<string>();
@@ -140,6 +141,45 @@ export function extractEngineSeeds(chunks: LoreChunk[]): EngineSeed {
     seed.surpriseTones = Array.from(surpriseTonesSet).filter(Boolean);
     seed.encounterTypes = Array.from(encounterTypesSet).filter(Boolean);
     seed.encounterTones = Array.from(encounterTonesSet).filter(Boolean);
+
+    // --- CHARACTER INTROS (Wandering / Location / Boosted) ---
+    const characterChunks = chunks.filter(c => c.category === 'character');
+    for (const chunk of characterChunks) {
+        const text = chunk.content;
+        const name = extractNameFromHeader(chunk.header);
+        if (!name) continue;
+
+        const isWandering = /\*\*Wandering:\s*true\*\*/i.test(text);
+        const locMatch = text.match(/\*\*Location:\s*\*?\*?([^*]+)\*\*/i);
+        const location = locMatch ? locMatch[1].trim() : undefined;
+        const boostMatch = text.match(/\*\*Intro Boost:\s*\*?\*?([^*]+)\*\*/i);
+        const boostKeywords = boostMatch
+            ? boostMatch[1].split(/[,/]+/).map(s => s.trim()).filter(Boolean)
+            : undefined;
+
+        if (!isWandering && !location) continue;
+
+        let type: CharacterIntroEntry['type'];
+        if (isWandering && location && boostKeywords && boostKeywords.length > 0) {
+            type = 'location+boosted';
+        } else if (isWandering && boostKeywords && boostKeywords.length > 0) {
+            type = 'wandering+boosted';
+        } else if (location && boostKeywords && boostKeywords.length > 0) {
+            type = 'location+boosted';
+        } else if (isWandering && location) {
+            type = 'location';
+        } else if (isWandering) {
+            type = 'wandering';
+        } else {
+            type = 'location';
+        }
+
+        const entry: CharacterIntroEntry = { name, type };
+        if (location) entry.location = location;
+        if (boostKeywords && boostKeywords.length > 0) entry.boostKeywords = boostKeywords;
+
+        seed.characterIntros.push(entry);
+    }
 
     return seed;
 }

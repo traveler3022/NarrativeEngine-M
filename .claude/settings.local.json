@@ -24,7 +24,15 @@
       "Bash(npm test *)",
       "Bash(git commit -m 'feat: NPC ledger prose extraction — capture names from narrative, strip titles, validate with Haiku *)",
       "Bash(git commit -m 'feat: auxiliaryAI provider for cheap NPC validation + npcDetector cleanup *)",
-      "Bash(find \"D:/Games/AI DM Project/Pure Magic/arkanus_world.md\" -printf \"%s\\\\n\" 2>nul; wc -l \"D:/Games/AI DM Project/Pure Magic/arkanus_world.md\")"
+      "Bash(find \"D:/Games/AI DM Project/Pure Magic/arkanus_world.md\" -printf \"%s\\\\n\" 2>nul; wc -l \"D:/Games/AI DM Project/Pure Magic/arkanus_world.md\")",
+      "Bash(git log *)",
+      "Bash(npx eslint *)",
+      "Bash(git stash *)",
+      "Bash(echo \"exit: $?\")",
+      "mcp__Claude_Preview__preview_start",
+      "PowerShell(Stop-Process -Id 35508 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 5173 -State Listen -ErrorAction SilentlyContinue)",
+      "PowerShell(if \\($?\\) { \"stopped 35508\" } else { \"already gone\" })"
     ]
   }
 }

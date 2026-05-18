@@ -116,6 +116,12 @@ export type WorldEventConfig = {
     what?: string[]; // The custom 'what' table
 };
 
+export type NpcIntroConfig = {
+    initialDC: number;
+    dcReduction: number;
+    characters: CharacterIntroEntry[];
+};
+
 export type GameContext = {
     loreRaw: string;
     rulesRaw: string;
@@ -144,6 +150,9 @@ export type GameContext = {
     sceneNoteDepth: number;
     surpriseConfig?: SurpriseConfig;
     encounterConfig?: EncounterConfig;
+    npcIntroConfig?: NpcIntroConfig;
+    npcIntroEngineActive?: boolean;
+    npcIntroDC?: number;
     notebook: NotebookNote[];
     notebookActive: boolean;
 };
@@ -261,6 +270,13 @@ export type LoreChunk = {
     keywordsEnriched?: boolean; // true after LLM enrichment pass; undefined = not yet enriched
 };
 
+export type CharacterIntroEntry = {
+    name: string;
+    type: 'wandering' | 'location' | 'wandering+boosted' | 'location+boosted';
+    location?: string;
+    boostKeywords?: string[];
+};
+
 export type EngineSeed = {
     surpriseTypes: string[];
     surpriseTones: string[];
@@ -270,6 +286,7 @@ export type EngineSeed = {
     worldWhere: string[];
     worldWhy: string[];
     worldWhat: string[];
+    characterIntros: CharacterIntroEntry[];
 };
 
 export type NPCDrives = {
