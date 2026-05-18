@@ -23,12 +23,15 @@ export function CreateTroubleButton() {
         useAppStore.setState({ troubleModalOpen: true, troubleLoading: true, troubleOptions: [] });
 
         try {
+            const ctx = state.context;
+            const sceneNote = ctx?.sceneNoteActive ? ctx.sceneNote : undefined;
             const options = await generateTroubleOptions(
                 provider,
                 state.messages,
                 state.archiveIndex ?? [],
                 state.chapters ?? [],
                 state.npcLedger ?? [],
+                sceneNote,
             );
             openTroubleModal(options);
         } catch (err) {

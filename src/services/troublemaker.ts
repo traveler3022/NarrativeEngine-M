@@ -7,11 +7,19 @@ export async function generateTroubleOptions(
     archiveIndex: ArchiveIndexEntry[],
     chapters: ArchiveChapter[],
     npcLedger: NPCEntry[],
+    sceneNote?: string,
 ): Promise<string[]> {
-    const recentMessages = messages.filter(m => m.role === 'user' || m.role === 'assistant').slice(-15);
+    const conversationMessages = messages.filter(m => m.role === 'user' || m.role === 'assistant');
+    const recentMessages = conversationMessages.slice(-15);
     const conversationSnippet = recentMessages
         .map(m => `${m.role.toUpperCase()}: ${typeof m.content === 'string' ? m.content : ''}`)
         .join('\n');
+
+    // The most recent assistant narration IS the player's current scene.
+    const lastAssistant = [...conversationMessages].reverse().find(m => m.role === 'assistant');
+    const currentScene = typeof lastAssistant?.content === 'string'
+        ? lastAssistant.content.slice(0, 1500)
+        : '';
 
     const recentScenes = archiveIndex.slice(-5).map(s => `Scene ${s.sceneId}: ${s.userSnippet}`).join('\n');
 
@@ -34,6 +42,9 @@ export async function generateTroubleOptions(
 
     const prompt = `You are a narrative director for a tabletop RPG. Analyze the recent campaign activity and identify what the player has been repeatedly doing (their loop or grind pattern).
 
+[CURRENT SCENE — WHERE THE PLAYER IS RIGHT NOW]
+${currentScene || '(unknown — infer from recent conversation below)'}
+${sceneNote && sceneNote.trim() ? `\n[SCENE NOTE (player-set location/context)]\n${sceneNote.trim()}\n` : ''}
 Recent conversation:
 ${conversationSnippet}
 
@@ -48,13 +59,15 @@ ${activeNPCs.length > 0 ? activeNPCs.map(n => `- ${n.name} (${n.role}): ignored=
 
 Generate 4 distinct ARC SEEDS — each one is an ongoing storyline that unfolds over multiple scenes as a natural consequence of the player's behavior. Not a one-scene event. A new thread that will keep developing.
 
+CRITICAL — LOCATION RULE: Each arc's opening hook MUST happen at the player's CURRENT location (see [CURRENT SCENE] above). The hook is something that comes TO the player right now — a stranger enters, a messenger arrives, a fight breaks out nearby, the player overhears something, an object is noticed. The hook must NEVER require the player to travel somewhere else first. The arc may LEAD toward distant places over later scenes — that is fine and expected — but it must START here, where the player already is.
+
 Each arc must:
 - Be a DIFFERENT arc TYPE (one of: threat, social/relationship, rivalry, opportunity/resource)
-- Start with a concrete first-scene hook (what happens NOW to begin the arc)
-- Hint at where it leads over time (not resolved immediately)
+- Open with a concrete hook that happens AT the player's current location, right now
+- Hint at where it leads over time (not resolved immediately — distant developments are OK in the direction, not the hook)
 - Be grounded in established world details (character names, places, factions already present)
 
-Return ONLY a JSON array of 4 strings. Each string = 2 sentences: the hook + the direction.
+Return ONLY a JSON array of 4 strings. Each string = 2 sentences: the local hook + the direction.
 ["...", "...", "...", "..."]`;
 
     const raw = await llmCall(provider, prompt, { maxTokens: 4000, thinkingEffort: 'low' });
