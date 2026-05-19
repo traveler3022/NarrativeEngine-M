@@ -69,8 +69,8 @@ export function rollEngines(context: GameContext): EngineRollResult {
                 cfg.what && cfg.what.length >= 3;
 
             const tag = hasCustomTags
-                ? `[WORLD_EVENT: ${cfg.who![Math.floor(Math.random() * cfg.who!.length)]} ${cfg.what![Math.floor(Math.random() * cfg.what!.length)]} ${cfg.why![Math.floor(Math.random() * cfg.why!.length)]} ${cfg.where![Math.floor(Math.random() * cfg.where!.length)]}]`
-                : `[WORLD_EVENT: ${DEFAULT_WORLD_WHO[Math.floor(Math.random() * DEFAULT_WORLD_WHO.length)]} ${DEFAULT_WORLD_WHAT[Math.floor(Math.random() * DEFAULT_WORLD_WHAT.length)]} ${DEFAULT_WORLD_WHY[Math.floor(Math.random() * DEFAULT_WORLD_WHY.length)]} ${DEFAULT_WORLD_WHERE[Math.floor(Math.random() * DEFAULT_WORLD_WHERE.length)]}]`;
+                ? `[WORLD_RUMOUR: ${cfg.who![Math.floor(Math.random() * cfg.who!.length)]} ${cfg.what![Math.floor(Math.random() * cfg.what!.length)]} ${cfg.where![Math.floor(Math.random() * cfg.where!.length)]} — ${cfg.why![Math.floor(Math.random() * cfg.why!.length)]}]`
+                : `[WORLD_RUMOUR: ${DEFAULT_WORLD_WHO[Math.floor(Math.random() * DEFAULT_WORLD_WHO.length)]} ${DEFAULT_WORLD_WHAT[Math.floor(Math.random() * DEFAULT_WORLD_WHAT.length)]} ${DEFAULT_WORLD_WHERE[Math.floor(Math.random() * DEFAULT_WORLD_WHERE.length)]} — ${DEFAULT_WORLD_WHY[Math.floor(Math.random() * DEFAULT_WORLD_WHY.length)]}]`;
 
             appendToInput += `\n${tag}`;
             newWorldDC = cfg.initialDC || 498;

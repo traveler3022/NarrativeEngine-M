@@ -7,50 +7,59 @@ import { toast } from '../../components/Toast';
 
 // ── DEFAULT constants ──────────────────────────────────────────────────
 
+// Surprise Engine — mundane world-flavor events. Genre-agnostic archetypes;
+// the GM AI fills in world-appropriate specifics from context.
 export const DEFAULT_SURPRISE_TYPES = [
-    "WEATHER_SHIFT", "ODD_SOUND", "NPC_QUIRK", "EQUIPMENT_HICCUP",
-    "SCENERY_CHANGE", "ANIMAL_BEHAVIOR", "RUMOR_OVERHEARD",
-    "STRANGE_SENSATION", "MINOR_MISHAP", "UNEXPECTED_KINDNESS"
+    "STREET_DRAMA", "FOUND_OBJECT", "OVERHEARD_GOSSIP", "ANIMAL_INCIDENT",
+    "VENDOR_DISPUTE", "STRANGER_MOMENT", "MINOR_MISHAP", "CROWD_REACTION",
+    "WEATHER_SHIFT", "UNEXPECTED_KINDNESS"
 ];
 
 export const DEFAULT_SURPRISE_TONES = [
-    "CURIOUS", "UNSETTLING", "AMUSING", "EERIE",
-    "MUNDANE", "WHOLESOME", "OMINOUS", "BIZARRE"
+    "MUNDANE", "AMUSING", "AWKWARD", "CURIOUS",
+    "TENSE", "HEARTWARMING", "CHAOTIC", "BITTERSWEET"
 ];
 
+// Encounter Engine — threat SITUATIONS, not specific enemies. The GM AI
+// resolves what the threat actually is based on the current location.
 export const DEFAULT_ENCOUNTER_TYPES = [
-    "AMBUSH", "RIVAL_APPEARANCE", "RESOURCE_CRISIS", "MORAL_DILEMMA",
-    "UNEXPECTED_ALLY", "TRAP_TRIGGERED", "FACTION_CONFRONTATION",
-    "BOUNTY_HUNTER", "SUPPLY_SHORTAGE", "BETRAYAL_HINT"
+    "HOSTILE_PRESENCE", "TERRITORIAL_THREAT", "PATROL_CONFRONTATION",
+    "AMBUSH_LAID", "DESPERATE_ATTACKER", "SCAVENGING_PREDATOR",
+    "RIVAL_CLAIM", "CORNERED_ENTITY", "ENVIRONMENTAL_THREAT", "TRAP_TRIGGERED"
 ];
 
 export const DEFAULT_ENCOUNTER_TONES = [
-    "TENSE", "DESPERATE", "MYSTERIOUS", "AGGRESSIVE",
-    "CHAOTIC", "CALCULATED", "GROTESQUE", "EPIC"
+    "TENSE", "DESPERATE", "SUDDEN", "CALCULATED",
+    "CHAOTIC", "PREDATORY", "TERRITORIAL", "GRIM"
 ];
 
+// World Rumour Engine — quest hooks and local hearsay. NOT canon-changing
+// world events. WHO heard/spread it, WHAT happened, WHERE locally, WHY it matters.
 export const DEFAULT_WORLD_WHO = [
-    "a major faction/organization", "a rogue splinter group", "a powerful leader/executive",
-    "a dangerous anomaly", "a fanatic cult/extremist group", "a prominent conglomerate/merchant guild",
-    "a desperate individual", "a completely random nobody", "an ancient/forgotten entity", "a chaotic force of nature"
+    "a passing merchant", "a frightened local", "a travelling soldier",
+    "an inn regular", "a desperate farmer", "a wandering scout",
+    "a shady fence", "an old hermit", "a wounded survivor", "a child from the outskirts"
 ];
 
 export const DEFAULT_WORLD_WHERE = [
-    "in a neighboring city/sector", "across the nearest border", "deep underground/in the lower levels",
-    "in a remote outpost/village", "in the capital/central hub", "in a forgotten ruin/abandoned zone",
-    "along a main trade/travel route", "in an uncharted area", "in a highly secure/restricted area", "in the wilderness/wasteland"
+    "on the northern road", "near the old ruins", "at the edge of town",
+    "along the main trade route", "in the nearby wilderness", "at a river crossing",
+    "close to an abandoned structure", "at a well-known crossroads", "in the hills nearby", "at the border outpost"
 ];
 
 export const DEFAULT_WORLD_WHY = [
-    "to seize power/control", "for brutal vengeance", "to protect a dangerous secret",
-    "driven by a radical ideology/prophecy", "for untold wealth/resources", "due to an escalating misunderstanding",
-    "out of pure desperation", "because someone dumb got lucky and found a legendary asset", "acting on an old grudge", "to reclaim lost glory/territory"
+    "and a reward is being offered", "and locals are too frightened to investigate",
+    "suggesting treasure or valuables are involved", "hinting at danger ahead for travellers",
+    "and no one who went to look has returned", "drawing unwanted attention from authorities",
+    "and the full story isn't clear yet", "causing unrest among the local population"
 ];
 
 export const DEFAULT_WORLD_WHAT = [
-    "declared open hostilities/war", "formed an unexpected alliance", "destroyed an important landmark/facility",
-    "discovered a game-changing asset/relic", "assassinated/eliminated a key figure", "triggered a massive disaster",
-    "monopolized a critical resource", "initiated a complete blockade/lockdown", "caused a mass exodus/evacuation", "staged a violent coup/takeover"
+    "spotted raiders near", "claims something valuable was found at",
+    "says a person went missing from", "heard screaming coming from",
+    "found fresh tracks leading to", "saw lights moving around",
+    "says a body was found near", "reports strange activity at",
+    "is paying for an escort to", "overheard a deal being made involving"
 ];
 
 // ── Internal helpers ───────────────────────────────────────────────────

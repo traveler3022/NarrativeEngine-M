@@ -119,10 +119,11 @@ export function extractEngineSeeds(chunks: LoreChunk[]): EngineSeed {
             [/\*\*Surprise Tones:\*\*\s*(.+)/i, surpriseTonesSet],
             [/\*\*Encounter Types:\*\*\s*(.+)/i, encounterTypesSet],
             [/\*\*Encounter Tones:\*\*\s*(.+)/i, encounterTonesSet],
-            [/\*\*World Event Who:\*\*\s*(.+)/i, whoSet],
-            [/\*\*World Event What:\*\*\s*(.+)/i, whatSet],
-            [/\*\*World Event Where:\*\*\s*(.+)/i, whereSet],
-            [/\*\*World Event Why:\*\*\s*(.+)/i, whySet],
+            // Accept both legacy "World Event" labels and new "Quest Hook" labels
+            [/\*\*(?:World Event Who|Quest Hook Who):\*\*\s*(.+)/i, whoSet],
+            [/\*\*(?:World Event What|Quest Hook What):\*\*\s*(.+)/i, whatSet],
+            [/\*\*(?:World Event Where|Quest Hook Where):\*\*\s*(.+)/i, whereSet],
+            [/\*\*(?:World Event Why|Quest Hook Why):\*\*\s*(.+)/i, whySet],
         ];
 
         for (const [pattern, set] of seedFieldPatterns) {

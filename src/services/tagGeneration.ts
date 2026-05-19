@@ -13,14 +13,14 @@ export async function populateEngineTags(
     field: 'surpriseTypes' | 'surpriseTones' | 'encounterTypes' | 'encounterTones' | 'worldWho' | 'worldWhere' | 'worldWhy' | 'worldWhat'
 ): Promise<string[]> {
     const fieldDescriptions: Record<typeof field, string> = {
-        surpriseTypes: 'surprise event TYPES (e.g. WEATHER_SHIFT, ODD_SOUND, NPC_QUIRK). These are categories of unexpected ambient flavor events.',
-        surpriseTones: 'surprise event TONES (e.g. CURIOUS, EERIE, AMUSING). These describe the emotional flavor of the surprise.',
-        encounterTypes: 'encounter event TYPES (e.g. AMBUSH, RIVAL_APPEARANCE, RESOURCE_CRISIS). These are mid-stakes challenges or hooks requiring immediate player response.',
-        encounterTones: 'encounter event TONES (e.g. TENSE, DESPERATE, MYSTERIOUS). These describe the emotional flavor of the encounter.',
-        worldWho: '"Who" elements for world events — the actors/instigators (e.g. "a rogue splinter group", "a powerful leader").',
-        worldWhere: '"Where" elements for world events — the locations (e.g. "in a neighboring city", "deep underground").',
-        worldWhy: '"Why" elements for world events — the motivations (e.g. "to seize power", "for brutal vengeance").',
-        worldWhat: '"What" elements for world events — the actions taken (e.g. "declared open hostilities", "formed an unexpected alliance").',
+        surpriseTypes: 'mundane world-flavor event TYPES (e.g. STREET_DRAMA, FOUND_OBJECT, VENDOR_DISPUTE). These are everyday ambient moments that add texture — NOT combat or major events. The GM AI resolves the genre-specific detail from context.',
+        surpriseTones: 'surprise event TONES (e.g. MUNDANE, AMUSING, AWKWARD, CURIOUS). These describe the emotional flavor of the everyday moment.',
+        encounterTypes: 'encounter SITUATION TYPES (e.g. HOSTILE_PRESENCE, TERRITORIAL_THREAT, PATROL_CONFRONTATION). These are threat archetypes — do NOT name specific enemies. The GM AI will resolve the actual enemy from the current location context.',
+        encounterTones: 'encounter event TONES (e.g. TENSE, DESPERATE, SUDDEN, PREDATORY). These describe the emotional flavor of the threat situation.',
+        worldWho: '"Who" elements for world rumours — the person spreading or involved in the hook (e.g. "a passing merchant", "a frightened local", "a wounded survivor"). Keep it grounded and local.',
+        worldWhere: '"Where" elements for world rumours — a local/regional area, NOT world-scale locations (e.g. "on the northern road", "near the old ruins", "at the river crossing").',
+        worldWhy: '"Why it matters" elements for world rumours — the hook or stakes (e.g. "and a reward is offered", "hinting at treasure involved", "and locals are too frightened to investigate").',
+        worldWhat: '"What happened" elements for world rumours — the inciting action that creates a quest hook (e.g. "spotted raiders near", "claims something was found at", "saw lights moving around"). These should create hooks, NOT permanent world-state changes.',
     };
 
     const prompt = `You are a Campaign Tag Generator. Your job is to analyze the provided WORLD LORE and CURRENT TAGS, then generate contextually appropriate tags that fit this specific campaign's theme, factions, locations, and tone.

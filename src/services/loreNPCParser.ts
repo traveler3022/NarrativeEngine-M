@@ -36,8 +36,8 @@ function extractNameFromHeader(raw: string): string {
  * extracts structured NPC entries for the ledger.
  *
  * Each character block must use `### Name` headers with `**Field:** Value` bullets.
- * Fields: Aliases, Appearance, Disposition, Goals, Faction, StoryRelevance,
- *         Status, Affinity, Nature, Training, Emotion, Social, Belief, Ego
+ * Fields: Aliases, Appearance, Disposition, Personality, Voice, Goals, Faction,
+ *         StoryRelevance, Status, Affinity (0–100), Example Output
  */
 export function parseNPCsFromLore(chunks: LoreChunk[]): NPCEntry[] {
     const npcs: NPCEntry[] = [];
