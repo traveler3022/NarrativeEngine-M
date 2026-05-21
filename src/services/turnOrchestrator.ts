@@ -27,6 +27,16 @@ export async function runTurn(
     callbacks.updateContext(engineResult.updatedDCs);
     finalInput += rollDiceFairness(context);
 
+    const userMsgId = uid();
+    callbacks.addMessage({
+        id: userMsgId,
+        role: 'user',
+        content: finalInput,
+        displayContent: displayInput,
+        timestamp: Date.now()
+    });
+    callbacks.setStreaming(true);
+
     // Async character introduction engine (Phase 4)
     const seenNpcNames = npcLedger
         .filter(npc => (npc.pressure?.engaged ?? 0) > 0)
@@ -37,22 +47,15 @@ export async function runTurn(
         const { tag: introTag, newDC: newIntroDC } = await rollCharacterIntroEngine(
             context, seenNpcNames, recentMessages, utilityProvider
         );
-        if (introTag) finalInput += `\n${introTag}`;
+        if (introTag) {
+            finalInput += `\n${introTag}`;
+            callbacks.updateLastMessage({ content: finalInput });
+        }
         callbacks.updateContext({ npcIntroDC: newIntroDC });
     } catch (err) {
         console.warn('[TurnOrchestrator] Character intro engine failed:', err);
     }
 
-    const userMsgId = uid();
-    callbacks.addMessage({
-        id: userMsgId,
-        role: 'user',
-        content: finalInput,
-        displayContent: displayInput,
-        timestamp: Date.now()
-    });
-
-    callbacks.setStreaming(true);
     callbacks.setLoadingStatus?.('[1/5] Extracting Lore & Stats...');
 
     callbacks.setPipelinePhase?.('gathering-context');
