@@ -12,6 +12,7 @@ import { BackupModal } from './components/BackupModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastContainer } from './components/Toast';
 import { MobileNavBar } from './components/MobileNavBar';
+import { useRulesIndexer } from './hooks/useRulesIndexer';
 import {
     loadCampaignState, getLoreChunks, getNPCLedger, loadArchiveIndex,
   loadChapters, loadSemanticFacts, loadDivergenceRegister,
@@ -132,6 +133,7 @@ export default function App() {
         <ChatArea />
       </div>
       <MobileNavBar />
+      <RulesIndexerWrapper />
       <SettingsModal />
       <LoreCheckModal />
       <NPCLedgerModal />
@@ -139,4 +141,9 @@ export default function App() {
       <ToastContainer />
     </ErrorBoundary>
   );
+}
+
+function RulesIndexerWrapper() {
+  useRulesIndexer();
+  return null;
 }

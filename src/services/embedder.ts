@@ -1,22 +1,70 @@
-const DIMS = 384;
+const MODEL_DIMS: Record<string, number> = {
+    'Xenova/all-MiniLM-L6-v2': 384,
+    'Xenova/bge-base-en-v1.5': 768,
+};
+
+const DEFAULT_DIMS = 384;
+const STANDARD_MODEL = 'Xenova/all-MiniLM-L6-v2';
+const HIGH_MODEL = 'Xenova/bge-base-en-v1.5';
+
 const CALL_TIMEOUT_MS = 60_000;
 const BATCH_CALL_TIMEOUT_MS = 30_000;
+
+export type DownloadProgress = {
+    file: string;
+    loaded: number;
+    total: number;
+    aggregateLoaded: number;
+    aggregateTotal: number;
+};
 
 type WorkerResponse =
     | { type: 'ready'; id: string }
     | { type: 'result'; id: string; vector: number[] | null }
     | { type: 'batchResult'; id: string; vectors: (number[] | null)[] }
+    | { type: 'progress'; id: string; file: string; loaded: number; total: number }
     | { type: 'error'; id: string; message: string };
+
+type PendingEntry = { resolve: (v: unknown) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> };
 
 let worker: Worker | null = null;
 let ready = false;
-const pending = new Map<string, { resolve: (v: unknown) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> }>();
+let currentModelId = STANDARD_MODEL;
+let currentDims = DEFAULT_DIMS;
+const pending = new Map<string, PendingEntry>();
+
+let onProgressCallback: ((progress: DownloadProgress) => void) | null = null;
+const fileProgress = new Map<string, { loaded: number; total: number }>();
+
+function computeAggregate(): { aggregateLoaded: number; aggregateTotal: number } {
+    let aggregateLoaded = 0;
+    let aggregateTotal = 0;
+    for (const p of fileProgress.values()) {
+        aggregateLoaded += p.loaded;
+        aggregateTotal += p.total;
+    }
+    return { aggregateLoaded, aggregateTotal };
+}
 
 function getWorker(): Worker {
     if (!worker) {
         worker = new Worker(new URL('./embedder.worker.ts', import.meta.url), { type: 'module' });
         worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
             const { id, type } = e.data;
+
+            if (type === 'progress' && id === 'model-download') {
+                fileProgress.set(e.data.file, { loaded: e.data.loaded, total: e.data.total });
+                const { aggregateLoaded, aggregateTotal } = computeAggregate();
+                onProgressCallback?.({
+                    file: e.data.file,
+                    loaded: e.data.loaded,
+                    total: e.data.total,
+                    aggregateLoaded,
+                    aggregateTotal,
+                });
+                return;
+            }
+
             const entry = pending.get(id);
             if (!entry) return;
             pending.delete(id);
@@ -48,13 +96,85 @@ function request<T>(msg: { type: string; id: string } & Record<string, unknown>,
     });
 }
 
-export async function warmupEmbedder(): Promise<void> {
-    if (ready) return;
-    try {
-        await request<void>({ type: 'warmup', id: `warmup-${Date.now()}` });
-    } catch (e) {
-        console.warn('[Embedder] Warmup failed:', e);
+function drainPending(error: Error): void {
+    for (const [, entry] of pending) {
+        clearTimeout(entry.timer);
+        entry.reject(error);
     }
+    pending.clear();
+}
+
+function modelIdFromSetting(setting: 'standard' | 'high'): string {
+    return setting === 'high' ? HIGH_MODEL : STANDARD_MODEL;
+}
+
+function dimsFromModelId(modelId: string): number {
+    return MODEL_DIMS[modelId] ?? DEFAULT_DIMS;
+}
+
+function allowRemoteForModel(modelId: string): boolean {
+    return modelId !== STANDARD_MODEL;
+}
+
+export async function warmupEmbedder(): Promise<void> {
+    if (ready && worker) return;
+    let modelId: string;
+    let allowRemote: boolean;
+    try {
+        const { useAppStore } = await import('../store/useAppStore');
+        const setting = useAppStore.getState().settings.embeddingModel ?? 'standard';
+        modelId = modelIdFromSetting(setting);
+        allowRemote = allowRemoteForModel(modelId);
+    } catch {
+        modelId = STANDARD_MODEL;
+        allowRemote = false;
+    }
+    try {
+        await request<void>({ type: 'init', id: `init-${Date.now()}`, modelId, allowRemote });
+        currentModelId = modelId;
+        currentDims = dimsFromModelId(modelId);
+    } catch (e) {
+        console.warn('[Embedder] Warmup with settings failed, falling back:', e);
+        currentModelId = STANDARD_MODEL;
+        currentDims = DEFAULT_DIMS;
+        try {
+            await request<void>({ type: 'init', id: `init-fallback-${Date.now()}`, modelId: STANDARD_MODEL, allowRemote: false });
+        } catch (e2) {
+            console.warn('[Embedder] Fallback warmup also failed:', e2);
+        }
+    }
+}
+
+export async function switchEmbeddingModel(
+    modelSetting: 'standard' | 'high',
+    onProgress?: (progress: DownloadProgress) => void,
+): Promise<void> {
+    const modelId = modelIdFromSetting(modelSetting);
+    const allowRemote = allowRemoteForModel(modelId);
+
+    const prevModelId = currentModelId;
+    const prevDims = currentDims;
+
+    if (worker) {
+        worker.terminate();
+        worker = null;
+    }
+    ready = false;
+    drainPending(new Error('[Embedder] Model switch — pending calls cancelled'));
+    fileProgress.clear();
+    onProgressCallback = onProgress ?? null;
+
+    try {
+        await request<void>({ type: 'init', id: `switch-${Date.now()}`, modelId, allowRemote });
+        currentModelId = modelId;
+        currentDims = dimsFromModelId(modelId);
+    } catch (e) {
+        currentModelId = prevModelId;
+        currentDims = prevDims;
+        onProgressCallback = null;
+        throw e;
+    }
+    onProgressCallback = null;
 }
 
 export async function embedText(text: string): Promise<Float32Array | null> {
@@ -80,5 +200,9 @@ export function isEmbedderReady(): boolean {
 }
 
 export function getEmbedDims(): number {
-    return DIMS;
+    return currentDims;
+}
+
+export function getCurrentModelId(): string {
+    return currentModelId;
 }

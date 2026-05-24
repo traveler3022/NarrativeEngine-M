@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
-import { X, ScrollText, Globe, Zap, BookOpen, Bookmark, Brain } from 'lucide-react';
+import { X, ScrollText, Globe, Zap, BookOpen, Bookmark, Brain, Sliders } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { RulesTab } from './context-drawer/RulesTab';
+import { RulesManagerTab } from './context-drawer/RulesManagerTab';
 import { LoreTab } from './context-drawer/LoreTab';
 import { EnginesTab } from './context-drawer/EnginesTab';
 import { ChapterTab } from './context-drawer/ChapterTab';
@@ -11,6 +12,7 @@ import { MemoryTab } from './context-drawer/MemoryTab';
 
 const TABS = [
   { id: 'sys',      label: 'System',   icon: ScrollText },
+  { id: 'rules-mgr', label: 'RuleMgr', icon: Sliders },
   { id: 'world',    label: 'World',    icon: Globe },
   { id: 'mem',      label: 'Memory',   icon: Brain },
   { id: 'eng',      label: 'Engines',  icon: Zap },
@@ -67,7 +69,8 @@ export function ContextDrawer() {
 
   const tabContent = (
     <>
-      {activeTab === 'sys' && <RulesTab />}
+      {activeTab === 'sys' && <RulesTab onOpenManager={() => setActiveTab('rules-mgr')} />}
+      {activeTab === 'rules-mgr' && <RulesManagerTab onBack={() => setActiveTab('sys')} />}
       {activeTab === 'world' && <LoreTab />}
       {activeTab === 'mem' && <MemoryTab />}
       {activeTab === 'eng' && <EnginesTab />}

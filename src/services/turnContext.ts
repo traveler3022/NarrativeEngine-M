@@ -2,6 +2,7 @@ import type { LoreChunk, ArchiveScene } from '../types';
 import type { TurnCallbacks, TurnState } from './turnTypes';
 import { buildPayload } from './chatEngine';
 import { retrieveRelevantLore } from './loreRetriever';
+import { retrieveRelevantRules } from './rulesRetriever';
 import { recallArchiveScenes, retrieveArchiveMemory, fetchArchiveScenes } from './archiveMemory';
 import { countTokens } from './tokenizer';
 import { offlineStorage } from './storage';
@@ -57,6 +58,8 @@ Generate 2 alternative phrasings that expand pronouns, add likely entity names f
 
 export type GatheredContext = {
     relevantLore: LoreChunk[] | undefined;
+    relevantRules: LoreChunk[] | undefined;
+    rulesManifest: string;
     sceneNumber: string | undefined;
     archiveRecall: ArchiveScene[] | undefined;
     semanticFactText: string;
@@ -74,6 +77,7 @@ export async function gatherContext(
     const { settings, loreChunks, npcLedger, archiveIndex, activeCampaignId } = state;
     let semanticArchiveIds: string[] | undefined;
     let semanticLoreIds: string[] | undefined;
+    let semanticRuleIds: string[] | undefined;
 
     if (isEmbedderReady() && activeCampaignId) {
         try {
@@ -89,15 +93,18 @@ export async function gatherContext(
                 }
             }
 
-            const [sceneIds, loreIds] = await Promise.all([
+            const [sceneIds, loreIds, ruleIds] = await Promise.all([
                 semanticSearch(activeCampaignId, queries, 'scene', 40, SEMANTIC_FLOOR_SCENE),
                 semanticSearch(activeCampaignId, queries, 'lore', 25, SEMANTIC_FLOOR_LORE),
+                semanticSearch(activeCampaignId, queries, 'rule', 25, SEMANTIC_FLOOR_LORE),
             ]);
             semanticArchiveIds = sceneIds;
             semanticLoreIds = loreIds;
+            semanticRuleIds = ruleIds;
 
             if (semanticArchiveIds?.length) console.log(`[Semantic] Found ${semanticArchiveIds.length} scene candidates`);
             if (semanticLoreIds?.length) console.log(`[Semantic] Found ${semanticLoreIds.length} lore candidates`);
+            if (semanticRuleIds?.length) console.log(`[Semantic] Found ${semanticRuleIds.length} rule candidates`);
         } catch (e) {
             console.warn('[Semantic] Candidate search failed, using keyword fallback:', e);
         }
@@ -142,6 +149,37 @@ export async function gatherContext(
     const relevantLore = loreChunks.length > 0
         ? retrieveRelevantLore(loreChunks, finalInput, 1200, messages, semanticLoreIds)
         : undefined;
+
+    let relevantRules: LoreChunk[] | undefined;
+    let rulesManifest = '';
+    if (state.context.rulesRaw) {
+        const rulesBudgetPct = settings.rulesBudgetPct ?? 0.10;
+        const rulesBudget = Math.floor((settings.contextLimit || 8192) * rulesBudgetPct);
+        const threshold = Math.floor(rulesBudget * 1.2);
+        const rulesTokenCount = countTokens(state.context.rulesRaw);
+
+        if (rulesTokenCount > threshold) {
+            try {
+                const { chunkLoreFile } = await import('./loreChunker');
+                const ruleChunks = chunkLoreFile(state.context.rulesRaw, 'rule');
+                const result = retrieveRelevantRules(
+                    ruleChunks,
+                    state.context.rulesChunkMeta,
+                    finalInput,
+                    rulesBudget,
+                    messages,
+                    semanticRuleIds
+                );
+                relevantRules = result.selected;
+                rulesManifest = result.manifest;
+                if (relevantRules.length > 0) {
+                    console.log(`[RulesRAG] Retrieved ${relevantRules.length}/${ruleChunks.length} rule chunks`);
+                }
+            } catch (e) {
+                console.warn('[RulesRAG] Retrieval failed, falling back to verbatim:', e);
+            }
+        }
+    }
 
     let sceneNumber: string | undefined;
     if (activeCampaignId) {
@@ -341,6 +379,8 @@ export async function gatherContext(
         userMessage: finalInput,
         condensedUpToIndex: condenser.condensedUpToIndex,
         relevantLore,
+        relevantRules,
+        rulesManifest,
         npcLedger,
         archiveRecall: finalArchiveRecall,
         onStageNpcIds: state.onStageNpcIds,
@@ -354,5 +394,5 @@ export async function gatherContext(
         semanticallyRecalledNpcIds,
     });
 
-    return { relevantLore, sceneNumber, archiveRecall: finalArchiveRecall, semanticFactText, recommendedNPCNames, deepContextSummary, payloadResult };
+    return { relevantLore, relevantRules, rulesManifest, sceneNumber, archiveRecall: finalArchiveRecall, semanticFactText, recommendedNPCNames, deepContextSummary, payloadResult };
 }

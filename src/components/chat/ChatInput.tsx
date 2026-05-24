@@ -19,9 +19,17 @@ export function ChatInput({
     inputRef,
 }: ChatInputProps) {
     const settings = useAppStore(s => s.settings);
+    const reindexing = useAppStore(s => s.embeddingsReindexing);
+
+    const isReindexing = reindexing.active;
 
     return (
         <div className="flex-shrink-0 bg-void border-t border-border">
+            {isReindexing && (
+                <div className="px-2 py-1 bg-amber-500/10 border-b border-amber-500/30 text-amber-400 text-[10px] text-center">
+                    Re-indexing lore… {reindexing.done}/{reindexing.total}. AI turns paused.
+                </div>
+            )}
             <div className="px-2 sm:px-4 pb-1 pt-1">
                 <div className="flex gap-1 border border-border bg-void focus-within:border-terminal items-center p-1 rounded-sm">
                     <div className="relative shrink-0 ml-1">
@@ -35,16 +43,17 @@ export function ChatInput({
                         ref={inputRef}
                         value={input}
                         onChange={onChange}
-                        placeholder="What do you do?"
-                        className="flex-1 bg-transparent px-2 py-2 text-[16px] md:text-sm text-text-primary placeholder:text-text-dim/40 font-mono resize-none border-none outline-none min-h-[40px] leading-5"
+                        placeholder={isReindexing ? 'Re-indexing…' : 'What do you do?'}
+                        disabled={isReindexing}
+                        className="flex-1 bg-transparent px-2 py-2 text-[16px] md:text-sm text-text-primary placeholder:text-text-dim/40 font-mono resize-none border-none outline-none min-h-[40px] leading-5 disabled:opacity-50"
                     />
                     <button
                         onClick={isStreaming ? onStop : onSend}
-                        disabled={!isStreaming && !input.trim()}
+                        disabled={(!isStreaming && !input.trim()) || isReindexing}
                         className={`h-[32px] w-[40px] rounded transition-all flex items-center justify-center shrink-0 ${
                             isStreaming ? 'text-amber-500 hover:bg-amber-500/10' :
                             'text-terminal hover:bg-terminal/10'
-                        }`}>
+                        } disabled:opacity-30`}>
                         {isStreaming ? <Square size={16} fill="currentColor" /> : <Send size={16} />}
                     </button>
                 </div>

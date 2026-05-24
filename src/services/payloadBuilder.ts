@@ -71,14 +71,15 @@ function swapActionResolutionForToolMode(rules: string): string {
     return rules.substring(0, idx) + TOOL_MODE_ACTION_RESOLUTION + rules.substring(endIdx);
 }
 
-function computeBudgets(limit: number, hasDeepContext: boolean): { stable: number; summary: number; world: number; volatile: number } {
-    // When deep context summary is present, expand world budget at expense of stable/volatile.
+function computeBudgets(limit: number, hasDeepContext: boolean, rulesBudgetPct: number): { stable: number; summary: number; world: number; rules: number; volatile: number } {
+    const rules = Math.max(50, Math.floor(limit * (rulesBudgetPct || 0)));
+    const adjusted = limit - rules;
     return {
-        stable:   Math.floor(limit * (hasDeepContext ? 0.15 : 0.25)),
-        summary:  Math.floor(limit * 0.10),
-        world:    Math.floor(limit * (hasDeepContext ? 0.60 : 0.40)),
-        volatile: Math.floor(limit * (hasDeepContext ? 0.07 : 0.10)),
-        // History + User message take the remainder
+        stable:   Math.floor(adjusted * (hasDeepContext ? 0.15 : 0.25)),
+        summary:  Math.floor(adjusted * 0.10),
+        world:    Math.floor(adjusted * (hasDeepContext ? 0.60 : 0.40)),
+        rules,
+        volatile: Math.floor(adjusted * (hasDeepContext ? 0.07 : 0.10)),
     };
 }
 
@@ -165,6 +166,8 @@ export interface BuildPayloadOptions {
     userMessage: string;
     condensedUpToIndex?: number;
     relevantLore?: LoreChunk[];
+    relevantRules?: LoreChunk[];
+    rulesManifest?: string;
     npcLedger?: NPCEntry[];
     archiveRecall?: ArchiveScene[];
     onStageNpcIds?: string[];
@@ -186,6 +189,8 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
         userMessage,
         condensedUpToIndex,
         relevantLore,
+        relevantRules,
+        rulesManifest,
         npcLedger,
         archiveRecall,
         onStageNpcIds,
@@ -204,7 +209,7 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
     const limit = settings.contextLimit || 8192;
 
     // --- 1. Define Budgets (ST-inspired proportionality) ---
-    const budgetMap = computeBudgets(limit, !!deepContextSummary);
+    const budgetMap = computeBudgets(limit, !!deepContextSummary, settings.rulesBudgetPct ?? 0.10);
 
     // Helper to log to trace if debug
     const addTrace = (t: PayloadTrace) => {
@@ -215,11 +220,21 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
     const stableParts: string[] = [];
     if (sceneNumber) stableParts.push(`[CURRENT SCENE: #${sceneNumber}]`);
     if (context.rulesRaw) {
-        let rules = context.rulesRaw;
-        if (context.diceFairnessActive === false) {
-            rules = swapActionResolutionForToolMode(rules);
+        const rulesTokenCount = countTokens(context.rulesRaw);
+        const rulesBudgetTokens = budgetMap.rules;
+        const threshold = Math.floor(rulesBudgetTokens * 1.2);
+
+        if (relevantRules && relevantRules.length > 0 && rulesTokenCount > threshold) {
+            const rulesText = relevantRules.map(c => `### ${c.header}\n${c.content}`).join('\n\n');
+            const manifestText = rulesManifest ? '\n\n' + rulesManifest : '';
+            stableParts.push(`[RULES — RETRIEVED SECTIONS]\n${rulesText}${manifestText}\n[END RULES]`);
+        } else {
+            let rules = context.rulesRaw;
+            if (context.diceFairnessActive === false) {
+                rules = swapActionResolutionForToolMode(rules);
+            }
+            stableParts.push(rules);
         }
-        stableParts.push(rules);
     }
     if (context.starterActive && context.starter) stableParts.push(context.starter);
     if (context.continuePromptActive && context.continuePrompt) stableParts.push(context.continuePrompt);

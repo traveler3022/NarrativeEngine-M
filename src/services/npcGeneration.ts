@@ -2,7 +2,7 @@ import type { LLMProvider, ChatMessage, NPCEntry } from '../types';
 import { llmCall } from '../utils/llmCall';
 import { extractJson } from './payloadBuilder';
 import { uid } from '../utils/uid';
-import { embedText } from './embedder';
+import { embedText, getCurrentModelId } from './embedder';
 import { embeddingStorage } from './storage/embeddingStorage';
 
 const RETRY_SUFFIX = '\n\nIMPORTANT: Your previous response was not valid JSON. Respond with ONLY valid JSON. No markdown fences, no comments, no trailing commas, no extra text before or after the JSON.';
@@ -72,7 +72,7 @@ export async function embedAndStoreNPC(campaignId: string, npc: NPCEntry): Promi
         if (!text) return;
         const vector = await embedText(text);
         if (vector) {
-            await embeddingStorage.store(campaignId, npc.id, Array.from(vector), 'npc');
+            await embeddingStorage.store(campaignId, npc.id, Array.from(vector), 'npc', getCurrentModelId());
         }
     } catch (e) {
         console.warn(`[NPC Embed] Failed to embed ${npc.name}:`, e);

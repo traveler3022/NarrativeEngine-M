@@ -4,6 +4,9 @@ const SINGLE_PASS_LIMIT = 1500;
 const WINDOW_SIZE = 1000;
 const WINDOW_STRIDE = 700;
 
+// Default dims match Xenova/all-MiniLM-L6-v2; bge-base-en-v1.5 uses 768
+const DEFAULT_DIMS = 384;
+
 function getWindows(text: string): string[] {
     if (text.length <= SINGLE_PASS_LIMIT) return [text];
     const windows: string[] = [];
@@ -16,24 +19,23 @@ function getWindows(text: string): string[] {
     return windows;
 }
 
-function poolVectors(vectors: number[][]): number[] {
-    const dim = vectors[0].length;
-    const pooled = new Array(dim).fill(0);
+function poolVectors(vectors: number[][], dims: number = DEFAULT_DIMS): number[] {
+    const pooled = new Array(dims).fill(0);
     for (const vec of vectors) {
-        for (let j = 0; j < dim; j++) {
+        for (let j = 0; j < dims; j++) {
             pooled[j] += vec[j];
         }
     }
-    for (let j = 0; j < dim; j++) {
+    for (let j = 0; j < dims; j++) {
         pooled[j] /= vectors.length;
     }
     let norm = 0;
-    for (let j = 0; j < dim; j++) {
+    for (let j = 0; j < dims; j++) {
         norm += pooled[j] * pooled[j];
     }
     norm = Math.sqrt(norm);
     if (norm > 0) {
-        for (let j = 0; j < dim; j++) {
+        for (let j = 0; j < dims; j++) {
             pooled[j] /= norm;
         }
     }
@@ -69,8 +71,8 @@ describe('embedder windowing logic', () => {
         }
     });
 
-    it('pooled vector has unit norm after renormalization', () => {
-        const dim = 384;
+    it('pooled vector has unit norm after renormalization (default dims)', () => {
+        const dim = DEFAULT_DIMS;
         const mockVecs = [
             Array.from({ length: dim }, () => Math.random()).map(x => {
                 const norm = Math.sqrt(dim) * 0.5;
@@ -81,13 +83,30 @@ describe('embedder windowing logic', () => {
                 return x / norm;
             }),
         ];
-        const pooled = poolVectors(mockVecs);
+        const pooled = poolVectors(mockVecs, dim);
+        const norm = vectorNorm(pooled);
+        expect(Math.abs(norm - 1.0)).toBeLessThan(1e-5);
+    });
+
+    it('pooled vector has unit norm after renormalization (768 dims)', () => {
+        const dim = 768;
+        const mockVecs = [
+            Array.from({ length: dim }, () => Math.random()).map(x => {
+                const norm = Math.sqrt(dim) * 0.5;
+                return x / norm;
+            }),
+            Array.from({ length: dim }, () => Math.random()).map(x => {
+                const norm = Math.sqrt(dim) * 0.5;
+                return x / norm;
+            }),
+        ];
+        const pooled = poolVectors(mockVecs, dim);
         const norm = vectorNorm(pooled);
         expect(Math.abs(norm - 1.0)).toBeLessThan(1e-5);
     });
 
     it('single vector pooling preserves unit norm', () => {
-        const dim = 384;
+        const dim = DEFAULT_DIMS;
         const unitVec = new Array(dim).fill(1 / Math.sqrt(dim));
         const pooled = poolVectors([unitVec]);
         const norm = vectorNorm(pooled);
@@ -95,7 +114,7 @@ describe('embedder windowing logic', () => {
     });
 
     it('zero vectors pool to zero norm without NaN', () => {
-        const dim = 384;
+        const dim = DEFAULT_DIMS;
         const zeroVec = new Array(dim).fill(0);
         const pooled = poolVectors([zeroVec]);
         const norm = vectorNorm(pooled);

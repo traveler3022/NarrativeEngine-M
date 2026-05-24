@@ -1,8 +1,11 @@
 import { embeddingStorage, EMBEDDING_VERSION } from './storage/embeddingStorage';
-import { embedText, isEmbedderReady, warmupEmbedder } from './embedder';
+import { embedText, isEmbedderReady, warmupEmbedder, getCurrentModelId } from './embedder';
 import { getList, k, type SceneRecord } from './storage/_helpers';
 import { buildNPCEmbeddingText } from './npcGeneration';
 import type { NPCEntry } from '../types';
+import { get as idbGet } from 'idb-keyval';
+
+const RULE_EMBED_SLICE = 500;
 
 
 export type BackfillProgress = {
@@ -33,6 +36,7 @@ export async function runBackfill(
         }
     }
 
+    const modelId = getCurrentModelId();
     const allRecords = await embeddingStorage.getAllWithVersion(campaignId);
     const outdated = allRecords.filter(r => r.version < EMBEDDING_VERSION);
 
@@ -59,10 +63,24 @@ export async function runBackfill(
                 const combinedText = `${sceneRec.userContent}\n${sceneRec.assistantContent}`;
                 const vector = await embedText(combinedText);
                 if (vector) {
-                    await embeddingStorage.store(campaignId, record.id, Array.from(vector), 'scene');
+                    await embeddingStorage.store(campaignId, record.id, Array.from(vector), 'scene', modelId);
                 }
             } else {
                 await embeddingStorage.deleteByTypeAndId(campaignId, 'scene', record.id);
+            }
+        } else if (record.type === 'npc') {
+            const npcs: NPCEntry[] = await idbGet(`npcs_${campaignId}`) || [];
+            const npc = npcs.find(n => n.id === record.id);
+            if (npc) {
+                const text = buildNPCEmbeddingText(npc);
+                if (text) {
+                    const vector = await embedText(text);
+                    if (vector) {
+                        await embeddingStorage.store(campaignId, record.id, Array.from(vector), 'npc', modelId);
+                    }
+                }
+            } else {
+                await embeddingStorage.deleteByTypeAndId(campaignId, 'npc', record.id);
             }
         } else {
             const baseId = record.id.replace(/#w\d+$/, '');
@@ -71,7 +89,7 @@ export async function runBackfill(
             if (chunk) {
                 const vector = await embedText(chunk.content);
                 if (vector) {
-                    await embeddingStorage.store(campaignId, record.id, Array.from(vector), 'lore');
+                    await embeddingStorage.store(campaignId, record.id, Array.from(vector), 'lore', modelId);
                 }
             } else {
                 await embeddingStorage.deleteByTypeAndId(campaignId, 'lore', record.id);
@@ -112,6 +130,21 @@ async function getLoreChunksForBackfill(_campaignId: string): Promise<Array<{ id
     return [];
 }
 
+async function getRuleChunksForReindex(_campaignId: string): Promise<Array<{ id: string; content: string }>> {
+    try {
+        const { chunkLoreFile } = await import('./loreChunker');
+        const { useAppStore } = await import('../store/useAppStore');
+        const state = useAppStore.getState();
+        const rulesRaw = state.context?.rulesRaw;
+        if (rulesRaw) {
+            return chunkLoreFile(rulesRaw, 'rule').map(c => ({ id: c.id, content: c.content }));
+        }
+    } catch {
+        console.warn('[FullReindex] Could not access rule chunks from store');
+    }
+    return [];
+}
+
 export async function backfillScenes(
     campaignId: string,
     sceneIds: string[],
@@ -122,6 +155,7 @@ export async function backfillScenes(
         if (!isEmbedderReady()) return;
     }
 
+    const modelId = getCurrentModelId();
     const sceneRecords: SceneRecord[] = await getList(k(campaignId, 'scenes'));
     const sceneMap = new Map(sceneRecords.map(s => [s.sceneId, s]));
 
@@ -133,7 +167,7 @@ export async function backfillScenes(
         const combinedText = `${sceneRec.userContent}\n${sceneRec.assistantContent}`;
         const vector = await embedText(combinedText);
         if (vector) {
-            await embeddingStorage.store(campaignId, sceneId, Array.from(vector), 'scene');
+            await embeddingStorage.store(campaignId, sceneId, Array.from(vector), 'scene', modelId);
         }
 
         done++;
@@ -155,6 +189,7 @@ export async function backfillNPCs(
         if (!isEmbedderReady()) return;
     }
 
+    const modelId = getCurrentModelId();
     const existingNpcEmbeds = await embeddingStorage.getAll(campaignId, 'npc');
     const embeddedIds = new Set(existingNpcEmbeds.map(e => e.id));
 
@@ -176,7 +211,7 @@ export async function backfillNPCs(
         }
         const vector = await embedText(text);
         if (vector) {
-            await embeddingStorage.store(campaignId, npc.id, Array.from(vector), 'npc');
+            await embeddingStorage.store(campaignId, npc.id, Array.from(vector), 'npc', modelId);
         }
 
         done++;
@@ -188,4 +223,100 @@ export async function backfillNPCs(
     }
 
     console.log(`[Backfill] NPC backfill complete. Embedded ${done} NPCs.`);
+}
+
+export async function runFullReindex(
+    campaignId: string,
+    onProgress?: (progress: BackfillProgress) => void
+): Promise<void> {
+    if (!isEmbedderReady()) {
+        await warmupEmbedder();
+        if (!isEmbedderReady()) {
+            console.warn('[FullReindex] Embedder not ready, skipping');
+            return;
+        }
+    }
+
+    const modelId = getCurrentModelId();
+    const allRecords = await embeddingStorage.getAllWithVersion(campaignId);
+    const stale = allRecords.filter(r => r.modelId !== modelId);
+
+    if (stale.length === 0) {
+        console.log('[FullReindex] No stale vectors found');
+        return;
+    }
+
+    console.log(`[FullReindex] ${stale.length} vectors need re-indexing (model: ${modelId})`);
+
+    const sceneRecords: SceneRecord[] = await getList(k(campaignId, 'scenes'));
+    const sceneMap = new Map(sceneRecords.map(s => [s.sceneId, s]));
+    const npcs: NPCEntry[] = await idbGet(`npcs_${campaignId}`) || [];
+    const npcMap = new Map(npcs.map(n => [n.id, n]));
+    const loreChunks = await getLoreChunksForBackfill(campaignId);
+    const ruleChunks = await getRuleChunksForReindex(campaignId);
+
+    const YIELD_EVERY = 5;
+    let done = 0;
+
+    for (let i = 0; i < stale.length; i++) {
+        const record = stale[i];
+        setBackfillCursor({ campaignId, type: record.type, index: i });
+
+        if (record.type === 'scene') {
+            const sceneRec = sceneMap.get(record.id);
+            if (sceneRec) {
+                const combinedText = `${sceneRec.userContent}\n${sceneRec.assistantContent}`;
+                const vector = await embedText(combinedText);
+                if (vector) {
+                    await embeddingStorage.store(campaignId, record.id, Array.from(vector), 'scene', modelId);
+                }
+            } else {
+                await embeddingStorage.deleteByTypeAndId(campaignId, 'scene', record.id);
+            }
+        } else if (record.type === 'npc') {
+            const npc = npcMap.get(record.id);
+            if (npc) {
+                const text = buildNPCEmbeddingText(npc);
+                if (text) {
+                    const vector = await embedText(text);
+                    if (vector) {
+                        await embeddingStorage.store(campaignId, record.id, Array.from(vector), 'npc', modelId);
+                    }
+                }
+            } else {
+                await embeddingStorage.deleteByTypeAndId(campaignId, 'npc', record.id);
+            }
+        } else if (record.type === 'rule') {
+            const chunk = ruleChunks.find(c => c.id === record.id);
+            if (chunk) {
+                const vector = await embedText(chunk.content.slice(0, RULE_EMBED_SLICE));
+                if (vector) {
+                    await embeddingStorage.store(campaignId, record.id, Array.from(vector), 'rule', modelId);
+                }
+            } else {
+                await embeddingStorage.deleteByTypeAndId(campaignId, 'rule', record.id);
+            }
+        } else {
+            const baseId = record.id.replace(/#w\d+$/, '');
+            const chunk = loreChunks.find(c => c.id === baseId) || loreChunks.find(c => c.id === record.id);
+            if (chunk) {
+                const vector = await embedText(chunk.content);
+                if (vector) {
+                    await embeddingStorage.store(campaignId, record.id, Array.from(vector), 'lore', modelId);
+                }
+            } else {
+                await embeddingStorage.deleteByTypeAndId(campaignId, 'lore', record.id);
+            }
+        }
+
+        done++;
+        onProgress?.({ total: stale.length, done, current: `${record.type}:${record.id}` });
+
+        if (done % YIELD_EVERY === 0) {
+            await new Promise(r => setTimeout(r, 0));
+        }
+    }
+
+    setBackfillCursor(null);
+    console.log(`[FullReindex] Complete. Re-indexed ${done} vectors.`);
 }

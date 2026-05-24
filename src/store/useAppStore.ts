@@ -16,6 +16,7 @@ export {
     DEFAULT_WORLD_WHY,
     DEFAULT_WORLD_WHAT,
 } from './slices/settingsSlice';
+export type { ReindexState } from './slices/uiSlice';
 
 // ── Combined store type ────────────────────────────────────────────────
 

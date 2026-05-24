@@ -1,6 +1,13 @@
 import type { StateCreator } from 'zustand';
 import type { PayloadTrace, PipelinePhase, StreamingStats } from '../../types';
 
+export type ReindexState = {
+    active: boolean;
+    total: number;
+    done: number;
+    reason: 'switch' | 'lazy' | null;
+};
+
 export type UISlice = {
     settingsOpen: boolean;
     drawerOpen: boolean;
@@ -28,6 +35,8 @@ export type UISlice = {
     closeTroubleModal: () => void;
     pendingArcSeed: string | null;
     setPendingArcSeed: (seed: string | null) => void;
+    embeddingsReindexing: ReindexState;
+    setEmbeddingsReindexing: (state: ReindexState) => void;
 };
 
 export const createUISlice: StateCreator<UISlice, [], [], UISlice> = (set) => ({
@@ -56,4 +65,6 @@ export const createUISlice: StateCreator<UISlice, [], [], UISlice> = (set) => ({
     closeTroubleModal: () => set({ troubleModalOpen: false, troubleOptions: [], troubleLoading: false }),
     pendingArcSeed: null,
     setPendingArcSeed: (seed) => set({ pendingArcSeed: seed }),
+    embeddingsReindexing: { active: false, total: 0, done: 0, reason: null },
+    setEmbeddingsReindexing: (state) => set({ embeddingsReindexing: state }),
 });

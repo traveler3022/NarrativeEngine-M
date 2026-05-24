@@ -2,10 +2,6 @@
 
 import { pipeline, env } from '@huggingface/transformers';
 
-env.allowRemoteModels = false;
-env.localModelPath = '/models/';
-
-const MODEL_ID = 'Xenova/all-MiniLM-L6-v2';
 const SINGLE_PASS_LIMIT = 1500;
 const WINDOW_SIZE = 1000;
 const WINDOW_STRIDE = 700;
@@ -15,6 +11,7 @@ type EmbedderPipeline = Awaited<ReturnType<typeof pipeline<'feature-extraction'>
 let embedder: EmbedderPipeline | null = null;
 let loading: Promise<EmbedderPipeline> | null = null;
 let ready = false;
+let currentModel = 'Xenova/all-MiniLM-L6-v2';
 
 async function ensureWarm(): Promise<EmbedderPipeline> {
     if (ready && embedder) return embedder;
@@ -22,7 +19,20 @@ async function ensureWarm(): Promise<EmbedderPipeline> {
 
     loading = (async () => {
         try {
-            const p = await pipeline('feature-extraction', MODEL_ID, { dtype: 'q8' });
+            const p = await pipeline('feature-extraction', currentModel, {
+                dtype: 'q8',
+                progress_callback: (progress: { status: string; file: string; loaded: number; total: number }) => {
+                    if (progress.status === 'progress') {
+                        self.postMessage({
+                            type: 'progress',
+                            id: 'model-download',
+                            file: progress.file,
+                            loaded: progress.loaded,
+                            total: progress.total,
+                        });
+                    }
+                },
+            });
             embedder = p;
             ready = true;
             return p;
@@ -87,6 +97,7 @@ async function embedSingle(text: string): Promise<number[] | null> {
 }
 
 type WorkerInMessage =
+    | { type: 'init'; id: string; modelId: string; allowRemote: boolean }
     | { type: 'warmup'; id: string }
     | { type: 'embed'; id: string; text: string }
     | { type: 'embedBatch'; id: string; texts: string[] };
@@ -96,6 +107,18 @@ self.onmessage = async (e: MessageEvent<WorkerInMessage>) => {
 
     try {
         switch (msg.type) {
+            case 'init': {
+                currentModel = msg.modelId;
+                env.allowRemoteModels = msg.allowRemote;
+                env.localModelPath = '/models/';
+                embedder = null;
+                ready = false;
+                loading = null;
+                await ensureWarm();
+                self.postMessage({ type: 'ready', id: msg.id });
+                break;
+            }
+
             case 'warmup':
                 await ensureWarm();
                 self.postMessage({ type: 'ready', id: msg.id });

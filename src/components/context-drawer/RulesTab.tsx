@@ -1,15 +1,23 @@
-import { ScrollText } from 'lucide-react';
+import { ScrollText, Settings2 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { PayloadTraceView } from '../PayloadTraceView';
 import { SceneNoteEditor } from '../SceneNoteEditor';
 import { TokenCounter } from './TokenCounter';
+import { countTokens } from '../../services/tokenizer';
 
 const RULES_LIMIT = 5000;
 
-export function RulesTab() {
+export function RulesTab({ onOpenManager }: { onOpenManager?: () => void }) {
     const context = useAppStore((s) => s.context);
     const updateContext = useAppStore((s) => s.updateContext);
     const settings = useAppStore((s) => s.settings);
+
+    const rulesBudgetPct = settings.rulesBudgetPct ?? 0.10;
+    const contextLimit = settings.contextLimit || 8192;
+    const rulesBudget = Math.floor(contextLimit * rulesBudgetPct);
+    const threshold = Math.floor(rulesBudget * 1.2);
+    const tokenCount = countTokens(context.rulesRaw);
+    const ragActive = tokenCount > threshold;
 
     return (
         <div className="px-4 py-4 space-y-4">
@@ -25,7 +33,28 @@ export function RulesTab() {
                     rows={6}
                     className="w-full bg-void border border-border px-3 py-2 text-[16px] md:text-xs text-text-primary placeholder:text-text-dim/40 font-mono resize-y min-h-[120px] md:min-h-0"
                 />
-                <TokenCounter text={context.rulesRaw} limit={RULES_LIMIT} />
+                <div className="flex items-center justify-between mt-1">
+                    <TokenCounter text={context.rulesRaw} limit={RULES_LIMIT} />
+                    <span className={`text-[9px] font-mono ml-2 ${ragActive ? 'text-terminal' : 'text-text-dim'}`}>
+                        {tokenCount.toLocaleString()}/{threshold} tok {ragActive ? '● RAG' : '● verbatim'}
+                    </span>
+                </div>
+                {ragActive && (
+                    <div className="mt-2 flex items-center justify-between">
+                        <span className="text-[9px] text-terminal-dim">
+                            RAG active — chunks retrieved per turn (budget: {rulesBudget} tok)
+                        </span>
+                        {onOpenManager && (
+                            <button
+                                onClick={onOpenManager}
+                                className="flex items-center gap-1 text-[9px] text-terminal hover:text-text-primary transition-colors"
+                            >
+                                <Settings2 size={10} />
+                                Manage chunks
+                            </button>
+                        )}
+                    </div>
+                )}
             </div>
 
             <div className="pt-4 border-t border-border/50">

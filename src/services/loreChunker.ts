@@ -108,6 +108,23 @@ function assignPriority(category: LoreCategory, alwaysInclude: boolean): number 
     }
 }
 
+function assignPriorityForRules(category: LoreCategory, alwaysInclude: boolean): number {
+    if (alwaysInclude) return 10;
+    switch (category) {
+        case 'rules': return 9;
+        case 'power_system': return 8;
+        case 'world_overview': return 8;
+        case 'economy': return 7;
+        case 'faction': return 6;
+        case 'character': return 6;
+        case 'location': return 5;
+        case 'event': return 5;
+        case 'relationship': return 5;
+        case 'culture': return 5;
+        default: return 4;
+    }
+}
+
 function classifyCategory(header: string, content: string, parentHeader?: string): LoreCategory {
     const h = (header || '').toUpperCase();
     const p = (parentHeader || '').toUpperCase();
@@ -170,7 +187,7 @@ function extractLinkedEntities(chunks: LoreChunk[]) {
     }
 }
 
-export function chunkLoreFile(markdown: string): LoreChunk[] {
+export function chunkLoreFile(markdown: string, category?: 'lore' | 'rule'): LoreChunk[] {
     const normalizedMarkdown = markdown.replace(/\\(#{2,3})\s*/g, '\n$1 ');
     const lines = normalizedMarkdown.split(/\r?\n/);
     const chunks: LoreChunk[] = [];
@@ -200,7 +217,9 @@ export function chunkLoreFile(markdown: string): LoreChunk[] {
             const baseId = slugify(currentHeader);
             const id = getUniqueId(baseId);
             const alwaysInclude = shouldAlwaysInclude(currentHeader);
-            const category = classifyCategory(currentHeader, content, parentHeader);
+            const autoCategory = classifyCategory(currentHeader, content, parentHeader);
+            const chunkCategory = category === 'rule' ? autoCategory : autoCategory;
+            const chunkAlwaysInclude = category === 'rule' ? alwaysInclude : alwaysInclude;
             
             // Extract Rag metadata blocks if any overrides exist
             let finalScanDepth = 3;
@@ -209,18 +228,22 @@ export function chunkLoreFile(markdown: string): LoreChunk[] {
                 if (match) finalScanDepth = parseInt(match[1]) || 3;
             }
 
+            const chunkPriority = category === 'rule'
+                ? assignPriorityForRules(autoCategory, alwaysInclude)
+                : assignPriority(autoCategory, alwaysInclude);
+
             chunks.push({
                 id,
                 header: currentHeader,
                 content,
                 tokens: countTokens(currentHeader + '\n' + content),
-                alwaysInclude,
+                alwaysInclude: chunkAlwaysInclude,
                 triggerKeywords: extractTriggerKeywords(currentHeader, content),
                 scanDepth: finalScanDepth,
-                category,
+                category: chunkCategory,
                 linkedEntities: [], // Populated post-processing
                 parentSection: parentHeader || undefined,
-                priority: assignPriority(category, alwaysInclude),
+                priority: chunkPriority,
                 summary: generateSummary(currentHeader, content)
             });
         }

@@ -98,6 +98,9 @@ export const defaultSettings: AppSettings = {
     divergenceTokenBudget: 2000,
     autoArchiveStaleNPCsTurns: 15,
     divergenceScanBudget: 0,
+    rulesBudgetPct: 0.10,
+    autoGenerateRuleKeywords: true,
+    embeddingModel: 'standard' as const,
 };
 
 export function resolveTheme(theme: 'light' | 'dark' | 'system'): 'light' | 'dark' {
@@ -150,6 +153,9 @@ export function migrateSettings(data: Record<string, unknown>): AppSettings {
             autoExtractDivergences: (raw.autoExtractDivergences as boolean) ?? true,
             divergenceTokenBudget: (raw.divergenceTokenBudget as number) ?? 2000,
             divergenceScanBudget: (raw.divergenceScanBudget as number) ?? 0,
+            rulesBudgetPct: (raw.rulesBudgetPct as number) ?? 0.10,
+            autoGenerateRuleKeywords: (raw.autoGenerateRuleKeywords as boolean) ?? true,
+            embeddingModel: (raw.embeddingModel as 'standard' | 'high') ?? 'standard',
         };
     }
 
@@ -196,6 +202,9 @@ export function migrateSettings(data: Record<string, unknown>): AppSettings {
         autoExtractDivergences: (raw.autoExtractDivergences as boolean) ?? true,
         divergenceTokenBudget: (raw.divergenceTokenBudget as number) ?? 2000,
         divergenceScanBudget: (raw.divergenceScanBudget as number) ?? 0,
+        rulesBudgetPct: (raw.rulesBudgetPct as number) ?? 0.10,
+        autoGenerateRuleKeywords: (raw.autoGenerateRuleKeywords as boolean) ?? true,
+        embeddingModel: (raw.embeddingModel as 'standard' | 'high') ?? 'standard',
     };
 }
 

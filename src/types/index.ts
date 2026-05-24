@@ -72,6 +72,10 @@ export type AppSettings = {
     divergenceScanBudget?: number; // 0 or undefined = auto (75% of contextLimit). Otherwise the explicit max-tokens-per-chunk for divergence extraction.
     autoArchiveStaleNPCsTurns?: number; // 0 disables auto-archive; default 15
 
+    rulesBudgetPct?: number;        // fraction of contextLimit for rules RAG, default 0.10
+    autoGenerateRuleKeywords?: boolean; // default true; false = header+bold derivation only
+    embeddingModel?: 'standard' | 'high'; // default 'standard'
+
     // Legacy fields kept for migration only
     providers?: LLMProvider[];
     activeProviderId?: string;
@@ -122,9 +126,19 @@ export type NpcIntroConfig = {
     characters: CharacterIntroEntry[];
 };
 
+export type RuleChunkMeta = {
+    id: string;
+    activationModes: ('vector' | 'keyword' | 'always')[];
+    triggerKeywords?: string[];
+    secondaryKeywords?: string[];
+    priority?: number;
+    keywordsUserEdited?: boolean;
+};
+
 export type GameContext = {
     loreRaw: string;
     rulesRaw: string;
+    rulesChunkMeta?: Record<string, RuleChunkMeta>;
     starter: string;
     continuePrompt: string;
     inventory: string;

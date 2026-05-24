@@ -2,9 +2,10 @@ import type { StateCreator } from 'zustand';
 import type { GameContext, ChatMessage, CondenserState, LoreChunk, ArchiveIndexEntry, NPCEntry, ArchiveChapter, SemanticFact, TimelineEvent, EntityEntry, DivergenceRegister } from '../../types';
 import { toast } from '../../components/Toast';
 import { debouncedSaveSettings } from './settingsSlice';
-import { embedText } from '../../services/embedder';
+import { embedText, getCurrentModelId } from '../../services/embedder';
 import { embeddingStorage } from '../../services/storage/embeddingStorage';
 import { buildNPCEmbeddingText } from '../../services/npcGeneration';
+import { runFullReindex } from '../../services/backfillRunner';
 import { EMPTY_REGISTER } from '../../services/divergenceRegister';
 
 const NPC_EMBED_FIELDS: (keyof NPCEntry)[] = ['name', 'aliases', 'faction', 'tier', 'appearance', 'personality', 'voice', 'goals', 'storyRelevance'];
@@ -302,10 +303,29 @@ export const createCampaignSlice: StateCreator<CampaignDeps, [], [], CampaignSli
             entities,
         } as Partial<CampaignDeps>);
 
-        import('../../services/embedder').then(({ warmupEmbedder }) => {
-            return warmupEmbedder();
-        }).then(() => {
+        import('../../services/embedder').then(async ({ warmupEmbedder, getCurrentModelId }) => {
+            await warmupEmbedder();
             console.log('[Embedder] Model warmed up and ready');
+            const { useAppStore } = await import('../../store/useAppStore');
+            const hasStale = await embeddingStorage.hasStaleVectors(id, getCurrentModelId());
+            if (hasStale) {
+                console.log('[Campaign] Stale embedding vectors detected, triggering lazy re-index');
+                useAppStore.getState().setEmbeddingsReindexing({ active: true, total: 0, done: 0, reason: 'lazy' });
+                runFullReindex(id, (progress) => {
+                    useAppStore.getState().setEmbeddingsReindexing({
+                        active: true,
+                        total: progress.total,
+                        done: progress.done,
+                        reason: 'lazy',
+                    });
+                }).then(() => {
+                    useAppStore.getState().setEmbeddingsReindexing({ active: false, total: 0, done: 0, reason: null });
+                    toast.success('Re-indexing complete');
+                }).catch((_e) => {
+                    console.error('[Campaign] Lazy re-index failed:', _e);
+                    useAppStore.getState().setEmbeddingsReindexing({ active: false, total: 0, done: 0, reason: null });
+                });
+            }
         }).catch(e => {
             console.warn('[Embedder] Warmup failed, semantic search will use keyword fallback:', e);
         });
@@ -360,7 +380,7 @@ export const createCampaignSlice: StateCreator<CampaignDeps, [], [], CampaignSli
             const updatedNpc = { ...oldNpc, ...patch };
             const cId = s.activeCampaignId;
             embedText(buildNPCEmbeddingText(updatedNpc))
-                .then(vec => vec && embeddingStorage.store(cId, id, Array.from(vec), 'npc'))
+                .then(vec => vec && embeddingStorage.store(cId, id, Array.from(vec), 'npc', getCurrentModelId()))
                 .catch(e => console.warn(`[NPC] Re-embed failed for ${updatedNpc.name}:`, e));
         }
         return { npcLedger: newLedger };

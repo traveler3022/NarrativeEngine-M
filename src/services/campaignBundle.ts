@@ -154,22 +154,23 @@ export async function importBundle(bundle: CampaignBundle): Promise<string> {
         bundle.entities?.length ? setList(k(newId, 'entities'), bundle.entities) : Promise.resolve(),
     ]);
 
-    reembedCampaign(newId, bundle.scenes || [], bundle.lore || []);
+    reembeddedCampaign(newId, bundle.scenes || [], bundle.lore || []);
 
     return newId;
 }
 
-function reembedCampaign(cid: string, scenes: SceneRecord[], lore: LoreChunk[]): void {
-    import('./embedder').then(({ embedText }) =>
+function reembeddedCampaign(cid: string, scenes: SceneRecord[], lore: LoreChunk[]): void {
+    import('./embedder').then(({ embedText, getCurrentModelId }) =>
         import('./storage').then(({ offlineStorage }) => {
+            const modelId = getCurrentModelId();
             for (const s of scenes) {
                 embedText(`${s.userContent}\n${s.assistantContent}`.slice(0, 500))
-                    .then(vec => { if (vec) offlineStorage.embeddings.store(cid, s.sceneId, Array.from(vec), 'scene'); })
+                    .then(vec => { if (vec) offlineStorage.embeddings.store(cid, s.sceneId, Array.from(vec), 'scene', modelId); })
                     .catch(() => {});
             }
             for (const chunk of lore) {
                 embedText(chunk.content.slice(0, 500))
-                    .then(vec => { if (vec) offlineStorage.embeddings.store(cid, chunk.id, Array.from(vec), 'lore'); })
+                    .then(vec => { if (vec) offlineStorage.embeddings.store(cid, chunk.id, Array.from(vec), 'lore', modelId); })
                     .catch(() => {});
             }
         })

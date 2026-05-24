@@ -21,11 +21,11 @@ export const offlineStorage = {
 
             const { sceneId, sceneNumber, indexEntry, timestamp } = core;
 
-            import('../embedder').then(({ embedText }) => {
+            import('../embedder').then(async ({ embedText, getCurrentModelId }) => {
+                const modelId = getCurrentModelId();
                 const combinedText = `${userContent}\n${assistantContent}`;
-                return embedText(combinedText);
-            }).then(vec => {
-                if (vec) embeddingStorage.store(cid, sceneId, Array.from(vec), 'scene');
+                const vec = await embedText(combinedText);
+                if (vec) embeddingStorage.store(cid, sceneId, Array.from(vec), 'scene', modelId);
             }).catch(() => {});
 
             const npcNames = indexEntry.npcsMentioned;
@@ -51,7 +51,7 @@ export const offlineStorage = {
                 }
             }
 
-            let chapters = await getList<ArchiveChapter>(k(cid, 'chapters'));
+            const chapters = await getList<ArchiveChapter>(k(cid, 'chapters'));
             let openChapter = chapters.find(c => !c.sealedAt);
             if (!openChapter) {
                 const nextNum = chapters.length + 1;
