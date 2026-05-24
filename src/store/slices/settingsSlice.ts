@@ -101,6 +101,8 @@ export const defaultSettings: AppSettings = {
     rulesBudgetPct: 0.10,
     autoGenerateRuleKeywords: true,
     embeddingModel: 'standard' as const,
+    utilityTimeoutSeconds: 45,
+    verboseUtilityLogging: false,
 };
 
 export function resolveTheme(theme: 'light' | 'dark' | 'system'): 'light' | 'dark' {
@@ -156,6 +158,8 @@ export function migrateSettings(data: Record<string, unknown>): AppSettings {
             rulesBudgetPct: (raw.rulesBudgetPct as number) ?? 0.10,
             autoGenerateRuleKeywords: (raw.autoGenerateRuleKeywords as boolean) ?? true,
             embeddingModel: (raw.embeddingModel as 'standard' | 'high') ?? 'standard',
+            utilityTimeoutSeconds: (raw.utilityTimeoutSeconds as number) ?? 45,
+            verboseUtilityLogging: (raw.verboseUtilityLogging as boolean) ?? false,
         };
     }
 
@@ -205,6 +209,8 @@ export function migrateSettings(data: Record<string, unknown>): AppSettings {
         rulesBudgetPct: (raw.rulesBudgetPct as number) ?? 0.10,
         autoGenerateRuleKeywords: (raw.autoGenerateRuleKeywords as boolean) ?? true,
         embeddingModel: (raw.embeddingModel as 'standard' | 'high') ?? 'standard',
+        utilityTimeoutSeconds: (raw.utilityTimeoutSeconds as number) ?? 45,
+        verboseUtilityLogging: (raw.verboseUtilityLogging as boolean) ?? false,
     };
 }
 

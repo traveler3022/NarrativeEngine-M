@@ -11,7 +11,7 @@ export async function rerankCandidates(
     query: string,
     candidates: RerankCandidate[],
     utilityEndpoint: LLMProvider,
-    opts?: { maxCandidates?: number; topN?: number }
+    opts?: { maxCandidates?: number; topN?: number; timeoutMs?: number; trackingLabel?: string }
 ): Promise<string[]> {
     const maxCandidates = opts?.maxCandidates ?? 30;
     const topN = opts?.topN ?? 12;
@@ -36,6 +36,7 @@ Return ONLY a JSON array of the candidate ids most relevant to the query, in des
             temperature: 0.1,
             priority: 'high',
             maxTokens: 500,
+            ...(opts?.timeoutMs ? { timeoutMs: opts.timeoutMs, trackingLabel: opts?.trackingLabel ?? 'reranker' } : {}),
         });
 
         let cleanContent = raw.replace(/<think>[\s\S]*?<\/think>/gi, '');

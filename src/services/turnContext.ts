@@ -24,7 +24,7 @@ const SEMANTIC_FLOOR_LORE = 0.30;
 
 const CALLBACK_REGEX = /\b(remember|earlier|back when|before|previously|that .*(we|i) (did|met|fought|saw|found|got))\b/i;
 
-async function expandQuery(query: string, npcLedger: import('../types').NPCEntry[], utilityEndpoint: LLMProvider): Promise<string[]> {
+async function expandQuery(query: string, npcLedger: import('../types').NPCEntry[], utilityEndpoint: LLMProvider, timeoutMs?: number): Promise<string[]> {
     try {
         const npcContext = npcLedger.slice(0, 10).map(n => n.name).join(', ');
         const prompt = `User query: "${query}"
@@ -35,6 +35,7 @@ Generate 2 alternative phrasings that expand pronouns, add likely entity names f
             temperature: 0.2,
             priority: 'high',
             maxTokens: 200,
+            ...(timeoutMs ? { timeoutMs, trackingLabel: 'expandQuery' } : {}),
         });
 
         let clean = raw.replace(/<think>[\s\S]*?<\/think>/gi, '');
@@ -75,6 +76,7 @@ export async function gatherContext(
     userMsgId: string
 ): Promise<GatheredContext> {
     const { settings, loreChunks, npcLedger, archiveIndex, activeCampaignId } = state;
+    const utilityTimeoutMs = (settings.utilityTimeoutSeconds ?? 45) * 1000;
     let semanticArchiveIds: string[] | undefined;
     let semanticLoreIds: string[] | undefined;
     let semanticRuleIds: string[] | undefined;
@@ -86,7 +88,7 @@ export async function gatherContext(
             const isShort = finalInput.trim().split(/\s+/).length < 8;
             const expansionEndpoint = state.getUtilityEndpoint?.();
             if ((isCallback || isShort) && expansionEndpoint?.endpoint) {
-                const expanded = await expandQuery(finalInput, npcLedger, expansionEndpoint);
+                const expanded = await expandQuery(finalInput, npcLedger, expansionEndpoint, utilityTimeoutMs);
                 queries = expanded;
                 if (expanded.length > 1) {
                     console.log(`[QueryExpansion] "${finalInput}" → ${expanded.length} variants`);
@@ -122,7 +124,7 @@ export async function gatherContext(
                         type: 'scene' as const,
                     };
                 });
-                const rerankedIds = await rerankCandidates(finalInput, sceneCandidates, rerankerEndpoint, { maxCandidates: 30, topN: 12 });
+                const rerankedIds = await rerankCandidates(finalInput, sceneCandidates, rerankerEndpoint, { maxCandidates: 30, topN: 12, timeoutMs: utilityTimeoutMs, trackingLabel: 'rerank-scene' });
                 semanticArchiveIds = rerankedIds;
                 console.log(`[Reranker] Scene candidates: ${rerankedIds.length} after rerank`);
             }
@@ -136,7 +138,7 @@ export async function gatherContext(
                         type: 'lore' as const,
                     };
                 });
-                const rerankedLoreIds = await rerankCandidates(finalInput, loreCandidates, rerankerEndpoint, { maxCandidates: 25, topN: 10 });
+                const rerankedLoreIds = await rerankCandidates(finalInput, loreCandidates, rerankerEndpoint, { maxCandidates: 25, topN: 10, timeoutMs: utilityTimeoutMs, trackingLabel: 'rerank-lore' });
                 semanticLoreIds = rerankedLoreIds;
                 console.log(`[Reranker] Lore candidates: ${rerankedLoreIds.length} after rerank`);
             }
@@ -316,13 +318,7 @@ export async function gatherContext(
     if (utilityEndpoint?.endpoint) {
         callbacks.setLoadingStatus?.('[4/5] Consulting AI Recommender...');
         try {
-            const recommenderResult = await Promise.race([
-                recommendContext(utilityEndpoint, npcLedger, loreChunks, messages, finalInput, pinnedChaptersForRecommender),
-                new Promise<null>(resolve => setTimeout(() => {
-                    console.warn('[TurnContext] Recommender timeout — proceeding without recommendations');
-                    resolve(null);
-                }, 15_000)),
-            ]);
+            const recommenderResult = await recommendContext(utilityEndpoint, npcLedger, loreChunks, messages, finalInput, pinnedChaptersForRecommender, utilityTimeoutMs);
             if (recommenderResult) {
                 recommendedNPCNames = recommenderResult.relevantNPCNames;
 

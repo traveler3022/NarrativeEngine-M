@@ -17,6 +17,7 @@ import { CreateTroubleModal } from './chat/CreateTroubleModal';
 
 import { NPCPressureInspector } from './NPCPressureInspector';
 import { ChatInput } from './chat/ChatInput';
+import { UtilityCallStrip } from './UtilityCallStrip';
 
 export function ChatArea() {
     const {
@@ -343,6 +344,7 @@ export function ChatArea() {
                     <span className="text-[9px] uppercase tracking-widest text-terminal font-bold">{loadingStatus}</span>
                 </div>
             )}
+            <UtilityCallStrip />
 
             {pendingArcSeed && (
                 <div className="px-2 md:px-4 py-1 flex items-center gap-2 bg-amber-500/10 border-t border-amber-500/20">

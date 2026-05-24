@@ -108,7 +108,8 @@ export async function recommendContext(
     loreChunks: LoreChunk[],
     messages: ChatMessage[],
     userMessage: string,
-    pinnedChapters?: ArchiveChapter[]
+    pinnedChapters?: ArchiveChapter[],
+    timeoutMs?: number,
 ): Promise<RecommenderResult> {
     const startTime = Date.now();
     const npcRoster = buildNPCRoster(npcLedger);
@@ -139,6 +140,7 @@ Respond with the JSON object now:`;
         rawContent = await llmCall(utilityEndpoint, userContent, {
             temperature: 0.1,
             priority: 'high',
+            ...(timeoutMs ? { timeoutMs, trackingLabel: 'recommender' } : {}),
         });
     } catch (err) {
         const elapsed = Date.now() - startTime;

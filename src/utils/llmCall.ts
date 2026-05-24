@@ -2,11 +2,19 @@ import type { LLMProvider, ThinkingEffort } from '../types';
 import { getQueueForEndpoint, type LLMCallPriority } from '../services/llmRequestQueue';
 import { getApiFormat, getChatUrl, buildChatHeaders, buildChatBody, extractContent } from './llmApiHelper';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
+import { startUtilityCall } from '../services/utilityCallTracker';
 
 const MAX_RETRIES = 3;
 const DEFAULT_RETRY_DELAY_MS = 300;
 
 export type { LLMCallPriority };
+
+export class UtilityTimeoutError extends Error {
+    constructor(public elapsedMs: number, public label: string) {
+        super(`Utility call "${label}" exceeded deadline (${elapsedMs}ms)`);
+        this.name = 'UtilityTimeoutError';
+    }
+}
 
 export async function llmCall(
     provider: LLMProvider,
@@ -17,7 +25,55 @@ export async function llmCall(
         temperature?: number;
         priority?: LLMCallPriority;
         thinkingEffort?: ThinkingEffort;
+        /** If set, registers this call with utilityCallTracker so UI can show countdown + EXTEND. */
+        trackingLabel?: string;
+        /** Soft deadline in ms. On expiry, rejects with UtilityTimeoutError. Caller should fall back. */
+        timeoutMs?: number;
     }
+): Promise<string> {
+    const inner = runInner(provider, prompt, opts);
+
+    if (!opts?.trackingLabel || !opts?.timeoutMs) {
+        return inner;
+    }
+
+    const label = opts.trackingLabel;
+    const handle = startUtilityCall(label, provider.modelName || provider.endpoint, opts.timeoutMs);
+    const startedAt = Date.now();
+
+    try {
+        const result = await Promise.race([
+            inner.then(v => ({ kind: 'ok' as const, value: v })),
+            handle.deadlinePromise.then(() => ({ kind: 'timeout' as const })),
+        ]);
+
+        if (result.kind === 'timeout') {
+            handle.settleError('timeout');
+            throw new UtilityTimeoutError(Date.now() - startedAt, label);
+        }
+
+        handle.settleSuccess();
+        return result.value;
+    } catch (e) {
+        // If inner threw before deadline, record it.
+        if (!(e instanceof UtilityTimeoutError)) {
+            const msg = e instanceof Error ? e.message : String(e);
+            handle.settleError('error', msg);
+        }
+        throw e;
+    }
+}
+
+async function runInner(
+    provider: LLMProvider,
+    prompt: string,
+    opts?: {
+        signal?: AbortSignal;
+        maxTokens?: number;
+        temperature?: number;
+        priority?: LLMCallPriority;
+        thinkingEffort?: ThinkingEffort;
+    },
 ): Promise<string> {
     const url = getChatUrl(provider);
     const headers = buildChatHeaders(provider);

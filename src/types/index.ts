@@ -76,6 +76,9 @@ export type AppSettings = {
     autoGenerateRuleKeywords?: boolean; // default true; false = header+bold derivation only
     embeddingModel?: 'standard' | 'high'; // default 'standard'
 
+    utilityTimeoutSeconds?: number;   // soft deadline for utility AI calls (reranker, recommender, expandQuery). Default 45. User can EXTEND +1m mid-flight.
+    verboseUtilityLogging?: boolean;  // when true, utility call tracker records extra detail (slot waits, retries, payload sizes)
+
     // Legacy fields kept for migration only
     providers?: LLMProvider[];
     activeProviderId?: string;
