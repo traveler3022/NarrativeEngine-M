@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Plus, Trash2, ArrowLeft, ChevronDown, ChevronRight, Download } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { testConnection } from '../services/chatEngine';
@@ -8,9 +8,10 @@ import { toast } from './Toast';
 import { uid } from '../utils/uid';
 import { SamplingPanel } from './SamplingPanel';
 import { ProviderConfigSection } from './settings/ProviderConfigSection';
-import { switchEmbeddingModel } from '../services/embedder';
+import { switchEmbeddingModel, getCurrentModelId } from '../services/embedder';
 import type { DownloadProgress } from '../services/embedder';
-import { runFullReindex } from '../services/backfillRunner';
+import { runFullReindex, rebuildAllEmbeddings } from '../services/backfillRunner';
+import { embeddingStorage } from '../services/storage/embeddingStorage';
 
 type ProviderSection = 'storyAI' | 'summarizerAI' | 'utilityAI' | 'auxiliaryAI';
 
@@ -33,6 +34,20 @@ export function SettingsModal() {
   const [reindexProgress, setReindexProgress] = useState<{ done: number; total: number } | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState<'toHigh' | 'toStandard' | null>(null);
   const [showCacheConfirm, setShowCacheConfirm] = useState(false);
+  const [vectorCounts, setVectorCounts] = useState<Record<string, number> | null>(null);
+  const activeCampaignId = useAppStore(s => s.activeCampaignId);
+
+  useEffect(() => {
+    if (!advancedOpen || !activeCampaignId) {
+      setVectorCounts(null);
+      return;
+    }
+    let cancelled = false;
+    embeddingStorage.countByModel(activeCampaignId)
+      .then(counts => { if (!cancelled) setVectorCounts(counts); })
+      .catch(() => { if (!cancelled) setVectorCounts({}); });
+    return () => { cancelled = true; };
+  }, [advancedOpen, activeCampaignId, embeddingSwitching, reindexProgress?.done]);
 
   const handleClose = () => {
     toggleSettings();
@@ -499,6 +514,94 @@ export function SettingsModal() {
                       }
                     </button>
                   </div>
+
+                  {/* Vector storage status (active campaign only) */}
+                  {activeCampaignId && vectorCounts !== null && (() => {
+                    const currentModel = settings.embeddingModel === 'high' ? 'Xenova/bge-base-en-v1.5' : 'Xenova/all-MiniLM-L6-v2';
+                    const upToDate = vectorCounts[currentModel] ?? 0;
+                    const staleEntries = Object.entries(vectorCounts).filter(([m]) => m !== currentModel);
+                    const staleTotal = staleEntries.reduce((sum, [, n]) => sum + n, 0);
+                    const total = upToDate + staleTotal;
+                    return (
+                      <div className="mt-3 space-y-1">
+                        <div className="text-[10px] text-text-dim uppercase tracking-widest">Storage status (this campaign)</div>
+                        {total === 0 ? (
+                          <div className="text-[10px] text-amber-400">
+                            No embeddings stored — semantic retrieval is offline. Tap "Rebuild ALL" below to fix.
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-[10px] text-text-primary">
+                              <span className="text-terminal">{upToDate}</span> vectors on current model
+                            </div>
+                            {staleTotal > 0 && (
+                              <div className="text-[10px] text-amber-400">
+                                {staleTotal} vector{staleTotal === 1 ? '' : 's'} on older model{staleEntries.length > 1 ? 's' : ''} — re-index needed
+                              </div>
+                            )}
+                            {staleTotal === 0 && (
+                              <div className="text-[10px] text-text-dim">All up to date ✓</div>
+                            )}
+                          </>
+                        )}
+                        <button
+                          disabled={embeddingSwitching || staleTotal === 0}
+                          onClick={async () => {
+                            setEmbeddingSwitching(true);
+                            setReindexProgress({ done: 0, total: 0 });
+                            useAppStore.getState().setEmbeddingsReindexing({ active: true, total: 0, done: 0, reason: 'switch' });
+                            try {
+                              await runFullReindex(activeCampaignId, (p) => {
+                                setReindexProgress({ done: p.done, total: p.total });
+                                useAppStore.getState().setEmbeddingsReindexing({ active: true, total: p.total, done: p.done, reason: 'switch' });
+                              });
+                              toast.success('Re-index complete');
+                              const fresh = await embeddingStorage.countByModel(activeCampaignId);
+                              setVectorCounts(fresh);
+                            } catch (e) {
+                              toast.error(`Re-index failed: ${e instanceof Error ? e.message : String(e)}`);
+                            } finally {
+                              useAppStore.getState().setEmbeddingsReindexing({ active: false, total: 0, done: 0, reason: null });
+                              setEmbeddingSwitching(false);
+                              setReindexProgress(null);
+                            }
+                          }}
+                          className="mt-2 w-full px-3 py-2 text-[10px] border border-border rounded text-text-primary hover:border-terminal hover:bg-terminal/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {staleTotal === 0 ? 'Re-index now (nothing to do)' : `Re-index ${staleTotal} stale vector${staleTotal === 1 ? '' : 's'} now`}
+                        </button>
+                        <button
+                          disabled={embeddingSwitching}
+                          onClick={async () => {
+                            setEmbeddingSwitching(true);
+                            setReindexProgress({ done: 0, total: 0 });
+                            useAppStore.getState().setEmbeddingsReindexing({ active: true, total: 0, done: 0, reason: 'switch' });
+                            try {
+                              const counts = await rebuildAllEmbeddings(activeCampaignId, (p) => {
+                                setReindexProgress({ done: p.done, total: p.total });
+                                useAppStore.getState().setEmbeddingsReindexing({ active: true, total: p.total, done: p.done, reason: 'switch' });
+                              });
+                              toast.success(`Rebuilt: ${counts.scenes} scenes, ${counts.lore} lore, ${counts.npcs} NPCs, ${counts.rules} rules`);
+                              const fresh = await embeddingStorage.countByModel(activeCampaignId);
+                              setVectorCounts(fresh);
+                            } catch (e) {
+                              toast.error(`Rebuild failed: ${e instanceof Error ? e.message : String(e)}`);
+                            } finally {
+                              useAppStore.getState().setEmbeddingsReindexing({ active: false, total: 0, done: 0, reason: null });
+                              setEmbeddingSwitching(false);
+                              setReindexProgress(null);
+                            }
+                          }}
+                          className="mt-1 w-full px-3 py-2 text-[10px] border border-amber-500/50 rounded text-amber-400 hover:bg-amber-500/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          Rebuild ALL embeddings from source (recovery)
+                        </button>
+                        <div className="text-[9px] text-text-dim/70 italic">
+                          Current model: {getCurrentModelId().split('/').pop()}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {downloadProgress && embeddingSwitching && !reindexProgress && (
                     <div className="mt-2">

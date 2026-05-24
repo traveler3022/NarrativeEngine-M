@@ -14,7 +14,7 @@ export type BackfillProgress = {
     current: string;
 };
 
-let backfillCursor: { campaignId: string; type: 'scene' | 'lore' | 'npc'; index: number } | null = null;
+let backfillCursor: { campaignId: string; type: 'scene' | 'lore' | 'npc' | 'rule'; index: number } | null = null;
 
 function setBackfillCursor(cursor: typeof backfillCursor) {
     backfillCursor = cursor;
@@ -223,6 +223,100 @@ export async function backfillNPCs(
     }
 
     console.log(`[Backfill] NPC backfill complete. Embedded ${done} NPCs.`);
+}
+
+/**
+ * Rebuild ALL embeddings for a campaign from source content (scenes, lore, NPCs, rules).
+ * Use this when embeddings are missing/corrupted — does not require existing records.
+ * Wipes existing embedding storage for the campaign before re-embedding.
+ */
+export async function rebuildAllEmbeddings(
+    campaignId: string,
+    onProgress?: (progress: BackfillProgress) => void
+): Promise<{ scenes: number; lore: number; npcs: number; rules: number }> {
+    if (!isEmbedderReady()) {
+        await warmupEmbedder();
+        if (!isEmbedderReady()) {
+            throw new Error('Embedder not ready');
+        }
+    }
+
+    const modelId = getCurrentModelId();
+
+    // Gather all source content
+    const scenes: SceneRecord[] = await getList(k(campaignId, 'scenes'));
+    const npcs: NPCEntry[] = await idbGet(`npcs_${campaignId}`) || [];
+    const loreChunks = await getLoreChunksForBackfill(campaignId);
+    const ruleChunks = await getRuleChunksForReindex(campaignId);
+
+    const totalUnits = scenes.length + loreChunks.length + npcs.length + ruleChunks.length;
+    if (totalUnits === 0) {
+        console.warn('[RebuildAll] No source content found for campaign', campaignId);
+        return { scenes: 0, lore: 0, npcs: 0, rules: 0 };
+    }
+
+    console.log(`[RebuildAll] Wiping existing embeddings and rebuilding ${totalUnits} units`);
+
+    // Wipe existing embedding storage for this campaign
+    await embeddingStorage.deleteAll(campaignId);
+
+    let done = 0;
+    const YIELD_EVERY = 5;
+    const counts = { scenes: 0, lore: 0, npcs: 0, rules: 0 };
+
+    // Scenes
+    for (const scene of scenes) {
+        const text = `${scene.userContent}\n${scene.assistantContent}`;
+        const vector = await embedText(text);
+        if (vector) {
+            await embeddingStorage.store(campaignId, scene.sceneId, Array.from(vector), 'scene', modelId);
+            counts.scenes++;
+        }
+        done++;
+        onProgress?.({ total: totalUnits, done, current: `scene:${scene.sceneId}` });
+        if (done % YIELD_EVERY === 0) await new Promise(r => setTimeout(r, 0));
+    }
+
+    // Lore
+    for (const chunk of loreChunks) {
+        const vector = await embedText(chunk.content);
+        if (vector) {
+            await embeddingStorage.store(campaignId, chunk.id, Array.from(vector), 'lore', modelId);
+            counts.lore++;
+        }
+        done++;
+        onProgress?.({ total: totalUnits, done, current: `lore:${chunk.id}` });
+        if (done % YIELD_EVERY === 0) await new Promise(r => setTimeout(r, 0));
+    }
+
+    // NPCs
+    for (const npc of npcs) {
+        const text = buildNPCEmbeddingText(npc);
+        if (!text) { done++; continue; }
+        const vector = await embedText(text);
+        if (vector) {
+            await embeddingStorage.store(campaignId, npc.id, Array.from(vector), 'npc', modelId);
+            counts.npcs++;
+        }
+        done++;
+        onProgress?.({ total: totalUnits, done, current: `npc:${npc.name}` });
+        if (done % YIELD_EVERY === 0) await new Promise(r => setTimeout(r, 0));
+    }
+
+    // Rules
+    for (const chunk of ruleChunks) {
+        const vector = await embedText(chunk.content.slice(0, RULE_EMBED_SLICE));
+        if (vector) {
+            await embeddingStorage.store(campaignId, chunk.id, Array.from(vector), 'rule', modelId);
+            counts.rules++;
+        }
+        done++;
+        onProgress?.({ total: totalUnits, done, current: `rule:${chunk.id}` });
+        if (done % YIELD_EVERY === 0) await new Promise(r => setTimeout(r, 0));
+    }
+
+    console.log(`[RebuildAll] Complete. scenes=${counts.scenes} lore=${counts.lore} npcs=${counts.npcs} rules=${counts.rules}`);
+    return counts;
 }
 
 export async function runFullReindex(

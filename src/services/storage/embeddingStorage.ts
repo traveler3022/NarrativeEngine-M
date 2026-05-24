@@ -77,6 +77,15 @@ export const embeddingStorage = {
         return all.some(r => r.modelId !== currentModelId);
     },
 
+    async countByModel(campaignId: string): Promise<Record<string, number>> {
+        const all = await this.getAllWithVersion(campaignId);
+        const counts: Record<string, number> = {};
+        for (const r of all) {
+            counts[r.modelId] = (counts[r.modelId] ?? 0) + 1;
+        }
+        return counts;
+    },
+
     async delete(campaignId: string, id: string): Promise<void> {
         await idbDel(`nn_embed_${campaignId}_scene_${id}`).catch(() => {});
         await idbDel(`nn_embed_${campaignId}_lore_${id}`).catch(() => {});

@@ -21,8 +21,9 @@ async function ensureWarm(): Promise<EmbedderPipeline> {
         try {
             const p = await pipeline('feature-extraction', currentModel, {
                 dtype: 'q8',
-                progress_callback: (progress: { status: string; file: string; loaded: number; total: number }) => {
-                    if (progress.status === 'progress') {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                progress_callback: ((progress: any) => {
+                    if (progress?.status === 'progress') {
                         self.postMessage({
                             type: 'progress',
                             id: 'model-download',
@@ -31,7 +32,8 @@ async function ensureWarm(): Promise<EmbedderPipeline> {
                             total: progress.total,
                         });
                     }
-                },
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                }) as any,
             });
             embedder = p;
             ready = true;
@@ -109,6 +111,7 @@ self.onmessage = async (e: MessageEvent<WorkerInMessage>) => {
         switch (msg.type) {
             case 'init': {
                 currentModel = msg.modelId;
+                env.allowLocalModels = true;
                 env.allowRemoteModels = msg.allowRemote;
                 env.localModelPath = '/models/';
                 embedder = null;
