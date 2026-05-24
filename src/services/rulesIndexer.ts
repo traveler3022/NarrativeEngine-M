@@ -65,17 +65,32 @@ function extractBoldKeywords(content: string): string[] {
 function deriveDefaultMeta(chunk: LoreChunk, existingMeta?: RuleChunkMeta): RuleChunkMeta {
     const headerKws = extractHeaderKeywords(chunk.header);
     const boldKws = extractBoldKeywords(chunk.content);
-    const merged = [...new Set([...headerKws, ...boldKws])].slice(0, 15);
+    // chunk.triggerKeywords already includes hint triggers (prepended by loreChunker)
+    const hintTriggers = chunk.triggerKeywords.filter(k =>
+        !headerKws.includes(k) && !boldKws.includes(k)
+    );
+    const merged = [...new Set([...hintTriggers, ...headerKws, ...boldKws])].slice(0, 15);
 
-    const isAlwaysCategory = chunk.alwaysInclude || chunk.priority >= 9;
-    const defaultModes: ('vector' | 'keyword' | 'always')[] = isAlwaysCategory ? ['always'] : ['vector'];
+    // ragMode from hint is authoritative; fall back to alwaysInclude/priority heuristic
+    let defaultModes: ('vector' | 'keyword' | 'always')[];
+    if (chunk.ragMode) {
+        defaultModes = [chunk.ragMode];
+    } else {
+        const isAlwaysCategory = chunk.alwaysInclude || chunk.priority >= 9;
+        defaultModes = isAlwaysCategory ? ['always'] : ['vector'];
+    }
 
     if (existingMeta) {
         return {
             ...existingMeta,
+            // Re-apply authoritative ragMode if present — overrides stale stored mode
+            activationModes: chunk.ragMode ? [chunk.ragMode] : existingMeta.activationModes,
             triggerKeywords: existingMeta.keywordsUserEdited
                 ? existingMeta.triggerKeywords
                 : merged,
+            secondaryKeywords: existingMeta.keywordsUserEdited
+                ? existingMeta.secondaryKeywords
+                : (chunk.secondaryKeywords ?? existingMeta.secondaryKeywords ?? []),
         };
     }
 
@@ -83,7 +98,7 @@ function deriveDefaultMeta(chunk: LoreChunk, existingMeta?: RuleChunkMeta): Rule
         id: chunk.id,
         activationModes: defaultModes,
         triggerKeywords: merged,
-        secondaryKeywords: [],
+        secondaryKeywords: chunk.secondaryKeywords ?? [],
         priority: chunk.priority,
         keywordsUserEdited: false,
     };
