@@ -308,8 +308,6 @@ export async function gatherContext(
     }
 
     const plannerFilters = plannerResult?.filters;
-    const plannerSceneRanges: [string, string][] | undefined =
-        plannerResult?.sceneIdRange ? [plannerResult.sceneIdRange] : undefined;
 
     callbacks.setLoadingStatus?.('[3/5] Recalling Archive Memory...');
     let archiveResult = { scenes: [] as ArchiveScene[], usedTokens: 0 };
