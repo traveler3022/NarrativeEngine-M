@@ -57,15 +57,17 @@ ${unresolvedThreads.length > 0 ? unresolvedThreads.map((t, i) => `${i + 1}. ${t}
 Active NPCs with pressure:
 ${activeNPCs.length > 0 ? activeNPCs.map(n => `- ${n.name} (${n.role}): ignored=${n.ignoredPressure}, engaged=${n.engagedPressure}`).join('\n') : '(none)'}
 
-Generate 4 distinct ARC SEEDS — each one is an ongoing storyline that unfolds over multiple scenes as a natural consequence of the player's behavior. Not a one-scene event. A new thread that will keep developing.
+Generate 4 distinct TROUBLE ARC SEEDS — each one is an ongoing storyline of conflict, danger, or pressure that unfolds over multiple scenes as a natural consequence of the player's behavior. Not a one-scene event. A new thread that will keep developing and demand a response.
 
 CRITICAL — LOCATION RULE: Each arc's opening hook MUST happen at the player's CURRENT location (see [CURRENT SCENE] above). The hook is something that comes TO the player right now — a stranger enters, a messenger arrives, a fight breaks out nearby, the player overhears something, an object is noticed. The hook must NEVER require the player to travel somewhere else first. The arc may LEAD toward distant places over later scenes — that is fine and expected — but it must START here, where the player already is.
 
 Each arc must:
-- Be a DIFFERENT arc TYPE (one of: threat, social/relationship, rivalry, opportunity/resource)
+- Be TROUBLE — a threat, conflict, complication, rivalry, ticking-clock, accusation, betrayal, hunt, debt-come-due, or escalation of past sins. NEVER a gift, reward, free opportunity, or "good thing happens" hook.
+- Pick a DIFFERENT flavor of trouble per arc (vary across: external threat/violence, social/political fallout, rivalry/grudge, consequence of past action, supernatural/unknown pressure, hidden betrayal, etc.) — but every one of them is trouble.
 - Open with a concrete hook that happens AT the player's current location, right now
 - Hint at where it leads over time (not resolved immediately — distant developments are OK in the direction, not the hook)
 - Be grounded in established world details (character names, places, factions already present)
+- Carry a stated or implied STAKE — what gets worse if the player ignores it. The reason this trouble exists should feel earned by what the player has been doing or ignoring, not random.
 
 Return ONLY a JSON array of 4 strings. Each string = 2 sentences: the local hook + the direction.
 ["...", "...", "...", "..."]`;
