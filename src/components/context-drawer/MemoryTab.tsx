@@ -109,7 +109,7 @@ export function MemoryTab() {
         setClustering(true);
         setClusterError(null);
         try {
-            const clusters = await runFactClustering(reg, utilityProvider);
+            const clusters = await runFactClustering(reg, utilityProvider, settings.contextLimit ?? 16000);
             setTopicClusters(clusters);
         } catch (err) {
             setClusterError(err instanceof Error ? err.message : 'Clustering failed.');
