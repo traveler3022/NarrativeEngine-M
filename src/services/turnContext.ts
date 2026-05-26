@@ -18,6 +18,13 @@ import { EMPTY_REGISTER } from './divergenceRegister';
 import { rerankCandidates, type RerankCandidate } from './semanticReranker';
 import type { LLMProvider } from '../types';
 import { llmCall } from '../utils/llmCall';
+import {
+    ANCHOR_BEFORE_INPUT,
+    INPUT_DELIMITER,
+    JSON_ONLY_FOOTER,
+    TTRPG_PERSONA_RETRIEVAL_PLANNER,
+    joinPromptSections,
+} from './utilityPrompts';
 
 const SEMANTIC_FLOOR_SCENE = 0.30;
 const SEMANTIC_FLOOR_LORE = 0.30;
@@ -54,41 +61,39 @@ export async function runPlannerCall(
 
         const npcRosterText = npcLedger.slice(0, 30).map(n => `${n.id}: ${n.name}`).join('\n') || '(none)';
 
-        const prompt = `You are a retrieval planner for a TTRPG campaign archive. Output a JSON object that helps focus memory recall for the GM's next turn.
+        const prompt = joinPromptSections(
+            TTRPG_PERSONA_RETRIEVAL_PLANNER,
 
-USER MESSAGE: """${userMessage}"""
-
-RECENT CONTEXT (last few turns):
-${recentContextText}
-
-NPC ROSTER:
-${npcRosterText}
-
-CHAPTER SUMMARY (if any):
-${chapterSummary || '(no chapter summary)'}
-
-OUTPUT — a single JSON object:
+            `OUTPUT — a single JSON object with this shape (all keys optional):
 {
-  "subQueries": ["query rephrase 1", "query rephrase 2"],
+  "subQueries": [],
   "filters": {
-    "characters": ["Astarion"],
-    "locations": ["Baldur's Gate"],
+    "characters": [],
+    "locations": [],
     "items": [],
     "concepts": [],
-    "eventTypes": ["promise", "betrayal"]
+    "eventTypes": []
   },
   "sceneIdRange": null
-}
+}`,
 
-RULES:
+            `RULES:
 - subQueries: 0-3 alternative phrasings of what to search for. Optional — omit or use [] if the user message is already specific.
-- filters.characters: NPC names (from the roster above) that should heavily influence recall. Only include if the user message clearly references them.
+- filters.characters: NPC names (from the roster below) that should heavily influence recall. Only include if the user message clearly references them.
 - filters.locations / items / concepts: domain entities mentioned or strongly implied.
 - filters.eventTypes: any of [combat, discovery, item_acquired, item_lost, relationship_shift, travel, promise, betrayal, death, revelation, quest_milestone, other]. Only include when the user message references that kind of event (e.g. "what did I promise" → ["promise"]).
 - sceneIdRange: only set if the user message clearly anchors to a time window (e.g. "back in Waterdeep" → range covering those scenes); otherwise null.
-- If nothing is clear, output {} — empty filters is valid. DO NOT hallucinate filters.
+- If nothing is clear, output {} — empty filters is valid. DO NOT hallucinate filters.`,
 
-Respond with ONE JSON object only. No prose, no markdown fences.`;
+            JSON_ONLY_FOOTER,
+            ANCHOR_BEFORE_INPUT,
+            INPUT_DELIMITER,
+
+            `USER MESSAGE: """${userMessage}"""`,
+            `RECENT CONTEXT (last few turns):\n${recentContextText}`,
+            `NPC ROSTER:\n${npcRosterText}`,
+            `CHAPTER SUMMARY (if any):\n${chapterSummary || '(no chapter summary)'}`,
+        );
 
         const raw = await llmCall(utilityEndpoint, prompt, {
             temperature: 0.1,
