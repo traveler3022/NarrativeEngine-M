@@ -2,6 +2,13 @@ import type { DivergenceRegister, DivergenceEntry, NPCEntry, ArchiveChapter, LLM
 import { llmCall } from '../utils/llmCall';
 import { CATEGORY_LABELS } from './divergenceRegister';
 import { extractJsonRobust } from './jsonExtract';
+import {
+    TTRPG_PERSONA_ARCHIVIST,
+    JSON_ONLY_FOOTER,
+    ANCHOR_BEFORE_INPUT,
+    INPUT_DELIMITER,
+    joinPromptSections,
+} from './utilityPrompts';
 
 export type DedupGroup = {
     bucketLabel: string;
@@ -76,12 +83,10 @@ export async function runFactDedup(
             .map(e => `${e.id} | #${e.sceneRef} | ${e.text}`)
             .join('\n');
 
-        const prompt = `You are deduplicating campaign facts about ${bucket.label}.
+        const prompt = joinPromptSections(
+            TTRPG_PERSONA_ARCHIVIST,
 
-FACTS (id | scene | text):
-${factLines}
-
-Identify groups where multiple facts describe the SAME EVENT or SAME STATE in different words.
+            `Identify groups where multiple facts describe the SAME EVENT or SAME STATE in different words.
 
 DO NOT GROUP:
 - Different events sharing a trait ("X saved A" + "X saved B")
@@ -96,7 +101,15 @@ GROUP:
 Schema (do not copy example values):
 {"duplicates":[{"ids":["<fact_id>","<fact_id>"],"reason":"<one short sentence>"}]}
 
-If nothing duplicates, return {"duplicates":[]} exactly.`;
+If nothing duplicates, return {"duplicates":[]} exactly.`,
+
+            JSON_ONLY_FOOTER,
+            ANCHOR_BEFORE_INPUT,
+            INPUT_DELIMITER,
+
+            `Deduplicating campaign facts about ${bucket.label}.`,
+            `FACTS (id | scene | text):\n${factLines}`,
+        );
 
         let raw: string;
         try {

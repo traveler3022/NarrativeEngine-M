@@ -3,6 +3,7 @@ import { chunkLoreFile } from './loreChunker';
 import { embeddingStorage } from './storage/embeddingStorage';
 import { embedText, getCurrentModelId } from './embedder';
 import { llmCall } from '../utils/llmCall';
+import { INPUT_DELIMITER } from './utilityPrompts';
 
 const STOP_WORDS = new Set([
     'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'has', 'her',
@@ -110,11 +111,7 @@ async function extractKeywordsViaLLM(
 ): Promise<{ primary: string[]; secondary: string[] }> {
     try {
         const preview = chunk.content.slice(0, 400).replace(/\n+/g, ' ').trim();
-        const prompt = `You are extracting trigger keywords for a tabletop RPG rule retrieval system.
-Rule section: "${chunk.header}"
-Content preview: "${preview}"
-
-List 3-5 keywords a player would type to trigger this rule, and 1-2 secondary keywords for narrowing if the primary keywords are ambiguous. Reply as JSON: { "primary": [...], "secondary": [...] }`;
+        const prompt = `You are extracting trigger keywords for a tabletop RPG rule retrieval system.\nList 3-5 keywords a player would type to trigger this rule, and 1-2 secondary keywords for narrowing. Reply as JSON: { "primary": [...], "secondary": [...] }\n\n${INPUT_DELIMITER}\n\nRule section: "${chunk.header}"\nContent preview: "${preview}"`;
 
         const raw = await llmCall(utilityEndpoint, prompt, {
             temperature: 0.1,

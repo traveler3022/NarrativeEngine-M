@@ -1,11 +1,31 @@
 import type { LoreChunk, LLMProvider } from '../types';
 import { llmCall } from '../utils/llmCall';
 import { saveLoreChunks } from '../store/campaignStore';
+import {
+    JSON_ONLY_FOOTER,
+    ANCHOR_BEFORE_INPUT,
+    INPUT_DELIMITER,
+    joinPromptSections,
+} from './utilityPrompts';
 
 const BATCH_SIZE = 8;
 const CONTENT_PREVIEW_CHARS = 300;
 const FINAL_KEYWORD_CAP = 25;
 const ENRICHER_VERSION = 2;
+
+const LORE_ENRICHER_STATIC = joinPromptSections(
+    'You are generating trigger keywords for a tabletop RPG lore retrieval system.',
+
+    `For each lore entry below, return TWO keyword sets:
+- "primary": 10-15 distinctive, high-precision trigger words that uniquely identify this entry. Include entity names, aliases, multi-word proper nouns, rare/specific nouns. AVOID generic verbs and common role words such as: visit, ask, go, members, join, order, fight, hire, travel, meet, find, talk — these cause false triggers on unrelated text.
+- "secondary": 5-10 contextual disambiguator words that, when present alongside a primary keyword, confirm this chunk is genuinely on-topic.
+
+Format: {"chunk-id": {"primary": ["kw1", "kw2", ...], "secondary": ["kw1", ...]}, ...}`,
+
+    JSON_ONLY_FOOTER,
+    ANCHOR_BEFORE_INPUT,
+    INPUT_DELIMITER,
+);
 
 function buildBatchPrompt(batch: LoreChunk[]): string {
     const entries = batch.map(c => {
@@ -13,19 +33,7 @@ function buildBatchPrompt(batch: LoreChunk[]): string {
         return `---\nID: ${c.id}\nHEADER: ${c.header}\nCONTENT: ${preview}`;
     }).join('\n');
 
-    return `You are generating trigger keywords for a tabletop RPG lore retrieval system.
-For each lore entry below, return TWO keyword sets:
-- "primary": 10-15 distinctive, high-precision trigger words that uniquely identify this entry. Include entity names, aliases, multi-word proper nouns, rare/specific nouns. AVOID generic verbs and common role words such as: visit, ask, go, members, join, order, fight, hire, travel, meet, find, talk — these cause false triggers on unrelated text.
-- "secondary": 5-10 contextual disambiguator words that, when present alongside a primary keyword, confirm this chunk is genuinely on-topic.
-
-Return ONLY a JSON object. No prose, no markdown fences.
-Format: {"chunk-id": {"primary": ["kw1", "kw2", ...], "secondary": ["kw1", ...]}, ...}
-
-LORE ENTRIES:
-${entries}
----
-
-Respond with the JSON object now:`;
+    return `${LORE_ENRICHER_STATIC}\n\nLORE ENTRIES:\n${entries}\n---`;
 }
 
 function parseEnrichmentResponse(raw: string): Record<string, { primary: string[]; secondary: string[] }> {

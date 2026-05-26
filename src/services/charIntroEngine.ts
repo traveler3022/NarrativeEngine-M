@@ -1,5 +1,6 @@
 import type { GameContext, CharacterIntroEntry, ChatMessage, LLMProvider } from '../types';
 import { llmCall } from '../utils/llmCall';
+import { INPUT_DELIMITER } from './utilityPrompts';
 
 export type CharIntroResult = {
     tag: string;
@@ -29,7 +30,7 @@ async function resolveLocation(
     }).join('\n\n');
 
     try {
-        const raw = await llmCall(provider, `${LOCATION_PROMPT}\n\n${excerpt}`, {
+        const raw = await llmCall(provider, `${LOCATION_PROMPT}\n\n${INPUT_DELIMITER}\n\n${excerpt}`, {
             temperature: 0.1,
             priority: 'high',
             maxTokens: 60,

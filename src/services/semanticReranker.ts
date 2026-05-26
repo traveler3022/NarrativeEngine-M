@@ -1,5 +1,11 @@
 import type { LLMProvider } from '../types';
 import { llmCall } from '../utils/llmCall';
+import {
+    JSON_ARRAY_ONLY_FOOTER,
+    ANCHOR_BEFORE_INPUT,
+    INPUT_DELIMITER,
+    joinPromptSections,
+} from './utilityPrompts';
 
 export type RerankCandidate = {
     id: string;
@@ -23,13 +29,18 @@ export async function rerankCandidates(
     const inputIds = new Set(candidates.map(c => c.id));
     const capped = candidates.slice(0, maxCandidates);
 
-    const prompt = `You are filtering memory candidates for relevance.
-User query: "${query}"
+    const prompt = joinPromptSections(
+        'You are filtering memory candidates for relevance.',
 
-Candidates (id → summary):
-${capped.map(c => `${c.id}: ${c.summary}`).join('\n')}
+        `Return a JSON array of the candidate ids most relevant to the query, in descending order of relevance. Max ${topN} ids.`,
 
-Return ONLY a JSON array of the candidate ids most relevant to the query, in descending order of relevance. Max ${topN} ids. No prose, no markdown.`;
+        JSON_ARRAY_ONLY_FOOTER,
+        ANCHOR_BEFORE_INPUT,
+        INPUT_DELIMITER,
+
+        `QUERY: "${query}"`,
+        `CANDIDATES (id → summary):\n${capped.map(c => `${c.id}: ${c.summary}`).join('\n')}`,
+    );
 
     try {
         const raw = await llmCall(utilityEndpoint, prompt, {

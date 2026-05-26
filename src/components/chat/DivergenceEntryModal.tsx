@@ -44,13 +44,14 @@ export function DivergenceEntryModal({ onAdd, onClose, provider, chapterId = 'ma
         try {
             const { llmCall } = await import('../../utils/llmCall');
             const { extractJson } = await import('../../services/payloadBuilder');
-            const prompt = `A player described a campaign fact in free text. Convert it to a structured fact.
-
-Player text: "${freeText}"
-
-Category options: ${DIVERGENCE_CATEGORIES.join(', ')}
-
-Output JSON only: { "category": "<category>", "text": "<one-line factual statement, max 15 words>" }`;
+            const { INPUT_DELIMITER: DELIM, JSON_ONLY_FOOTER: JSON_FOOTER, joinPromptSections } = await import('../../services/utilityPrompts');
+            const prompt = joinPromptSections(
+                'You are a TTRPG campaign archivist.',
+                `Convert free-text player input into a structured campaign fact.\n\nCategory options: ${DIVERGENCE_CATEGORIES.join(', ')}\n\nOutput schema: { "category": "<category>", "text": "<one-line factual statement, max 15 words>" }`,
+                JSON_FOOTER,
+                DELIM,
+                `Player text: "${freeText}"`,
+            );
             const raw = await llmCall(provider, prompt, { priority: 'low', maxTokens: 200 });
             const jsonStr = extractJson(raw);
             const result = JSON.parse(jsonStr);

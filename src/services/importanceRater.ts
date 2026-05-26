@@ -1,7 +1,9 @@
 import type { ChatMessage, LLMProvider } from '../types';
 import { llmCall } from '../utils/llmCall';
+import { INPUT_DELIMITER, joinPromptSections } from './utilityPrompts';
 
-const IMPORTANCE_PROMPT = `Rate the narrative importance of the scene below on a 1-10 scale.
+const IMPORTANCE_PROMPT_STATIC = joinPromptSections(
+    `Rate the narrative importance of the scene below on a 1-10 scale.
 
 CRITERIA:
 1-2 — Trivial: passing greeting, mundane travel, routine shopping, small talk
@@ -12,14 +14,10 @@ CRITERIA:
 
 RULES:
 - Output ONLY a single digit or two-digit number 1-10, nothing else
-- When uncertain, round DOWN (prefer lower importance)
+- When uncertain, round DOWN (prefer lower importance)`,
 
-RECENT CONTEXT:
-{context}
-
-SCENE TO RATE:
-User: {userText}
-GM: {gmText}`;
+    INPUT_DELIMITER,
+);
 
 export async function rateImportance(
     provider: LLMProvider,
@@ -32,10 +30,12 @@ export async function rateImportance(
         .map(m => `[${m.role.toUpperCase()}]: ${m.content.slice(0, 200)}`)
         .join('\n') ?? '';
 
-    const prompt = IMPORTANCE_PROMPT
-        .replace('{context}', contextLines)
-        .replace('{userText}', userText.slice(0, 600))
-        .replace('{gmText}', gmText.slice(0, 1200));
+    const dynamicSection = [
+        contextLines ? `RECENT CONTEXT:\n${contextLines}` : '',
+        `SCENE TO RATE:\nUser: ${userText.slice(0, 600)}\nGM: ${gmText.slice(0, 1200)}`,
+    ].filter(Boolean).join('\n\n');
+
+    const prompt = `${IMPORTANCE_PROMPT_STATIC}\n\n${dynamicSection}`;
 
     try {
         const raw = await llmCall(provider, prompt, { priority: 'low', maxTokens: 5 });
