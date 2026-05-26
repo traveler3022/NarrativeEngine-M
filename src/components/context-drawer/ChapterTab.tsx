@@ -135,6 +135,7 @@ export function ChapterTab() {
                     tone: sealResult.summary.tone,
                     themes: sealResult.summary.themes,
                     invalidated: false,
+                    ...(sealResult.summary.npcInnerState && { npcInnerState: sealResult.summary.npcInnerState }),
                 });
             }
 

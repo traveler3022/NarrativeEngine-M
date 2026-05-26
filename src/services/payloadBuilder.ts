@@ -5,6 +5,7 @@ import { buildBehaviorDirective, buildDriftAlert } from './npcBehaviorDirective'
 import { minifyLoreChunk, minifyNPC } from './contextMinifier';
 import { renderRegisterForPayload } from './divergenceRegister';
 import type { ArchiveChapter } from '../types';
+import type { PinnedExcerpt } from '../types';
 
 
 /**
@@ -155,6 +156,55 @@ function fitHistory(
     return { fitted, historyUsed, userTokens, historyBudget };
 }
 
+/**
+ * Returns the total token cost of all pinned excerpts (for budget reservation).
+ */
+export function pinnedExcerptsTokenCost(pinnedExcerpts: PinnedExcerpt[]): number {
+    if (!pinnedExcerpts || pinnedExcerpts.length === 0) return 0;
+    const block = buildPinnedMemoriesBlock(pinnedExcerpts, []);
+    return countTokens(block);
+}
+
+function buildPinnedMemoriesBlock(pinnedExcerpts: PinnedExcerpt[], messages: ChatMessage[]): string {
+    const msgSceneMap = new Map<string, string>();
+    for (const m of messages) {
+        if ((m as any).sceneNumber) msgSceneMap.set(m.id, (m as any).sceneNumber);
+    }
+    const lines = pinnedExcerpts.map(e => {
+        const scene = msgSceneMap.get(e.sourceMessageId);
+        return scene ? `- "${e.text}" — scene ${scene}` : `- "${e.text}"`;
+    });
+    return `[PINNED MEMORIES]\n${lines.join('\n')}`;
+}
+
+function splicePinnedMemories(
+    fitted: OpenAIMessage[],
+    pinnedExcerpts: PinnedExcerpt[],
+    messages: ChatMessage[],
+): PayloadTrace[] {
+    if (!pinnedExcerpts || pinnedExcerpts.length === 0) return [];
+
+    const blockText = buildPinnedMemoriesBlock(pinnedExcerpts, messages);
+    const blockMsg: OpenAIMessage = { role: 'system', content: blockText };
+    const depth = 3;
+
+    if (fitted.length > 0) {
+        const index = Math.max(0, fitted.length - depth);
+        fitted.splice(index, 0, blockMsg);
+    } else {
+        fitted.push(blockMsg);
+    }
+
+    return pinnedExcerpts.map(e => ({
+        source: `Pinned Excerpt (${e.isFullMessage ? 'full message' : 'span'})`,
+        classification: 'summary' as const,
+        tokens: countTokens(e.text),
+        reason: `Pinned from message ${e.sourceMessageId}`,
+        included: true,
+        position: 'pinned_memories',
+    }));
+}
+
 function spliceSceneNote(context: GameContext, fitted: OpenAIMessage[]): PayloadTrace | null {
     if (!context.sceneNoteActive || !context.sceneNote) return null;
 
@@ -194,6 +244,7 @@ export interface BuildPayloadOptions {
     chapters?: ArchiveChapter[];
     archiveIndex?: ArchiveIndexEntry[];
     semanticallyRecalledNpcIds?: string[];
+    pinnedExcerpts?: PinnedExcerpt[];
 }
 
 export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessage[]; trace?: PayloadTrace[] } {
@@ -217,6 +268,7 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
         chapters,
         archiveIndex,
         semanticallyRecalledNpcIds,
+        pinnedExcerpts,
     } = opts;
 
     const trace: PayloadTrace[] = [];
@@ -479,6 +531,25 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
                 if (directive) line += ` | ${directive}`;
                 const drift = buildDriftAlert(npc);
                 if (drift) line += ` | ${drift}`;
+                // NPC inner state: scan chapters newest-to-oldest for a note on this NPC
+                if (chapters && chapters.length > 0) {
+                    for (let ci = chapters.length - 1; ci >= 0; ci--) {
+                        const ch = chapters[ci];
+                        if (ch.npcInnerState && ch.npcInnerState[npc.name]) {
+                            const innerNote = ch.npcInnerState[npc.name];
+                            line += ` | Inner: ${innerNote}`;
+                            addTrace({
+                                source: `NPC Inner State: ${npc.name}`,
+                                classification: 'world_context',
+                                tokens: countTokens(innerNote),
+                                reason: `From chapter ${ch.chapterId}`,
+                                included: true,
+                                position: 'system_dynamic',
+                            });
+                            break;
+                        }
+                    }
+                }
                 return line;
             }).join('\n')}\n[END NPC CONTEXT]`;
             worldBlocks.push({ source: 'Active NPCs', content: npcText, tokens: countTokens(npcText), reason: `NPCs detected in context (${activeNPCs.length}, minified)` });
@@ -508,11 +579,14 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
     addTrace({ source: 'Profile/Inventory', classification: 'volatile_state', tokens: volatileTokens, reason: 'Player state', included: true, position: 'system_dynamic' });
 
     // --- 6. Fit History ---
+    const pinnedExcerptsTokens = pinnedExcerpts && pinnedExcerpts.length > 0
+        ? pinnedExcerptsTokenCost(pinnedExcerpts)
+        : 0;
     const { fitted, historyUsed, userTokens, historyBudget } = fitHistory(
         history,
         condensedUpToIndex,
         userMessage,
-        stableTokens + divergenceTokens + currentWorldTokens + volatileTokens,
+        stableTokens + divergenceTokens + currentWorldTokens + volatileTokens + pinnedExcerptsTokens,
         limit,
     );
 
@@ -530,6 +604,12 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
     // --- 7. Depth-Based Scene Note Insertion ---
     const sceneNoteTrace = spliceSceneNote(context, fitted);
     if (sceneNoteTrace) addTrace(sceneNoteTrace);
+
+    // --- 7b. Pinned Memories Injection ---
+    if (pinnedExcerpts && pinnedExcerpts.length > 0) {
+        const pinnedTraces = splicePinnedMemories(fitted, pinnedExcerpts, history);
+        for (const t of pinnedTraces) addTrace(t);
+    }
 
     // --- 8. Final Assembly ---
     const messages: OpenAIMessage[] = [];

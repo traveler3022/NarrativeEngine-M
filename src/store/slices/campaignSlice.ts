@@ -20,9 +20,10 @@ import {
 let stateTimer: ReturnType<typeof setTimeout> | null = null;
 let loreTimer: ReturnType<typeof setTimeout> | null = null;
 let autoBackupTimer: ReturnType<typeof setInterval> | null = null;
-let _getStateForSave: (() => { context: GameContext; messages: ChatMessage[]; condenser: CondenserState }) | null = null;
+import type { PinnedExcerpt } from '../../types';
+let _getStateForSave: (() => { context: GameContext; messages: ChatMessage[]; condenser: CondenserState; pinnedExcerpts?: PinnedExcerpt[] }) | null = null;
 
-export function debouncedSaveCampaignState(campaignId: string | null, _state: { context: GameContext; messages: ChatMessage[]; condenser: CondenserState }) {
+export function debouncedSaveCampaignState(campaignId: string | null, _state: { context: GameContext; messages: ChatMessage[]; condenser: CondenserState; pinnedExcerpts?: PinnedExcerpt[] }) {
     if (!campaignId) return;
     if (stateTimer) clearTimeout(stateTimer);
     stateTimer = setTimeout(async () => {
@@ -207,7 +208,7 @@ export type CampaignSlice = {
     setChapters: (chapters: ArchiveChapter[]) => void;
     setSemanticFacts: (facts: SemanticFact[]) => void;
     preOpBackup: (campaignId: string, trigger: string) => Promise<void>;
-    _registerCampaignStateGetter: (getter: () => { context: GameContext; messages: ChatMessage[]; condenser: CondenserState }) => void;
+    _registerCampaignStateGetter: (getter: () => { context: GameContext; messages: ChatMessage[]; condenser: CondenserState; pinnedExcerpts?: PinnedExcerpt[] }) => void;
 
     // Timeline / World State
     timeline: TimelineEvent[];
@@ -413,7 +414,7 @@ export const createCampaignSlice: StateCreator<CampaignDeps, [], [], CampaignSli
     updateContext: (patch) =>
         set((s) => {
             const newContext = { ...s.context, ...patch };
-            debouncedSaveCampaignState(s.activeCampaignId, { context: newContext, messages: s.messages, condenser: s.condenser });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: newContext, messages: s.messages, condenser: s.condenser, pinnedExcerpts: (s as any).pinnedExcerpts });
             return { context: newContext };
         }),
 

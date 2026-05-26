@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { 
+import {
     Loader2, Zap, Trash2,
-    ChevronDown, X
+    ChevronDown, X, Pin
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import type { PipelinePhase, StreamingStats } from '../types';
@@ -12,6 +12,8 @@ import { useCondenser } from './hooks/useCondenser';
 import { toast } from './Toast';
 import { api } from '../services/apiClient';
 import { MessageBubble } from './chat/MessageBubble';
+import { PinSelectionButton } from './chat/PinSelectionButton';
+import { PinnedMemoriesPanel } from './chat/PinnedMemoriesPanel';
 import { CreateTroubleButton } from './chat/CreateTroubleButton';
 import { CreateTroubleModal } from './chat/CreateTroubleModal';
 
@@ -56,10 +58,12 @@ export function ChatArea() {
         updateMessageDivergence,
         pendingArcSeed,
         setPendingArcSeed,
+        pinnedExcerpts,
     } = useAppStore();
 
     const [input, setInput] = useState('');
     const [isStreaming, setStreaming] = useState(false);
+    const [pinnedPanelOpen, setPinnedPanelOpen] = useState(false);
     const [isCheckingNotes, setIsCheckingNotes] = useState(false);
     const [visibleCount, setVisibleCount] = useState(10);
     const [loadingStatus, setLoadingStatus] = useState<string | null>(null);
@@ -275,7 +279,7 @@ export function ChatArea() {
                 </div>
             )}
 
-            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-2 md:px-4 py-4 space-y-3">
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-2 md:px-4 py-4 space-y-3 relative">
                 {messages.length === 0 && (
                     <div className="flex items-center justify-center h-full">
                         <div className="text-center space-y-3">
@@ -322,6 +326,7 @@ export function ChatArea() {
                     </div>
                 ) : null}
                 <div ref={bottomRef} />
+                <PinSelectionButton />
             </div>
 
             <div className="px-2 md:px-4 pb-1 flex gap-2 overflow-x-auto no-scrollbar">
@@ -329,8 +334,22 @@ export function ChatArea() {
                     <Zap size={13} /> TRIM
                 </button>
                 <CreateTroubleButton />
+                <button
+                    onClick={() => setPinnedPanelOpen(true)}
+                    className="relative flex items-center gap-1.5 bg-void border border-terminal/20 text-text-dim hover:text-terminal text-[10px] uppercase tracking-wider px-3 py-1.5 min-h-[40px] rounded transition-all hover:bg-terminal/5 hover:border-terminal/40"
+                    title="View pinned memories"
+                >
+                    <Pin size={13} /> PINS
+                    {pinnedExcerpts.length > 0 && (
+                        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-terminal text-void text-[9px] font-bold rounded-full flex items-center justify-center px-1">
+                            {pinnedExcerpts.length}
+                        </span>
+                    )}
+                </button>
                 <button onClick={handleClearArchive} disabled={!activeCampaignId} className="flex items-center gap-1.5 bg-void border border-red-500/20 text-red-500/60 hover:text-red-500 text-[10px] uppercase tracking-wider px-3 py-1.5 min-h-[40px] rounded transition-all hover:bg-red-500/5 hover:border-red-500/40 disabled:opacity-40"><Trash2 size={13} /> CLEAR</button>
             </div>
+
+            <PinnedMemoriesPanel open={pinnedPanelOpen} onClose={() => setPinnedPanelOpen(false)} />
 
 
 

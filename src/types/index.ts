@@ -458,6 +458,7 @@ export type ArchiveChapter = {
     sealedAt?: number;
     invalidated?: boolean;
     _lastSeenSessionId?: string;
+    npcInnerState?: Record<string, string>; // NPC name -> 1-2 sentence belief/posture note
 };
 
 export type NotebookNote = {
@@ -545,5 +546,15 @@ export type LoreCheckResult = {
     originalText: string;
     /** Raw LLM output, populated on parse failure for debugging */
     rawResponse?: string;
+};
+
+// ── Pinned Excerpts ────────────────────────────────────────────────────
+
+export type PinnedExcerpt = {
+    id: string;                // own ID
+    sourceMessageId: string;   // for back-jump / context
+    text: string;              // verbatim pinned content (source of truth)
+    createdAt: number;
+    isFullMessage: boolean;    // affects rendering & dedup
 };
 

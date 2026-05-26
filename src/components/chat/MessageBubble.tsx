@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { Edit2, RotateCcw, Trash2, Loader2, Terminal, Zap, Check, X } from 'lucide-react';
+import { Edit2, RotateCcw, Trash2, Loader2, Terminal, Zap, Check, X, Pin, PinOff } from 'lucide-react';
 import type { ChatMessage } from '../../types';
 import { EngineTraceView } from '../engine-trace/EngineTraceView';
 import { ContentWithChips } from './ContentWithChips';
+import { useAppStore } from '../../store/useAppStore';
+import { toast } from '../Toast';
 
 type MessageBubbleProps = {
     msg: ChatMessage;
@@ -44,8 +46,82 @@ export function MessageBubble({
     const hasDebugPayload = !!(debugMode && msg.debugPayload);
 
     const [editText, setEditText] = useState(msg.displayContent || msg.content);
+    const [showActions, setShowActions] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const bubbleRef = useRef<HTMLDivElement>(null);
+    const actionsDismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const pinnedExcerpts = useAppStore(s => s.pinnedExcerpts);
+    const addPinnedExcerpt = useAppStore(s => s.addPinnedExcerpt);
+    const removePinnedExcerpt = useAppStore(s => s.removePinnedExcerpt);
+
+    // Full-message pin for this bubble (if it exists)
+    const fullMessagePin = pinnedExcerpts.find(
+        p => p.isFullMessage && p.sourceMessageId === msg.id
+    );
+    // Any pin referencing this bubble (for the badge)
+    const hasPinBadge = pinnedExcerpts.some(p => p.sourceMessageId === msg.id);
+
+    const clearActionsDismissTimer = () => {
+        if (actionsDismissTimer.current) {
+            clearTimeout(actionsDismissTimer.current);
+            actionsDismissTimer.current = null;
+        }
+    };
+
+    const scheduleActionsDismiss = () => {
+        clearActionsDismissTimer();
+        actionsDismissTimer.current = setTimeout(() => setShowActions(false), 4000);
+    };
+
+    const handleBubbleTap = (e: React.MouseEvent) => {
+        // Don't toggle if we're clicking inside a button/link inside the bubble
+        if ((e.target as HTMLElement).closest('button, a')) return;
+        if (isEditing) return;
+        setShowActions(prev => {
+            if (!prev) {
+                scheduleActionsDismiss();
+                return true;
+            }
+            clearActionsDismissTimer();
+            return false;
+        });
+    };
+
+    // Dismiss on outside click
+    useEffect(() => {
+        if (!showActions) return;
+        const handler = (e: MouseEvent) => {
+            if (bubbleRef.current && !bubbleRef.current.contains(e.target as Node)) {
+                setShowActions(false);
+                clearActionsDismissTimer();
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showActions]);
+
+    // Clean up timer on unmount
+    useEffect(() => {
+        return () => clearActionsDismissTimer();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handlePinToggle = () => {
+        if (fullMessagePin) {
+            removePinnedExcerpt(fullMessagePin.id);
+            setShowActions(false);
+        } else {
+            const text = msg.displayContent || msg.content;
+            const result = addPinnedExcerpt(msg.id, text, true);
+            if (!result.ok) {
+                toast.warning(result.reason);
+            } else {
+                setShowActions(false);
+            }
+        }
+    };
 
     // Sync draft state only when entering edit mode
     useEffect(() => {
@@ -101,9 +177,13 @@ export function MessageBubble({
     };
 
     return (
-        <div className={`group flex animate-[msg-in_0.2s_ease-out] ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+        <div
+            data-message-id={msg.id}
+            className={`group flex animate-[msg-in_0.2s_ease-out] ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+        >
             <div
                 ref={bubbleRef}
+                onClick={handleBubbleTap}
                 className={`px-3 md:px-4 py-2 md:py-3 text-sm font-mono leading-relaxed relative transition-all duration-200 ${
                     isEditing ? 'w-full max-w-[95%] md:max-w-[85%]' : 'max-w-[95%] md:max-w-[75%]'
                 } ${
@@ -116,9 +196,21 @@ export function MessageBubble({
                     <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" title="Divergence tracked" />
                 )}
 
-                {/* Floating action row - hidden during editing or when streaming */}
+                {/* Pin badge — visible whenever any excerpt references this bubble */}
+                {hasPinBadge && !isEditing && (
+                    <div
+                        className={`absolute -top-1.5 ${msg.role === 'user' ? '-right-1.5' : '-left-1.5'} w-3.5 h-3.5 flex items-center justify-center bg-terminal/20 border border-terminal/50 rounded-full z-20`}
+                        title="Has pinned memory"
+                    >
+                        <Pin size={7} className="text-terminal" />
+                    </div>
+                )}
+
+                {/* Floating action row - visible on hover (desktop) or tap (mobile) */}
                 {!isEditing && (
-                    <div className={`absolute -top-3 ${msg.role === 'user' ? 'left-2' : 'right-2'} flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-void-darker border border-border p-[2px] rounded z-10`}>
+                    <div className={`absolute -top-3 ${msg.role === 'user' ? 'left-2' : 'right-2'} flex gap-1 transition-opacity bg-void-darker border border-border p-[2px] rounded z-10 ${
+                        showActions ? 'opacity-100' : 'opacity-0 sm:group-hover:opacity-100'
+                    }`}>
                         {msg.role !== 'system' && !isStreaming && (
                             <button title="Edit" onClick={() => onStartEdit(msg)} className="text-text-dim hover:text-terminal p-1 bg-void-lighter rounded">
                                 <Edit2 size={10} />
@@ -138,6 +230,17 @@ export function MessageBubble({
                                 }`}
                             >
                                 <Zap size={10} />
+                            </button>
+                        )}
+                        {msg.role !== 'system' && (
+                            <button
+                                title={fullMessagePin ? 'Unpin message' : 'Pin message'}
+                                onClick={handlePinToggle}
+                                className={`p-1 bg-void-lighter rounded transition-colors ${
+                                    fullMessagePin ? 'text-terminal hover:text-terminal/60' : 'text-text-dim hover:text-terminal'
+                                }`}
+                            >
+                                {fullMessagePin ? <PinOff size={10} /> : <Pin size={10} />}
                             </button>
                         )}
                         <button title="Delete" onClick={() => onDelete(msg.id)} className="text-text-dim hover:text-red-400 p-1 bg-void-lighter rounded">

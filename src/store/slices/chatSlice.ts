@@ -1,7 +1,14 @@
 import type { StateCreator } from 'zustand';
-import type { ChatMessage, CondenserState, GameContext, LoreCheckSelection, LoreCheckResult, DivergenceRegister, DivergenceEntry, DivergenceCategory, TopicClusters } from '../../types';
+import type { ChatMessage, CondenserState, GameContext, LoreCheckSelection, LoreCheckResult, DivergenceRegister, DivergenceEntry, DivergenceCategory, TopicClusters, PinnedExcerpt } from '../../types';
 import { EMPTY_REGISTER, toggleChapter, toggleCategory, pinFact, editFact, deleteFact, deleteChapter, toggleFact, dismissReviewFlag, migrateV1ToV2 } from '../../services/divergenceRegister';
 import { debouncedSaveCampaignState } from './campaignSlice';
+import { countTokens } from '../../services/tokenizer';
+import { uid } from '../../utils/uid';
+
+// Re-export PinnedExcerpt from types for consumers that import from this slice
+export type { PinnedExcerpt };
+
+const PINNED_EXCERPTS_TOKEN_CAP = 3000;
 
 // ── Slice type ─────────────────────────────────────────────────────────
 
@@ -43,6 +50,11 @@ export type ChatSlice = {
     setTopicClusters: (clusters: TopicClusters) => void;
     migrateDivergenceIfNeeded: () => void;
 
+    pinnedExcerpts: PinnedExcerpt[];
+    addPinnedExcerpt: (sourceMessageId: string, text: string, isFullMessage: boolean) => { ok: true } | { ok: false; reason: string };
+    removePinnedExcerpt: (id: string) => void;
+    clearPinnedExcerpts: () => void;
+
     loreCheckOpen: boolean;
     loreCheckLoading: boolean;
     loreCheckSelection: LoreCheckSelection | null;
@@ -81,7 +93,7 @@ export const createChatSlice: StateCreator<ChatDeps, [], [], ChatSlice> = (set) 
     divergenceRegister: { ...EMPTY_REGISTER },
     setDivergenceRegister: (register) =>
         set((s) => {
-            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { divergenceRegister: register };
         }),
     editDivergenceEntry: (id, patch) =>
@@ -90,7 +102,7 @@ export const createChatSlice: StateCreator<ChatDeps, [], [], ChatSlice> = (set) 
                 if (e.id !== id) return e;
                 return { ...e, ...patch };
             });
-            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { divergenceRegister: { ...s.divergenceRegister, entries, lastUpdatedAt: Date.now() } };
         }),
     updateMessageDivergence: (messageId, divergenceIds) =>
@@ -105,37 +117,37 @@ export const createChatSlice: StateCreator<ChatDeps, [], [], ChatSlice> = (set) 
     confirmReviewEntry: (id) =>
         set((s) => {
             const reg = dismissReviewFlag(s.divergenceRegister, id);
-            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { divergenceRegister: reg };
         }),
     deleteReviewedEntry: (id) =>
         set((s) => {
             const reg = deleteFact(s.divergenceRegister, id);
-            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { divergenceRegister: reg };
         }),
     toggleDivergenceChapter: (chapterId, on) =>
         set((s) => {
             const reg = toggleChapter(s.divergenceRegister, chapterId, on);
-            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { divergenceRegister: reg };
         }),
     toggleDivergenceCategory: (chapterId, category, on) =>
         set((s) => {
             const reg = toggleCategory(s.divergenceRegister, chapterId, category, on);
-            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { divergenceRegister: reg };
         }),
     pinDivergenceFact: (entryId) =>
         set((s) => {
             const reg = pinFact(s.divergenceRegister, entryId);
-            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { divergenceRegister: reg };
         }),
     editDivergenceFact: (entryId, text) =>
         set((s) => {
             const reg = editFact(s.divergenceRegister, entryId, text);
-            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { divergenceRegister: reg };
         }),
     deleteDivergenceFact: (entryId) =>
@@ -148,25 +160,25 @@ export const createChatSlice: StateCreator<ChatDeps, [], [], ChatSlice> = (set) 
                 })).filter(g => g.factIds.length > 0);
                 reg = { ...reg, topicClusters: { ...reg.topicClusters, groups } };
             }
-            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { divergenceRegister: reg };
         }),
     dismissDivergenceReviewFlag: (entryId) =>
         set((s) => {
             const reg = dismissReviewFlag(s.divergenceRegister, entryId);
-            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { divergenceRegister: reg };
         }),
     deleteDivergenceChapter: (chapterId) =>
         set((s) => {
             const reg = deleteChapter(s.divergenceRegister, chapterId);
-            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { divergenceRegister: reg };
         }),
     toggleDivergenceFact: (entryId, on) =>
         set((s) => {
             const reg = toggleFact(s.divergenceRegister, entryId, on);
-            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { divergenceRegister: reg };
         }),
     setManyFactsEnabled: (updates) =>
@@ -176,13 +188,13 @@ export const createChatSlice: StateCreator<ChatDeps, [], [], ChatSlice> = (set) 
             for (const [id, on] of updateMap) {
                 reg = toggleFact(reg, id, on);
             }
-            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { divergenceRegister: reg };
         }),
     setTopicClusters: (clusters) =>
         set((s) => {
             const reg = { ...s.divergenceRegister, topicClusters: clusters };
-            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { divergenceRegister: reg };
         }),
     migrateDivergenceIfNeeded: () =>
@@ -190,7 +202,7 @@ export const createChatSlice: StateCreator<ChatDeps, [], [], ChatSlice> = (set) 
             const reg = s.divergenceRegister;
             if (reg.version < 2) {
                 const migrated = migrateV1ToV2(reg as any);
-                debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser });
+                debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
                 return { divergenceRegister: migrated };
             }
             return s;
@@ -222,7 +234,7 @@ export const createChatSlice: StateCreator<ChatDeps, [], [], ChatSlice> = (set) 
     updateMessageContent: (id, content) =>
         set((s) => {
             const msgs = s.messages.map(m => m.id === id ? { ...m, content } : m);
-            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: msgs, condenser: s.condenser });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: msgs, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { messages: msgs };
         }),
     replaceMessageText: (id, oldText, newText) =>
@@ -238,13 +250,13 @@ export const createChatSlice: StateCreator<ChatDeps, [], [], ChatSlice> = (set) 
                 }
                 return next;
             });
-            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: msgs, condenser: s.condenser });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: msgs, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { messages: msgs };
         }),
     deleteMessage: (id) =>
         set((s) => {
             const msgs = s.messages.filter(m => m.id !== id);
-            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: msgs, condenser: s.condenser });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: msgs, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { messages: msgs };
         }),
     deleteMessagesFrom: (id) =>
@@ -252,17 +264,53 @@ export const createChatSlice: StateCreator<ChatDeps, [], [], ChatSlice> = (set) 
             const index = s.messages.findIndex(m => m.id === id);
             if (index === -1) return { messages: s.messages };
             const msgs = s.messages.slice(0, index);
-            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: msgs, condenser: s.condenser });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: msgs, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { messages: msgs };
         }),
     setStreaming: (v) => set({ isStreaming: v } as Partial<ChatDeps>),
     clearChat: () => set((s) => {
         const newCondenser = { condensedUpToIndex: -1 };
         const newDivReg = { ...EMPTY_REGISTER };
-        debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: [], condenser: newCondenser });
-        return { messages: [], condenser: newCondenser, divergenceRegister: newDivReg };
+        debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: [], condenser: newCondenser, pinnedExcerpts: [] });
+        return { messages: [], condenser: newCondenser, divergenceRegister: newDivReg, pinnedExcerpts: [] };
     }),
     clearArchive: () => set({ archiveIndex: [] } as unknown as Partial<ChatDeps>),
+
+    // Pinned Excerpts
+    pinnedExcerpts: [],
+    addPinnedExcerpt: (sourceMessageId, text, isFullMessage) => {
+        let result: { ok: true } | { ok: false; reason: string } = { ok: true };
+        set((s) => {
+            const newTokens = countTokens(text);
+            const currentTotal = s.pinnedExcerpts.reduce((sum, e) => sum + countTokens(e.text), 0);
+            if (currentTotal + newTokens > PINNED_EXCERPTS_TOKEN_CAP) {
+                result = { ok: false, reason: 'Pinned memories full — unpin something first' };
+                return s;
+            }
+            const excerpt: PinnedExcerpt = {
+                id: `pin_${uid()}`,
+                sourceMessageId,
+                text,
+                createdAt: Date.now(),
+                isFullMessage,
+            };
+            const pinnedExcerpts = [...s.pinnedExcerpts, excerpt];
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts });
+            return { pinnedExcerpts };
+        });
+        return result;
+    },
+    removePinnedExcerpt: (id) =>
+        set((s) => {
+            const pinnedExcerpts = s.pinnedExcerpts.filter(e => e.id !== id);
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts });
+            return { pinnedExcerpts };
+        }),
+    clearPinnedExcerpts: () =>
+        set((s) => {
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts: [] });
+            return { pinnedExcerpts: [] };
+        }),
 
     loreCheckOpen: false,
     loreCheckLoading: false,

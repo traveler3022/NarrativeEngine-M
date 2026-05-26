@@ -413,6 +413,7 @@ async function handleSealChapter(state: TurnState, callbacks: TurnCallbacks, act
                         unresolvedThreads: sealResult.summary.unresolvedThreads,
                         tone: sealResult.summary.tone,
                         themes: sealResult.summary.themes,
+                        ...(sealResult.summary.npcInnerState && { npcInnerState: sealResult.summary.npcInnerState }),
                     });
                 }
 

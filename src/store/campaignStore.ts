@@ -1,10 +1,11 @@
 import { get, set, del } from 'idb-keyval';
-import type { Campaign, LoreChunk, GameContext, ChatMessage, CondenserState, NPCEntry, ArchiveIndexEntry, ArchiveChapter, SemanticFact, TimelineEvent, EntityEntry, DivergenceRegister } from '../types';
+import type { Campaign, LoreChunk, GameContext, ChatMessage, CondenserState, NPCEntry, ArchiveIndexEntry, ArchiveChapter, SemanticFact, TimelineEvent, EntityEntry, DivergenceRegister, PinnedExcerpt } from '../types';
 
 export type CampaignState = {
     context: GameContext;
     messages: ChatMessage[];
     condenser: CondenserState;
+    pinnedExcerpts?: PinnedExcerpt[];
 };
 
 // ─── Campaign CRUD ───

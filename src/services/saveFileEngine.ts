@@ -16,6 +16,7 @@ export type ChapterSummaryOutput = {
     unresolvedThreads: string[];
     tone: string;
     themes: string[];
+    npcInnerState?: Record<string, string>; // NPC name -> 1-2 sentence belief/posture note after this chapter's events
 };
 
 export function truncateScenesToBudget(
@@ -216,8 +217,17 @@ The "summary" value must be this JSON shape:
     "majorEvents": ["Event description 1", "Event description 2"],
     "unresolvedThreads": ["Thread 1", "Thread 2"],
     "tone": "one of: combat-heavy, exploration, social, mystery, political, emotional, mixed",
-    "themes": ["theme1", "theme2"]
+    "themes": ["theme1", "theme2"],
+    "npcInnerState": { "NPC Name": "1-2 sentence inner-state note" }
 }
+
+NPC INNER STATE RULES:
+- "npcInnerState" captures an NPC's beliefs, posture, and attitude AFTER this chapter's events — NOT a list of events ("X happened").
+- Write what is true about the NPC's inner world now: what they believe, how they regard other characters, what has shifted in them.
+- 1-2 sentences max per NPC. Aim for texture and specificity, not plot recaps.
+- Include ONLY NPCs whose inner state meaningfully shifted during this chapter. Omit NPCs with no arc movement.
+- Example: "Helena Broadmarsh": "Pale, processing the violation of natural order; trusts Grey absolutely but now fears him."
+- If no NPC inner state shifted meaningfully, output "npcInnerState": {}.
 
 The "divergences" value must be an object with one key per category slot. Each value is an array of fact objects, or [] if empty. Example:
 {
