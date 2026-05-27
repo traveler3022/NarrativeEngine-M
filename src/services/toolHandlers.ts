@@ -1,7 +1,7 @@
 import type { DiceConfig, LoreChunk, NotebookNote } from '../types';
 import { searchLoreByQuery } from './loreRetriever';
 import { uid } from '../utils/uid';
-import { mapTier } from './diceTier';
+import { mapTier } from './engine';
 
 const MAX_NOTEBOOK_OPS = 5;
 const MAX_NOTEBOOK_NOTES = 50;

@@ -1,5 +1,5 @@
 import type { LoreChunk, LoreCategory } from '../types';
-import { countTokens } from './tokenizer';
+import { countTokens } from './infrastructure';
 
 const CATEGORY_PREFIXES = [
     'CHARACTER', 'FACTION', 'NPC', 'HERO', 'VILLAIN',

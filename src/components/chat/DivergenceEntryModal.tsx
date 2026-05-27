@@ -44,7 +44,7 @@ export function DivergenceEntryModal({ onAdd, onClose, provider, chapterId = 'ma
         try {
             const { llmCall } = await import('../../utils/llmCall');
             const { extractJson } = await import('../../services/payloadBuilder');
-            const { INPUT_DELIMITER: DELIM, JSON_ONLY_FOOTER: JSON_FOOTER, joinPromptSections } = await import('../../services/utilityPrompts');
+            const { INPUT_DELIMITER: DELIM, JSON_ONLY_FOOTER: JSON_FOOTER, joinPromptSections } = await import('../../services/infrastructure');
             const prompt = joinPromptSections(
                 'You are a TTRPG campaign archivist.',
                 `Convert free-text player input into a structured campaign fact.\n\nCategory options: ${DIVERGENCE_CATEGORIES.join(', ')}\n\nOutput schema: { "category": "<category>", "text": "<one-line factual statement, max 15 words>" }`,

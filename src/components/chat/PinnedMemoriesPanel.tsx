@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X, ArrowLeft, Pin, Trash2, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
-import { countTokens } from '../../services/tokenizer';
+import { countTokens } from '../../services/infrastructure';
 import type { PinnedExcerpt } from '../../types';
 
 const PIN_TOKEN_CAP = 3000;

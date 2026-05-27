@@ -9,21 +9,21 @@ import { shouldAutoSeal, sealChapter } from './archiveChapterEngine';
 import { sealChapterCombined, type CombinedSealResult } from './saveFileEngine';
 import { fetchFacts } from './semanticMemory';
 import { loadChapters } from '../store/campaignStore';
-import { backgroundQueue } from './backgroundQueue';
 import { scanCharacterProfile } from './characterProfileParser';
 import { scanInventory } from './inventoryParser';
 import { rateImportance } from './importanceRater';
 import { scanPressure, buildPressurePatch, shouldArchiveNPC, findArchivedToRestore } from './npcPressureTracker';
 import { mergeSealEntries } from './divergenceRegister';
 import { llmCall } from '../utils/llmCall';
-import { extractJson } from './payloadBuilder';
 import {
+    backgroundQueue,
+    extractJson,
     ANCHOR_BEFORE_INPUT,
     INPUT_DELIMITER,
     JSON_ARRAY_ONLY_FOOTER,
     TTRPG_PERSONA_GM_ASSISTANT,
     joinPromptSections,
-} from './utilityPrompts';
+} from './infrastructure';
 
 const PRESENT_HEADER_RE = /👥\s*\[Present\]\s*[:\-–—]?\s*(.+?)(?:\n|$)/i;
 

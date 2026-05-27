@@ -6,7 +6,7 @@ import {
     ANCHOR_BEFORE_INPUT,
     INPUT_DELIMITER,
     joinPromptSections,
-} from './utilityPrompts';
+} from './infrastructure';
 
 const BATCH_SIZE = 8;
 const CONTENT_PREVIEW_CHARS = 300;

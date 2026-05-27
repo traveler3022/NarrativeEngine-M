@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rollCharacterIntroEngine } from '../charIntroEngine';
+import { rollCharacterIntroEngine } from '../engine';
 import type { GameContext, CharacterIntroEntry, ChatMessage } from '../../types';
 
 const makeContext = (overrides?: Partial<GameContext>): GameContext => ({

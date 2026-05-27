@@ -1,7 +1,7 @@
 import { get, set } from 'idb-keyval';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
-import { SaveFile } from './saveFilePicker';
+import { SaveFile } from './infrastructure';
 import type { Campaign, LoreChunk, ArchiveIndexEntry, ArchiveChapter, SemanticFact, TimelineEvent, EntityEntry, NPCEntry } from '../types';
 import type { CampaignState } from '../store/campaignStore';
 import { getList, setList, k, type SceneRecord } from './storage/_helpers';

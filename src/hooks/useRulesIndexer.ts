@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { indexRules, computeRulesThreshold } from '../services/rulesIndexer';
-import { countTokens } from '../services/tokenizer';
+import { countTokens } from '../services/infrastructure';
 
 export function useRulesIndexer() {
     const rulesRaw = useAppStore((s) => s.context.rulesRaw);

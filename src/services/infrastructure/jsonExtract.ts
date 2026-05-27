@@ -48,3 +48,36 @@ export function extractJsonRobust<T>(raw: string, fallback: T): { value: T; pars
         return { value: fallback, parseOk: false };
     }
 }
+
+/**
+ * Robustly extracts the first JSON object or array found in a text string.
+ * Handles <think> tags, markdown code blocks, and leading/trailing chatter.
+ */
+export function extractJson(text: string): string {
+    // 1. Remove reasoning blocks if present
+    let clean = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
+
+    // 2. Try to find content between triple backticks first
+    const markdownMatch = clean.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (markdownMatch) {
+        clean = markdownMatch[1];
+    }
+
+    // 3. Final fallback: find the first { or [ and the last } or ]
+    const firstObj = clean.indexOf('{');
+    const firstArr = clean.indexOf('[');
+    const start = (firstObj !== -1 && (firstArr === -1 || firstObj < firstArr)) ? firstObj : firstArr;
+
+    if (start !== -1) {
+        const lastObj = clean.lastIndexOf('}');
+        const lastArr = clean.lastIndexOf(']');
+        const end = (lastObj !== -1 && (lastArr === -1 || lastObj > lastArr)) ? lastObj : lastArr;
+
+        if (end !== -1 && end > start) {
+            return clean.substring(start, end + 1).trim();
+        }
+    }
+
+    return clean.trim();
+}
+

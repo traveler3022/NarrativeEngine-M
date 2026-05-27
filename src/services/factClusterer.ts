@@ -1,13 +1,13 @@
 import type { DivergenceRegister, TopicClusters, TopicCluster, LLMProvider } from '../types';
 import { llmCall } from '../utils/llmCall';
-import { countTokens } from './tokenizer';
-import { extractJsonRobust } from './jsonExtract';
 import {
+    countTokens,
+    extractJsonRobust,
     ANCHOR_BEFORE_INPUT,
     INPUT_DELIMITER,
     JSON_ONLY_FOOTER,
     joinPromptSections,
-} from './utilityPrompts';
+} from './infrastructure';
 
 export type ClusteringCancelled = { cancelled: boolean };
 

@@ -1,12 +1,12 @@
-import type { LLMProvider, ChatMessage, ArchiveIndexEntry, ArchiveChapter, NPCEntry } from '../types';
-import { llmCall } from '../utils/llmCall';
+import type { LLMProvider, ChatMessage, ArchiveIndexEntry, ArchiveChapter, NPCEntry } from '../../types';
+import { llmCall } from '../../utils/llmCall';
 import {
     ANCHOR_BEFORE_INPUT,
     INPUT_DELIMITER,
     JSON_ARRAY_ONLY_FOOTER,
     TTRPG_PERSONA_GM_ASSISTANT,
     joinPromptSections,
-} from './utilityPrompts';
+} from '../infrastructure';
 
 export async function generateTroubleOptions(
     provider: LLMProvider,

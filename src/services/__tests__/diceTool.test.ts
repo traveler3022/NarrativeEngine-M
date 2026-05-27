@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapTier } from '../diceTier';
+import { mapTier } from '../engine';
 import { handleDiceTool, getToolDefinitions } from '../toolHandlers';
 import type { DiceConfig } from '../../types';
 

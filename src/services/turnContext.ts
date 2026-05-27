@@ -4,7 +4,6 @@ import { buildPayload } from './chatEngine';
 import { retrieveRelevantLore } from './loreRetriever';
 import { retrieveRelevantRules } from './rulesRetriever';
 import { recallArchiveScenes, retrieveArchiveMemory, fetchArchiveScenes } from './archiveMemory';
-import { countTokens } from './tokenizer';
 import { offlineStorage } from './storage';
 import { recommendContext } from './contextRecommender';
 import { deepArchiveScan } from './deepArchiveSearch';
@@ -19,13 +18,14 @@ import { rerankCandidates, type RerankCandidate } from './semanticReranker';
 import type { LLMProvider } from '../types';
 import { llmCall } from '../utils/llmCall';
 import {
+    countTokens,
     ANCHOR_BEFORE_INPUT,
     INPUT_DELIMITER,
     JSON_ARRAY_ONLY_FOOTER,
     JSON_ONLY_FOOTER,
     TTRPG_PERSONA_RETRIEVAL_PLANNER,
     joinPromptSections,
-} from './utilityPrompts';
+} from './infrastructure';
 
 const SEMANTIC_FLOOR_SCENE = 0.30;
 const SEMANTIC_FLOOR_LORE = 0.30;

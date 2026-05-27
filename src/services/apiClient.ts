@@ -110,7 +110,7 @@ export const api = {
             return localSettings?.settings || {};
         },
         async save(settings: AppSettings, activeCampaignId: string | null): Promise<void> {
-            const { encryptSettingsPresets } = await import('./settingsCrypto');
+            const { encryptSettingsPresets } = await import('./infrastructure');
             const encryptedPresets = await encryptSettingsPresets(settings.presets);
             const encryptedSettings = { ...settings, presets: encryptedPresets };
             await idbSet('nn_settings', { settings: encryptedSettings, activeCampaignId });

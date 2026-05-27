@@ -5,5 +5,5 @@ export { extractJson, buildPayload } from './payloadBuilder';
 export { sendMessage, testConnection } from './llmService';
 export type { OpenAIMessage } from './llmService';
 export { generateNPCProfile, updateExistingNPCs, backfillNPCDrives } from './npcGeneration';
-export { populateEngineTags } from './tagGeneration';
+export { populateEngineTags } from './engine';
 export { shouldAutoSeal, sealChapter, recallWithChapterFunnel } from './archiveChapterEngine';

@@ -1,10 +1,10 @@
 import type { LLMProvider, ChatMessage, NPCEntry } from '../types';
 import { llmCall } from '../utils/llmCall';
-import { extractJson } from './payloadBuilder';
 import { uid } from '../utils/uid';
 import { embedText, getCurrentModelId } from './embedder';
 import { embeddingStorage } from './storage/embeddingStorage';
 import {
+    extractJson,
     ANCHOR_BEFORE_INPUT,
     APPEARANCE_UPDATE_RULES,
     DRIVES_UPDATE_RULES,
@@ -13,7 +13,7 @@ import {
     TTRPG_PERSONA_GM_ASSISTANT,
     TTRPG_PERSONA_STATE_ANALYZER,
     joinPromptSections,
-} from './utilityPrompts';
+} from './infrastructure';
 
 const RETRY_SUFFIX = '\n\nIMPORTANT: Your previous response was not valid JSON. Respond with ONLY valid JSON. No markdown fences, no comments, no trailing commas, no extra text before or after the JSON.';
 

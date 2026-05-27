@@ -3,7 +3,7 @@ import { chunkLoreFile } from './loreChunker';
 import { embeddingStorage } from './storage/embeddingStorage';
 import { embedText, getCurrentModelId } from './embedder';
 import { llmCall } from '../utils/llmCall';
-import { INPUT_DELIMITER } from './utilityPrompts';
+import { INPUT_DELIMITER } from './infrastructure';
 
 const STOP_WORDS = new Set([
     'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'has', 'her',

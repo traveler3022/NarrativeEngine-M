@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { countTokens } from '../services/tokenizer';
+import { countTokens } from '../services/infrastructure';
 import { countRegisterTokens } from '../services/divergenceRegister';
 
 export function TokenGauge() {

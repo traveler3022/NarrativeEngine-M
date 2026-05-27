@@ -1,13 +1,13 @@
 import type { NPCEntry, LLMProvider } from '../types';
 import { llmCall } from '../utils/llmCall';
-import { extractJson } from './payloadBuilder';
-import TITLES from '../data/titles.json';
 import {
+    extractJson,
     ANCHOR_BEFORE_INPUT,
     INPUT_DELIMITER,
     JSON_ARRAY_ONLY_FOOTER,
     joinPromptSections,
-} from './utilityPrompts';
+} from './infrastructure';
+import TITLES from '../data/titles.json';
 
 const TITLES_SET = new Set(TITLES.map(t => t.toLowerCase()));
 const NAME_CONNECTIVES = new Set(['of', 'the', 'von', 'de', 'di', 'al', 'el', 'ibn', 'bin']);

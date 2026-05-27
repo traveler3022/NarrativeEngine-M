@@ -2,7 +2,7 @@ import type { StateCreator } from 'zustand';
 import type { ChatMessage, CondenserState, GameContext, LoreCheckSelection, LoreCheckResult, DivergenceRegister, DivergenceEntry, DivergenceCategory, TopicClusters, PinnedExcerpt } from '../../types';
 import { EMPTY_REGISTER, toggleChapter, toggleCategory, pinFact, editFact, deleteFact, deleteChapter, toggleFact, dismissReviewFlag, migrateV1ToV2 } from '../../services/divergenceRegister';
 import { debouncedSaveCampaignState } from './campaignSlice';
-import { countTokens } from '../../services/tokenizer';
+import { countTokens } from '../../services/infrastructure';
 import { uid } from '../../utils/uid';
 
 // Re-export PinnedExcerpt from types for consumers that import from this slice

@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rollEngines, rollDiceFairness } from '../engineRolls';
-import { mapTier } from '../diceTier';
+import { rollEngines, rollDiceFairness, mapTier } from '../engine';
 import type { GameContext } from '../../types';
 import {
     DEFAULT_SURPRISE_TYPES, DEFAULT_SURPRISE_TONES,

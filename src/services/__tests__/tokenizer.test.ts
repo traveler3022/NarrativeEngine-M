@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { countTokens } from '../tokenizer';
+import { countTokens } from '../infrastructure';
 
 describe('countTokens', () => {
     it('returns 0 for empty string', () => {

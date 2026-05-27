@@ -23,7 +23,7 @@ import {
     INPUT_DELIMITER,
     JSON_ONLY_FOOTER,
     joinPromptSections,
-} from './utilityPrompts';
+} from './infrastructure';
 
 const EST_TOKENS = (text: string) => Math.ceil(text.length / 4);
 

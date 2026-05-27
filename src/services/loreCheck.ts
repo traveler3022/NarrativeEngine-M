@@ -16,7 +16,7 @@ import {
     ANCHOR_BEFORE_INPUT,
     INPUT_DELIMITER,
     joinPromptSections,
-} from './utilityPrompts';
+} from './infrastructure';
 
 export type LoreCheckInput = {
     utilityEndpoint: LLMProvider;

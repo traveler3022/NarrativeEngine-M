@@ -251,7 +251,7 @@ type CampaignDeps = CampaignSlice & {
 export const createCampaignSlice: StateCreator<CampaignDeps, [], [], CampaignSlice> = (set, get) => ({
     activeCampaignId: null,
     setActiveCampaign: async (id) => {
-        import('../../services/backgroundQueue').then(({ backgroundQueue }) => {
+        import('../../services/infrastructure').then(({ backgroundQueue }) => {
             backgroundQueue.clear('Campaign switched');
         }).catch(() => {});
 

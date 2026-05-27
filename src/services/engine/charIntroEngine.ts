@@ -1,6 +1,6 @@
-import type { GameContext, CharacterIntroEntry, ChatMessage, LLMProvider } from '../types';
-import { llmCall } from '../utils/llmCall';
-import { INPUT_DELIMITER } from './utilityPrompts';
+import type { GameContext, CharacterIntroEntry, ChatMessage, LLMProvider } from '../../types';
+import { llmCall } from '../../utils/llmCall';
+import { INPUT_DELIMITER } from '../infrastructure';
 
 export type CharIntroResult = {
     tag: string;

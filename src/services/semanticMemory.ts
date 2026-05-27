@@ -9,7 +9,7 @@
  */
 
 import type { SemanticFact, NPCEntry } from '../types';
-import { countTokens } from './tokenizer';
+import { countTokens } from './infrastructure';
 import { offlineStorage } from './storage';
 import { PROPER_NOUN_STOP_WORDS } from '../utils/stopWords';
 

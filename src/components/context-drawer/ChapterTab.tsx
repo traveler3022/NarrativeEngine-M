@@ -4,7 +4,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { api } from '../../services/apiClient';
 import { ChapterCard } from './ChapterCard';
 import { toast } from '../Toast';
-import { countTokens } from '../../services/tokenizer';
+import { countTokens } from '../../services/infrastructure';
 import { runCombinedSeal } from '../../services/turnPostProcess';
 import { mergeSealEntries } from '../../services/divergenceRegister';
 import type { ArchiveChapter } from '../../types';

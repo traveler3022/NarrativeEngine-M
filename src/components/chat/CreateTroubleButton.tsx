@@ -1,6 +1,6 @@
 import { Flame, Loader2 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
-import { generateTroubleOptions } from '../../services/troublemaker';
+import { generateTroubleOptions } from '../../services/engine';
 import { toast } from '../Toast';
 
 export function CreateTroubleButton() {

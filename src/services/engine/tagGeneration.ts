@@ -1,12 +1,12 @@
-import type { LLMProvider } from '../types';
-import { llmCall } from '../utils/llmCall';
-import { extractJson } from './payloadBuilder';
+import type { LLMProvider } from '../../types';
+import { llmCall } from '../../utils/llmCall';
 import {
+    extractJson,
     ANCHOR_BEFORE_INPUT,
     INPUT_DELIMITER,
     JSON_ARRAY_ONLY_FOOTER,
     joinPromptSections,
-} from './utilityPrompts';
+} from '../infrastructure';
 
 /**
  * AI-powered tag population for Surprise & World engines.

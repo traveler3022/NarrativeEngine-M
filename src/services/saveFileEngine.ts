@@ -1,8 +1,8 @@
 import type { LLMProvider, ThinkingEffort, SceneEvent, SceneEventType } from '../types';
-import { countTokens } from './tokenizer';
-import { extractJson } from './payloadBuilder';
 import { llmCall } from '../utils/llmCall';
 import {
+    countTokens,
+    extractJson,
     ANCHOR_BEFORE_INPUT,
     INPUT_DELIMITER,
     JSON_ONLY_FOOTER,
@@ -11,7 +11,7 @@ import {
     SCENE_EVENT_RULES,
     TTRPG_PERSONA_ARCHIVIST,
     joinPromptSections,
-} from './utilityPrompts';
+} from './infrastructure';
 
 // ─── Chapter Summary Generator ───
 

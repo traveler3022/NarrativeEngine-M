@@ -15,7 +15,7 @@ import {
     INPUT_DELIMITER,
     JSON_ONLY_FOOTER,
     joinPromptSections,
-} from './utilityPrompts';
+} from './infrastructure';
 
 export type RecommenderResult = {
     relevantNPCNames: string[];   // NPC names the model considers relevant
