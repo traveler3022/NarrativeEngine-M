@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
-import type { PipelinePhase, StreamingStats } from '../types';
+import type { PipelinePhase, StreamingStats, LLMProvider } from '../types';
 import { runTurn } from '../services/turn';
 import { GenerationProgress } from './GenerationProgress';
 import { useMessageEditor } from './hooks/useMessageEditor';
@@ -153,11 +153,22 @@ export function ChatArea() {
             provider: getActiveStoryEndpoint(),
             getMessages: () => useAppStore.getState().messages,
             getFreshProvider: () => getActiveStoryEndpoint(),
-            getFreshSummarizerProvider: () => getActiveSummarizerEndpoint?.() ?? getActiveStoryEndpoint(),
+            getFreshSummarizerProvider: () => {
+                const s = getActiveSummarizerEndpoint?.();
+                return (s?.endpoint && s?.modelName) ? s : undefined;
+            },
             getUtilityEndpoint: () => getActiveUtilityEndpoint(),
             getFreshAuxiliaryProvider: () => {
                 const aux = getActiveAuxiliaryEndpoint?.();
                 return aux?.modelName ? aux : getActiveStoryEndpoint();
+            },
+            getExtractionProvider: () => {
+                const hasEndpoint = (p?: LLMProvider) => !!(p?.endpoint && p?.modelName);
+                const a = getActiveAuxiliaryEndpoint?.();
+                if (hasEndpoint(a)) return a!;
+                const s = getActiveSummarizerEndpoint?.();
+                if (hasEndpoint(s)) return s!;
+                return getActiveStoryEndpoint();
             },
             forcedInterventions: forcedAIs,
             incrementBookkeepingTurnCounter: () => useAppStore.getState().incrementBookkeepingTurnCounter(),

@@ -1,8 +1,7 @@
-import type { GameContext, LoreChunk, NPCEntry, ArchiveScene, ArchiveIndexEntry, ArchiveChapter, ChatMessage, PayloadTrace, DivergenceRegister, SceneEvent } from '../../../types';
+import type { GameContext, LoreChunk, NPCEntry, ArchiveScene, ArchiveIndexEntry, ArchiveChapter, ChatMessage, PayloadTrace, SceneEvent } from '../../types';
 import { countTokens } from '../infrastructure';
 import { buildBehaviorDirective, buildDriftAlert } from '../npc';
 import { minifyLoreChunk, minifyNPC } from './contextMinifier';
-import type { BudgetMap } from './payloadBudgeter';
 
 export interface WorldBlock {
     source: string;

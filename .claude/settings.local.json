@@ -82,7 +82,9 @@
       "Bash(find \"/mnt/d/Games/AI DM Project/Automated_system/mobileApp/android/app/build/outputs\" -name \"*.apk\" 2>/dev/null)",
       "Bash(.\\\\gradlew assembleRelease)",
       "Bash(cmd /c \"gradlew.bat assembleRelease\")",
-      "Bash(cmd /c \"gradlew.bat assembleRelease 2>&1\")"
+      "Bash(cmd /c \"gradlew.bat assembleRelease 2>&1\")",
+      "Bash(powershell -Command \"Get-ChildItem -Path '.\\\\src\\\\store' -Filter '*.ts' -Recurse | Select-Object -ExpandProperty FullName\")",
+      "Bash(powershell -Command \"Select-String -Path 'src\\\\services\\\\npc\\\\*.ts' -Pattern 'async function|export async function' | Select-Object -First 20\")"
     ]
   }
 }

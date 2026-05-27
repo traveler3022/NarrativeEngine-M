@@ -1,4 +1,4 @@
-import type { ChatMessage, GameContext, PayloadTrace, PinnedExcerpt } from '../../../types';
+import type { ChatMessage, GameContext, PayloadTrace, PinnedExcerpt } from '../../types';
 import type { OpenAIMessage } from '../llm/llmService';
 import { countTokens } from '../infrastructure';
 

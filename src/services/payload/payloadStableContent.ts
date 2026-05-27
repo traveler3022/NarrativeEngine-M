@@ -1,4 +1,4 @@
-import type { AppSettings, DivergenceRegister, ArchiveChapter, NPCEntry, PayloadTrace } from '../../../types';
+import type { AppSettings, ArchiveChapter, DivergenceRegister, NPCEntry, PayloadTrace } from '../../types';
 import { countTokens } from '../infrastructure';
 import { renderRegisterForPayload } from '../campaign-state';
 import type { BudgetMap } from './payloadBudgeter';

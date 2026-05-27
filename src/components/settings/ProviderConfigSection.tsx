@@ -1,7 +1,45 @@
-import { ChevronDown, ChevronRight, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { ChevronDown, ChevronRight, Loader2, CheckCircle, XCircle, Info } from 'lucide-react';
 import type { AIPreset, LLMProvider, ApiFormat, ThinkingEffort } from '../../types';
 
 type ProviderKey = 'storyAI' | 'summarizerAI' | 'utilityAI' | 'auxiliaryAI';
+
+const SECTION_TOOLTIPS: Record<ProviderKey, string> = {
+    storyAI: 'Generates narrative, runs the game, handles tool calls. The voice of the DM. Always required.',
+    summarizerAI: 'Runs background work after each turn: chapter recaps, importance scoring, NPC updates, profile/inventory extraction. A cheaper mid-tier model (e.g. Deepseek V3.2) frees up Story-AI tokens. Falls back to Story AI if unset.',
+    utilityAI: 'Recommends relevant NPCs and lore, plans archive retrieval, reranks semantic search results. Optional — lore still works via keyword and local vector search without it.',
+    auxiliaryAI: 'Cheap/fast model for NPC name validation and witness detection. Best paired with Haiku-class models. Falls back to Summarizer then Story AI if unset.',
+};
+
+function InfoTooltip({ text }: { text: string }) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        if (!open) return;
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [open]);
+    return (
+        <div className="relative inline-flex" ref={ref}>
+            <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                className="text-text-dim/50 hover:text-text-dim transition-colors ml-1"
+                aria-label="Info"
+            >
+                <Info size={14} />
+            </button>
+            {open && (
+                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 w-64 p-3 bg-surface border border-border rounded shadow-lg text-[11px] text-text-primary leading-relaxed">
+                    {text}
+                </div>
+            )}
+        </div>
+    );
+}
 
 type ProviderConfigSectionProps = {
     section: ProviderKey;
@@ -57,6 +95,7 @@ export function ProviderConfigSection({
                 <div className="flex items-center gap-2 text-sm font-bold text-text-primary uppercase tracking-wider">
                     {isExpanded ? <ChevronDown size={16} className="text-terminal" /> : <ChevronRight size={16} className="text-text-dim" />}
                     {title}
+                    <InfoTooltip text={SECTION_TOOLTIPS[section]} />
                 </div>
             </button>
 

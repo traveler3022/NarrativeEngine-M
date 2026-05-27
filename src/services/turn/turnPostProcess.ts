@@ -22,6 +22,18 @@ import {
 
 const PRESENT_HEADER_RE = /👥\s*\[Present\]\s*[:\-–—]?\s*(.+?)(?:\n|$)/i;
 
+async function tryWithFallback<T>(
+    label: string,
+    primary: () => Promise<T>,
+    fallback: () => Promise<T>,
+): Promise<T> {
+    try { return await primary(); }
+    catch (err) {
+        console.warn(`[${label}] primary failed, falling back:`, err);
+        return await fallback();
+    }
+}
+
 export function parsePresentHeader(gmText: string): string[] {
     const match = gmText.match(PRESENT_HEADER_RE);
     if (!match) return [];
@@ -187,7 +199,8 @@ function queueIndexPatch(
         const gmText = lastAssistantContent;
         const npcLedgerSnap = npcLedger;
         const cid = activeCampaignId;
-        const ratingProvider = state.getFreshProvider();
+        const summarizerProvider = state.getFreshSummarizerProvider?.();
+        const storyProvider = state.getFreshProvider();
 
         // Pre-compute witness data synchronously so it's captured before the
         // background task fires — avoids racing against message state changes.
@@ -201,15 +214,20 @@ function queueIndexPatch(
             const entry = index.find(e => e.sceneId === sceneId);
             if (!entry) return;
 
-            // (a) Importance rating
+            // (a) Importance rating — summarizer-primary, story fallback
+            const ratingProvider = summarizerProvider ?? storyProvider;
             if (ratingProvider) {
                 try {
                     const recentMsgs = state.getMessages();
-                    const llmImportance = await rateImportance(ratingProvider, userText, gmText, recentMsgs);
+                    const llmImportance = await tryWithFallback(
+                        'ImportanceRater',
+                        () => rateImportance(ratingProvider, userText, gmText, recentMsgs),
+                        () => storyProvider ? rateImportance(storyProvider, userText, gmText, recentMsgs) : Promise.resolve(3),
+                    );
                     if (llmImportance !== entry.importance) {
                         entry.importance = llmImportance;
                         changed = true;
-                        console.log(`[ImportanceRater] Scene #${sceneId}: heuristic→${entry.importance} → LLM→${llmImportance}`);
+                        console.log(`[ImportanceRater] Scene #${sceneId}: → ${llmImportance}`);
                     }
                 } catch (e) { console.warn('[TurnPostProcess] Importance rating failed:', e); }
             }
@@ -224,15 +242,15 @@ function queueIndexPatch(
                 let resolvedIds: string[] = [];
                 let source: WitnessSource = 'empty';
 
-                const auxProvider = state.getFreshAuxiliaryProvider?.();
-                if (auxProvider?.endpoint) {
+                const extractionProvider = state.getExtractionProvider?.();
+                if (extractionProvider?.endpoint) {
                     try {
-                        const auxIds = await auxWitnessFallback(gmText, npcLedgerSnap, auxProvider);
+                        const auxIds = await auxWitnessFallback(gmText, npcLedgerSnap, extractionProvider);
                         if (auxIds.length > 0) {
                             resolvedIds = auxIds;
                             source = 'aux_fallback';
                         }
-                    } catch { /* aux failed, fall through */ }
+                    } catch { /* extraction failed, fall through */ }
                 }
 
                 if (resolvedIds.length === 0) {
@@ -267,11 +285,7 @@ function queueNPCValidation(
 ): void {
     if (extractedNames.length > 0) {
         backgroundQueue.push('NPC-Validate', async () => {
-            const aux = state.getFreshAuxiliaryProvider?.();
-            const provider = (aux && aux.modelName) ? aux : state.getFreshProvider();
-            if (aux && !aux.modelName) {
-                console.info('[NPC Validator] auxiliaryAI not configured — falling back to story provider. Configure a cheap model (e.g. Haiku/Flash) as Auxiliary AI for faster NPC validation.');
-            }
+            const provider = state.getExtractionProvider?.() ?? state.getFreshProvider();
             const validatedNames = provider ?
                 await validateNPCCandidates(provider, extractedNames, lastAssistantContent) :
                 extractedNames;
@@ -282,21 +296,29 @@ function queueNPCValidation(
 
                 for (const potentialName of newNames) {
                     console.log(`[NPC Auto-Gen] Spawning profile: "${potentialName}"`);
-                    const genProvider = state.getFreshProvider();
-                    if (genProvider) {
-                        generateNPCProfile(genProvider, allMsgs, potentialName, callbacks.addNPC, npcLedger, activeCampaignId).catch((e) => console.warn(`[TurnPostProcess] NPC profile gen failed for "${potentialName}":`, e));
+                    const storyProvider = state.getFreshProvider();
+                    const summarizerProvider = state.getFreshSummarizerProvider?.();
+                    if (storyProvider) {
+                        const genTask = summarizerProvider
+                            ? tryWithFallback(
+                                `NPC-Profile-${potentialName}`,
+                                () => generateNPCProfile(storyProvider, allMsgs, potentialName, callbacks.addNPC, npcLedger, activeCampaignId),
+                                () => generateNPCProfile(summarizerProvider, allMsgs, potentialName, callbacks.addNPC, npcLedger, activeCampaignId),
+                              )
+                            : generateNPCProfile(storyProvider, allMsgs, potentialName, callbacks.addNPC, npcLedger, activeCampaignId);
+                        genTask.catch((e) => console.warn(`[TurnPostProcess] NPC profile gen failed for "${potentialName}":`, e));
                     }
                 }
 
                 if (existingNpcsToUpdate.length > 0) {
-                    const updateProvider = state.getFreshProvider();
+                    const updateProvider = state.getFreshSummarizerProvider?.() ?? state.getFreshProvider();
                     if (updateProvider) {
                         updateExistingNPCs(updateProvider, allMsgs, existingNpcsToUpdate, callbacks.updateNPC, activeCampaignId).catch((e) => console.warn('[TurnPostProcess] updateExistingNPCs failed:', e));
                     }
 
                     const npcsNeedingDrives = existingNpcsToUpdate.filter(n => !n.drives);
                     if (npcsNeedingDrives.length > 0) {
-                        const backfillProvider = state.getFreshProvider();
+                        const backfillProvider = state.getFreshSummarizerProvider?.() ?? state.getFreshProvider();
                         if (backfillProvider) {
                             backgroundQueue.push('NPC-Drives-Backfill', () => backfillNPCDrives(backfillProvider, allMsgs, npcsNeedingDrives, callbacks.updateNPC)).catch((e) => console.warn('[TurnPostProcess] NPC drives backfill failed:', e));
                         }
@@ -315,7 +337,7 @@ function runBookkeepingScans(
     const turnCount = state.incrementBookkeepingTurnCounter();
     if (turnCount >= state.autoBookkeepingInterval && appendedSceneId) {
         state.resetBookkeepingTurnCounter();
-        const bkProvider = state.getFreshProvider();
+        const bkProvider = state.getFreshSummarizerProvider?.() ?? state.getFreshProvider();
         if (bkProvider) {
             const sceneId = appendedSceneId;
             const allMsgs = state.getMessages();
@@ -405,9 +427,15 @@ async function handleSealChapter(state: TurnState, callbacks: TurnCallbacks, act
                 console.warn(`[SealChapter] Chapter ${sealed.chapterId} is marked invalidated — proceeding with seal normally`);
             }
 
-            const provider = state.getFreshProvider();
-            if (provider) {
-                const sealResult = await runCombinedSeal(activeCampaignId, sealed, provider, state.npcLedger ?? [], state.archiveIndex);
+            const summarizerProvider = state.getFreshSummarizerProvider?.();
+            const storyProvider = state.getFreshProvider();
+            const sealProvider = summarizerProvider ?? storyProvider;
+            if (sealProvider) {
+                const sealResult = await tryWithFallback(
+                    'SealChapter',
+                    () => runCombinedSeal(activeCampaignId, sealed, summarizerProvider ?? storyProvider!, state.npcLedger ?? [], state.archiveIndex),
+                    () => runCombinedSeal(activeCampaignId, sealed, storyProvider!, state.npcLedger ?? [], state.archiveIndex),
+                );
 
                 if (sealResult.summary) {
                     await api.chapters.update(activeCampaignId, sealed.chapterId, {
