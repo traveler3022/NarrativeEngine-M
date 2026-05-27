@@ -1,6 +1,6 @@
-import type { ChatMessage, LLMProvider } from '../types';
-import { llmCall } from '../utils/llmCall';
-import { INPUT_DELIMITER, joinPromptSections } from './infrastructure';
+import type { ChatMessage, LLMProvider } from '../../types';
+import { llmCall } from '../../utils/llmCall';
+import { INPUT_DELIMITER, joinPromptSections } from '../infrastructure';
 
 const IMPORTANCE_PROMPT_STATIC = joinPromptSections(
     `Rate the narrative importance of the scene below on a 1-10 scale.

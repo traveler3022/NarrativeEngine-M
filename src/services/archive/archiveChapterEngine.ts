@@ -1,6 +1,6 @@
-import type { ArchiveChapter, ArchiveIndexEntry, ChatMessage, NPCEntry, SemanticFact, LLMProvider } from '../types';
+import type { ArchiveChapter, ArchiveIndexEntry, ChatMessage, NPCEntry, SemanticFact, LLMProvider } from '../../types';
 import { extractContextActivations, expandActivationsWithFacts, retrieveArchiveMemory, fetchArchiveScenes } from './archiveMemory';
-import { llmCall } from '../utils/llmCall';
+import { llmCall } from '../../utils/llmCall';
 
 const AUTO_SEAL_SCENE_THRESHOLD = 25;
 

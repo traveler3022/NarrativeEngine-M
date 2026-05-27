@@ -1,5 +1,5 @@
 import type { ArchiveChapter, SemanticFact } from '../../types';
-import { extractNPCFacts } from '../archiveIndexer';
+import { extractNPCFacts } from '../archive';
 import { getList, setList, k } from './_helpers';
 import { archiveStorage } from './archiveStorage';
 import { chapterStorage } from './chapterStorage';

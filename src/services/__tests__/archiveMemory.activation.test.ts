@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractContextActivations } from '../archiveMemory';
+import { extractContextActivations } from '../archive';
 import type { ChatMessage } from '../../types';
 
 function makeMsg(role: 'user' | 'assistant', content: string): ChatMessage {

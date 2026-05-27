@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseCombinedSealOutput, parseChapterSummaryOutput, truncateScenesToBudget } from '../saveFileEngine';
+import { parseCombinedSealOutput, parseChapterSummaryOutput, truncateScenesToBudget } from '../archive';
 
 const NPC_LEDGER = [
     { id: 'npc_grak', name: 'Grak', aliases: 'The Orc' },

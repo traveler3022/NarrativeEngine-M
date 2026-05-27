@@ -14,16 +14,16 @@
  * One-shot per turn. Nothing persisted — condenser captures the output.
  */
 
-import type { LLMProvider, ArchiveIndexEntry, ArchiveChapter, ChatMessage } from '../types';
-import { llmCall } from '../utils/llmCall';
-import { getList, k, type SceneRecord } from './storage/_helpers';
-import { stripThink } from '../utils/stripThink';
+import type { LLMProvider, ArchiveIndexEntry, ArchiveChapter, ChatMessage } from '../../types';
+import { llmCall } from '../../utils/llmCall';
+import { getList, k, type SceneRecord } from '../storage/_helpers';
+import { stripThink } from '../../utils/stripThink';
 import {
     ANCHOR_BEFORE_INPUT,
     INPUT_DELIMITER,
     JSON_ONLY_FOOTER,
     joinPromptSections,
-} from './infrastructure';
+} from '../infrastructure';
 
 const EST_TOKENS = (text: string) => Math.ceil(text.length / 4);
 

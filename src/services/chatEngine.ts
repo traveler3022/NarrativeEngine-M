@@ -6,4 +6,4 @@ export { sendMessage, testConnection } from './llmService';
 export type { OpenAIMessage } from './llmService';
 export { generateNPCProfile, updateExistingNPCs, backfillNPCDrives } from './npc';
 export { populateEngineTags } from './engine';
-export { shouldAutoSeal, sealChapter, recallWithChapterFunnel } from './archiveChapterEngine';
+export { shouldAutoSeal, sealChapter, recallWithChapterFunnel } from './archive';

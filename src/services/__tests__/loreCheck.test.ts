@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { runLoreCheck, buildVerifierPrompt, buildSearchQuery } from '../lore';
 
 vi.mock('../../utils/llmCall', () => ({ llmCall: vi.fn() }));
-vi.mock('../deepArchiveSearch', () => ({ deepArchiveScan: vi.fn(async () => 'mock archive brief') }));
+vi.mock('../archive', () => ({ deepArchiveScan: vi.fn(async () => 'mock archive brief') }));
 vi.mock('../loreRetriever', () => ({
     searchLoreByQuery: vi.fn(() => [
         { id: '1', header: 'Eldra the Pale', content: 'Eldra is a high elf, not a dwarf.', tokens: 10,
@@ -61,7 +61,7 @@ describe('runLoreCheck', () => {
     });
 
     it('skips deepArchiveScan when no sealed chapters', async () => {
-        const { deepArchiveScan } = await import('../deepArchiveSearch');
+        const { deepArchiveScan } = await import('../archive');
         (llmCall as any).mockResolvedValue('{"verdict":"consistent","issues":[],"citations":[],"suggestedRewrite":null}');
         await runLoreCheck(baseInput({ sealedChapters: [], archiveIndex: [] }));
         expect(deepArchiveScan).not.toHaveBeenCalled();

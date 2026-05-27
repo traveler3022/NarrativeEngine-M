@@ -1,5 +1,5 @@
-import type { ArchiveIndexEntry, SemanticFact } from '../types';
-import { PROPER_NOUN_STOP_WORDS } from '../utils/stopWords';
+import type { ArchiveIndexEntry, SemanticFact } from '../../types';
+import { PROPER_NOUN_STOP_WORDS } from '../../utils/stopWords';
 import { heuristicImportance } from './importanceRater';
 
 export function extractIndexKeywords(text: string): string[] {

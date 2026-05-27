@@ -5,13 +5,11 @@ import { extractNPCNames, classifyNPCNames, validateNPCCandidates } from './npc'
 import { api } from './apiClient';
 import { uid } from '../utils/uid';
 import { toast } from '../components/Toast';
-import { shouldAutoSeal, sealChapter } from './archiveChapterEngine';
-import { sealChapterCombined, type CombinedSealResult } from './saveFileEngine';
+import { shouldAutoSeal, sealChapter, sealChapterCombined, type CombinedSealResult, rateImportance } from './archive';
 import { fetchFacts } from './semanticMemory';
 import { loadChapters } from '../store/campaignStore';
 import { scanCharacterProfile } from './characterProfileParser';
 import { scanInventory } from './inventoryParser';
-import { rateImportance } from './importanceRater';
 import { scanPressure, buildPressurePatch, shouldArchiveNPC, findArchivedToRestore } from './npc';
 import { mergeSealEntries } from './divergenceRegister';
 import { llmCall } from '../utils/llmCall';

@@ -1,5 +1,5 @@
-import type { LLMProvider, ThinkingEffort, SceneEvent, SceneEventType } from '../types';
-import { llmCall } from '../utils/llmCall';
+import type { LLMProvider, ThinkingEffort, SceneEvent, SceneEventType } from '../../types';
+import { llmCall } from '../../utils/llmCall';
 import {
     countTokens,
     extractJson,
@@ -11,7 +11,7 @@ import {
     SCENE_EVENT_RULES,
     TTRPG_PERSONA_ARCHIVIST,
     joinPromptSections,
-} from './infrastructure';
+} from '../infrastructure';
 
 // ─── Chapter Summary Generator ───
 
@@ -146,11 +146,9 @@ export async function generateChapterSummary(
     return null;
 }
 
-// ─── Combined Seal Call (summary + divergences in ONE LLM call) ───
-
-import type { DivergenceEntry } from '../types';
-import { DIVERGENCE_CATEGORIES, CATEGORY_DEFINITIONS, coerceCategory, stripReasoning } from './divergenceRegister';
-import { uid } from '../utils/uid';
+import type { DivergenceEntry } from '../../types';
+import { DIVERGENCE_CATEGORIES, CATEGORY_DEFINITIONS, coerceCategory, stripReasoning } from '../divergenceRegister';
+import { uid } from '../../utils/uid';
 
 const COMBINED_SEAL_TOKEN_BUDGET = 12000;
 

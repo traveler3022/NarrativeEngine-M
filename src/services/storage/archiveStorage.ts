@@ -1,6 +1,6 @@
 import { del as idbDel } from 'idb-keyval';
 import type { ArchiveChapter, SemanticFact } from '../../types';
-import { buildArchiveIndexEntry } from '../archiveIndexer';
+import { buildArchiveIndexEntry } from '../archive';
 import { getList, setList, k, type SceneRecord } from './_helpers';
 
 export const archiveStorage = {
