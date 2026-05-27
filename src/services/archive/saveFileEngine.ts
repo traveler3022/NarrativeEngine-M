@@ -147,7 +147,7 @@ export async function generateChapterSummary(
 }
 
 import type { DivergenceEntry } from '../../types';
-import { DIVERGENCE_CATEGORIES, CATEGORY_DEFINITIONS, coerceCategory, stripReasoning } from '../divergenceRegister';
+import { DIVERGENCE_CATEGORIES, CATEGORY_DEFINITIONS, coerceCategory, stripReasoning } from '../campaign-state';
 import { uid } from '../../utils/uid';
 
 const COMBINED_SEAL_TOKEN_BUDGET = 12000;

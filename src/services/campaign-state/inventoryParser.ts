@@ -1,10 +1,10 @@
-import type { ChatMessage, LLMProvider } from '../types';
-import { llmCall } from '../utils/llmCall';
+import type { ChatMessage, LLMProvider } from '../../types';
+import { llmCall } from '../../utils/llmCall';
 import {
     ANCHOR_BEFORE_INPUT,
     INPUT_DELIMITER,
     joinPromptSections,
-} from './infrastructure';
+} from '../infrastructure';
 
 export async function scanInventory(
     provider: LLMProvider,

@@ -8,10 +8,10 @@
  * This service queries them by entity matching against current context.
  */
 
-import type { SemanticFact, NPCEntry } from '../types';
-import { countTokens } from './infrastructure';
-import { offlineStorage } from './storage';
-import { PROPER_NOUN_STOP_WORDS } from '../utils/stopWords';
+import type { SemanticFact, NPCEntry } from '../../types';
+import { countTokens } from '../infrastructure';
+import { offlineStorage } from '../storage';
+import { PROPER_NOUN_STOP_WORDS } from '../../utils/stopWords';
 
 export async function fetchFacts(campaignId: string): Promise<SemanticFact[]> {
     try {

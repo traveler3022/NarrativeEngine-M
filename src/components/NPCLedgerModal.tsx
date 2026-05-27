@@ -13,7 +13,7 @@ import { NPCListView } from './npc-ledger/NPCListView';
 import { NPCGalleryView } from './npc-ledger/NPCGalleryView';
 import { NPCEditForm } from './npc-ledger/NPCEditForm';
 import { uid } from '../utils/uid';
-import { getEntriesForNpc } from '../services/divergenceRegister';
+import { getEntriesForNpc } from '../services/campaign-state';
 
 export function NPCLedgerModal() {
   const { npcLedger, npcLedgerOpen, toggleNPCLedger, addNPC, updateNPC, removeNPC, restoreNPC, setNPCLedger, setMobileView, activeCampaignId, divergenceRegister } = useAppStore();

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Zap, Loader2 } from 'lucide-react';
 import type { DivergenceCategory, DivergenceEntry } from '../../types';
 import { uid } from '../../utils/uid';
-import { DIVERGENCE_CATEGORIES, CATEGORY_LABELS } from '../../services/divergenceRegister';
+import { DIVERGENCE_CATEGORIES, CATEGORY_LABELS } from '../../services/campaign-state';
 import type { LLMProvider } from '../../types';
 
 type DivergenceEntryModalProps = {

@@ -134,7 +134,7 @@ export async function loadDivergenceRegister(campaignId: string): Promise<Diverg
     const register = await get(`divergence_${campaignId}`);
     if (!register) return null;
     if (!register.version || register.version < 2) {
-        const { migrateV1ToV2 } = await import('../services/divergenceRegister');
+        const { migrateV1ToV2 } = await import('../services/campaign-state');
         return migrateV1ToV2(register);
     }
     return {

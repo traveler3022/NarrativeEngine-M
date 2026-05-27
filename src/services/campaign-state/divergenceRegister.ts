@@ -1,6 +1,6 @@
-import type { DivergenceEntry, DivergenceRegister, DivergenceCategory, ArchiveChapter, NPCEntry } from '../types';
-import { countTokens } from './infrastructure';
-import { toast } from '../components/Toast';
+import type { DivergenceEntry, DivergenceRegister, DivergenceCategory, ArchiveChapter, NPCEntry } from '../../types';
+import { countTokens } from '../infrastructure';
+import { toast } from '../../components/Toast';
 
 export const EMPTY_REGISTER: DivergenceRegister = {
     entries: [],

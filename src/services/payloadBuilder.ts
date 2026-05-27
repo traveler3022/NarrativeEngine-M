@@ -3,7 +3,7 @@ import type { OpenAIMessage } from './llmService';
 import { countTokens } from './infrastructure';
 import { buildBehaviorDirective, buildDriftAlert } from './npc';
 import { minifyLoreChunk, minifyNPC } from './contextMinifier';
-import { renderRegisterForPayload } from './divergenceRegister';
+import { renderRegisterForPayload } from './campaign-state';
 import type { ArchiveChapter } from '../types';
 import type { PinnedExcerpt } from '../types';
 

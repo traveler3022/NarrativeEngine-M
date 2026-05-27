@@ -5,11 +5,8 @@ import { retrieveRelevantLore, retrieveRelevantRules } from './lore';
 import { recallArchiveScenes, retrieveArchiveMemory, fetchArchiveScenes, deepArchiveScan, recallWithChapterFunnel } from './archive';
 import { offlineStorage } from './storage';
 import { recommendContext } from './contextRecommender';
-import { queryFacts, formatFactsForContext } from './semanticMemory';
+import { queryFacts, formatFactsForContext, formatResolvedForContext, getDivergenceSceneIds, EMPTY_REGISTER } from './campaign-state';
 import { semanticSearch, isEmbedderReady } from './embedding';
-import { formatResolvedForContext } from './timelineResolver';
-import { getDivergenceSceneIds } from './divergenceRegister';
-import { EMPTY_REGISTER } from './divergenceRegister';
 import { rerankCandidates, type RerankCandidate } from './semanticReranker';
 import type { LLMProvider } from '../types';
 import { llmCall } from '../utils/llmCall';
@@ -433,7 +430,7 @@ export async function gatherContext(
     try {
         const timeline = state.timeline;
         if (timeline && timeline.length > 0) {
-            const { resolveTimeline } = await import('./timelineResolver');
+            const { resolveTimeline } = await import('./campaign-state');
             const resolvedText = formatResolvedForContext(resolveTimeline(timeline));
             if (resolvedText) semanticFactText += '\n' + resolvedText;
         }

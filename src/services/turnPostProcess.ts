@@ -6,12 +6,9 @@ import { api } from './apiClient';
 import { uid } from '../utils/uid';
 import { toast } from '../components/Toast';
 import { shouldAutoSeal, sealChapter, sealChapterCombined, type CombinedSealResult, rateImportance } from './archive';
-import { fetchFacts } from './semanticMemory';
+import { fetchFacts, scanCharacterProfile, scanInventory, mergeSealEntries } from './campaign-state';
 import { loadChapters } from '../store/campaignStore';
-import { scanCharacterProfile } from './characterProfileParser';
-import { scanInventory } from './inventoryParser';
 import { scanPressure, buildPressurePatch, shouldArchiveNPC, findArchivedToRestore } from './npc';
-import { mergeSealEntries } from './divergenceRegister';
 import { llmCall } from '../utils/llmCall';
 import {
     backgroundQueue,

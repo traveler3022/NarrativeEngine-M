@@ -1,6 +1,6 @@
 import { Trash2, Save, Loader2, Sparkles, Users, ScrollText } from 'lucide-react';
 import type { NPCEntry, NPCBehavioralTrigger, DivergenceCategory, DivergenceEntry } from '../../types';
-import { CATEGORY_LABELS } from '../../services/divergenceRegister';
+import { CATEGORY_LABELS } from '../../services/campaign-state';
 
 type Props = {
     form: Partial<NPCEntry>;

@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Briefcase, RefreshCw, User } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
-import { scanInventory } from '../../services/inventoryParser';
-import { scanCharacterProfile } from '../../services/characterProfileParser';
+import { scanInventory, scanCharacterProfile } from '../../services/campaign-state';
 import { TemplateField } from './TemplateField';
 import { toast } from '../Toast';
 import type { LLMProvider } from '../../types';

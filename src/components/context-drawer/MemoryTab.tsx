@@ -2,8 +2,7 @@ import { useState, useRef } from 'react';
 import { Edit2, Check, Pin, PinOff, ChevronDown, ChevronUp, AlertTriangle, Trash2, Sparkles } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import type { DivergenceCategory, DivergenceEntry } from '../../types';
-import { countRegisterTokens, EMPTY_REGISTER, CATEGORY_LABELS, DIVERGENCE_CATEGORIES } from '../../services/divergenceRegister';
-import { runFactDedup, type DedupResult, type DedupCancelled } from '../../services/factDeduper';
+import { countRegisterTokens, EMPTY_REGISTER, CATEGORY_LABELS, DIVERGENCE_CATEGORIES, runFactDedup, type DedupResult, type DedupCancelled } from '../../services/campaign-state';
 import { DedupReviewModal } from '../DedupReviewModal';
 
 const CATEGORY_COLORS: Record<DivergenceCategory, string> = {

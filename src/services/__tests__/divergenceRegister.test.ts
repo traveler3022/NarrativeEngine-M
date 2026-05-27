@@ -13,7 +13,7 @@ import {
     renderRegisterForPayload,
     stripReasoning,
     countRegisterTokens,
-} from '../divergenceRegister';
+} from '../campaign-state';
 import type { DivergenceEntry, DivergenceRegister, DivergenceCategory, ArchiveChapter } from '../../types';
 
 const makeEntry = (overrides: Partial<DivergenceEntry> & { id: string; chapterId: string; category: DivergenceCategory; text: string; sceneRef: string }): DivergenceEntry => ({
