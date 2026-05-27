@@ -96,8 +96,11 @@ export function buildChatHeaders(provider: AnyProvider): Record<string, string> 
         }
     } else if (format === 'gemini') {
         // Gemini auth goes in URL param, not headers
-    } else if (provider.apiKey) {
-        headers['Authorization'] = `Bearer ${provider.apiKey}`;
+    } else {
+        headers['User-Agent'] = 'Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+        if (provider.apiKey) {
+            headers['Authorization'] = `Bearer ${provider.apiKey}`;
+        }
     }
     return headers;
 }
