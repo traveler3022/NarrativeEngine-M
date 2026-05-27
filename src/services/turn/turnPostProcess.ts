@@ -1,15 +1,15 @@
-import type { NPCEntry, ArchiveChapter, ArchiveIndexEntry, LLMProvider, WitnessSource } from '../types';
+import type { NPCEntry, ArchiveChapter, ArchiveIndexEntry, LLMProvider, WitnessSource } from '../../types';
 import type { TurnCallbacks, TurnState } from './turnTypes';
-import { generateNPCProfile, updateExistingNPCs, backfillNPCDrives } from './chatEngine';
-import { extractNPCNames, classifyNPCNames, validateNPCCandidates } from './npc';
-import { api } from './apiClient';
-import { uid } from '../utils/uid';
-import { toast } from '../components/Toast';
-import { shouldAutoSeal, sealChapter, sealChapterCombined, type CombinedSealResult, rateImportance } from './archive';
-import { fetchFacts, scanCharacterProfile, scanInventory, mergeSealEntries } from './campaign-state';
-import { loadChapters } from '../store/campaignStore';
-import { scanPressure, buildPressurePatch, shouldArchiveNPC, findArchivedToRestore } from './npc';
-import { llmCall } from '../utils/llmCall';
+import { generateNPCProfile, updateExistingNPCs, backfillNPCDrives } from '../chatEngine';
+import { extractNPCNames, classifyNPCNames, validateNPCCandidates } from '../npc';
+import { api } from '../apiClient';
+import { uid } from '../../utils/uid';
+import { toast } from '../../components/Toast';
+import { shouldAutoSeal, sealChapter, sealChapterCombined, type CombinedSealResult, rateImportance } from '../archive';
+import { fetchFacts, scanCharacterProfile, scanInventory, mergeSealEntries } from '../campaign-state';
+import { loadChapters } from '../../store/campaignStore';
+import { scanPressure, buildPressurePatch, shouldArchiveNPC, findArchivedToRestore } from '../npc';
+import { llmCall } from '../../utils/llmCall';
 import {
     backgroundQueue,
     extractJson,
@@ -18,7 +18,7 @@ import {
     JSON_ARRAY_ONLY_FOOTER,
     TTRPG_PERSONA_GM_ASSISTANT,
     joinPromptSections,
-} from './infrastructure';
+} from '../infrastructure';
 
 const PRESENT_HEADER_RE = /👥\s*\[Present\]\s*[:\-–—]?\s*(.+?)(?:\n|$)/i;
 
@@ -249,7 +249,7 @@ function queueIndexPatch(
             }
 
             if (changed) {
-                const { offlineStorage } = await import('./storage');
+                const { offlineStorage } = await import('../storage');
                 await offlineStorage.archive.updateIndex(cid, index);
                 callbacks.setArchiveIndex([...index]);
             }
@@ -443,7 +443,7 @@ async function handleSealChapter(state: TurnState, callbacks: TurnCallbacks, act
                             }
                         }
                         if (corrected) {
-                            const { offlineStorage } = await import('./storage');
+                            const { offlineStorage } = await import('../storage');
                             await offlineStorage.archive.updateIndex(activeCampaignId, index);
                             callbacks.setArchiveIndex([...index]);
                             console.log(`[CombinedSeal] Applied witness corrections for ${Object.keys(sealResult.witnessCorrections).length} scenes`);
@@ -464,7 +464,7 @@ async function handleSealChapter(state: TurnState, callbacks: TurnCallbacks, act
                             }
                         }
                         if (eventCount > 0) {
-                            const { offlineStorage } = await import('./storage');
+                            const { offlineStorage } = await import('../storage');
                             await offlineStorage.archive.updateIndex(activeCampaignId, index);
                             callbacks.setArchiveIndex([...index]);
                             console.log(`[Seal] Persisted scene events for ${eventCount} scenes`);

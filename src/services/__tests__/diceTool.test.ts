@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { mapTier } from '../engine';
-import { handleDiceTool, getToolDefinitions } from '../toolHandlers';
+import { handleDiceTool, getToolDefinitions } from '../turn';
 import type { DiceConfig } from '../../types';
 
 const defaultConfig: DiceConfig = { catastrophe: 2, failure: 6, success: 15, triumph: 19, crit: 20 };

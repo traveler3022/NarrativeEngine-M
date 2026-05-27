@@ -1,15 +1,15 @@
-import type { LoreChunk, ArchiveScene } from '../types';
+import type { LoreChunk, ArchiveScene } from '../../types';
 import type { TurnCallbacks, TurnState } from './turnTypes';
-import { buildPayload } from './chatEngine';
-import { retrieveRelevantLore, retrieveRelevantRules } from './lore';
-import { recallArchiveScenes, retrieveArchiveMemory, fetchArchiveScenes, deepArchiveScan, recallWithChapterFunnel } from './archive';
-import { offlineStorage } from './storage';
-import { recommendContext } from './payload';
-import { queryFacts, formatFactsForContext, formatResolvedForContext, getDivergenceSceneIds, EMPTY_REGISTER } from './campaign-state';
-import { semanticSearch, isEmbedderReady } from './embedding';
-import { rerankCandidates, type RerankCandidate } from './payload';
-import type { LLMProvider } from '../types';
-import { llmCall } from '../utils/llmCall';
+import { buildPayload } from '../chatEngine';
+import { retrieveRelevantLore, retrieveRelevantRules } from '../lore';
+import { recallArchiveScenes, retrieveArchiveMemory, fetchArchiveScenes, deepArchiveScan, recallWithChapterFunnel } from '../archive';
+import { offlineStorage } from '../storage';
+import { recommendContext } from '../payload';
+import { queryFacts, formatFactsForContext, formatResolvedForContext, getDivergenceSceneIds, EMPTY_REGISTER } from '../campaign-state';
+import { semanticSearch, isEmbedderReady } from '../embedding';
+import { rerankCandidates, type RerankCandidate } from '../payload';
+import type { LLMProvider } from '../../types';
+import { llmCall } from '../../utils/llmCall';
 import {
     countTokens,
     ANCHOR_BEFORE_INPUT,
@@ -18,7 +18,7 @@ import {
     JSON_ONLY_FOOTER,
     TTRPG_PERSONA_RETRIEVAL_PLANNER,
     joinPromptSections,
-} from './infrastructure';
+} from '../infrastructure';
 
 const SEMANTIC_FLOOR_SCENE = 0.30;
 const SEMANTIC_FLOOR_LORE = 0.30;
@@ -40,7 +40,7 @@ type PlannerResult = {
 export async function runPlannerCall(
     userMessage: string,
     recentMessages: Array<{ role?: string; content?: string }>,
-    npcLedger: import('../types').NPCEntry[],
+    npcLedger: import('../../types').NPCEntry[],
     chapterSummary: string | undefined,
     utilityEndpoint: LLMProvider,
     timeoutSeconds?: number,
@@ -112,7 +112,7 @@ export async function runPlannerCall(
     }
 }
 
-async function expandQuery(query: string, npcLedger: import('../types').NPCEntry[], utilityEndpoint: LLMProvider, timeoutMs?: number): Promise<string[]> {
+async function expandQuery(query: string, npcLedger: import('../../types').NPCEntry[], utilityEndpoint: LLMProvider, timeoutMs?: number): Promise<string[]> {
     try {
         const npcContext = npcLedger.slice(0, 10).map(n => n.name).join(', ');
         const prompt = joinPromptSections(
@@ -280,7 +280,7 @@ export async function gatherContext(
 
         if (rulesTokenCount > threshold) {
             try {
-                const { chunkLoreFile } = await import('./lore');
+                const { chunkLoreFile } = await import('../lore');
                 const ruleChunks = chunkLoreFile(state.context.rulesRaw, 'rule');
                 const result = retrieveRelevantRules(
                     ruleChunks,
@@ -369,7 +369,7 @@ export async function gatherContext(
 
         const pinnedRanges: [string, string][] = state.pinnedChapterIds
             .map(id => state.chapters.find(c => c.chapterId === id))
-            .filter((c): c is import('../types').ArchiveChapter => !!c)
+            .filter((c): c is import('../../types').ArchiveChapter => !!c)
             .map(c => c.sceneRange);
 
         if (pinnedRanges.length > 0) {
@@ -430,7 +430,7 @@ export async function gatherContext(
     try {
         const timeline = state.timeline;
         if (timeline && timeline.length > 0) {
-            const { resolveTimeline } = await import('./campaign-state');
+            const { resolveTimeline } = await import('../campaign-state');
             const resolvedText = formatResolvedForContext(resolveTimeline(timeline));
             if (resolvedText) semanticFactText += '\n' + resolvedText;
         }

@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import type { PipelinePhase, StreamingStats } from '../types';
-import { runTurn } from '../services/turnOrchestrator';
+import { runTurn } from '../services/turn';
 import { GenerationProgress } from './GenerationProgress';
 import { useMessageEditor } from './hooks/useMessageEditor';
 import { useCondenser } from './hooks/useCondenser';

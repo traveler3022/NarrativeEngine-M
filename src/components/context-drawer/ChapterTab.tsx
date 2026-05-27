@@ -5,7 +5,7 @@ import { api } from '../../services/apiClient';
 import { ChapterCard } from './ChapterCard';
 import { toast } from '../Toast';
 import { countTokens } from '../../services/infrastructure';
-import { runCombinedSeal } from '../../services/turnPostProcess';
+import { runCombinedSeal } from '../../services/turn';
 import { mergeSealEntries } from '../../services/campaign-state';
 import type { ArchiveChapter } from '../../types';
 

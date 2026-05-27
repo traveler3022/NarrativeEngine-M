@@ -13,7 +13,7 @@ import type {
     PipelinePhase,
     StreamingStats,
     DivergenceRegister,
-} from '../types';
+} from '../../types';
 
 export type TurnCallbacks = {
     onCheckingNotes: (checking: boolean) => void;
