@@ -15,22 +15,20 @@ type SelectionSnapshot = {
 };
 
 export function Header() {
-    const {
-        toggleSettings,
-        toggleNPCLedger,
-        toggleBackupModal,
-        clearChat,
-        activeCampaignId,
-        setActiveCampaign,
-        context,
-        messages,
-        condenser,
-        deepArmed,
-        toggleDeepArmed,
-        settings,
-        openLoreCheck,
-        addPinnedExcerpt,
-    } = useAppStore();
+    const toggleSettings = useAppStore(s => s.toggleSettings);
+    const toggleNPCLedger = useAppStore(s => s.toggleNPCLedger);
+    const toggleBackupModal = useAppStore(s => s.toggleBackupModal);
+    const clearChat = useAppStore(s => s.clearChat);
+    const activeCampaignId = useAppStore(s => s.activeCampaignId);
+    const setActiveCampaign = useAppStore(s => s.setActiveCampaign);
+    const context = useAppStore(s => s.context);
+    const messages = useAppStore(s => s.messages);
+    const condenser = useAppStore(s => s.condenser);
+    const deepArmed = useAppStore(s => s.deepArmed);
+    const toggleDeepArmed = useAppStore(s => s.toggleDeepArmed);
+    const settings = useAppStore(s => s.settings);
+    const openLoreCheck = useAppStore(s => s.openLoreCheck);
+    const addPinnedExcerpt = useAppStore(s => s.addPinnedExcerpt);
 
     const [loreSel, setLoreSel] = useState<SelectionSnapshot | null>(null);
     const [pinSel, setPinSel] = useState<SelectionSnapshot | null>(null);

@@ -16,7 +16,17 @@ import { uid } from '../utils/uid';
 import { getEntriesForNpc } from '../services/campaign-state';
 
 export function NPCLedgerModal() {
-  const { npcLedger, npcLedgerOpen, toggleNPCLedger, addNPC, updateNPC, removeNPC, restoreNPC, setNPCLedger, setMobileView, activeCampaignId, divergenceRegister } = useAppStore();
+  const npcLedger = useAppStore(s => s.npcLedger);
+  const npcLedgerOpen = useAppStore(s => s.npcLedgerOpen);
+  const toggleNPCLedger = useAppStore(s => s.toggleNPCLedger);
+  const addNPC = useAppStore(s => s.addNPC);
+  const updateNPC = useAppStore(s => s.updateNPC);
+  const removeNPC = useAppStore(s => s.removeNPC);
+  const restoreNPC = useAppStore(s => s.restoreNPC);
+  const setNPCLedger = useAppStore(s => s.setNPCLedger);
+  const setMobileView = useAppStore(s => s.setMobileView);
+  const activeCampaignId = useAppStore(s => s.activeCampaignId);
+  const divergenceRegister = useAppStore(s => s.divergenceRegister);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list');

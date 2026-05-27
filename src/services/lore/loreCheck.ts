@@ -13,6 +13,7 @@ import { llmCall } from '../../utils/llmCall';
 import { searchLoreByQuery } from './loreRetriever';
 import { deepArchiveScan } from '../archive';
 import {
+    extractJsonRobust,
     ANCHOR_BEFORE_INPUT,
     INPUT_DELIMITER,
     joinPromptSections,
@@ -170,56 +171,39 @@ Focus your verdict on whether the concern is justified, but you may still flag o
 }
 
 function parseVerdict(raw: string, originalText: string): LoreCheckResult {
-    let clean = raw.replace(/<think>[\s\S]*?<\/think>/gi, '');
-    // Tolerate unterminated <think>... blocks (some reasoning models don't close them)
-    const orphanThink = clean.indexOf('<think>');
-    if (orphanThink !== -1 && !clean.includes('</think>')) {
-        clean = clean.slice(0, orphanThink);
-    }
-    const fence = clean.match(/```(?:json)?\s*([\s\S]*?)```/i);
-    if (fence) clean = fence[1];
+    const { value: parsed, parseOk } = extractJsonRobust<LoreCheckResult & { verdict?: string; issues?: string[]; citations?: LoreCheckCitation[]; suggestedRewrite?: string | null }>(raw, {
+        verdict: 'unsupported',
+        issues: ['The verifier returned an unparseable response. See raw output below.'],
+        citations: [],
+        suggestedRewrite: null,
+        originalText,
+    });
 
-    // Try multiple JSON candidates: first {...} block, then last, then aggressive
-    const candidates: string[] = [];
-    const firstStart = clean.indexOf('{');
-    const lastEnd = clean.lastIndexOf('}');
-    if (firstStart !== -1 && lastEnd !== -1 && lastEnd > firstStart) {
-        candidates.push(clean.substring(firstStart, lastEnd + 1));
-    }
-    // Also try a balanced first-object scan in case there's trailing prose
-    const balanced = extractFirstJsonObject(clean);
-    if (balanced && !candidates.includes(balanced)) candidates.push(balanced);
-
-    for (const candidate of candidates) {
-        try {
-            const parsed = JSON.parse(candidate);
-            const verdictRaw = String(parsed.verdict ?? '').toLowerCase();
-            const verdict: LoreCheckVerdict =
-                verdictRaw === 'contradicts' || verdictRaw === 'unsupported' ? verdictRaw : 'consistent';
-            const issues: string[] = Array.isArray(parsed.issues)
-                ? parsed.issues.filter((s: unknown): s is string => typeof s === 'string').slice(0, 3)
-                : [];
-            const citations: LoreCheckCitation[] = Array.isArray(parsed.citations)
-                ? parsed.citations
-                    .map((c: unknown) => {
-                        if (typeof c === 'string') return { ref: c, label: c };
-                        if (c && typeof c === 'object' && 'ref' in c) {
-                            const ref = String((c as { ref: unknown }).ref);
-                            const label = 'label' in c ? String((c as { label: unknown }).label) : ref;
-                            return { ref, label };
-                        }
-                        return null;
-                    })
-                    .filter((x: LoreCheckCitation | null): x is LoreCheckCitation => x !== null)
-                : [];
-            const suggestedRewrite =
-                typeof parsed.suggestedRewrite === 'string' && parsed.suggestedRewrite.trim().length > 0
-                    ? parsed.suggestedRewrite
-                    : null;
-            return { verdict, issues, citations, suggestedRewrite, originalText };
-        } catch {
-            // try next candidate
-        }
+    if (parseOk && parsed.verdict) {
+        const verdictRaw = String(parsed.verdict).toLowerCase();
+        const verdict: LoreCheckVerdict =
+            verdictRaw === 'contradicts' || verdictRaw === 'unsupported' ? verdictRaw : 'consistent';
+        const issues: string[] = Array.isArray(parsed.issues)
+            ? parsed.issues.filter((s: unknown): s is string => typeof s === 'string').slice(0, 3)
+            : [];
+        const citations: LoreCheckCitation[] = Array.isArray(parsed.citations)
+            ? parsed.citations
+                .map((c: unknown) => {
+                    if (typeof c === 'string') return { ref: c, label: c };
+                    if (c && typeof c === 'object' && 'ref' in c) {
+                        const ref = String((c as { ref: unknown }).ref);
+                        const label = 'label' in c ? String((c as { label: unknown }).label) : ref;
+                        return { ref, label };
+                    }
+                    return null;
+                })
+                .filter((x: LoreCheckCitation | null): x is LoreCheckCitation => x !== null)
+            : [];
+        const suggestedRewrite =
+            typeof parsed.suggestedRewrite === 'string' && parsed.suggestedRewrite.trim().length > 0
+                ? parsed.suggestedRewrite
+                : null;
+        return { verdict, issues, citations, suggestedRewrite, originalText };
     }
 
     console.warn('[LoreCheck] Verifier returned unparseable response. Raw:\n', raw);
@@ -233,27 +217,3 @@ function parseVerdict(raw: string, originalText: string): LoreCheckResult {
     };
 }
 
-/** Walk the string and return the first balanced {...} substring, ignoring strings. */
-function extractFirstJsonObject(text: string): string | null {
-    let depth = 0;
-    let start = -1;
-    let inString = false;
-    let escape = false;
-    for (let i = 0; i < text.length; i++) {
-        const ch = text[i];
-        if (escape) { escape = false; continue; }
-        if (ch === '\\') { escape = true; continue; }
-        if (ch === '"') { inString = !inString; continue; }
-        if (inString) continue;
-        if (ch === '{') {
-            if (depth === 0) start = i;
-            depth++;
-        } else if (ch === '}') {
-            depth--;
-            if (depth === 0 && start !== -1) {
-                return text.substring(start, i + 1);
-            }
-        }
-    }
-    return null;
-}

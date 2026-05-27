@@ -9,7 +9,12 @@ import { toast } from '../Toast';
 const PREDICATE_LIST = TIMELINE_PREDICATES as unknown as string[];
 
 export const ResolvedStatePanel: React.FC = () => {
-    const { timeline, activeCampaignId, chapters, setTimeline, addTimelineEvent, removeTimelineEvent } = useAppStore();
+    const timeline = useAppStore(s => s.timeline);
+    const activeCampaignId = useAppStore(s => s.activeCampaignId);
+    const chapters = useAppStore(s => s.chapters);
+    const setTimeline = useAppStore(s => s.setTimeline);
+    const addTimelineEvent = useAppStore(s => s.addTimelineEvent);
+    const removeTimelineEvent = useAppStore(s => s.removeTimelineEvent);
 
     const [collapsed, setCollapsed] = useState(true);
     const [filter, setFilter] = useState('');

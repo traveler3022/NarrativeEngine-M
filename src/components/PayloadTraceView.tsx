@@ -55,7 +55,8 @@ const TraceRow: React.FC<{ trace: PayloadTrace }> = ({ trace }) => {
 };
 
 export const PayloadTraceView: React.FC = () => {
-    const { lastPayloadTrace, settings } = useAppStore();
+    const lastPayloadTrace = useAppStore(s => s.lastPayloadTrace);
+    const settings = useAppStore(s => s.settings);
     const [expanded, setExpanded] = useState({ included: true, excluded: false });
 
     if (!settings.debugMode || !lastPayloadTrace || lastPayloadTrace.length === 0) {

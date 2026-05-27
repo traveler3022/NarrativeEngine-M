@@ -10,7 +10,15 @@ import { mergeSealEntries } from '../../services/campaign-state';
 import type { ArchiveChapter } from '../../types';
 
 export function ChapterTab() {
-    const { chapters, setChapters, activeCampaignId, context, messages, settings, condenser, pinnedChapterIds, pinChapter } = useAppStore();
+    const chapters = useAppStore(s => s.chapters);
+    const setChapters = useAppStore(s => s.setChapters);
+    const activeCampaignId = useAppStore(s => s.activeCampaignId);
+    const context = useAppStore(s => s.context);
+    const messages = useAppStore(s => s.messages);
+    const settings = useAppStore(s => s.settings);
+    const condenser = useAppStore(s => s.condenser);
+    const pinnedChapterIds = useAppStore(s => s.pinnedChapterIds);
+    const pinChapter = useAppStore(s => s.pinChapter);
 
     const ctxPct = useMemo(() => {
         const sysText = [

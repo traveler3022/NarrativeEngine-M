@@ -6,7 +6,9 @@ import type { BackupMeta } from '../types';
 import { toast } from './Toast';
 
 export function BackupModal() {
-    const { backupModalOpen, toggleBackupModal, activeCampaignId } = useAppStore();
+    const backupModalOpen = useAppStore(s => s.backupModalOpen);
+    const toggleBackupModal = useAppStore(s => s.toggleBackupModal);
+    const activeCampaignId = useAppStore(s => s.activeCampaignId);
     const [backups, setBackups] = useState<BackupMeta[]>([]);
     const [loading, setLoading] = useState(false);
     const [creating, setCreating] = useState(false);

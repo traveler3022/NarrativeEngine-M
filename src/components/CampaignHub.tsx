@@ -16,7 +16,6 @@ import type { Campaign } from '../types';
 const DEFAULT_CONDENSER = { condensedUpToIndex: -1 };
 
 export function CampaignHub() {
-    useAppStore(); // state accessed via useAppStore.setState / useAppStore.getState
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
     const [isExporting, setIsExporting] = useState<string | null>(null);

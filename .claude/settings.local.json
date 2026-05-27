@@ -77,7 +77,12 @@
       "Bash(echo \"Exit code: $?\")",
       "Bash(ls \"C:/Users/User/.claude/plans/\" 2>nul || echo \"dir missing\")",
       "Bash(echo \"exit=$?\")",
-      "PowerShell(head -40)"
+      "PowerShell(head -40)",
+      "Bash(.\\\\gradlew assembleDebug)",
+      "Bash(find \"/mnt/d/Games/AI DM Project/Automated_system/mobileApp/android/app/build/outputs\" -name \"*.apk\" 2>/dev/null)",
+      "Bash(.\\\\gradlew assembleRelease)",
+      "Bash(cmd /c \"gradlew.bat assembleRelease\")",
+      "Bash(cmd /c \"gradlew.bat assembleRelease 2>&1\")"
     ]
   }
 }

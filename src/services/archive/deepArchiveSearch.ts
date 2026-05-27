@@ -17,8 +17,9 @@
 import type { LLMProvider, ArchiveIndexEntry, ArchiveChapter, ChatMessage } from '../../types';
 import { llmCall } from '../../utils/llmCall';
 import { getList, k, type SceneRecord } from '../storage/_helpers';
-import { stripThink } from '../../utils/stripThink';
+
 import {
+    extractJson,
     ANCHOR_BEFORE_INPUT,
     INPUT_DELIMITER,
     JSON_ONLY_FOOTER,
@@ -89,14 +90,9 @@ function buildConversationExcerpt(messages: ChatMessage[], userMessage: string):
 // ── JSON parsers ──
 
 async function parseChapterIds(raw: string): Promise<string[]> {
-    let clean = await stripThink(raw);
-    const mdMatch = clean.match(/```(?:json)?\s*([\s\S]*?)```/i);
-    if (mdMatch) clean = mdMatch[1];
-    const start = clean.indexOf('{');
-    const end = clean.lastIndexOf('}');
-    if (start === -1 || end === -1) return [];
+    const cleanStr = extractJson(raw);
     try {
-        const parsed = JSON.parse(clean.substring(start, end + 1));
+        const parsed = JSON.parse(cleanStr);
         return Array.isArray(parsed.chapters)
             ? parsed.chapters.filter((c: unknown) => typeof c === 'string')
             : [];
@@ -104,14 +100,9 @@ async function parseChapterIds(raw: string): Promise<string[]> {
 }
 
 async function parseSceneIds(raw: string): Promise<string[]> {
-    let clean = await stripThink(raw);
-    const mdMatch = clean.match(/```(?:json)?\s*([\s\S]*?)```/i);
-    if (mdMatch) clean = mdMatch[1];
-    const start = clean.indexOf('{');
-    const end = clean.lastIndexOf('}');
-    if (start === -1 || end === -1) return [];
+    const cleanStr = extractJson(raw);
     try {
-        const parsed = JSON.parse(clean.substring(start, end + 1));
+        const parsed = JSON.parse(cleanStr);
         return Array.isArray(parsed.scenes)
             ? parsed.scenes.filter((s: unknown) => typeof s === 'string')
             : [];

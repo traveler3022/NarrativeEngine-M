@@ -3,7 +3,8 @@ import { useAppStore } from '../store/useAppStore';
 import { StickyNote, Trash2 } from 'lucide-react';
 
 export const SceneNoteEditor: React.FC = () => {
-    const { context, updateContext } = useAppStore();
+    const context = useAppStore(s => s.context);
+    const updateContext = useAppStore(s => s.updateContext);
 
     const handleClear = () => {
         updateContext({

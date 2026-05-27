@@ -4,7 +4,11 @@ import { countTokens } from '../services/infrastructure';
 import { countRegisterTokens } from '../services/campaign-state';
 
 export function TokenGauge() {
-    const { context, messages, settings, condenser, divergenceRegister } = useAppStore();
+    const context = useAppStore(s => s.context);
+    const messages = useAppStore(s => s.messages);
+    const settings = useAppStore(s => s.settings);
+    const condenser = useAppStore(s => s.condenser);
+    const divergenceRegister = useAppStore(s => s.divergenceRegister);
 
     const systemText = useMemo(() => {
         const parts: string[] = [];

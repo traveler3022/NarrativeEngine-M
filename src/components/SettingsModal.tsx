@@ -17,7 +17,14 @@ import type { UtilityCallStatus } from '../services/llm/utilityCallTracker';
 type ProviderSection = 'storyAI' | 'summarizerAI' | 'utilityAI' | 'auxiliaryAI';
 
 export function SettingsModal() {
-  const { settings, updateSettings, settingsOpen, toggleSettings, addPreset, updatePreset, removePreset, setMobileView } = useAppStore();
+  const settings = useAppStore(s => s.settings);
+  const updateSettings = useAppStore(s => s.updateSettings);
+  const settingsOpen = useAppStore(s => s.settingsOpen);
+  const toggleSettings = useAppStore(s => s.toggleSettings);
+  const addPreset = useAppStore(s => s.addPreset);
+  const updatePreset = useAppStore(s => s.updatePreset);
+  const removePreset = useAppStore(s => s.removePreset);
+  const setMobileView = useAppStore(s => s.setMobileView);
   const [activeTab, setActiveTab] = useState(settings.presets[0]?.id || '');
   const [testingSection, setTestingSection] = useState<ProviderSection | null>(null);
   const [testResults, setTestResults] = useState<Record<string, { ok: boolean; detail: string } | null>>({});
