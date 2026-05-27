@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractNPCNames, classifyNPCNames } from '../npcDetector';
+import { extractNPCNames, classifyNPCNames } from '../npc';
 
 describe('npcDetector', () => {
     describe('extractNPCNames', () => {

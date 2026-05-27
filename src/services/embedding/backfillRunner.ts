@@ -1,7 +1,7 @@
 import { embeddingStorage, EMBEDDING_VERSION } from '../storage/embeddingStorage';
 import { embedText, isEmbedderReady, warmupEmbedder, getCurrentModelId } from './embedder';
 import { getList, k, type SceneRecord } from '../storage/_helpers';
-import { buildNPCEmbeddingText } from '../npcGeneration';
+import { buildNPCEmbeddingText } from '../npc';
 import type { NPCEntry } from '../../types';
 import { get as idbGet } from 'idb-keyval';
 

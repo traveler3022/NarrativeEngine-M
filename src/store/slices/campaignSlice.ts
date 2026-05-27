@@ -4,7 +4,7 @@ import { toast } from '../../components/Toast';
 import { debouncedSaveSettings } from './settingsSlice';
 import { embedText, getCurrentModelId, runFullReindex } from '../../services/embedding';
 import { embeddingStorage } from '../../services/storage/embeddingStorage';
-import { buildNPCEmbeddingText } from '../../services/npcGeneration';
+import { buildNPCEmbeddingText } from '../../services/npc';
 import { EMPTY_REGISTER } from '../../services/divergenceRegister';
 
 const NPC_EMBED_FIELDS: (keyof NPCEntry)[] = ['name', 'aliases', 'faction', 'tier', 'appearance', 'personality', 'voice', 'goals', 'storyRelevance'];

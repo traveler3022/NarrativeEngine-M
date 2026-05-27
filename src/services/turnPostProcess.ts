@@ -1,7 +1,7 @@
 import type { NPCEntry, ArchiveChapter, ArchiveIndexEntry, LLMProvider, WitnessSource } from '../types';
 import type { TurnCallbacks, TurnState } from './turnTypes';
 import { generateNPCProfile, updateExistingNPCs, backfillNPCDrives } from './chatEngine';
-import { extractNPCNames, classifyNPCNames, validateNPCCandidates } from './npcDetector';
+import { extractNPCNames, classifyNPCNames, validateNPCCandidates } from './npc';
 import { api } from './apiClient';
 import { uid } from '../utils/uid';
 import { toast } from '../components/Toast';
@@ -12,7 +12,7 @@ import { loadChapters } from '../store/campaignStore';
 import { scanCharacterProfile } from './characterProfileParser';
 import { scanInventory } from './inventoryParser';
 import { rateImportance } from './importanceRater';
-import { scanPressure, buildPressurePatch, shouldArchiveNPC, findArchivedToRestore } from './npcPressureTracker';
+import { scanPressure, buildPressurePatch, shouldArchiveNPC, findArchivedToRestore } from './npc';
 import { mergeSealEntries } from './divergenceRegister';
 import { llmCall } from '../utils/llmCall';
 import {

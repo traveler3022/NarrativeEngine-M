@@ -1,4 +1,4 @@
-import type { NPCEntry } from '../types';
+import type { NPCEntry } from '../../types';
 
 function affinityDescriptor(v: number): string {
     if (v <= 15) return 'Nemesis — actively hostile';
