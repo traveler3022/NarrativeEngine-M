@@ -67,7 +67,7 @@ export async function loadCampaignState(campaignId: string): Promise<CampaignSta
 export async function saveLoreChunks(campaignId: string, chunks: LoreChunk[]): Promise<void> {
     await set(`lore_${campaignId}`, chunks);
 
-    import('../services/embedder').then(({ embedText, getCurrentModelId }) => {
+    import('../services/embedding').then(({ embedText, getCurrentModelId }) => {
         import('../services/storage').then(({ offlineStorage }) => {
             const modelId = getCurrentModelId();
             for (const chunk of chunks) {

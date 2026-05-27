@@ -1,4 +1,4 @@
-import { offlineStorage } from './storage';
+import { offlineStorage } from '../storage';
 import { embedText, isEmbedderReady } from './embedder';
 
 export type SearchHit = {

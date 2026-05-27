@@ -160,7 +160,7 @@ export async function importBundle(bundle: CampaignBundle): Promise<string> {
 }
 
 function reembeddedCampaign(cid: string, scenes: SceneRecord[], lore: LoreChunk[]): void {
-    import('./embedder').then(({ embedText, getCurrentModelId }) =>
+    import('./embedding').then(({ embedText, getCurrentModelId }) =>
         import('./storage').then(({ offlineStorage }) => {
             const modelId = getCurrentModelId();
             for (const s of scenes) {

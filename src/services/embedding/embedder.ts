@@ -121,7 +121,7 @@ export async function warmupEmbedder(): Promise<void> {
     let modelId: string;
     let allowRemote: boolean;
     try {
-        const { useAppStore } = await import('../store/useAppStore');
+        const { useAppStore } = await import('../../store/useAppStore');
         const setting = useAppStore.getState().settings.embeddingModel ?? 'standard';
         modelId = modelIdFromSetting(setting);
         allowRemote = allowRemoteForModel(modelId);

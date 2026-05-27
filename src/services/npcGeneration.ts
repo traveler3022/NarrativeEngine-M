@@ -1,7 +1,7 @@
 import type { LLMProvider, ChatMessage, NPCEntry } from '../types';
 import { llmCall } from '../utils/llmCall';
 import { uid } from '../utils/uid';
-import { embedText, getCurrentModelId } from './embedder';
+import { embedText, getCurrentModelId } from './embedding';
 import { embeddingStorage } from './storage/embeddingStorage';
 import {
     extractJson,

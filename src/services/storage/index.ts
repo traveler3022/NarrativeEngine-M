@@ -21,7 +21,7 @@ export const offlineStorage = {
 
             const { sceneId, sceneNumber, indexEntry, timestamp } = core;
 
-            import('../embedder').then(async ({ embedText, getCurrentModelId }) => {
+            import('../embedding').then(async ({ embedText, getCurrentModelId }) => {
                 const modelId = getCurrentModelId();
                 const combinedText = `${userContent}\n${assistantContent}`;
                 const vec = await embedText(combinedText);

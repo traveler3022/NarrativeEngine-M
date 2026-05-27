@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cosineSimilarity } from '../vectorSearch';
+import { cosineSimilarity } from '../embedding';
 
 describe('vectorSearch similarity floor and dedupe', () => {
     it('cosineSimilarity returns 1 for identical vectors', () => {

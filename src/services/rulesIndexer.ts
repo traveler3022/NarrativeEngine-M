@@ -1,7 +1,7 @@
 import type { LoreChunk, RuleChunkMeta, LLMProvider } from '../types';
 import { chunkLoreFile } from './loreChunker';
 import { embeddingStorage } from './storage/embeddingStorage';
-import { embedText, getCurrentModelId } from './embedder';
+import { embedText, getCurrentModelId } from './embedding';
 import { llmCall } from '../utils/llmCall';
 import { INPUT_DELIMITER } from './infrastructure';
 

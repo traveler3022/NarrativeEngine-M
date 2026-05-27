@@ -1,8 +1,8 @@
-import { embeddingStorage, EMBEDDING_VERSION } from './storage/embeddingStorage';
+import { embeddingStorage, EMBEDDING_VERSION } from '../storage/embeddingStorage';
 import { embedText, isEmbedderReady, warmupEmbedder, getCurrentModelId } from './embedder';
-import { getList, k, type SceneRecord } from './storage/_helpers';
-import { buildNPCEmbeddingText } from './npcGeneration';
-import type { NPCEntry } from '../types';
+import { getList, k, type SceneRecord } from '../storage/_helpers';
+import { buildNPCEmbeddingText } from '../npcGeneration';
+import type { NPCEntry } from '../../types';
 import { get as idbGet } from 'idb-keyval';
 
 const RULE_EMBED_SLICE = 500;
@@ -117,8 +117,8 @@ export async function runBackfill(
 
 async function getLoreChunksForBackfill(_campaignId: string): Promise<Array<{ id: string; content: string }>> {
     try {
-        const { chunkLoreFile } = await import('./loreChunker');
-        const { useAppStore } = await import('../store/useAppStore');
+        const { chunkLoreFile } = await import('../loreChunker');
+        const { useAppStore } = await import('../../store/useAppStore');
         const state = useAppStore.getState();
         const loreRaw = state.context?.loreRaw;
         if (loreRaw) {
@@ -132,8 +132,8 @@ async function getLoreChunksForBackfill(_campaignId: string): Promise<Array<{ id
 
 async function getRuleChunksForReindex(_campaignId: string): Promise<Array<{ id: string; content: string }>> {
     try {
-        const { chunkLoreFile } = await import('./loreChunker');
-        const { useAppStore } = await import('../store/useAppStore');
+        const { chunkLoreFile } = await import('../loreChunker');
+        const { useAppStore } = await import('../../store/useAppStore');
         const state = useAppStore.getState();
         const rulesRaw = state.context?.rulesRaw;
         if (rulesRaw) {

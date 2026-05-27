@@ -2,10 +2,9 @@ import type { StateCreator } from 'zustand';
 import type { GameContext, ChatMessage, CondenserState, LoreChunk, ArchiveIndexEntry, NPCEntry, ArchiveChapter, SemanticFact, TimelineEvent, EntityEntry, DivergenceRegister } from '../../types';
 import { toast } from '../../components/Toast';
 import { debouncedSaveSettings } from './settingsSlice';
-import { embedText, getCurrentModelId } from '../../services/embedder';
+import { embedText, getCurrentModelId, runFullReindex } from '../../services/embedding';
 import { embeddingStorage } from '../../services/storage/embeddingStorage';
 import { buildNPCEmbeddingText } from '../../services/npcGeneration';
-import { runFullReindex } from '../../services/backfillRunner';
 import { EMPTY_REGISTER } from '../../services/divergenceRegister';
 
 const NPC_EMBED_FIELDS: (keyof NPCEntry)[] = ['name', 'aliases', 'faction', 'tier', 'appearance', 'personality', 'voice', 'goals', 'storyRelevance'];
@@ -304,7 +303,7 @@ export const createCampaignSlice: StateCreator<CampaignDeps, [], [], CampaignSli
             entities,
         } as Partial<CampaignDeps>);
 
-        import('../../services/embedder').then(async ({ warmupEmbedder, getCurrentModelId }) => {
+        import('../../services/embedding').then(async ({ warmupEmbedder, getCurrentModelId }) => {
             await warmupEmbedder();
             console.log('[Embedder] Model warmed up and ready');
             const { useAppStore } = await import('../../store/useAppStore');
