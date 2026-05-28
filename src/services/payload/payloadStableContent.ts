@@ -45,11 +45,10 @@ export function buildStablePreamble(opts: {
     context: { rulesRaw?: string; starterActive?: boolean; starter?: string; continuePromptActive?: boolean; continuePrompt?: string; diceFairnessActive?: boolean };
     sceneNumber?: string;
     relevantRules?: { header: string; content: string }[];
-    rulesManifest?: string;
     budgetMap: BudgetMap;
     addTrace: (t: PayloadTrace) => void;
 }): StableContentResult {
-    const { settings, context, sceneNumber, relevantRules, rulesManifest, budgetMap, addTrace } = opts;
+    const { settings, context, sceneNumber, relevantRules, budgetMap, addTrace } = opts;
 
     const stableParts: string[] = [];
     if (sceneNumber) stableParts.push(`[CURRENT SCENE: #${sceneNumber}]`);
@@ -60,8 +59,7 @@ export function buildStablePreamble(opts: {
 
         if (relevantRules && relevantRules.length > 0 && rulesTokenCount > threshold) {
             const rulesText = relevantRules.map(c => `### ${c.header}\n${c.content}`).join('\n\n');
-            const manifestText = rulesManifest ? '\n\n' + rulesManifest : '';
-            stableParts.push(`[RULES — RETRIEVED SECTIONS]\n${rulesText}${manifestText}\n[END RULES]`);
+            stableParts.push(`[RULES — RETRIEVED SECTIONS]\n${rulesText}\n[END RULES]`);
         } else {
             let rules = context.rulesRaw;
             if (context.diceFairnessActive === false) {

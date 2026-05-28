@@ -157,7 +157,6 @@ async function expandQuery(query: string, npcLedger: import('../../types').NPCEn
 export type GatheredContext = {
     relevantLore: LoreChunk[] | undefined;
     relevantRules: LoreChunk[] | undefined;
-    rulesManifest: string;
     sceneNumber: string | undefined;
     archiveRecall: ArchiveScene[] | undefined;
     semanticFactText: string;
@@ -271,7 +270,6 @@ export async function gatherContext(
         : undefined;
 
     let relevantRules: LoreChunk[] | undefined;
-    let rulesManifest = '';
     if (state.context.rulesRaw) {
         const rulesBudgetPct = settings.rulesBudgetPct ?? 0.10;
         const rulesBudget = Math.floor((settings.contextLimit || 8192) * rulesBudgetPct);
@@ -282,7 +280,7 @@ export async function gatherContext(
             try {
                 const { chunkLoreFile } = await import('../lore');
                 const ruleChunks = chunkLoreFile(state.context.rulesRaw, 'rule');
-                const result = retrieveRelevantRules(
+                relevantRules = retrieveRelevantRules(
                     ruleChunks,
                     state.context.rulesChunkMeta,
                     finalInput,
@@ -290,8 +288,6 @@ export async function gatherContext(
                     messages,
                     semanticRuleIds
                 );
-                relevantRules = result.selected;
-                rulesManifest = result.manifest;
                 if (relevantRules.length > 0) {
                     console.log(`[RulesRAG] Retrieved ${relevantRules.length}/${ruleChunks.length} rule chunks`);
                 }
@@ -502,7 +498,6 @@ export async function gatherContext(
         condensedUpToIndex: condenser.condensedUpToIndex,
         relevantLore,
         relevantRules,
-        rulesManifest,
         npcLedger,
         archiveRecall: finalArchiveRecall,
         onStageNpcIds: state.onStageNpcIds,
@@ -516,5 +511,5 @@ export async function gatherContext(
         semanticallyRecalledNpcIds,
     });
 
-    return { relevantLore, relevantRules, rulesManifest, sceneNumber, archiveRecall: finalArchiveRecall, semanticFactText, recommendedNPCNames, deepContextSummary, payloadResult };
+    return { relevantLore, relevantRules, sceneNumber, archiveRecall: finalArchiveRecall, semanticFactText, recommendedNPCNames, deepContextSummary, payloadResult };
 }

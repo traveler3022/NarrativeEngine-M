@@ -16,7 +16,6 @@ export interface BuildPayloadOptions {
     condensedUpToIndex?: number;
     relevantLore?: LoreChunk[];
     relevantRules?: LoreChunk[];
-    rulesManifest?: string;
     npcLedger?: NPCEntry[];
     archiveRecall?: ArchiveScene[];
     onStageNpcIds?: string[];
@@ -42,7 +41,6 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
         condensedUpToIndex,
         relevantLore,
         relevantRules,
-        rulesManifest,
         npcLedger,
         archiveRecall,
         onStageNpcIds,
@@ -72,7 +70,6 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
         context,
         sceneNumber,
         relevantRules,
-        rulesManifest,
         budgetMap,
         addTrace,
     });

@@ -1,9 +1,5 @@
 import type { LoreChunk, ChatMessage, RuleChunkMeta } from '../../types';
 
-function stripChunkPrefix(header: string): string {
-    return header.replace(/\[CHUNK:\s*[A-Z_]+[—\-\s]*\]/i, '').trim();
-}
-
 export function retrieveRelevantRules(
     chunks: LoreChunk[],
     chunkMeta: Record<string, RuleChunkMeta> | undefined,
@@ -11,8 +7,8 @@ export function retrieveRelevantRules(
     tokenBudget: number,
     recentMessages?: ChatMessage[],
     semanticRuleIds?: string[]
-): { selected: LoreChunk[]; manifest: string } {
-    if (chunks.length === 0) return { selected: [], manifest: '' };
+): LoreChunk[] {
+    if (chunks.length === 0) return [];
 
     const meta = chunkMeta ?? {};
     const results: LoreChunk[] = [];
@@ -111,13 +107,5 @@ export function retrieveRelevantRules(
         usedTokens += chunk.tokens;
     }
 
-    const unretrievedHeaders = chunks
-        .filter(c => !includedSet.has(c.id))
-        .map(c => `## ${stripChunkPrefix(c.header)}`)
-        .join('\n');
-    const manifest = unretrievedHeaders.length > 0
-        ? `[Available rule sections not loaded this turn]\n${unretrievedHeaders}\n[End section list]`
-        : '';
-
-    return { selected: results, manifest };
+    return results;
 }
