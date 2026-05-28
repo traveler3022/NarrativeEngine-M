@@ -1,4 +1,5 @@
 import type { ArchiveIndexEntry, ArchiveScene, ChatMessage, NPCEntry, SemanticFact } from '../../types';
+import type { SearchHit } from '../embedding/vectorSearch';
 import { countTokens } from '../infrastructure';
 import { offlineStorage } from '../storage';
 
@@ -7,43 +8,106 @@ import { offlineStorage } from '../storage';
  *
  * T4 Memory — Index-based retrieval over lossless .archive.md content.
  *
- * Uses 3D scoring: recency bonus + intrinsic importance + keyword activation strength.
+ * Hybrid recall: IDF-weighted keyword ranking fused with embedding ranking via RRF.
+ * Keywords are down-weighted by IDF so common terms count less than rare distinctive ones.
+ * Embeddings and keywords are two independent rankers fused by Reciprocal Rank Fusion.
  */
 
-// ─── 3D Scoring ───
+// ─── IDF Computation ───
+
+let _idfCache: { sig: string; idf: Record<string, number> } | null = null;
+
+function indexSignature(index: ArchiveIndexEntry[]): string {
+    if (index.length === 0) return '';
+    const first = index[0].sceneId;
+    const last = index[index.length - 1].sceneId;
+    const tsLast = index[index.length - 1].timestamp;
+    return `${index.length}:${first}:${last}:${tsLast}`;
+}
+
+export function computeArchiveIdf(index: ArchiveIndexEntry[]): Record<string, number> {
+    const sig = indexSignature(index);
+    if (_idfCache && _idfCache.sig === sig) return _idfCache.idf;
+
+    const N = index.length;
+    const df: Record<string, number> = {};
+
+    for (const entry of index) {
+        const seen = new Set<string>();
+        const kwStrengths = entry.keywordStrengths ?? {};
+        const npcStrengths = entry.npcStrengths ?? {};
+        if (Object.keys(kwStrengths).length > 0 || Object.keys(npcStrengths).length > 0) {
+            for (const kw of Object.keys(kwStrengths)) {
+                const k = kw.toLowerCase();
+                if (!seen.has(k)) { seen.add(k); df[k] = (df[k] || 0) + 1; }
+            }
+            for (const npc of Object.keys(npcStrengths)) {
+                const k = npc.toLowerCase();
+                if (!seen.has(k)) { seen.add(k); df[k] = (df[k] || 0) + 1; }
+            }
+        } else {
+            for (const kw of entry.keywords) {
+                const k = kw.toLowerCase();
+                if (!seen.has(k)) { seen.add(k); df[k] = (df[k] || 0) + 1; }
+            }
+            for (const npc of entry.npcsMentioned) {
+                const k = npc.toLowerCase();
+                if (!seen.has(k)) { seen.add(k); df[k] = (df[k] || 0) + 1; }
+            }
+        }
+    }
+
+    const idf: Record<string, number> = {};
+    for (const [term, count] of Object.entries(df)) {
+        idf[term] = Math.log(1 + (N - count + 0.5) / (count + 0.5));
+    }
+
+    _idfCache = { sig, idf };
+    return idf;
+}
+
+export function clearIdfCache(): void {
+    _idfCache = null;
+}
+
+// ─── Keyword Relevance Scoring ───
+
+type ScoreResult = {
+    keywordRelevance: number;
+    recency: number;
+    importance: number;
+};
 
 function scoreEntry(
     entry: ArchiveIndexEntry,
     contextText: string,
     contextActivations: Record<string, number>,
     totalScenes: number,
-    divergenceSceneIds?: Set<string>
-): number {
-    // D1: Recency bonus — exponential decay with chat-length-scaled half-life
+    idf: Record<string, number>
+): ScoreResult {
     const sceneNum = parseInt(entry.sceneId, 10) || 0;
     const turnsSince = totalScenes - sceneNum;
     const halfLife = Math.max(40, 0.2 * totalScenes);
-    const recencyBonus = Math.pow(0.5, Math.max(0, turnsSince) / halfLife);
+    const recency = Math.pow(0.5, Math.max(0, turnsSince) / halfLife);
 
-    // D2: Intrinsic importance (permanent, no decay)
     const importance = entry.importance ?? 5;
 
-    // D3: Activation strength (keyword strength matrix dot product)
-    let activation = 0;
+    let keywordRelevance = 0;
     const kwStrengths = entry.keywordStrengths ?? {};
     for (const [keyword, strength] of Object.entries(kwStrengths)) {
         if (contextActivations[keyword]) {
-            activation += contextActivations[keyword] * strength;
+            const idfWeight = idf[keyword] ?? 1;
+            keywordRelevance += contextActivations[keyword] * strength * idfWeight;
         }
     }
     const npcStrengths = entry.npcStrengths ?? {};
     for (const [npc, strength] of Object.entries(npcStrengths)) {
         if (contextActivations[npc]) {
-            activation += contextActivations[npc] * strength * 1.5;
+            const idfWeight = idf[npc] ?? 1;
+            keywordRelevance += contextActivations[npc] * strength * 1.5 * idfWeight;
         }
     }
 
-    // Event-field activation (additive on top of keyword/NPC scoring)
     if (entry.events && entry.events.length > 0) {
         let eventActivation = 0;
         for (const event of entry.events) {
@@ -52,42 +116,43 @@ function scoreEntry(
             for (const name of (event.characters ?? [])) {
                 const key = name.toLowerCase();
                 if (contextActivations[key]) {
-                    perEvent += contextActivations[key] * 1.5; // characters get NPC-tier weight; locations/items/concepts get keyword tier (prevents protagonist drowning out recall)
+                    const idfWeight = idf[key] ?? 1;
+                    perEvent += contextActivations[key] * 1.5 * idfWeight;
                 }
             }
             for (const fieldNames of [event.locations ?? [], event.items ?? [], event.concepts ?? []]) {
                 for (const name of fieldNames) {
                     const key = name.toLowerCase();
                     if (contextActivations[key]) {
-                        perEvent += contextActivations[key] * 1.0;
+                        const idfWeight = idf[key] ?? 1;
+                        perEvent += contextActivations[key] * 1.0 * idfWeight;
                     }
                 }
             }
             eventActivation += perEvent * eventImportanceScale;
         }
-        activation += Math.min(15, eventActivation);
+        keywordRelevance += Math.min(15, eventActivation);
     }
 
-    // Fallback: legacy keyword matching for old entries without strengths or events
     if (Object.keys(kwStrengths).length === 0 && Object.keys(npcStrengths).length === 0 && !(entry.events && entry.events.length > 0)) {
         for (const kw of entry.keywords) {
-            if (contextText.includes(kw)) {
+            const k = kw.toLowerCase();
+            if (contextText.includes(k)) {
                 const exactMatch = new RegExp(`\\b${kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-                activation += exactMatch.test(contextText) ? 2 : 0.5;
+                const idfWeight = idf[k] ?? 1;
+                keywordRelevance += (exactMatch.test(contextText) ? 2 : 0.5) * idfWeight;
             }
         }
         for (const npc of entry.npcsMentioned) {
-            if (contextText.includes(npc.toLowerCase())) activation += 3;
+            const k = npc.toLowerCase();
+            if (contextText.includes(k)) {
+                const idfWeight = idf[k] ?? 1;
+                keywordRelevance += 3 * idfWeight;
+            }
         }
     }
 
-    // Weighted additive: (0.5 × recency) + (1.0 × importance) + (2.0 × activation) + D4
-    let divergenceBoost = 0;
-    if (divergenceSceneIds?.has(entry.sceneId)) {
-        divergenceBoost = 5.0;
-    }
-
-    return (0.5 * recencyBonus) + (1.0 * importance) + (2.0 * activation) + divergenceBoost;
+    return { keywordRelevance, recency, importance };
 }
 
 /**
@@ -166,9 +231,51 @@ export function expandActivationsWithFacts(
     return expanded;
 }
 
+// ─── RRF Fusion ───
+
+export function fuseRecall(
+    keywordRanked: string[],
+    embeddingRanked: string[],
+    k = 60,
+    keywordWeight = 1.0,
+    embeddingWeight = 1.0
+): string[] {
+    const allIds = new Set<string>([...keywordRanked, ...embeddingRanked]);
+    if (allIds.size === 0) return [];
+    if (keywordRanked.length === 0) return embeddingRanked;
+    if (embeddingRanked.length === 0) return keywordRanked;
+
+    const scores = new Map<string, number>();
+
+    for (const id of allIds) {
+        let score = 0;
+        const kwRank = keywordRanked.indexOf(id);
+        if (kwRank !== -1) score += keywordWeight / (k + kwRank + 1);
+        const embRank = embeddingRanked.indexOf(id);
+        if (embRank !== -1) score += embeddingWeight / (k + embRank + 1);
+        scores.set(id, score);
+    }
+
+    return Array.from(scores.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map(([id]) => id);
+}
+
+function computeDynamicMax(keywordRanked: string[], embeddingRanked: string[], maxScenes?: number): number {
+    if (maxScenes !== undefined) return maxScenes;
+    const keywordSet = new Set(keywordRanked);
+    let consensus = 0;
+    for (const id of embeddingRanked) {
+        if (keywordSet.has(id)) consensus++;
+    }
+    if (consensus >= 3) return 5;
+    if (consensus >= 1) return 4;
+    return 3;
+}
+
 /**
- * Search the archive index using 3D scoring, return matching scene IDs
- * ranked by score (best first).
+ * Search the archive index using IDF-weighted keyword scoring fused with
+ * embedding ranking via Reciprocal Rank Fusion (RRF).
  */
 export function retrieveArchiveMemory(
     index: ArchiveIndexEntry[],
@@ -178,7 +285,7 @@ export function retrieveArchiveMemory(
     maxScenes?: number,
     semanticFacts?: SemanticFact[],
     sceneRanges?: [string, string][],
-    semanticCandidateIds?: string[],
+    semanticCandidateIds?: string[] | SearchHit[],
     divergenceSceneIds?: Set<string>,
     filters?: { characters?: string[]; locations?: string[]; items?: string[]; concepts?: string[]; eventTypes?: string[] }
 ): string[] {
@@ -195,7 +302,6 @@ export function retrieveArchiveMemory(
     let contextActivations = extractContextActivations(userMessage, recentMessages, npcLedger);
     contextActivations = expandActivationsWithFacts(contextActivations, semanticFacts);
 
-    // NEW: Filter index to only scenes within provided scene ranges (if any)
     let scopedIndex = index;
     if (sceneRanges && sceneRanges.length > 0) {
         scopedIndex = index.filter(entry => {
@@ -208,14 +314,13 @@ export function retrieveArchiveMemory(
         });
     }
 
+    const idf = computeArchiveIdf(index);
     const totalScenes = scopedIndex.length;
-    const scored = scopedIndex.map(entry => {
-        const baseScore = scoreEntry(entry, contextText, contextActivations, totalScenes, divergenceSceneIds);
 
-        let semanticBoost = 0;
-        if (semanticCandidateIds && semanticCandidateIds.includes(entry.sceneId)) {
-            semanticBoost = baseScore * 0.5;
-        }
+    const scored = scopedIndex.map(entry => {
+        const { keywordRelevance, recency, importance } = scoreEntry(
+            entry, contextText, contextActivations, totalScenes, idf
+        );
 
         let filterBoost = 1.0;
         if (filters && entry.events && entry.events.length > 0) {
@@ -230,21 +335,74 @@ export function retrieveArchiveMemory(
             if (matched) filterBoost = 1.5;
         }
 
-        return { sceneId: entry.sceneId, score: (baseScore + semanticBoost) * filterBoost };
+        return {
+            sceneId: entry.sceneId,
+            keywordRelevance,
+            tiebreak: (0.1 * recency) + (0.05 * importance),
+            filterBoost,
+        };
     });
 
-    const sorted = scored.filter(s => s.score > 0).sort((a, b) => b.score - a.score);
-    const topScore = sorted[0]?.score ?? 0;
-    const dynamicMax = maxScenes ?? (topScore > 15 ? 5 : topScore > 8 ? 4 : 3);
-    const candidates = sorted.slice(0, dynamicMax);
+    const keywordRelevant = scored
+        .filter(s => s.keywordRelevance > 0)
+        .sort((a, b) => {
+            const aScore = a.keywordRelevance * a.filterBoost + a.tiebreak;
+            const bScore = b.keywordRelevance * b.filterBoost + b.tiebreak;
+            return bScore - aScore;
+        });
+    const keywordRanked = keywordRelevant.map(s => s.sceneId);
+
+    const scopedSceneIds = scopedIndex.length < index.length
+        ? new Set(scopedIndex.map(e => e.sceneId))
+        : null;
+
+    let embeddingRanked: string[];
+    if (Array.isArray(semanticCandidateIds) && semanticCandidateIds.length > 0) {
+        if (typeof semanticCandidateIds[0] === 'object' && semanticCandidateIds[0] !== null && 'score' in (semanticCandidateIds[0] as SearchHit)) {
+            const hits = (semanticCandidateIds as SearchHit[])
+                .filter(h => !scopedSceneIds || scopedSceneIds.has(h.id))
+                .sort((a, b) => b.score - a.score)
+                .map(h => h.id);
+            embeddingRanked = hits;
+        } else {
+            const ids = (semanticCandidateIds as string[]).filter(id => !scopedSceneIds || scopedSceneIds.has(id));
+            embeddingRanked = ids;
+        }
+    } else {
+        embeddingRanked = [];
+    }
+
+    const fused = fuseRecall(keywordRanked, embeddingRanked);
+    const dynamicMax = computeDynamicMax(keywordRanked, embeddingRanked, maxScenes);
+
+    // Divergence scenes (where the story left canon) must surface for continuity even
+    // when they don't match the current turn's keywords or embeddings. Force them to the
+    // front: matched ones keep their fused order, unmatched ones follow by recency.
+    let ordered = fused;
+    if (divergenceSceneIds && divergenceSceneIds.size > 0) {
+        const fusedSet = new Set(fused);
+        const divInScope = scopedIndex
+            .map(e => e.sceneId)
+            .filter(id => divergenceSceneIds.has(id));
+        if (divInScope.length > 0) {
+            const divSet = new Set(divInScope);
+            const matchedDiv = fused.filter(id => divSet.has(id));
+            const unmatchedDiv = divInScope
+                .filter(id => !fusedSet.has(id))
+                .sort((a, b) => parseInt(b, 10) - parseInt(a, 10));
+            const rest = fused.filter(id => !divSet.has(id));
+            ordered = [...matchedDiv, ...unmatchedDiv, ...rest];
+        }
+    }
+
+    const result = ordered.slice(0, dynamicMax);
 
     console.log(
-        `[Archive Retrieval] 3D scored ${index.length} entries. ` +
-        `${candidates.length} matched (max ${dynamicMax}). ` +
-        `Top: [${candidates.map(c => `${c.sceneId}:${c.score.toFixed(1)}`).join(', ')}]`
+        `[Archive Retrieval] Hybrid: ${keywordRanked.length} keyword hits, ${embeddingRanked.length} embedding hits, ` +
+        `consensus → max ${dynamicMax}. Top: [${result.join(', ')}]`
     );
 
-    return candidates.map(c => c.sceneId);
+    return result;
 }
 
 /**
@@ -306,7 +464,7 @@ export async function recallArchiveScenes(
     tokenBudget = 3000,
     npcLedger?: NPCEntry[],
     semanticFacts?: SemanticFact[],
-    semanticCandidateIds?: string[],
+    semanticCandidateIds?: string[] | SearchHit[],
     divergenceSceneIds?: Set<string>,
     excludeSceneIds?: Set<string>,
     filters?: { characters?: string[]; locations?: string[]; items?: string[]; concepts?: string[]; eventTypes?: string[] }

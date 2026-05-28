@@ -7,7 +7,8 @@ import { recallArchiveScenes, retrieveArchiveMemory, fetchArchiveScenes, deepArc
 import { offlineStorage } from '../storage';
 import { recommendContext } from '../payload';
 import { queryFacts, formatFactsForContext, formatResolvedForContext, getDivergenceSceneIds, EMPTY_REGISTER } from '../campaign-state';
-import { semanticSearch, isEmbedderReady } from '../embedding';
+import { semanticSearch, semanticSearchScored, isEmbedderReady } from '../embedding';
+import type { SearchHit } from '../embedding/vectorSearch';
 import { rerankCandidates, type RerankCandidate } from '../payload';
 import type { LLMProvider } from '../../types';
 import { llmCall } from '../../utils/llmCall';
@@ -160,6 +161,7 @@ export type GatheredContext = {
     relevantRules: LoreChunk[] | undefined;
     sceneNumber: string | undefined;
     archiveRecall: ArchiveScene[] | undefined;
+    semanticArchiveHits: SearchHit[];
     semanticFactText: string;
     recommendedNPCNames: string[] | undefined;
     deepContextSummary: string | undefined;
@@ -175,6 +177,7 @@ export async function gatherContext(
     const { settings, loreChunks, npcLedger, archiveIndex, activeCampaignId } = state;
     const utilityTimeoutMs = (settings.utilityTimeoutSeconds ?? 45) * 1000;
     let semanticArchiveIds: string[] | undefined;
+    let semanticArchiveHits: SearchHit[] = [];
     let semanticLoreIds: string[] | undefined;
     let semanticRuleIds: string[] | undefined;
 
@@ -213,12 +216,13 @@ export async function gatherContext(
                 console.log(`[Planner] Added ${newSubs.length} sub-queries`);
             }
 
-            const [sceneIds, loreIds, ruleIds] = await Promise.all([
-                semanticSearch(activeCampaignId, queries, 'scene', 40, SEMANTIC_FLOOR_SCENE),
+            const [sceneHits, loreIds, ruleIds] = await Promise.all([
+                semanticSearchScored(activeCampaignId, queries, 'scene', 40, SEMANTIC_FLOOR_SCENE),
                 semanticSearch(activeCampaignId, queries, 'lore', 25, SEMANTIC_FLOOR_LORE),
                 semanticSearch(activeCampaignId, queries, 'rule', 25, SEMANTIC_FLOOR_LORE),
             ]);
-            semanticArchiveIds = sceneIds;
+            semanticArchiveIds = sceneHits?.map(h => h.id);
+            semanticArchiveHits = sceneHits ?? [];
             semanticLoreIds = loreIds;
             semanticRuleIds = ruleIds;
 
@@ -243,6 +247,8 @@ export async function gatherContext(
                     };
                 });
                 const rerankedIds = await rerankCandidates(finalInput, sceneCandidates, rerankerEndpoint, { maxCandidates: 30, topN: 12, timeoutMs: utilityTimeoutMs, trackingLabel: 'rerank-scene' });
+                const scoreLookup = new Map(semanticArchiveHits.map(h => [h.id, h.score]));
+                semanticArchiveHits = rerankedIds.map((id, i) => ({ id, score: scoreLookup.get(id) ?? (1 - i * 0.05) }));
                 semanticArchiveIds = rerankedIds;
                 console.log(`[Reranker] Scene candidates: ${rerankedIds.length} after rerank`);
             }
@@ -323,7 +329,7 @@ export async function gatherContext(
             const utilityEndpoint = state.getUtilityEndpoint?.();
             if (!utilityEndpoint) throw new Error('No utility endpoint');
             const funnelPromise = recallWithChapterFunnel(
-                activeCampaignId, chapters, archiveIndex, finalInput, messages, npcLedger, semanticFacts, 3000, utilityEndpoint, undefined, semanticArchiveIds
+                activeCampaignId, chapters, archiveIndex, finalInput, messages, npcLedger, semanticFacts, 3000, utilityEndpoint, undefined, semanticArchiveHits.length > 0 ? semanticArchiveHits : semanticArchiveIds
             );
             let fallbackTimeoutId: ReturnType<typeof setTimeout>;
             const fallbackPromise = new Promise<{ scenes: string; usedTokens: number } | null>(resolve => {
@@ -347,14 +353,14 @@ export async function gatherContext(
             }
         } catch {
             if (activeCampaignId) {
-                const flatRecall = await recallArchiveScenes(activeCampaignId, archiveIndex, finalInput, messages, 3000, npcLedger, semanticFacts, semanticArchiveIds, getDivergenceSceneIds(state.divergenceRegister ?? EMPTY_REGISTER), undefined, plannerFilters);
+                const flatRecall = await recallArchiveScenes(activeCampaignId, archiveIndex, finalInput, messages, 3000, npcLedger, semanticFacts, semanticArchiveHits.length > 0 ? semanticArchiveHits : semanticArchiveIds, getDivergenceSceneIds(state.divergenceRegister ?? EMPTY_REGISTER), undefined, plannerFilters);
                 archiveResult = { scenes: flatRecall || [], usedTokens: 0 };
             }
         }
     } else if (archiveIndex.length > 0 && activeCampaignId) {
         // Covers: (a) no chapters yet, (b) archiveFunnel tier-gated — fall through to engine flat-recall
         const flatRecall = await recallArchiveScenes(
-            activeCampaignId, archiveIndex, finalInput, messages, 3000, npcLedger, semanticFacts, semanticArchiveIds, getDivergenceSceneIds(state.divergenceRegister ?? EMPTY_REGISTER), undefined, plannerFilters
+            activeCampaignId, archiveIndex, finalInput, messages, 3000, npcLedger, semanticFacts, semanticArchiveHits.length > 0 ? semanticArchiveHits : semanticArchiveIds, getDivergenceSceneIds(state.divergenceRegister ?? EMPTY_REGISTER), undefined, plannerFilters
         );
         archiveResult = { scenes: flatRecall || [], usedTokens: 0 };
     }
@@ -374,7 +380,7 @@ export async function gatherContext(
             try {
                 const scoredIds = retrieveArchiveMemory(
                     archiveIndex, finalInput, messages, npcLedger,
-                    undefined, semanticFacts, pinnedRanges, semanticArchiveIds,
+                    undefined, semanticFacts, pinnedRanges, semanticArchiveHits.length > 0 ? semanticArchiveHits : semanticArchiveIds,
                     undefined, plannerFilters
                 ).filter(id => !alreadyCoveredIds.has(id));
 
@@ -513,5 +519,5 @@ export async function gatherContext(
         semanticallyRecalledNpcIds,
     });
 
-    return { relevantLore, relevantRules, sceneNumber, archiveRecall: finalArchiveRecall, semanticFactText, recommendedNPCNames, deepContextSummary, payloadResult };
+    return { relevantLore, relevantRules, sceneNumber, archiveRecall: finalArchiveRecall, semanticArchiveHits, semanticFactText, recommendedNPCNames, deepContextSummary, payloadResult };
 }

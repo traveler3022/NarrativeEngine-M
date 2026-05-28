@@ -1,4 +1,4 @@
-export { retrieveArchiveMemory, fetchArchiveScenes, recallArchiveScenes, extractContextActivations, expandActivationsWithFacts } from './archiveMemory';
+export { retrieveArchiveMemory, fetchArchiveScenes, recallArchiveScenes, extractContextActivations, expandActivationsWithFacts, computeArchiveIdf, clearIdfCache, fuseRecall } from './archiveMemory';
 export { extractIndexKeywords, extractNPCNames, extractKeywordStrengths, extractNPCStrengths, extractNPCFacts, buildArchiveIndexEntry } from './archiveIndexer';
 export { shouldAutoSeal, sealChapter, scoreChapter, rankChapters, iterativeChapterFilter, recallWithChapterFunnel } from './archiveChapterEngine';
 export { deepArchiveScan } from './deepArchiveSearch';

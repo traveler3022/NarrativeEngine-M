@@ -1,4 +1,5 @@
 import type { ArchiveChapter, ArchiveIndexEntry, ChatMessage, NPCEntry, SemanticFact, LLMProvider } from '../../types';
+import type { SearchHit } from '../embedding/vectorSearch';
 import { extractContextActivations, expandActivationsWithFacts, retrieveArchiveMemory, fetchArchiveScenes } from './archiveMemory';
 import { llmCall } from '../../utils/llmCall';
 
@@ -254,7 +255,7 @@ export async function recallWithChapterFunnel(
     tokenBudget: number,
     utilityProvider: LLMProvider,
     _countTokens?: (text: string) => number,
-    semanticCandidateIds?: string[]
+    semanticCandidateIds?: string[] | SearchHit[]
 ): Promise<{ scenes: string; usedTokens: number }> {
     // ─── Phase 1: Chapter-level 3D scoring ───
     const ranked = rankChapters(chapters, userMessage, recentMessages, npcLedger, semanticFacts);

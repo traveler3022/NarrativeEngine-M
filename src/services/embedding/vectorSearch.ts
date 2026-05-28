@@ -65,6 +65,17 @@ export async function semanticSearch(
     topK?: number,
     minScore?: number
 ): Promise<string[] | undefined> {
+    const hits = await semanticSearchScored(campaignId, queries, type, topK, minScore);
+    return hits?.map(h => h.id);
+}
+
+export async function semanticSearchScored(
+    campaignId: string,
+    queries: string[],
+    type: 'scene' | 'lore' | 'npc' | 'rule',
+    topK?: number,
+    minScore?: number
+): Promise<SearchHit[] | undefined> {
     if (!isEmbedderReady()) return undefined;
 
     const queryVectors: number[][] = [];
@@ -88,5 +99,5 @@ export async function semanticSearch(
         console.log(`[turnContext] semantic search returned 0 above floor (best=${bestScore.toFixed(3)})`);
     }
 
-    return hits.map(h => h.id);
+    return hits;
 }
