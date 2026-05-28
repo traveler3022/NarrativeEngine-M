@@ -41,6 +41,8 @@ export type UtilityCallHandle = {
     deadlinePromise: Promise<void>;
     /** Push the deadline forward by ms (default 60000). No-op if already settled. */
     extend: (ms?: number) => void;
+    /** Like extend() but does not increment the visible "extensions" counter. For automatic/internal deadline pushes. */
+    extendSilent: (ms: number) => void;
     /** Mark success. Records duration + moves to history. */
     settleSuccess: (verbose?: Record<string, unknown>) => void;
     /** Mark failure (error or timeout). */
@@ -112,6 +114,19 @@ export function startUtilityCall(
                 ...cur,
                 deadline: cur.deadline + ms,
                 extensions: cur.extensions + 1,
+            };
+            active = active.map(c => (c.id === id ? updated : c));
+            emit();
+            notifyDeadline(id);
+        },
+        extendSilent(ms) {
+            const idx = active.findIndex(c => c.id === id);
+            if (idx === -1) return;
+            const cur = active[idx];
+            if (cur.status !== 'running') return;
+            const updated: UtilityCallRecord = {
+                ...cur,
+                deadline: cur.deadline + ms,
             };
             active = active.map(c => (c.id === id ? updated : c));
             emit();

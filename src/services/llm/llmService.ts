@@ -4,6 +4,11 @@ import { uid } from '../../utils/uid';
 import { getApiFormat, getChatUrl, getModelsUrl, buildChatHeaders, buildChatBody, extractContent, extractStreamDelta, extractStreamToolCall } from '../../utils/llmApiHelper';
 import { isAbortError } from '../../types/llmMessages';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
+import { startUtilityCall } from './utilityCallTracker';
+
+const STORY_INITIAL_TIMEOUT_MS = 120000;
+const STORY_CHUNK_EXTEND_MS = 30000;
+const STORY_CHUNK_EXTEND_THRESHOLD_MS = 30000;
 
 export type OpenAIMessage = LLMChatMessage;
 
@@ -22,6 +27,14 @@ export async function sendMessage(
     const url = getChatUrl(provider, { stream: useStreaming });
     const headers = buildChatHeaders(provider);
 
+    let trackerSettled = false;
+    let tracker: ReturnType<typeof startUtilityCall> | null = null;
+    const settleTrackerError = (status: 'timeout' | 'error' | 'aborted', message?: string) => {
+        if (trackerSettled || !tracker) return;
+        trackerSettled = true;
+        tracker.settleError(status, message);
+    };
+
     try {
         // On native with streaming OFF: use CapacitorHttp to bypass WebView CORS restrictions.
         if (Capacitor.isNativePlatform() && !useStreaming) {
@@ -30,6 +43,19 @@ export async function sendMessage(
                 const sep = nativeUrl.includes('?') ? '&' : '?';
                 nativeUrl = `${nativeUrl}${sep}key=${provider.apiKey}`;
             }
+            const nativeCall = startUtilityCall(
+                'story-generation',
+                provider.modelName || provider.endpoint,
+                STORY_INITIAL_TIMEOUT_MS,
+            );
+            tracker = nativeCall;
+            const nativeStartedAt = Date.now();
+            console.info(`[story-gen] start (native non-stream) model=${provider.modelName || provider.endpoint} format=${format} messages=${messages.length} tools=${tools ? (tools as unknown[]).length : 0} timeoutMs=${STORY_INITIAL_TIMEOUT_MS}`);
+            // CapacitorHttp can't be aborted mid-flight, so the deadline is informational here.
+            nativeCall.deadlinePromise.then(() => {
+                if (trackerSettled) return;
+                console.warn(`[story-gen] deadline reached after ${Date.now() - nativeStartedAt}ms (native non-stream — request cannot be cancelled, still waiting on response)`);
+            });
             const nativePayload = buildChatBody(provider, messages, { stream: false, tools, sampling });
             const nativeRes = await CapacitorHttp.post({
                 url: nativeUrl,
@@ -39,11 +65,15 @@ export async function sendMessage(
                 connectTimeout: 15000,
             });
             if (nativeRes.status < 200 || nativeRes.status >= 300) {
+                settleTrackerError('error', `API error ${nativeRes.status}`);
+                console.warn(`[story-gen] http error ${nativeRes.status} after ${Date.now() - nativeStartedAt}ms (native non-stream)`);
                 onError(`API error ${nativeRes.status}: ${JSON.stringify(nativeRes.data)}`);
                 return;
             }
             const nativeText = extractContent(nativeRes.data, provider);
             const nativeReasoning = (nativeRes.data as OpenAICompletionResponse)?.choices?.[0]?.message?.reasoning_content as string | undefined;
+            if (!trackerSettled) { trackerSettled = true; nativeCall.settleSuccess({ chars: nativeText.length, durationMs: Date.now() - nativeStartedAt, streaming: false, native: true }); }
+            console.info(`[story-gen] done (native non-stream) chars=${nativeText.length} durationMs=${Date.now() - nativeStartedAt}`);
             onChunk(nativeText);
             onDone(nativeText, undefined, nativeReasoning || undefined);
             return;
@@ -56,7 +86,29 @@ export async function sendMessage(
         });
 
         const controller = abortController || new AbortController();
-        let timeoutId = setTimeout(() => controller.abort(), 120000);
+        const storyCall = startUtilityCall(
+            'story-generation',
+            provider.modelName || provider.endpoint,
+            STORY_INITIAL_TIMEOUT_MS,
+        );
+        tracker = storyCall;
+        const startedAt = Date.now();
+        let chunkCount = 0;
+        const settleSuccess = (verbose: Record<string, unknown>) => {
+            if (trackerSettled) return;
+            trackerSettled = true;
+            storyCall.settleSuccess(verbose);
+        };
+        const settleError = settleTrackerError;
+        storyCall.deadlinePromise.then(() => {
+            if (trackerSettled) return;
+            const elapsedMs = Date.now() - startedAt;
+            console.warn(`[story-gen] deadline reached after ${elapsedMs}ms, aborting (model=${provider.modelName || provider.endpoint}, chunks=${chunkCount})`);
+            controller.abort();
+            settleError('timeout');
+        });
+
+        console.info(`[story-gen] start model=${provider.modelName || provider.endpoint} format=${format} streaming=${useStreaming} messages=${messages.length} tools=${tools ? (tools as unknown[]).length : 0} timeoutMs=${STORY_INITIAL_TIMEOUT_MS}`);
 
         let fetchUrl = url;
         if (format === 'gemini' && provider.apiKey) {
@@ -72,17 +124,19 @@ export async function sendMessage(
         });
 
         if (!res.ok) {
-            clearTimeout(timeoutId);
             const errBody = await res.text();
+            settleError('error', `API error ${res.status}`);
+            console.warn(`[story-gen] http error ${res.status} after ${Date.now() - startedAt}ms: ${errBody.slice(0, 200)}`);
             onError(`API error ${res.status}: ${errBody}`);
             return;
         }
 
         if (!useStreaming) {
-            clearTimeout(timeoutId);
             const data = await res.json();
             const text = extractContent(data, provider);
             const reasoning = (data as OpenAICompletionResponse)?.choices?.[0]?.message?.reasoning_content as string | undefined;
+            settleSuccess({ chars: text.length, durationMs: Date.now() - startedAt, streaming: false });
+            console.info(`[story-gen] done (non-stream) chars=${text.length} durationMs=${Date.now() - startedAt}`);
             onChunk(text);
             onDone(text, undefined, reasoning || undefined);
             return;
@@ -90,9 +144,25 @@ export async function sendMessage(
 
         const reader = res.body?.getReader();
         if (!reader) {
+            settleError('error', 'No readable stream in response');
             onError('No readable stream in response');
             return;
         }
+
+        let nextAutoExtendAt = startedAt + (STORY_INITIAL_TIMEOUT_MS - STORY_CHUNK_EXTEND_THRESHOLD_MS);
+        const wrappedOnChunk = (text: string) => {
+            chunkCount++;
+            const now = Date.now();
+            if (now >= nextAutoExtendAt) {
+                storyCall.extendSilent(STORY_CHUNK_EXTEND_MS);
+                nextAutoExtendAt += STORY_CHUNK_EXTEND_MS;
+                console.info(`[story-gen] auto-extend +${STORY_CHUNK_EXTEND_MS}ms (elapsed=${now - startedAt}ms, chunks=${chunkCount})`);
+            }
+            if (chunkCount === 1 || chunkCount % 25 === 0) {
+                console.info(`[story-gen] chunk #${chunkCount} chars=${text.length} elapsedMs=${now - startedAt}`);
+            }
+            onChunk(text);
+        };
 
         const decoder = new TextDecoder();
         let buffer = '';
@@ -105,10 +175,7 @@ export async function sendMessage(
 
         while (true) {
             const { done, value } = await reader.read();
-            clearTimeout(timeoutId);
             if (done) break;
-
-            timeoutId = setTimeout(() => controller.abort(), 120000);
 
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
@@ -123,7 +190,7 @@ export async function sendMessage(
                         const parsed = JSON.parse(trimmed);
                         if (parsed.message?.content) {
                             fullText += parsed.message.content;
-                            onChunk(fullText);
+                            wrappedOnChunk(fullText);
                         }
                     } catch {
                         // skip malformed chunks
@@ -141,7 +208,7 @@ export async function sendMessage(
                         const delta = extractStreamDelta(parsed, provider);
                         if (delta) {
                             fullText += delta;
-                            onChunk(fullText);
+                            wrappedOnChunk(fullText);
                         }
 
                         const tc = extractStreamToolCall(parsed, provider);
@@ -170,7 +237,7 @@ export async function sendMessage(
 
                     if (delta?.content) {
                         fullText += delta.content;
-                        onChunk(fullText);
+                        wrappedOnChunk(fullText);
                     }
 
                     if (delta?.tool_calls && delta.tool_calls.length > 0) {
@@ -215,9 +282,18 @@ export async function sendMessage(
                 }
 
                 fullText = fullText.split('<\uFF5CDSML\uFF5C>function_calls>')[0].trim();
-                onChunk(fullText);
+                wrappedOnChunk(fullText);
             }
         }
+
+        settleSuccess({
+            chars: fullText.length,
+            durationMs: Date.now() - startedAt,
+            chunks: chunkCount,
+            toolCall: tcName || null,
+            reasoningChars: reasoningContent.length,
+        });
+        console.info(`[story-gen] done model=${provider.modelName || provider.endpoint} chars=${fullText.length} chunks=${chunkCount} durationMs=${Date.now() - startedAt} toolCall=${tcName || 'none'}`);
 
         if (tcName) {
             onDone(fullText, { id: tcId, name: tcName, arguments: tcArgs }, reasoningContent || undefined);
@@ -226,10 +302,15 @@ export async function sendMessage(
         }
     } catch (err) {
         if (isAbortError(err)) {
+            settleTrackerError('aborted');
+            console.warn('[story-gen] aborted');
             onError('__ABORT__');
             return;
         }
-        onError(err instanceof Error ? err.message : 'Unknown network error');
+        const msg = err instanceof Error ? err.message : 'Unknown network error';
+        settleTrackerError('error', msg);
+        console.warn(`[story-gen] error: ${msg}`);
+        onError(msg);
     }
 }
 

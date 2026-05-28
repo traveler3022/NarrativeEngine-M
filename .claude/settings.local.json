@@ -84,7 +84,24 @@
       "Bash(cmd /c \"gradlew.bat assembleRelease\")",
       "Bash(cmd /c \"gradlew.bat assembleRelease 2>&1\")",
       "Bash(powershell -Command \"Get-ChildItem -Path '.\\\\src\\\\store' -Filter '*.ts' -Recurse | Select-Object -ExpandProperty FullName\")",
-      "Bash(powershell -Command \"Select-String -Path 'src\\\\services\\\\npc\\\\*.ts' -Pattern 'async function|export async function' | Select-Object -First 20\")"
+      "Bash(powershell -Command \"Select-String -Path 'src\\\\services\\\\npc\\\\*.ts' -Pattern 'async function|export async function' | Select-Object -First 20\")",
+      "Bash(npx vite *)",
+      "Bash(Get-ChildItem \"D:\\\\Games\\\\AI DM Project\\\\Automated_system\\\\mobileApp\\\\src\\\\components\" -Filter \"*Settings*\" -Recurse)",
+      "Bash(Select-Object FullName)",
+      "Bash(find \"D:\\\\Games\\\\AI DM Project\" -type f -name \"useAppStore.ts\" -o -name \"useAppStore.tsx\" 2>/dev/null | head -1)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('scripts',{}\\), indent=2\\)\\)\")",
+      "Bash(git --no-pager diff --stat)",
+      "Bash(git --no-pager diff src/services/turn/turnContext.ts src/services/turn/turnPostProcess.ts src/services/turn/turnOrchestrator.ts)",
+      "Bash(git --no-pager diff src/types/index.ts src/store/slices/settingsSlice.ts src/components/Header.tsx src/components/SettingsModal.tsx)",
+      "Bash(git --no-pager log -1 --stat --oneline)",
+      "Bash(git --no-pager status --short)",
+      "Bash(grep -rn \"signingConfig\\\\|storeFile\\\\|keystore\" android/app/build.gradle android/build.gradle)",
+      "Bash(ls android/*.keystore android/app/*.keystore android/*.jks)",
+      "Bash(ls -la android/app/build/outputs/apk/*/*.apk)",
+      "Bash(ls \"NE v\"*.apk)",
+      "Bash(cmd.exe /c \"gradlew.bat assembleDebug\")",
+      "Bash(git --no-pager diff --stat .claude/settings.local.json src/components/UtilityCallStrip.tsx src/components/settings/ProviderConfigSection.tsx src/services/llm/llmService.ts src/services/llm/utilityCallTracker.ts)",
+      "Bash(git --no-pager diff src/services/llm/utilityCallTracker.ts src/components/UtilityCallStrip.tsx src/components/settings/ProviderConfigSection.tsx .claude/settings.local.json)"
     ]
   }
 }

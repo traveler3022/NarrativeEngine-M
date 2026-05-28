@@ -7,6 +7,7 @@ const LABEL_MAP: Record<string, string> = {
     'rerank-lore': 'Reranking Lore',
     'recommender': 'AI Recommender',
     'planner': 'Planner',
+    'story-generation': 'Story Generation',
 };
 
 export function UtilityCallStrip() {
