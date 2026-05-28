@@ -2,8 +2,16 @@ import type { StateCreator } from 'zustand';
 import type { AppSettings, LLMProvider, AIPreset } from '../../types';
 import { get as idbGet, set as idbSet } from 'idb-keyval';
 import { encryptSettingsPresets, decryptSettingsPresets } from '../../services/infrastructure';
-import { uid } from '../../utils/uid';
 import { toast } from '../../components/Toast';
+import {
+    applyTheme,
+    watchSystemTheme,
+    applyUIScale
+} from '../../services/infrastructure/themeService';
+import {
+    defaultSettings,
+    migrateSettings
+} from '../settingsMigration';
 
 // ── DEFAULT constants ──────────────────────────────────────────────────
 
@@ -62,161 +70,6 @@ export const DEFAULT_WORLD_WHAT = [
     "is paying for an escort to", "overheard a deal being made involving"
 ];
 
-// ── Internal helpers ───────────────────────────────────────────────────
-
-export const defaultPreset: AIPreset = {
-    id: uid(),
-    name: 'Default Setting',
-    storyAI: {
-        endpoint: 'http://localhost:11434/v1',
-        apiKey: '',
-        modelName: 'llama3',
-        apiFormat: 'openai',
-    },
-    summarizerAI: {
-        endpoint: 'http://localhost:11434/v1',
-        apiKey: '',
-        modelName: 'llama3',
-        apiFormat: 'openai',
-    },
-    utilityAI: { endpoint: '', apiKey: '', modelName: '' },
-    auxiliaryAI: { endpoint: '', apiKey: '', modelName: '' },
-};
-
-export const defaultSettings: AppSettings = {
-    presets: [defaultPreset],
-    activePresetId: defaultPreset.id,
-    contextLimit: 4096,
-    autoCondenseEnabled: true,
-    condenseAggressiveness: 'balanced',
-    debugMode: false,
-    theme: 'system',
-    showReasoning: true,
-    uiScale: 1.0,
-    enableDeepArchiveSearch: false,
-    autoExtractDivergences: true,
-    divergenceTokenBudget: 2000,
-    autoArchiveStaleNPCsTurns: 15,
-    divergenceScanBudget: 0,
-    rulesBudgetPct: 0.10,
-    autoGenerateRuleKeywords: true,
-    embeddingModel: 'standard' as const,
-    utilityTimeoutSeconds: 45,
-    verboseUtilityLogging: false,
-    aiTier: 'pro' as const,
-};
-
-export function resolveTheme(theme: 'light' | 'dark' | 'system'): 'light' | 'dark' {
-    if (theme !== 'system') return theme;
-    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
-        return 'dark';
-    }
-    return 'light';
-}
-
-export function applyTheme(theme: 'light' | 'dark' | 'system') {
-    activeThemeSetting = theme;
-    document.documentElement.setAttribute('data-theme', resolveTheme(theme));
-}
-
-let activeThemeSetting: 'light' | 'dark' | 'system' = 'light';
-let systemThemeUnsubscribe: (() => void) | null = null;
-
-export function watchSystemTheme() {
-    systemThemeUnsubscribe?.();
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = () => {
-        if (activeThemeSetting === 'system') applyTheme('system');
-    };
-    mq.addEventListener('change', handler);
-    systemThemeUnsubscribe = () => mq.removeEventListener('change', handler);
-}
-
-/** Migrate old single-provider/multi-provider settings to presets format */
-export function migrateSettings(data: Record<string, unknown>): AppSettings {
-    const raw = (data.settings || {}) as Record<string, unknown>;
-
-    // Already migrated -- has presets array
-    if (Array.isArray(raw.presets) && raw.presets.length > 0) {
-        const cleanedPresets = (raw.presets as any[]).map(p => {
-            const { enemyAI: _e, neutralAI: _n, allyAI: _a, ...rest } = p;
-            return rest as AIPreset;
-        });
-        return {
-            presets: cleanedPresets,
-            activePresetId: (raw.activePresetId as string) || cleanedPresets[0].id,
-            contextLimit: (raw.contextLimit as number) ?? 4096,
-            autoCondenseEnabled: (raw.autoCondenseEnabled as boolean) ?? true,
-            condenseAggressiveness: (raw.condenseAggressiveness as AppSettings['condenseAggressiveness']) ?? 'balanced',
-            debugMode: (raw.debugMode as boolean) ?? false,
-            theme: (raw.theme as 'light' | 'dark' | 'system') ?? 'system',
-            showReasoning: (raw.showReasoning as boolean) ?? true,
-            uiScale: (raw.uiScale as number) ?? 1.0,
-            enableDeepArchiveSearch: (raw.enableDeepArchiveSearch as boolean) ?? false,
-            autoExtractDivergences: (raw.autoExtractDivergences as boolean) ?? true,
-            divergenceTokenBudget: (raw.divergenceTokenBudget as number) ?? 2000,
-            divergenceScanBudget: (raw.divergenceScanBudget as number) ?? 0,
-            rulesBudgetPct: (raw.rulesBudgetPct as number) ?? 0.10,
-            autoGenerateRuleKeywords: (raw.autoGenerateRuleKeywords as boolean) ?? true,
-            embeddingModel: (raw.embeddingModel as 'standard' | 'high') ?? 'standard',
-            utilityTimeoutSeconds: (raw.utilityTimeoutSeconds as number) ?? 45,
-            verboseUtilityLogging: (raw.verboseUtilityLogging as boolean) ?? false,
-            aiTier: (raw.aiTier as AppSettings['aiTier']) ?? 'pro',
-        };
-    }
-
-    // Migration from old provider structure
-    let migratedStoryProvider: LLMProvider = { ...defaultPreset.storyAI };
-
-    if (Array.isArray(raw.providers) && raw.providers.length > 0) {
-        const oldActive = (raw.providers as LLMProvider[]).find(p => p.id === raw.activeProviderId) || (raw.providers as LLMProvider[])[0];
-        migratedStoryProvider = {
-            endpoint: oldActive.endpoint || defaultPreset.storyAI.endpoint,
-            apiKey: oldActive.apiKey || '',
-            modelName: oldActive.modelName || defaultPreset.storyAI.modelName,
-            apiFormat: oldActive.apiFormat || 'openai',
-        };
-    } else {
-        migratedStoryProvider = {
-            endpoint: (raw.endpoint as string) || defaultPreset.storyAI.endpoint,
-            apiKey: (raw.apiKey as string) || '',
-            modelName: (raw.modelName as string) || defaultPreset.storyAI.modelName,
-            apiFormat: (raw.apiFormat as 'openai' | 'ollama') || 'openai',
-        };
-    }
-
-    const legacyId = uid();
-    const migratedPreset: AIPreset = {
-        id: legacyId,
-        name: 'Default Preset',
-        storyAI: migratedStoryProvider,
-        summarizerAI: { ...migratedStoryProvider },
-        utilityAI: { endpoint: '', apiKey: '', modelName: '' },
-        auxiliaryAI: { endpoint: '', apiKey: '', modelName: '' },
-    };
-
-    return {
-        presets: [migratedPreset],
-        activePresetId: legacyId,
-        contextLimit: (raw.contextLimit as number) ?? 4096,
-        autoCondenseEnabled: (raw.autoCondenseEnabled as boolean) ?? true,
-        condenseAggressiveness: (raw.condenseAggressiveness as AppSettings['condenseAggressiveness']) ?? 'balanced',
-        debugMode: (raw.debugMode as boolean) ?? false,
-        theme: (raw.theme as 'light' | 'dark' | 'system') ?? 'system',
-        showReasoning: (raw.showReasoning as boolean) ?? true,
-        enableDeepArchiveSearch: (raw.enableDeepArchiveSearch as boolean) ?? false,
-        autoExtractDivergences: (raw.autoExtractDivergences as boolean) ?? true,
-        divergenceTokenBudget: (raw.divergenceTokenBudget as number) ?? 2000,
-        divergenceScanBudget: (raw.divergenceScanBudget as number) ?? 0,
-        rulesBudgetPct: (raw.rulesBudgetPct as number) ?? 0.10,
-        autoGenerateRuleKeywords: (raw.autoGenerateRuleKeywords as boolean) ?? true,
-        embeddingModel: (raw.embeddingModel as 'standard' | 'high') ?? 'standard',
-        utilityTimeoutSeconds: (raw.utilityTimeoutSeconds as number) ?? 45,
-        verboseUtilityLogging: (raw.verboseUtilityLogging as boolean) ?? false,
-        aiTier: (raw.aiTier as AppSettings['aiTier']) ?? 'pro',
-    };
-}
-
 // Debounced save to avoid hammering the API on rapid changes
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 export function debouncedSaveSettings(settings: AppSettings, activeCampaignId: string | null) {
@@ -262,12 +115,36 @@ export const createSettingsSlice: StateCreator<SettingsSlice & { activeCampaignI
                 const migrated = migrateSettings(localSettings);
                 const decryptedPresets = await decryptSettingsPresets(migrated.presets);
                 const decrypted = { ...migrated, presets: decryptedPresets };
+                
                 set({
-                    settings: decrypted,
+                    settings: {
+                        presets: decrypted.presets,
+                        activePresetId: decrypted.activePresetId,
+                        contextLimit: decrypted.contextLimit,
+                        autoCondenseEnabled: decrypted.autoCondenseEnabled,
+                        condenseAggressiveness: decrypted.condenseAggressiveness,
+                        enableDeepArchiveSearch: decrypted.enableDeepArchiveSearch,
+                        autoExtractDivergences: decrypted.autoExtractDivergences,
+                        divergenceTokenBudget: decrypted.divergenceTokenBudget,
+                        divergenceScanBudget: decrypted.divergenceScanBudget,
+                        autoArchiveStaleNPCsTurns: decrypted.autoArchiveStaleNPCsTurns,
+                        rulesBudgetPct: decrypted.rulesBudgetPct,
+                        autoGenerateRuleKeywords: decrypted.autoGenerateRuleKeywords,
+                        embeddingModel: decrypted.embeddingModel,
+                        utilityTimeoutSeconds: decrypted.utilityTimeoutSeconds,
+                        verboseUtilityLogging: decrypted.verboseUtilityLogging,
+                        aiTier: decrypted.aiTier,
+                        theme: decrypted.theme ?? 'system',
+                        uiScale: decrypted.uiScale ?? 1.0,
+                        debugMode: decrypted.debugMode ?? false,
+                        showReasoning: decrypted.showReasoning ?? true,
+                    },
                     settingsLoaded: true,
-                } as Partial<SettingsSlice>);
+                });
+
                 applyTheme(decrypted.theme ?? 'system');
                 watchSystemTheme();
+                applyUIScale(decrypted.uiScale ?? 1.0);
                 return;
             }
         } catch (e) {
@@ -279,26 +156,13 @@ export const createSettingsSlice: StateCreator<SettingsSlice & { activeCampaignI
 
     updateSettings: (patch) => {
         set((s) => {
-            const newSettings = { ...s.settings, ...patch };
-            debouncedSaveSettings(newSettings, s.activeCampaignId);
-            if (patch.theme) {
-                applyTheme(patch.theme);
-            }
-            if (patch.uiScale !== undefined) {
-                const html = document.documentElement;
-                html.style.setProperty('--ui-scale', String(patch.uiScale));
-                
-                const root = document.getElementById('root');
-                if (root) {
-                    root.style.width = '';
-                    root.style.height = '';
-                    root.style.transform = '';
-                    root.style.transformOrigin = '';
-                    root.style.zoom = '';
-                }
-                html.style.zoom = patch.uiScale !== 1 ? String(patch.uiScale) : '';
-            }
-            return { settings: newSettings };
+            const updated = { ...s.settings, ...patch };
+            debouncedSaveSettings(updated, s.activeCampaignId);
+
+            if (patch.theme !== undefined) applyTheme(patch.theme);
+            if (patch.uiScale !== undefined) applyUIScale(patch.uiScale);
+
+            return { settings: updated };
         });
     },
 
@@ -370,3 +234,8 @@ export const createSettingsSlice: StateCreator<SettingsSlice & { activeCampaignI
         return preset?.auxiliaryAI;
     },
 });
+
+// Re-exports for backward compatibility
+export { resolveTheme } from '../../services/infrastructure/themeService';
+export { migrateSettings, defaultSettings } from '../settingsMigration';
+

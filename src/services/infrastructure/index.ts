@@ -4,3 +4,4 @@ export * from './utilityPrompts';
 export * from './settingsCrypto';
 export * from './backgroundQueue';
 export * from './saveFilePicker';
+export * from './themeService';

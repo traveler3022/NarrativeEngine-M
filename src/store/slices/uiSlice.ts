@@ -68,3 +68,4 @@ export const createUISlice: StateCreator<UISlice, [], [], UISlice> = (set) => ({
     embeddingsReindexing: { active: false, total: 0, done: 0, reason: null },
     setEmbeddingsReindexing: (state) => set({ embeddingsReindexing: state }),
 });
+

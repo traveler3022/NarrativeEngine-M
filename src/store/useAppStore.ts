@@ -24,9 +24,17 @@ type AppState = SettingsSlice & CampaignSlice & ChatSlice & UISlice;
 
 // ── Store ──────────────────────────────────────────────────────────────
 
-export const useAppStore = create<AppState>()((...a) => ({
-    ...createSettingsSlice(...a),
-    ...createCampaignSlice(...a),
-    ...createChatSlice(...a),
-    ...createUISlice(...a),
-}));
+export const useAppStore = create<AppState>()((set, get, store) => {
+    const settingsSlice = createSettingsSlice(set, get, store);
+    const campaignSlice = createCampaignSlice(set, get, store);
+    const chatSlice = createChatSlice(set, get, store);
+    const uiSlice = createUISlice(set, get, store);
+
+    return {
+        ...settingsSlice,
+        ...campaignSlice,
+        ...chatSlice,
+        ...uiSlice,
+    };
+});
+
