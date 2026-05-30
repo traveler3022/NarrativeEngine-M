@@ -428,7 +428,7 @@ export async function fetchArchiveScenes(
         const deduped = excludeSceneIds ? raw.filter(s => !excludeSceneIds.has(s.sceneId)) : raw;
 
         // Build a map for O(1) lookup so we can walk in rank order
-        const byId = new Map<string, ArchiveScene>(deduped.map(s => [s.sceneId, s]));
+        const byId = new Map(deduped.map(s => [s.sceneId, s] as const));
 
         // Walk sceneIds in rank order (highest relevance first) and fill the budget
         const selected: ArchiveScene[] = [];
