@@ -2,6 +2,18 @@
 
 import { pipeline, env } from '@huggingface/transformers';
 
+// Serve the ONNX Runtime WASM binaries from the bundled app assets instead of a
+// CDN. Without this, init fails on the offline/CSP-restricted Android webview
+// even though the model weights are bundled — surfacing as "Embedder not ready".
+const ortWasm = env.backends?.onnx?.wasm;
+if (ortWasm) {
+    ortWasm.wasmPaths = '/ort/';
+    // Single-threaded avoids the SharedArrayBuffer / cross-origin-isolation
+    // requirement, which the Capacitor webview does not satisfy.
+    ortWasm.numThreads = 1;
+    ortWasm.proxy = false;
+}
+
 const SINGLE_PASS_LIMIT = 1500;
 const WINDOW_SIZE = 1000;
 const WINDOW_STRIDE = 700;

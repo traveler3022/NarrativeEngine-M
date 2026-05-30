@@ -1,5 +1,5 @@
 import { embeddingStorage, EMBEDDING_VERSION } from '../storage/embeddingStorage';
-import { embedText, isEmbedderReady, warmupEmbedder, getCurrentModelId } from './embedder';
+import { embedText, isEmbedderReady, warmupEmbedder, getCurrentModelId, getLastInitError } from './embedder';
 import { getList, k, type SceneRecord } from '../storage/_helpers';
 import { buildNPCEmbeddingText } from '../npc';
 import type { NPCEntry } from '../../types';
@@ -237,7 +237,8 @@ export async function rebuildAllEmbeddings(
     if (!isEmbedderReady()) {
         await warmupEmbedder();
         if (!isEmbedderReady()) {
-            throw new Error('Embedder not ready');
+            const cause = getLastInitError();
+            throw new Error(cause ? `Embedder failed to load: ${cause.message}` : 'Embedder not ready');
         }
     }
 

@@ -29,6 +29,7 @@ type PendingEntry = { resolve: (v: unknown) => void; reject: (e: Error) => void;
 
 let worker: Worker | null = null;
 let ready = false;
+let lastInitError: Error | null = null;
 let currentModelId = STANDARD_MODEL;
 let currentDims = DEFAULT_DIMS;
 const pending = new Map<string, PendingEntry>();
@@ -133,16 +134,23 @@ export async function warmupEmbedder(): Promise<void> {
         await request<void>({ type: 'init', id: `init-${Date.now()}`, modelId, allowRemote });
         currentModelId = modelId;
         currentDims = dimsFromModelId(modelId);
+        lastInitError = null;
     } catch (e) {
         console.warn('[Embedder] Warmup with settings failed, falling back:', e);
         currentModelId = STANDARD_MODEL;
         currentDims = DEFAULT_DIMS;
         try {
             await request<void>({ type: 'init', id: `init-fallback-${Date.now()}`, modelId: STANDARD_MODEL, allowRemote: false });
+            lastInitError = null;
         } catch (e2) {
             console.warn('[Embedder] Fallback warmup also failed:', e2);
+            lastInitError = e2 instanceof Error ? e2 : new Error(String(e2));
         }
     }
+}
+
+export function getLastInitError(): Error | null {
+    return lastInitError;
 }
 
 export async function switchEmbeddingModel(
