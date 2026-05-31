@@ -44,11 +44,9 @@ describe('retrieveRelevantLore — activation modes', () => {
         const chunk = makeChunk('vec-only', ['dragon'], {
             activationModes: ['vector'],
         });
-        // No keyword match, no semantic hit → excluded
         const result1 = retrieveRelevantLore([chunk], 'nothing relevant here');
         expect(result1).not.toContainEqual(expect.objectContaining({ id: 'vec-only' }));
 
-        // No keyword match, but semantic hit → included
         const result2 = retrieveRelevantLore([chunk], 'nothing relevant here', 1200, [], ['vec-only']);
         expect(result2).toContainEqual(expect.objectContaining({ id: 'vec-only' }));
     });
@@ -57,24 +55,19 @@ describe('retrieveRelevantLore — activation modes', () => {
         const chunk = makeChunk('both', ['dragon'], {
             activationModes: ['vector', 'keyword'],
         });
-        // Keyword match scores via keyword mode
         const result1 = retrieveRelevantLore([chunk], 'a dragon appeared');
         expect(result1).toContainEqual(expect.objectContaining({ id: 'both' }));
 
-        // Semantic hit scores via vector mode
         const result2 = retrieveRelevantLore([chunk], 'nothing relevant here', 1200, [], ['both']);
         expect(result2).toContainEqual(expect.objectContaining({ id: 'both' }));
     });
 
     it('legacy behavior: undefined activationModes = vector+keyword (hybrid)', () => {
         const chunk = makeChunk('legacy', ['dragon'], {
-            // activationModes intentionally undefined
         });
-        // Keyword match works
         const result1 = retrieveRelevantLore([chunk], 'a dragon appeared');
         expect(result1).toContainEqual(expect.objectContaining({ id: 'legacy' }));
 
-        // Semantic hit works
         const result2 = retrieveRelevantLore([chunk], 'nothing relevant here', 1200, [], ['legacy']);
         expect(result2).toContainEqual(expect.objectContaining({ id: 'legacy' }));
     });
@@ -88,12 +81,10 @@ describe('retrieveRelevantLore — activation modes', () => {
     });
 
     it('activationModes always takes precedence over legacy alwaysInclude', () => {
-        // alwaysInclude=true but activationModes=['keyword'] → keyword mode, NOT always
         const chunk = makeChunk('override', ['dragon'], {
             alwaysInclude: true,
             activationModes: ['keyword'],
         });
-        // No keyword match → should NOT be included despite alwaysInclude=true
         const result = retrieveRelevantLore([chunk], 'unrelated message');
         expect(result).not.toContainEqual(expect.objectContaining({ id: 'override' }));
     });
@@ -103,7 +94,6 @@ describe('retrieveRelevantLore — activation modes', () => {
             activationModes: ['keyword'],
             secondaryKeywords: ['fortress'],
         });
-        // Primary "dragon" present, but secondary "fortress" is absent
         const result = retrieveRelevantLore([chunk], 'the dragon appeared');
         expect(result).not.toContainEqual(expect.objectContaining({ id: 'kw-and-sec' }));
     });
@@ -122,7 +112,6 @@ describe('retrieveRelevantLore — activation modes', () => {
             activationModes: ['vector', 'keyword'],
             secondaryKeywords: ['alsonomatch'],
         });
-        // No keyword match at all but semantic hit
         const result = retrieveRelevantLore(
             [chunk],
             'completely unrelated sentence',
@@ -163,5 +152,126 @@ describe('retrieveRelevantLore — secondary-key AND-gate (legacy compat)', () =
         const chunk = makeChunk('chunk-5', ['goldenveil']);
         const result = retrieveRelevantLore([chunk], 'the goldenveil guild is nearby');
         expect(result).toContainEqual(expect.objectContaining({ id: 'chunk-5' }));
+    });
+});
+
+describe('retrieveRelevantLore — IDF weighting', () => {
+    it('rare keyword chunk outranks common keyword chunk', () => {
+        // Create a corpus where 'the' appears in many chunks, 'ironwall' in few
+        const commonChunks: LoreChunk[] = [];
+        for (let i = 0; i < 8; i++) {
+            commonChunks.push(makeChunk(`common-${i}`, ['the', 'guard', 'attack'], {
+                activationModes: ['keyword'],
+            }));
+        }
+        // Rare distinctive keyword
+        const rareChunk = makeChunk('rare-1', ['ironwall', 'concentration'], {
+            activationModes: ['keyword'],
+        });
+        // Common-keyword chunk
+        const commonMatch = makeChunk('common-match', ['the', 'guard'], {
+            activationModes: ['keyword'],
+        });
+
+        const allChunks = [...commonChunks, rareChunk, commonMatch];
+
+        // Query mentions both "the" and "ironwall"
+        const result = retrieveRelevantLore(allChunks, 'the ironwall guard', 1200, []);
+
+        // The rare chunk should rank ahead of common-match because 'ironwall' has higher IDF
+        const rareIdx = result.findIndex(c => c.id === 'rare-1');
+        const commonIdx = result.findIndex(c => c.id === 'common-match');
+        expect(rareIdx).toBeGreaterThanOrEqual(0);
+        expect(commonIdx).toBeGreaterThanOrEqual(0);
+        expect(rareIdx).toBeLessThan(commonIdx);
+    });
+});
+
+describe('retrieveRelevantLore — RRF fusion', () => {
+    it('chunk present in both keyword and embedding lists ranks above single-list chunks', () => {
+        const chunk1 = makeChunk('dual', ['dragon'], { activationModes: ['vector', 'keyword'] });
+        const chunk2 = makeChunk('embed-only', ['xyzunmatch'], { activationModes: ['vector'] });
+        const chunk3 = makeChunk('kw-only', ['sword'], { activationModes: ['keyword'] });
+
+        // Query matches 'dragon' and 'sword' keywords; 'dual' also has semantic hit
+        const result = retrieveRelevantLore(
+            [chunk1, chunk2, chunk3],
+            'dragon sword',
+            1200,
+            [],
+            ['dual', 'embed-only']
+        );
+
+        // 'dual' appears in both lists → RRF consensus should push it top
+        const dualIdx = result.findIndex(c => c.id === 'dual');
+        expect(dualIdx).toBe(0);
+    });
+
+    it('token budget is respected', () => {
+        const chunks: LoreChunk[] = [];
+        for (let i = 0; i < 20; i++) {
+            chunks.push(makeChunk(`kw-${i}`, [`keyword${i}`], {
+                activationModes: ['keyword'],
+                tokens: 100,
+            }));
+        }
+
+        const result = retrieveRelevantLore(chunks, 'keyword0 keyword1 keyword2', 250);
+        const totalTokens = result.reduce((sum, c) => sum + c.tokens, 0);
+        expect(totalTokens).toBeLessThanOrEqual(250);
+    });
+
+    it('linked-entity Pass 2 still works after IDF+RRF', () => {
+        const mainChunk = makeChunk('main', ['dragon'], {
+            activationModes: ['keyword'],
+            linkedEntities: ['Drakmoor'],
+        });
+        const linkedChunk = makeChunk('drakmoor-fortress', ['nevermatch'], {
+            activationModes: ['keyword'],
+            tokens: 30,
+        });
+        linkedChunk.header = 'Drakmoor Fortress';
+
+        const result = retrieveRelevantLore(
+            [mainChunk, linkedChunk],
+            'dragon',
+            200
+        );
+
+        // mainChunk should be included via keywords, linkedChunk via entity cross-pull
+        const ids = result.map(c => c.id);
+        expect(ids).toContain('main');
+        expect(ids).toContain('drakmoor-fortress');
+    });
+});
+
+describe('retrieveRelevantLore — embedder-absent fallback', () => {
+    it('falls back to keyword-only order when semanticLoreIds is undefined', () => {
+        const rareChunk = makeChunk('rare-idf', ['ironwall'], { activationModes: ['keyword'] });
+        const commonChunk = makeChunk('common-idf', ['the'], { activationModes: ['keyword'] });
+
+        // Seed corpus so 'the' is common and 'ironwall' is rare
+        const fillerChunks: LoreChunk[] = [];
+        for (let i = 0; i < 8; i++) {
+            fillerChunks.push(makeChunk(`filler-${i}`, ['the'], { activationModes: ['keyword'] }));
+        }
+
+        const allChunks = [...fillerChunks, rareChunk, commonChunk];
+
+        // No semantic IDs → pure keyword fallback with IDF
+        const result = retrieveRelevantLore(allChunks, 'the ironwall', 1200, [], undefined);
+
+        const rareIdx = result.findIndex(c => c.id === 'rare-idf');
+        const commonIdx = result.findIndex(c => c.id === 'common-idf');
+        expect(rareIdx).toBeGreaterThanOrEqual(0);
+        expect(commonIdx).toBeGreaterThanOrEqual(0);
+        expect(rareIdx).toBeLessThan(commonIdx);
+    });
+
+    it('falls back to keyword-only order when semanticLoreIds is empty', () => {
+        const chunk = makeChunk('kw-fallback', ['dragon'], { activationModes: ['keyword'] });
+
+        const result = retrieveRelevantLore([chunk], 'dragon attack', 1200, [], []);
+        expect(result).toContainEqual(expect.objectContaining({ id: 'kw-fallback' }));
     });
 });

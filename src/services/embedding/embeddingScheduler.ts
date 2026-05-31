@@ -189,7 +189,7 @@ export function enqueueProgressive(params: {
             campaignId,
             type,
             id: c.id,
-            content: type === 'rule' ? c.content.slice(0, 500) : c.content,
+            content: c.content,
             priority: c.priority,
         }));
 

@@ -1,4 +1,5 @@
 import type { LoreChunk, ChatMessage } from '../../types';
+import { computeIdf, fuseRRF } from '../retrieval/lexicalFusion';
 
 export function retrieveRelevantLore(
     chunks: LoreChunk[],
@@ -40,19 +41,20 @@ export function retrieveRelevantLore(
         return textByDepth.get(depth)!;
     };
 
-    // Ensure default depth text is computed
     if (!textByDepth.has(defaultDepth)) {
         getScanText(defaultDepth);
     }
 
-    const scored: { chunk: LoreChunk; score: number }[] = [];
-    const semanticSet = new Set(semanticLoreIds || []);
+    // ─── IDF computation over corpus ───
+    const idf = computeIdf(chunks.map(c => c.triggerKeywords ?? []));
+
+    // ─── Keyword ranking (IDF-weighted) ───
+    const keywordScored: { chunk: LoreChunk; score: number }[] = [];
 
     for (const chunk of chunks) {
         if (includedSet.has(chunk.id)) continue;
 
         const modes = chunk.activationModes;
-        // Back-compat: undefined = legacy hybrid behavior (vector + keyword + alwaysInclude)
         const isKeywordMode = modes ? modes.includes('keyword') : true;
         const isVectorMode = modes ? modes.includes('vector') : true;
 
@@ -63,68 +65,81 @@ export function retrieveRelevantLore(
 
         const keywords = chunk.triggerKeywords || [];
 
-        let matchCount = 0;
+        let idfScore = 0;
         for (const kw of keywords) {
             const lower = kw.toLowerCase();
-            const regex = new RegExp(`\\b${lower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-            if (regex.test(scanText)) matchCount++;
+            const escaped = lower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp('\\b' + escaped + '\\b', 'i');
+            if (regex.test(scanText)) {
+                idfScore += idf[lower] ?? 1;
+            }
         }
 
-        const isSemanticHit = semanticSet.has(chunk.id);
+        // Vector-only chunks with keyword overlap but no semantic hit get reduced weight
+        if (idfScore > 0 && !isKeywordMode) {
+            const semanticSet = new Set(semanticLoreIds || []);
+            const isSemanticHit = semanticSet.has(chunk.id);
+            if (!isSemanticHit) {
+                idfScore *= 0.5;
+            }
+        }
 
-        let score = 0;
-        let keywordMatched = false;
-
-        if (isKeywordMode && matchCount > 0) {
+        if (isKeywordMode && idfScore > 0) {
             // Secondary-key AND-gate: if secondaryKeywords exist, at least one must also match
             const secondaryKws = chunk.secondaryKeywords || [];
             if (secondaryKws.length > 0) {
                 const secondaryMatch = secondaryKws.some(kw => {
                     const lower = kw.toLowerCase();
-                    const regex = new RegExp(`\\b${lower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+                    const escaped = lower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const regex = new RegExp('\\b' + escaped + '\\b', 'i');
                     return regex.test(scanText);
                 });
                 if (!secondaryMatch) continue;
             }
 
-            score += matchCount * 10;
-            score += (chunk.priority || 5);
-            keywordMatched = true;
-        }
-
-        if (isVectorMode) {
-            if (isSemanticHit) {
-                score += 25 + (chunk.priority || 5);
-                if (keywordMatched) score += 20;
-            } else if (matchCount > 0 && !isKeywordMode) {
-                // Vector-only chunk with keyword overlap but no semantic hit still gets a small score
-                score += matchCount * 10;
-                score += (chunk.priority || 5);
-            }
+            idfScore += (chunk.priority || 5) * 0.1;
         }
 
         // Category heuristics (applied when keyword matched, mirroring original logic)
-        if (keywordMatched || (modes === undefined && matchCount > 0)) {
+        if (idfScore > 0) {
             if (chunk.category === 'power_system' && (scanText.includes('combat') || scanText.includes('attack') || scanText.includes('damage') || scanText.includes('cast'))) {
-                score += 15;
+                idfScore += 1.5;
             }
             if (chunk.category === 'faction' && (scanText.includes('politics') || scanText.includes('war') || scanText.includes('guild') || scanText.includes('order'))) {
-                score += 15;
+                idfScore += 1.5;
             }
             if (chunk.category === 'economy' && (scanText.includes('buy') || scanText.includes('sell') || scanText.includes('cost') || scanText.includes('gold') || scanText.includes('money'))) {
-                score += 15;
+                idfScore += 1.5;
             }
         }
 
-        if (score > 0) {
-            scored.push({ chunk, score });
+        if (idfScore > 0) {
+            keywordScored.push({ chunk, score: idfScore });
         }
     }
 
-    scored.sort((a, b) => b.score - a.score);
+    keywordScored.sort((a, b) => b.score - a.score);
+    const keywordRanked = keywordScored.map(s => s.chunk.id);
 
-    for (const { chunk } of scored) {
-        if (includedSet.has(chunk.id)) continue;
+    // ─── Embedding ranking (already cosine-ranked) ───
+    const embeddingRanked = (semanticLoreIds || [])
+        .filter(id => {
+            const chunk = chunks.find(c => c.id === id);
+            if (!chunk) return false;
+            const modes = chunk.activationModes;
+            const isVectorMode = modes ? modes.includes('vector') : true;
+            return isVectorMode;
+        });
+
+    // ─── RRF fusion ───
+    const fused = fuseRRF(keywordRanked, embeddingRanked);
+
+    // Build a map for quick chunk lookup
+    const chunkById = new Map(chunks.map(c => [c.id, c]));
+
+    for (const id of fused) {
+        const chunk = chunkById.get(id);
+        if (!chunk || includedSet.has(chunk.id)) continue;
         if (usedTokens + chunk.tokens > tokenBudget) continue;
         results.push(chunk);
         includedSet.add(chunk.id);

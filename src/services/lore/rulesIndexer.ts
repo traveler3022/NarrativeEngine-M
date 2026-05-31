@@ -1,6 +1,6 @@
 import type { LoreChunk, RuleChunkMeta, LLMProvider } from '../../types';
 import { chunkLoreFile } from './loreChunker';
-import { embeddingStorage } from '../storage/embeddingStorage';
+import { embeddingStorage, EMBEDDING_VERSION } from '../storage/embeddingStorage';
 import { enqueueProgressiveWithExistingCheck } from '../embedding/embeddingScheduler';
 import { llmCall } from '../../utils/llmCall';
 import { INPUT_DELIMITER } from '../infrastructure';
@@ -155,6 +155,18 @@ export async function indexRules(
     const chunkMeta: Record<string, RuleChunkMeta> = { ...existingChunkMeta };
 
     onProgress?.({ phase: 'chunking', current: 0, total: chunks.length });
+
+    // One-time migration: rule embeddings created before the full-content scheme
+    // (version < EMBEDDING_VERSION) were truncated to 500 chars. Delete them so the
+    // existing-check below re-embeds them at full content via the (fixed) scheduler path.
+    const storedRuleVectors = await embeddingStorage.getAllWithVersion(campaignId, 'rule');
+    const staleRuleIds = storedRuleVectors.filter(r => r.version < EMBEDDING_VERSION).map(r => r.id);
+    for (const id of staleRuleIds) {
+        await embeddingStorage.deleteByTypeAndId(campaignId, 'rule', id).catch(() => {});
+    }
+    if (staleRuleIds.length > 0) {
+        console.log(`[RulesRAG] Migrated ${staleRuleIds.length} truncated rule embedding(s) → full-content re-embed`);
+    }
 
     const existingIds = new Set(
         (await embeddingStorage.getAll(campaignId, 'rule')).map(e => e.id)

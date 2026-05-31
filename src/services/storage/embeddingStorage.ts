@@ -1,6 +1,8 @@
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval';
 
-export const EMBEDDING_VERSION = 3;
+// v4: rule embeddings switched from 500-char-truncated to full content (windowed by
+// the embedder worker). Rule vectors with version < 4 are re-embedded by indexRules.
+export const EMBEDDING_VERSION = 4;
 
 const LEGACY_MODEL_ID = 'Xenova/all-MiniLM-L6-v2';
 

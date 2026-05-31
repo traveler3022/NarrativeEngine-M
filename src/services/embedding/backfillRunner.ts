@@ -5,7 +5,6 @@ import { buildNPCEmbeddingText } from '../npc';
 import type { NPCEntry } from '../../types';
 import { get as idbGet } from 'idb-keyval';
 
-const RULE_EMBED_SLICE = 500;
 
 
 export type BackfillProgress = {
@@ -306,7 +305,7 @@ export async function rebuildAllEmbeddings(
 
     // Rules
     for (const chunk of ruleChunks) {
-        const vector = await embedText(chunk.content.slice(0, RULE_EMBED_SLICE));
+        const vector = await embedText(chunk.content);
         if (vector) {
             await embeddingStorage.store(campaignId, chunk.id, Array.from(vector), 'rule', modelId);
             counts.rules++;
@@ -384,7 +383,7 @@ export async function runFullReindex(
         } else if (record.type === 'rule') {
             const chunk = ruleChunks.find(c => c.id === record.id);
             if (chunk) {
-                const vector = await embedText(chunk.content.slice(0, RULE_EMBED_SLICE));
+                const vector = await embedText(chunk.content);
                 if (vector) {
                     await embeddingStorage.store(campaignId, record.id, Array.from(vector), 'rule', modelId);
                 }

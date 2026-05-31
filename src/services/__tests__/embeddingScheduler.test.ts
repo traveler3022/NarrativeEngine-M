@@ -131,7 +131,7 @@ describe('embeddingScheduler', () => {
             abortForCampaignSwitch();
         });
 
-        it('slices rule content to 500 chars', async () => {
+        it('passes rule content in full (no truncation)', async () => {
             const longContent = 'x'.repeat(600);
             const chunks: ProgressiveChunk[] = [
                 { id: 'r1', content: longContent, modes: ['vector'], priority: 5 },
@@ -143,7 +143,7 @@ describe('embeddingScheduler', () => {
 
             const callContent = mockPoolEmbed.mock.calls[0]?.[0] as string | undefined;
             if (callContent !== undefined) {
-                expect(callContent.length).toBeLessThanOrEqual(500);
+                expect(callContent.length).toBe(600);
             }
         });
 

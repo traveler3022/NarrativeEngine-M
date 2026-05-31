@@ -1,4 +1,5 @@
 import type { LoreChunk, ChatMessage, RuleChunkMeta } from '../../types';
+import { computeIdf, fuseRRF } from '../retrieval/lexicalFusion';
 
 export function retrieveRelevantRules(
     chunks: LoreChunk[],
@@ -38,8 +39,11 @@ export function retrieveRelevantRules(
         return textByDepth.get(depth)!;
     };
 
-    const scored: { chunk: LoreChunk; score: number }[] = [];
-    const semanticSet = new Set(semanticRuleIds || []);
+    // ─── IDF computation over corpus ───
+    const idf = computeIdf(chunks.map(c => (meta[c.id]?.triggerKeywords ?? c.triggerKeywords ?? [])));
+
+    // ─── Keyword ranking (IDF-weighted) ───
+    const keywordScored: { chunk: LoreChunk; score: number }[] = [];
 
     for (const chunk of chunks) {
         if (includedSet.has(chunk.id)) continue;
@@ -55,52 +59,64 @@ export function retrieveRelevantRules(
         const scanText = getScanText(depth);
         const keywords = cm?.triggerKeywords ?? chunk.triggerKeywords ?? [];
 
-        let matchCount = 0;
+        let idfScore = 0;
         for (const kw of keywords) {
             const lower = kw.toLowerCase();
-            const regex = new RegExp(`\\b${lower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-            if (regex.test(scanText)) matchCount++;
+            const escaped = lower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp('\\b' + escaped + '\\b', 'i');
+            if (regex.test(scanText)) {
+                idfScore += idf[lower] ?? 1;
+            }
         }
 
-        let score = 0;
-        let keywordMatched = false;
-
-        if (isKeywordMode && matchCount > 0) {
+        if (isKeywordMode && idfScore > 0) {
             const secondaryKws = cm?.secondaryKeywords ?? chunk.secondaryKeywords ?? [];
             if (secondaryKws.length > 0) {
                 const secondaryMatch = secondaryKws.some(kw => {
                     const lower = kw.toLowerCase();
-                    const regex = new RegExp(`\\b${lower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+                    const escaped = lower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const regex = new RegExp('\\b' + escaped + '\\b', 'i');
                     return regex.test(scanText);
                 });
                 if (!secondaryMatch) continue;
             }
 
-            score += matchCount * 10;
-            score += (cm?.priority ?? chunk.priority ?? 5);
-            keywordMatched = true;
+            idfScore += (cm?.priority ?? chunk.priority ?? 5) * 0.1;
         }
 
-        if (isVectorMode) {
+        if (!isKeywordMode && idfScore > 0) {
+            const semanticSet = new Set(semanticRuleIds || []);
             const isSemanticHit = semanticSet.has(chunk.id);
-            if (isSemanticHit) {
-                score += 25 + (cm?.priority ?? chunk.priority ?? 5);
-                if (keywordMatched) score += 20;
-            } else if (matchCount > 0 && !isKeywordMode) {
-                score += matchCount * 10;
-                score += (cm?.priority ?? chunk.priority ?? 5);
+            if (!isSemanticHit) {
+                idfScore *= 0.5;
             }
         }
 
-        if (score > 0) {
-            scored.push({ chunk, score });
+        if (idfScore > 0) {
+            keywordScored.push({ chunk, score: idfScore });
         }
     }
 
-    scored.sort((a, b) => b.score - a.score);
+    keywordScored.sort((a, b) => b.score - a.score);
+    const keywordRanked = keywordScored.map(s => s.chunk.id);
 
-    for (const { chunk } of scored) {
-        if (includedSet.has(chunk.id)) continue;
+    // ─── Embedding ranking (already cosine-ranked) ───
+    const embeddingRanked = (semanticRuleIds || []).filter(id => {
+        const chunk = chunks.find(c => c.id === id);
+        if (!chunk) return false;
+        const cm = meta[chunk.id];
+        const modes = cm ? cm.activationModes : ['vector'];
+        return modes.includes('vector');
+    });
+
+    // ─── RRF fusion ───
+    const fused = fuseRRF(keywordRanked, embeddingRanked);
+
+    const chunkById = new Map(chunks.map(c => [c.id, c]));
+
+    for (const id of fused) {
+        const chunk = chunkById.get(id);
+        if (!chunk || includedSet.has(chunk.id)) continue;
         if (usedTokens + chunk.tokens > tokenBudget) continue;
         results.push(chunk);
         includedSet.add(chunk.id);
