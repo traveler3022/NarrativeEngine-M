@@ -35,6 +35,8 @@ export type UISlice = {
     closeTroubleModal: () => void;
     pendingArcSeed: string | null;
     setPendingArcSeed: (seed: string | null) => void;
+    pendingCombatPrompt: { entitiesReferenced: string[]; originalInput: string } | null;
+    setPendingCombatPrompt: (prompt: { entitiesReferenced: string[]; originalInput: string } | null) => void;
     embeddingsReindexing: ReindexState;
     setEmbeddingsReindexing: (state: ReindexState) => void;
 };
@@ -65,6 +67,8 @@ export const createUISlice: StateCreator<UISlice, [], [], UISlice> = (set) => ({
     closeTroubleModal: () => set({ troubleModalOpen: false, troubleOptions: [], troubleLoading: false }),
     pendingArcSeed: null,
     setPendingArcSeed: (seed) => set({ pendingArcSeed: seed }),
+    pendingCombatPrompt: null,
+    setPendingCombatPrompt: (prompt) => set({ pendingCombatPrompt: prompt }),
     embeddingsReindexing: { active: false, total: 0, done: 0, reason: null },
     setEmbeddingsReindexing: (state) => set({ embeddingsReindexing: state }),
 });

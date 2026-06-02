@@ -1,5 +1,5 @@
-import { Trash2, Save, Loader2, Sparkles, Users, ScrollText } from 'lucide-react';
-import type { NPCEntry, NPCBehavioralTrigger, DivergenceCategory, DivergenceEntry } from '../../types';
+import { Trash2, Save, Loader2, Sparkles, Users, ScrollText, Shield } from 'lucide-react';
+import type { NPCEntry, NPCBehavioralTrigger, DivergenceCategory, DivergenceEntry, CombatTier, Archetype } from '../../types';
 import { CATEGORY_LABELS } from '../../services/campaign-state';
 
 type Props = {
@@ -381,6 +381,146 @@ export function NPCEditForm({
                                 {isEditing && <button onClick={() => removeBoundary('softBoundaries', i)} className="text-danger/60 hover:text-danger p-1 shrink-0"><Trash2 size={11} /></button>}
                             </div>
                         ))}
+                    </div>
+                 </div>
+
+                {/* Combat Stats */}
+                <div className="bg-void p-4 rounded border border-border space-y-3">
+                    <div className="flex items-center justify-between">
+                        <span className="text-red-400 font-bold uppercase tracking-widest text-xs flex items-center gap-2">
+                            <Shield size={14} /> Combat Stats
+                        </span>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={form.isPC ?? false}
+                                onChange={e => setForm({ ...form, isPC: e.target.checked })}
+                                disabled={!isEditing}
+                                className="accent-terminal"
+                            />
+                            <span className="text-[10px] text-terminal uppercase tracking-widest font-bold">Player Character</span>
+                        </label>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-text-dim text-[10px] uppercase tracking-wider mb-1">Combat Tier</label>
+                            <select
+                                value={form.combatTier ?? 'grunt'}
+                                onChange={e => setForm({ ...form, combatTier: e.target.value as CombatTier })}
+                                disabled={!isEditing}
+                                className="w-full bg-void border border-border rounded px-3 py-2 text-[14px] md:text-sm text-text-primary disabled:opacity-70 disabled:bg-surface outline-none focus:border-terminal transition-colors"
+                            >
+                                <option value="minion">Minion</option>
+                                <option value="grunt">Grunt</option>
+                                <option value="elite">Elite</option>
+                                <option value="boss">Boss</option>
+                                <option value="legendary">Legendary</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-text-dim text-[10px] uppercase tracking-wider mb-1">Archetype</label>
+                            <select
+                                value={form.archetype ?? 'skirmisher'}
+                                onChange={e => setForm({ ...form, archetype: e.target.value as Archetype })}
+                                disabled={!isEditing}
+                                className="w-full bg-void border border-border rounded px-3 py-2 text-[14px] md:text-sm text-text-primary disabled:opacity-70 disabled:bg-surface outline-none focus:border-terminal transition-colors"
+                            >
+                                <option value="bulwark">Bulwark</option>
+                                <option value="assassin">Assassin</option>
+                                <option value="caster">Caster</option>
+                                <option value="skirmisher">Skirmisher</option>
+                                <option value="brute">Brute</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-text-dim text-[10px] uppercase tracking-wider mb-1">6-Stat Block</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            {(['VIT', 'PWR', 'RES', 'FOC', 'SPD', 'WIL'] as const).map(stat => (
+                                <div key={stat}>
+                                    <label className="block text-[9px] text-text-dim uppercase tracking-wider mb-0.5">{stat}</label>
+                                    <input
+                                        type="number"
+                                        min={3}
+                                        max={20}
+                                        value={form.stats?.[stat] ?? 10}
+                                        onChange={e => {
+                                            const val = parseInt(e.target.value) || 10;
+                                            const currentStats = form.stats ?? { VIT: 10, PWR: 10, RES: 10, FOC: 10, SPD: 10, WIL: 10 };
+                                            setForm({ ...form, stats: { ...currentStats, [stat]: val } });
+                                        }}
+                                        disabled={!isEditing}
+                                        className="w-full bg-surface border border-border px-2 py-1 text-[12px] font-mono text-text-primary disabled:opacity-70 disabled:bg-void outline-none focus:border-terminal"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-text-dim text-[10px] uppercase tracking-wider mb-1">Equipped Weapon ID</label>
+                            <input
+                                type="text"
+                                value={form.equippedWeapon ?? ''}
+                                onChange={e => setForm({ ...form, equippedWeapon: e.target.value })}
+                                disabled={!isEditing}
+                                placeholder="e.g. longsword"
+                                className="w-full bg-void border border-border rounded px-3 py-2 text-[14px] md:text-sm text-text-primary placeholder:text-text-dim/50 disabled:opacity-70 disabled:bg-surface outline-none focus:border-terminal transition-colors"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-text-dim text-[10px] uppercase tracking-wider mb-1">Condition</label>
+                            <select
+                                value={form.condition ?? 'healthy'}
+                                onChange={e => setForm({ ...form, condition: e.target.value as NPCEntry['condition'] })}
+                                disabled={!isEditing}
+                                className="w-full bg-void border border-border rounded px-3 py-2 text-[14px] md:text-sm text-text-primary disabled:opacity-70 disabled:bg-surface outline-none focus:border-terminal transition-colors"
+                            >
+                                <option value="healthy">Healthy</option>
+                                <option value="wounded">Wounded</option>
+                                <option value="critical">Critical</option>
+                                <option value="dead">Dead</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-text-dim text-[10px] uppercase tracking-wider mb-1">Known Skills (comma-separated IDs)</label>
+                        <input
+                            type="text"
+                            value={(form.knownSkills ?? []).join(', ')}
+                            onChange={e => setForm({ ...form, knownSkills: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
+                            disabled={!isEditing}
+                            placeholder="fireball, healing_light, deflect"
+                            className="w-full bg-void border border-border rounded px-3 py-2 text-[14px] md:text-sm text-text-primary placeholder:text-text-dim/50 disabled:opacity-70 disabled:bg-surface outline-none focus:border-terminal transition-colors"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-text-dim text-[10px] uppercase tracking-wider mb-1">Inventory (comma-separated IDs)</label>
+                        <input
+                            type="text"
+                            value={(form.inventory ?? []).join(', ')}
+                            onChange={e => setForm({ ...form, inventory: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
+                            disabled={!isEditing}
+                            placeholder="longsword, leather_armor, health_potion"
+                            className="w-full bg-void border border-border rounded px-3 py-2 text-[14px] md:text-sm text-text-primary placeholder:text-text-dim/50 disabled:opacity-70 disabled:bg-surface outline-none focus:border-terminal transition-colors"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-text-dim text-[10px] uppercase tracking-wider mb-1">Recovery Note</label>
+                        <input
+                            type="text"
+                            value={form.recoveryNote ?? ''}
+                            onChange={e => setForm({ ...form, recoveryNote: e.target.value })}
+                            disabled={!isEditing}
+                            placeholder="Optional — how this NPC recovers between fights"
+                            className="w-full bg-void border border-border rounded px-3 py-2 text-[14px] md:text-sm text-text-primary placeholder:text-text-dim/50 disabled:opacity-70 disabled:bg-surface outline-none focus:border-terminal transition-colors"
+                        />
                     </div>
                 </div>
 

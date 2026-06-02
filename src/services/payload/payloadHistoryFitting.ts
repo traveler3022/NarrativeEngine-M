@@ -40,6 +40,7 @@ export function fitHistory(
         if (msg.role === 'tool') continue;
         if (msg.role === 'assistant' && Array.isArray(msg.tool_calls) && msg.tool_calls.length > 0) continue;
         if (msg.name === 'scene-marker') continue;
+        if (msg.name === 'combat-ledger') continue;
 
         let content = msg.content ?? null;
         if (msg.role === 'user' && typeof content === 'string') {

@@ -14,6 +14,7 @@ import {
     TTRPG_PERSONA_STATE_ANALYZER,
     joinPromptSections,
 } from '../infrastructure';
+import { COMBAT_TIER_ARCHETYPE_RUBRIC } from './npcDetector';
 
 const RETRY_SUFFIX = '\n\nIMPORTANT: Your previous response was not valid JSON. Respond with ONLY valid JSON. No markdown fences, no comments, no trailing commas, no extra text before or after the JSON.';
 
@@ -128,8 +129,12 @@ export async function generateNPCProfile(
   ],
   "hardBoundaries": ["String — something this NPC will never do. Example: 'will not betray her sister'"],
   "softBoundaries": ["String — something this NPC dislikes but may tolerate under pressure. Example: 'dislikes being excluded from plans'"],
-  "tier": "String — one of: 'recurring' (named character likely to return), 'oneshot' (named but scene-bound), 'walkon' (background, minor speaking role). Default 'oneshot' if uncertain."
+  "tier": "String — one of: 'recurring' (named character likely to return), 'oneshot' (named but scene-bound), 'walkon' (background, minor speaking role). Default 'oneshot' if uncertain.",
+  "combatTier": "String — one of: 'minion', 'grunt', 'elite', 'boss', 'legendary'. Only for NPCs who could plausibly fight. Omit if purely social/narrative.",
+  "archetype": "String — one of: 'bulwark', 'assassin', 'caster', 'skirmisher', 'brute'. Only for NPCs who could plausibly fight. Omit if purely social/narrative."
 }`,
+
+            COMBAT_TIER_ARCHETYPE_RUBRIC,
 
             JSON_ONLY_FOOTER,
             ANCHOR_BEFORE_INPUT,
@@ -200,6 +205,12 @@ export async function generateNPCProfile(
                     ? finalParsed.softBoundaries.map(String).filter(Boolean)
                     : undefined,
                 tier: validTiers.has(rawTier) ? rawTier as NPCEntry['tier'] : 'oneshot',
+                combatTier: (['minion', 'grunt', 'elite', 'boss', 'legendary'].includes(finalParsed.combatTier as string))
+                    ? (finalParsed.combatTier as NPCEntry['combatTier'])
+                    : undefined,
+                archetype: (['bulwark', 'assassin', 'caster', 'skirmisher', 'brute'].includes(finalParsed.archetype as string))
+                    ? (finalParsed.archetype as NPCEntry['archetype'])
+                    : undefined,
             };
 
             addNPCToStore(newEntry);

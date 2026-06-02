@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import {
     Loader2, Zap, Trash2,
-    ChevronDown, X, Pin
+    ChevronDown, X, Pin, Sword
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -20,7 +20,10 @@ import { CreateTroubleModal } from './chat/CreateTroubleModal';
 
 import { NPCPressureInspector } from './NPCPressureInspector';
 import { ChatInput } from './chat/ChatInput';
+import { CombatHUD } from './combat/CombatHUD';
 import { UtilityCallStrip } from './UtilityCallStrip';
+import { scanCombatIntent, combatKeywordPrefilter, routeCombatIntent } from '../services/turn/combatScanner';
+import { buildCombatEntryArgs, classifyUnknownFoes } from '../services/turn/combatEntry';
 
 export function ChatArea() {
     const {
@@ -59,6 +62,8 @@ export function ChatArea() {
         updateMessageDivergence,
         pendingArcSeed,
         setPendingArcSeed,
+        pendingCombatPrompt,
+        setPendingCombatPrompt,
         pinnedExcerpts,
     } = useAppStore(useShallow(s => ({
         messages: s.messages,
@@ -96,8 +101,15 @@ export function ChatArea() {
         updateMessageDivergence: s.updateMessageDivergence,
         pendingArcSeed: s.pendingArcSeed,
         setPendingArcSeed: s.setPendingArcSeed,
+        pendingCombatPrompt: s.pendingCombatPrompt,
+        setPendingCombatPrompt: s.setPendingCombatPrompt,
         pinnedExcerpts: s.pinnedExcerpts,
     })));
+
+    const initiateCombatFromStore = useAppStore(s => s.initiateCombat);
+    const combatState = useAppStore(s => s.combatState);
+    const items = useAppStore(s => s.items);
+    const skills = useAppStore(s => s.skills);
 
     const [input, setInput] = useState('');
     const [isStreaming, setStreaming] = useState(false);
@@ -119,9 +131,92 @@ export function ChatArea() {
         if (inputRef.current) inputRef.current.style.height = '40px';
     };
 
-    const handleSend = async (overrideText?: string) => {
+    const handleSend = async (overrideText?: string, skipCombatScan = false) => {
+        const existingPrompt = useAppStore.getState().pendingCombatPrompt;
+        if (existingPrompt && !overrideText) {
+            // Player typed something new while the Y/N banner was open → send it as narrative (skip re-scan).
+            const newText = input.trim();
+            setPendingCombatPrompt(null);
+            console.log('[CombatEntry]', { decision: 'ask→dismissed_new_input' });
+            if (!newText) return;
+            return handleSend(newText, true);
+        }
+        if (existingPrompt && overrideText) {
+            setPendingCombatPrompt(null);
+            console.log('[CombatEntry]', { decision: 'ask→dismissed_new_input' });
+        }
+
         const textToUse = overrideText || input.trim();
         if (!textToUse || isStreaming) return;
+
+        // Claim the turn synchronously: taps during the async combat scan can no longer
+        // fire duplicate turns, and the Stop button appears immediately (not only once
+        // runTurn starts streaming).
+        setStreaming(true);
+        const turnAbort = (abortControllerRef.current = new AbortController());
+
+        const combatConfig = context.combatConfig ?? {};
+        const combatAutoDetect = combatConfig.combatAutoDetect ?? false;
+
+        if (context.combatModeActive && combatAutoDetect && !combatState?.active && !skipCombatScan) {
+            const derivedNouns = [
+                ...items.map(i => i.name),
+                ...skills.map(s => s.name),
+                ...npcLedger.map(n => n.name).filter(Boolean),
+                ...npcLedger.flatMap(n => (n.aliases || '').split(',').map(a => a.trim()).filter(Boolean)),
+            ];
+            const extraKeywords = combatConfig.combatKeywords ?? [];
+            const allNouns = [...derivedNouns.map(n => n.toLowerCase()), ...extraKeywords.map(k => k.toLowerCase())];
+
+            if (combatKeywordPrefilter(textToUse, allNouns, extraKeywords)) {
+                const auxProvider = getActiveAuxiliaryEndpoint?.();
+                if (auxProvider?.modelName) {
+                    try {
+                        const recentScene = messages.slice(-5).map(m => {
+                            const role = m.role === 'assistant' ? 'GM' : m.role.toUpperCase();
+                            return `[${role}]: ${(m.content || '').slice(0, 400)}`;
+                        }).join('\n\n');
+
+                        const scanResult = await scanCombatIntent(textToUse, recentScene, auxProvider, false);
+                        const decision = routeCombatIntent(scanResult, {
+                            autoEnterThreshold: combatConfig.autoEnterThreshold,
+                            askThreshold: combatConfig.askThreshold,
+                            confirmOnBorderline: combatConfig.confirmOnBorderline,
+                        }, false);
+
+                        console.log('[CombatEntry]', { intent: scanResult.intent, confidence: scanResult.confidence, decision, entitiesReferenced: scanResult.entitiesReferenced });
+
+                        if (decision === 'enter') {
+                            const entryArgs = buildCombatEntryArgs(scanResult.entitiesReferenced, npcLedger);
+                            if (entryArgs.pcIds.length === 0) {
+                                toast.warning('No player character set — mark an NPC as PC in the ledger to use combat');
+                                // fall through to a normal narrative turn (don't strand the player)
+                            } else {
+                                let mookSpecs = entryArgs.mookSpecs;
+                                if (entryArgs.unknownFoeNames.length > 0) {
+                                    const classified = await classifyUnknownFoes(entryArgs.unknownFoeNames, recentScene, auxProvider);
+                                    mookSpecs = [...mookSpecs, ...classified.map(c => ({ combatTier: c.combatTier, archetype: c.archetype, count: c.count }))];
+                                }
+                                const allNamed = [...entryArgs.namedNpcIds, ...entryArgs.pcIds];
+                                initiateCombatFromStore(allNamed, mookSpecs);
+                                toast.success('Combat started!');
+                                setStreaming(false);
+                                return;
+                            }
+                        } else if (decision === 'ask') {
+                            setPendingCombatPrompt({ entitiesReferenced: scanResult.entitiesReferenced, originalInput: textToUse });
+                            if (!overrideText) { setInput(''); resetTextareaHeight(); }
+                            setStreaming(false);
+                            return;
+                        }
+                    } catch (err) {
+                        console.warn('[CombatEntry] Pre-send scan failed, falling back to normal turn:', err);
+                    }
+                }
+            }
+        }
+
+        if (turnAbort.signal.aborted) { setStreaming(false); return; }
 
         const useDeepScan = deepArmed && !!settings.enableDeepArchiveSearch;
         setDeepArmed(false);
@@ -134,8 +229,6 @@ export function ChatArea() {
         const arcSeed = useAppStore.getState().pendingArcSeed;
         if (arcSeed) setPendingArcSeed(null);
         const llmInput = arcSeed ? `${textToUse}\n\n[SYS: Introduce this arc naturally going forward — ${arcSeed}]` : textToUse;
-
-        abortControllerRef.current = new AbortController();
 
         await runTurn({
             input: llmInput,
@@ -417,14 +510,62 @@ export function ChatArea() {
                 </div>
             )}
 
-            <ChatInput
-                input={input}
-                isStreaming={isStreaming}
-                onChange={handleInputChange}
-                onSend={() => handleSend()}
-                onStop={handleStop}
-                inputRef={inputRef}
-            />
+            {pendingCombatPrompt && (
+                <div className="px-2 md:px-4 py-2 flex items-center gap-2 bg-red-500/10 border-t border-red-500/20">
+                    <Sword size={14} className="text-red-400 shrink-0" />
+                    <span className="text-[9px] uppercase tracking-widest text-red-400 font-bold flex-1">Combat detected — start fight?</span>
+                    <button
+                        onClick={async () => {
+                            const prompt = useAppStore.getState().pendingCombatPrompt;
+                            if (!prompt) return;
+                            setPendingCombatPrompt(null);
+                            const auxProvider = getActiveAuxiliaryEndpoint?.();
+                            const recentScene = messages.slice(-5).map(m => {
+                                const role = m.role === 'assistant' ? 'GM' : m.role.toUpperCase();
+                                return `[${role}]: ${(m.content || '').slice(0, 400)}`;
+                            }).join('\n\n');
+                            const entryArgs = buildCombatEntryArgs(prompt.entitiesReferenced, npcLedger);
+                            if (entryArgs.pcIds.length === 0) {
+                                toast.warning('No player character set — mark an NPC as PC in the ledger to use combat');
+                                return;
+                            }
+                            let mookSpecs = entryArgs.mookSpecs;
+                            if (entryArgs.unknownFoeNames.length > 0 && auxProvider?.modelName) {
+                                const classified = await classifyUnknownFoes(entryArgs.unknownFoeNames, recentScene, auxProvider);
+                                mookSpecs = [...mookSpecs, ...classified.map(c => ({ combatTier: c.combatTier, archetype: c.archetype, count: c.count }))];
+                            }
+                            const allNamed = [...entryArgs.namedNpcIds, ...entryArgs.pcIds];
+                            initiateCombatFromStore(allNamed, mookSpecs);
+                            toast.success('Combat started!');
+                            console.log('[CombatEntry]', { decision: 'ask→yes' });
+                        }}
+                        className="px-2 py-0.5 text-[9px] uppercase tracking-widest font-bold bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 rounded hover:bg-emerald-500/30 transition-colors"
+                    >Yes</button>
+                    <button
+                        onClick={() => {
+                            const orig = useAppStore.getState().pendingCombatPrompt?.originalInput ?? '';
+                            setPendingCombatPrompt(null);
+                            console.log('[CombatEntry]', { decision: 'ask→no' });
+                            if (orig) handleSend(orig, true);
+                        }}
+                        className="px-2 py-0.5 text-[9px] uppercase tracking-widest font-bold bg-red-500/20 border border-red-500/50 text-red-400 rounded hover:bg-red-500/30 transition-colors"
+                    >No</button>
+                    <button onClick={() => setPendingCombatPrompt(null)} className="text-red-400/60 hover:text-red-400 shrink-0"><X size={12} /></button>
+                </div>
+            )}
+
+            {combatState?.active ? (
+                <CombatHUD onActionCommitted={() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' })} />
+            ) : (
+                <ChatInput
+                    input={input}
+                    isStreaming={isStreaming}
+                    onChange={handleInputChange}
+                    onSend={() => handleSend()}
+                    onStop={handleStop}
+                    inputRef={inputRef}
+                />
+            )}
 
             {showScrollFab && (
                 <button onClick={() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' })} className="fixed bottom-[calc(160px+env(safe-area-inset-bottom))] right-4 z-50 w-10 h-10 rounded-full bg-terminal text-surface shadow-lg flex items-center justify-center"><ChevronDown size={20} /></button>

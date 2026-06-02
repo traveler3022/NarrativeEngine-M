@@ -269,3 +269,24 @@ When in doubt, REJECT. If none are valid names, return [].`,
 
     return [];
 }
+
+export const COMBAT_TIER_ARCHETYPE_RUBRIC = `For any NPC who could plausibly fight, also assign:
+
+combatTier (raw threat / how dangerous in a fight):
+- "minion": fodder, untrained, dies fast (street thug, conscript).
+- "grunt": competent rank-and-file (trained soldier, seasoned bandit). DEFAULT if unsure.
+- "elite": a standout threat (captain, veteran duelist, skilled mage).
+- "boss": a major antagonist who anchors an encounter.
+- "legendary": world-class, a fight against them is a set-piece.
+NOTE: combatTier is COMBAT threat, independent of narrative importance — a beloved harmless
+shopkeeper is "minion"; a feared assassin cameo can be "elite".
+
+archetype (how they fight — drives their AI behavior):
+- "bulwark": tanky defender, protects allies (knight, bodyguard).
+- "brute": raw offense, heavy hits (berserker, ogre).
+- "assassin": fast, precise, burst (rogue, ninja).
+- "skirmisher": mobile, adaptable, ranged/hit-and-run. DEFAULT if unsure.
+- "caster": magic/tech ranged, fragile (mage, hacker, sniper-mystic).
+
+Only assign these for combat-relevant NPCs. If the NPC is purely social/narrative and would
+never fight, you may omit them (the store backfills defaults).`;

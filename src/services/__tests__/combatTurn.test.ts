@@ -23,7 +23,7 @@ import {
 } from '../engine/combatEngine';
 import { handleCombatAction, ADJUDICATOR_PROMPT, type CombatActionSource } from '../turn/turnOrchestrator';
 import { fitHistory } from '../payload/payloadHistoryFitting';
-import type { ChatMessage, CombatState as CSType } from '../../types';
+import type { ChatMessage } from '../../types';
 
 function makeCombatant(overrides: Partial<Combatant> & { id: string }): Combatant {
     const tier = overrides.combatTier ?? 'grunt';

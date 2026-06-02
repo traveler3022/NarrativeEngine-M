@@ -175,6 +175,18 @@ export type GameContext = {
     npcIntroDC?: number;
     notebook: NotebookNote[];
     notebookActive: boolean;
+    combatModeActive?: boolean;
+    combatConfig?: {
+        mookJitterRange?: number;
+        defaultWeaponDie?: number;
+        recoveryBands?: Record<'healthy' | 'wounded' | 'critical', number>;
+        combatAutoDetect?: boolean;
+        autoEnterThreshold?: number;
+        askThreshold?: number;
+        confirmOnBorderline?: boolean;
+        combatKeywords?: string[];
+    };
+    statLabelMap?: Record<string, string>;
 };
 
 
@@ -408,6 +420,25 @@ export type NPCEntry = {
     tier?: 'recurring' | 'oneshot' | 'walkon';
     recalledByEmbedding?: boolean;
     lastUpdateScene?: number;
+    isPC?: boolean;
+    combatTier?: 'minion' | 'grunt' | 'elite' | 'boss' | 'legendary';
+    archetype?: 'bulwark' | 'assassin' | 'caster' | 'skirmisher' | 'brute';
+    stats?: {
+        VIT: number;
+        PWR: number;
+        RES: number;
+        FOC: number;
+        SPD: number;
+        WIL: number;
+    };
+    equippedWeapon?: string;
+    knownSkills?: string[];
+    inventory?: string[];
+    condition?: 'healthy' | 'wounded' | 'critical' | 'dead';
+    lastCondition?: 'healthy' | 'wounded' | 'critical' | 'dead';
+    lastSeenTimestamp?: number;
+    recoveryNote?: string;
+    overrides?: { trigger: string; action: string }[];
 };
 
 
@@ -563,5 +594,71 @@ export type PinnedExcerpt = {
     text: string;              // verbatim pinned content (source of truth)
     createdAt: number;
     isFullMessage: boolean;    // affects rendering & dedup
+};
+
+// ── Combat Mode Core Types ─────────────────────────────────────────────
+
+export type CombatTier = 'minion' | 'grunt' | 'elite' | 'boss' | 'legendary';
+export type Archetype = 'bulwark' | 'assassin' | 'caster' | 'skirmisher' | 'brute';
+export type RecoveryBand = 'healthy' | 'wounded' | 'critical';
+
+export type StatBlock = {
+    VIT: number;
+    PWR: number;
+    RES: number;
+    FOC: number;
+    SPD: number;
+    WIL: number;
+};
+
+export type Combatant = {
+    id: string;
+    name: string;
+    stats: StatBlock;
+    currentHP: number;
+    maxHP: number;
+    currentFOC: number;
+    maxFOC: number;
+    combatTier: CombatTier;
+    archetype: Archetype;
+    ac: number;
+    proficiencyBonus: number;
+    isPC?: boolean;
+    position?: 'cover' | 'elevated' | 'exposed';
+    statusEffects?: string[];
+};
+
+export type ItemDef = {
+    id: string;
+    name: string;
+    description: string;
+    damageDice: number;
+    scalingStat: 'PWR' | 'SPD' | 'WIL';
+    bonus: number;
+    properties: string[];
+    range: 'Close' | 'Reach' | 'Ranged';
+    rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+};
+
+export type SkillDef = {
+    id: string;
+    name: string;
+    description: string;
+    focCost: number;
+    type: 'attack' | 'heal' | 'utility';
+    damageDice?: number;
+    healDice?: number;
+    scaling: 'PWR' | 'SPD' | 'WIL';
+    properties: string[];
+    range: 'Close' | 'Reach' | 'Ranged';
+};
+
+export type CombatState = {
+    active: boolean;
+    round: number;
+    turnOrder: string[];
+    activeTurnIndex: number;
+    combatants: Record<string, Combatant>;
+    rangeRelations: Record<string, Record<string, 'Engaged' | 'Apart'>>;
 };
 

@@ -38,6 +38,7 @@ export type TurnCallbacks = {
     archiveNPC?: (id: string, turn: number, reason: string) => void;
     restoreNPC?: (id: string) => void;
     setOnStageNpcIds?: (ids: string[]) => void;
+    initiateCombat?: (namedNpcIds: string[], pcIds: string[], mookSpecs: { combatTier: import('../../types').CombatTier; archetype: import('../../types').Archetype; count: number }[]) => void;
 };
 
 export type TurnState = {

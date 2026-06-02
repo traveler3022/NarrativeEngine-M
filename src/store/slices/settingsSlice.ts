@@ -70,6 +70,29 @@ export const DEFAULT_WORLD_WHAT = [
     "is paying for an escort to", "overheard a deal being made involving"
 ];
 
+export const DEFAULT_COMBAT_CONFIG = {
+    mookJitterRange: 0.1,
+    defaultWeaponDie: 6,
+    recoveryBands: {
+        healthy: 100,
+        wounded: 50,
+        critical: 25,
+    },
+    combatAutoDetect: false,
+    autoEnterThreshold: 0.75,
+    askThreshold: 0.45,
+    confirmOnBorderline: true,
+};
+
+export const DEFAULT_STAT_LABEL_MAP = {
+    VIT: 'Vitality',
+    PWR: 'Power',
+    RES: 'Resilience',
+    FOC: 'Focus',
+    SPD: 'Speed',
+    WIL: 'Willpower'
+};
+
 // Debounced save to avoid hammering the API on rapid changes
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 export function debouncedSaveSettings(settings: AppSettings, activeCampaignId: string | null) {

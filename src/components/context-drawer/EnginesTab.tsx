@@ -340,6 +340,145 @@ export function EnginesTab() {
                         ))}
                     </div>
                 </div>
+
+                {/* Combat Mode Engine */}
+                <div className="space-y-2">
+                    <div className="text-[10px] text-red-400 uppercase tracking-wider font-bold border-b border-red-400/20 pb-1 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                            Combat Mode
+                        </div>
+                        <Toggle active={context.combatModeActive ?? false} onChange={() => updateContext({ combatModeActive: !(context.combatModeActive ?? false) })} />
+                    </div>
+                    <div className="bg-void border border-border p-3 space-y-3">
+                        <div className="flex flex-col">
+                            <label className="text-[10px] text-text-dim uppercase tracking-wider mb-1">Combat Assistant Model</label>
+                            <select
+                                value={useAppStore.getState().settings.presets.find(p => p.auxiliaryAI)?.id ?? ''}
+                                onChange={(e) => {
+                                    const presetId = e.target.value;
+                                    const store = useAppStore.getState();
+                                    if (presetId) {
+                                        const preset = store.settings.presets.find(p => p.id === presetId);
+                                        if (preset) {
+                                            store.updatePreset(presetId, { auxiliaryAI: preset.auxiliaryAI || preset.utilityAI || preset.storyAI });
+                                        }
+                                    }
+                                }}
+                                className="w-full bg-surface border border-border px-2 py-1.5 text-[16px] md:text-[11px] font-mono text-text-primary focus:border-terminal outline-none transition-colors min-h-[44px] md:min-h-0"
+                            >
+                                <option value="">None (use initiate_combat backstop)</option>
+                                {useAppStore.getState().settings.presets.map(p => (
+                                    <option key={p.id} value={p.id}>
+                                        {p.name} — {(p.auxiliaryAI ?? p.utilityAI ?? p.storyAI)?.modelName ?? 'no model'}
+                                    </option>
+                                ))}
+                            </select>
+                            <span className="text-[8px] text-text-dim/50 mt-0.5 uppercase tracking-widest">MUCH more accurate with a combatAssistant model</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="flex flex-col">
+                                <label className="text-[10px] text-text-dim uppercase tracking-wider mb-1">Mook Jitter % (def 10)</label>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    max={50}
+                                    value={context.combatConfig?.mookJitterRange ?? 10}
+                                    onChange={(e) => {
+                                        const val = parseInt(e.target.value);
+                                        updateContext({ combatConfig: { ...(context.combatConfig || {}), mookJitterRange: isNaN(val) ? 10 : val } });
+                                    }}
+                                    className="w-full bg-surface border border-border px-2 py-1.5 text-[16px] md:text-[11px] font-mono text-text-primary focus:border-terminal outline-none transition-colors min-h-[44px] md:min-h-0"
+                                />
+                            </div>
+                            <div className="flex flex-col">
+                                <label className="text-[10px] text-text-dim uppercase tracking-wider mb-1">Default Weapon Die (def 6)</label>
+                                <input
+                                    type="number"
+                                    min={4}
+                                    max={12}
+                                    value={context.combatConfig?.defaultWeaponDie ?? 6}
+                                    onChange={(e) => {
+                                        const val = parseInt(e.target.value);
+                                        updateContext({ combatConfig: { ...(context.combatConfig || {}), defaultWeaponDie: isNaN(val) ? 6 : val } });
+                                    }}
+                                    className="w-full bg-surface border border-border px-2 py-1.5 text-[16px] md:text-[11px] font-mono text-text-primary focus:border-terminal outline-none transition-colors min-h-[44px] md:min-h-0"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="text-[10px] text-text-dim uppercase tracking-wider mb-1">Stat Label Map (JSON, optional)</label>
+                            <input
+                                type="text"
+                                value={context.statLabelMap ? JSON.stringify(context.statLabelMap) : ''}
+                                onChange={(e) => {
+                                    try {
+                                        const parsed = e.target.value.trim() ? JSON.parse(e.target.value) : undefined;
+                                        updateContext({ statLabelMap: parsed });
+                                    } catch { /* ignore parse errors */ }
+                                }}
+                                placeholder='{"FOC":"Mana","RES":"Armor"}'
+                                className="w-full bg-surface border border-border px-2 py-1.5 text-[16px] md:text-[11px] font-mono text-text-primary placeholder:text-text-dim/40 focus:border-terminal outline-none transition-colors min-h-[44px] md:min-h-0"
+                            />
+                        </div>
+                        <div className="border-t border-border pt-3 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <label className="text-[10px] text-text-dim uppercase tracking-wider">Auto-detect Combat Entry</label>
+                                <Toggle active={context.combatConfig?.combatAutoDetect ?? false} onChange={() => updateContext({ combatConfig: { ...(context.combatConfig || {}), combatAutoDetect: !(context.combatConfig?.combatAutoDetect ?? false) } })} />
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <label className="text-[10px] text-text-dim uppercase tracking-wider">Confirm on Borderline</label>
+                                <Toggle active={context.combatConfig?.confirmOnBorderline ?? true} onChange={() => updateContext({ combatConfig: { ...(context.combatConfig || {}), confirmOnBorderline: !(context.combatConfig?.confirmOnBorderline ?? true) } })} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="flex flex-col">
+                                    <label className="text-[10px] text-text-dim uppercase tracking-wider mb-1">Auto-enter (def 0.75)</label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        max={1}
+                                        step={0.05}
+                                        value={context.combatConfig?.autoEnterThreshold ?? 0.75}
+                                        onChange={(e) => {
+                                            const val = parseFloat(e.target.value);
+                                            updateContext({ combatConfig: { ...(context.combatConfig || {}), autoEnterThreshold: isNaN(val) ? 0.75 : Math.max(0, Math.min(1, val)) } });
+                                        }}
+                                        className="w-full bg-surface border border-border px-2 py-1.5 text-[16px] md:text-[11px] font-mono text-text-primary focus:border-terminal outline-none transition-colors min-h-[44px] md:min-h-0"
+                                    />
+                                </div>
+                                <div className="flex flex-col">
+                                    <label className="text-[10px] text-text-dim uppercase tracking-wider mb-1">Ask threshold (def 0.45)</label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        max={1}
+                                        step={0.05}
+                                        value={context.combatConfig?.askThreshold ?? 0.45}
+                                        onChange={(e) => {
+                                            const val = parseFloat(e.target.value);
+                                            updateContext({ combatConfig: { ...(context.combatConfig || {}), askThreshold: isNaN(val) ? 0.45 : Math.max(0, Math.min(1, val)) } });
+                                        }}
+                                        className="w-full bg-surface border border-border px-2 py-1.5 text-[16px] md:text-[11px] font-mono text-text-primary focus:border-terminal outline-none transition-colors min-h-[44px] md:min-h-0"
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex flex-col">
+                                <label className="text-[10px] text-text-dim uppercase tracking-wider mb-1">Extra Combat Keywords (comma-separated)</label>
+                                <input
+                                    type="text"
+                                    value={(context.combatConfig?.combatKeywords ?? []).join(', ')}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        const keywords = val.split(',').map(k => k.trim()).filter(Boolean);
+                                        updateContext({ combatConfig: { ...(context.combatConfig || {}), combatKeywords: keywords } });
+                                    }}
+                                    placeholder="draw sword, en garde, battle station..."
+                                    className="w-full bg-surface border border-border px-2 py-1.5 text-[16px] md:text-[11px] font-mono text-text-primary placeholder:text-text-dim/40 focus:border-terminal outline-none transition-colors min-h-[44px] md:min-h-0"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
