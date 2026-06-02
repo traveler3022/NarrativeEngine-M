@@ -119,7 +119,7 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
     const pinnedExcerptsTokens = pinnedExcerpts && pinnedExcerpts.length > 0
         ? pinnedExcerptsTokenCost(pinnedExcerpts)
         : 0;
-    const { fitted, historyUsed, userTokens, historyBudget } = fitHistory(
+    const { fitted, historyUsed, historyBudget } = fitHistory(
         history,
         condensedUpToIndex,
         userMessage,
@@ -136,8 +136,6 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
             return { role: m.role, tokens: countTokens(text), preview: text.slice(0, 80).replace(/\n/g, ' ') };
         }),
     });
-    addTrace({ source: 'User Message', classification: 'volatile_state', tokens: userTokens, reason: 'Current turn', included: true, position: 'user' });
-
     const sceneNoteTrace = spliceSceneNote(context, fitted);
     if (sceneNoteTrace) addTrace(sceneNoteTrace);
 
@@ -156,6 +154,7 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
     const finalUserContent = volatileBlock
         ? `${volatileBlock}\n\n---\n\n${userMessage}`
         : userMessage;
+    addTrace({ source: 'User Message (with world context)', classification: 'volatile_state', tokens: countTokens(finalUserContent), reason: 'Current turn + folded world/volatile context', included: true, position: 'user' });
     messages.push({ role: 'user', content: finalUserContent });
 
     return { messages, trace: isDebug ? trace : undefined };
