@@ -1,10 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { buildCombatEntryArgs, type ClassifiedFoe } from '../combatEntry';
+import { buildCombatEntryArgs } from '../combatEntry';
 import type { NPCEntry } from '../../../types';
 
 const makeNPC = (overrides: Partial<NPCEntry> & { id: string; name: string }): NPCEntry => ({
-    id: overrides.id,
-    name: overrides.name,
     aliases: overrides.aliases ?? '',
     appearance: overrides.appearance ?? '',
     faction: overrides.faction ?? '',

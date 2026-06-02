@@ -107,7 +107,6 @@ export function ChatArea() {
     })));
 
     const initiateCombatFromStore = useAppStore(s => s.initiateCombat);
-    const _terminateCombatFromStore = useAppStore(s => s.terminateCombat);
     const items = useAppStore(s => s.items);
     const skills = useAppStore(s => s.skills);
 
