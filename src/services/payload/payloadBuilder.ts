@@ -44,7 +44,6 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
         npcLedger,
         archiveRecall,
         onStageNpcIds,
-        sceneNumber,
         recommendedNPCNames,
         semanticFactText,
         deepContextSummary,
@@ -65,10 +64,9 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
         if (isDebug) trace.push(t);
     };
 
-    const { stableContent, stableTokens } = buildStablePreamble({
+    const { stableContent, stableTokens, retrievedRulesContent } = buildStablePreamble({
         settings,
         context,
-        sceneNumber,
         relevantRules,
         budgetMap,
         addTrace,
@@ -110,6 +108,7 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
     const { worldContent, currentWorldTokens } = trimWorldBlocks(worldBlocks, budgetMap.world, addTrace);
 
     const volatileParts: string[] = [];
+    if (retrievedRulesContent) volatileParts.push(retrievedRulesContent);
     if (context.characterProfileActive && context.characterProfile) volatileParts.push(`[CHARACTER PROFILE]\n${context.characterProfile}`);
     if (context.inventoryActive && context.inventory) volatileParts.push(`[PLAYER INVENTORY]\n${context.inventory}`);
 
@@ -148,13 +147,16 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
     }
 
     const messages: OpenAIMessage[] = [];
-    if (stableContent) messages.push({ role: 'system', content: stableContent });
-    if (divergenceContent) messages.push({ role: 'system', content: divergenceContent });
-    if (worldContent || volatileContent) {
-        messages.push({ role: 'system', content: [worldContent, volatileContent].filter(Boolean).join('\n\n') });
-    }
+    if (stableContent) messages.push({ role: 'system', content: stableContent, cache_control: { type: 'ephemeral' } });
+    if (divergenceContent) messages.push({ role: 'system', content: divergenceContent, cache_control: { type: 'ephemeral' } });
+
     messages.push(...fitted);
-    messages.push({ role: 'user', content: userMessage });
+
+    const volatileBlock = [worldContent, volatileContent].filter(Boolean).join('\n\n');
+    const finalUserContent = volatileBlock
+        ? `${volatileBlock}\n\n---\n\n${userMessage}`
+        : userMessage;
+    messages.push({ role: 'user', content: finalUserContent });
 
     return { messages, trace: isDebug ? trace : undefined };
 }

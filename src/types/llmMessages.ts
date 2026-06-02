@@ -29,6 +29,7 @@ export interface UserMessage {
 export interface SystemMessage {
     role: 'system';
     content: string;
+    cache_control?: { type: 'ephemeral' };
 }
 
 export type LLMChatMessage =

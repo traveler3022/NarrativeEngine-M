@@ -38,20 +38,20 @@ export interface StableContentResult {
     stableTokens: number;
     divergenceContent: string;
     divergenceTokens: number;
+    retrievedRulesContent?: string;
 }
 
 export function buildStablePreamble(opts: {
     settings: AppSettings;
     context: { rulesRaw?: string; starterActive?: boolean; starter?: string; continuePromptActive?: boolean; continuePrompt?: string; diceFairnessActive?: boolean };
-    sceneNumber?: string;
     relevantRules?: { header: string; content: string }[];
     budgetMap: BudgetMap;
     addTrace: (t: PayloadTrace) => void;
 }): StableContentResult {
-    const { settings, context, sceneNumber, relevantRules, budgetMap, addTrace } = opts;
+    const { settings, context, relevantRules, budgetMap, addTrace } = opts;
 
     const stableParts: string[] = [];
-    if (sceneNumber) stableParts.push(`[CURRENT SCENE: #${sceneNumber}]`);
+    let retrievedRulesContent: string | undefined;
     if (context.rulesRaw) {
         const rulesTokenCount = countTokens(context.rulesRaw);
         const rulesBudgetTokens = budgetMap.rules;
@@ -59,7 +59,7 @@ export function buildStablePreamble(opts: {
 
         if (relevantRules && relevantRules.length > 0 && rulesTokenCount > threshold) {
             const rulesText = relevantRules.map(c => `### ${c.header}\n${c.content}`).join('\n\n');
-            stableParts.push(`[RULES — RETRIEVED SECTIONS]\n${rulesText}\n[END RULES]`);
+            retrievedRulesContent = `[RULES — RETRIEVED SECTIONS]\n${rulesText}\n[END RULES]`;
         } else {
             let rules = context.rulesRaw;
             if (context.diceFairnessActive === false) {
@@ -82,7 +82,7 @@ export function buildStablePreamble(opts: {
     const stableTokens = countTokens(stableContent);
     addTrace({ source: 'Stable Preamble', classification: 'stable_truth', tokens: stableTokens, reason: 'Rules & Core state', included: true, position: 'system_static' });
 
-    return { stableContent, stableTokens, divergenceContent: '', divergenceTokens: 0 };
+    return { stableContent, stableTokens, divergenceContent: '', divergenceTokens: 0, retrievedRulesContent };
 }
 
 export function buildDivergenceBlock(opts: {
