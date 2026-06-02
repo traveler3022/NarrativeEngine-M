@@ -149,6 +149,12 @@ export function ChatArea() {
         const textToUse = overrideText || input.trim();
         if (!textToUse || isStreaming) return;
 
+        // Claim the turn synchronously: taps during the async combat scan can no longer
+        // fire duplicate turns, and the Stop button appears immediately (not only once
+        // runTurn starts streaming).
+        setStreaming(true);
+        const turnAbort = (abortControllerRef.current = new AbortController());
+
         const combatConfig = context.combatConfig ?? {};
         const combatAutoDetect = combatConfig.combatAutoDetect ?? false;
 
@@ -182,20 +188,25 @@ export function ChatArea() {
 
                         if (decision === 'enter') {
                             const entryArgs = buildCombatEntryArgs(scanResult.entitiesReferenced, npcLedger);
-                            const unknownNames = entryArgs.unknownFoeNames;
-                            let mookSpecs = entryArgs.mookSpecs;
-                            if (unknownNames.length > 0) {
-                                const classified = await classifyUnknownFoes(unknownNames, recentScene, auxProvider);
-                                mookSpecs = [...mookSpecs, ...classified.map(c => ({ combatTier: c.combatTier, archetype: c.archetype, count: c.count }))];
+                            if (entryArgs.pcIds.length === 0) {
+                                toast.warning('No player character set — mark an NPC as PC in the ledger to use combat');
+                                // fall through to a normal narrative turn (don't strand the player)
+                            } else {
+                                let mookSpecs = entryArgs.mookSpecs;
+                                if (entryArgs.unknownFoeNames.length > 0) {
+                                    const classified = await classifyUnknownFoes(entryArgs.unknownFoeNames, recentScene, auxProvider);
+                                    mookSpecs = [...mookSpecs, ...classified.map(c => ({ combatTier: c.combatTier, archetype: c.archetype, count: c.count }))];
+                                }
+                                const allNamed = [...entryArgs.namedNpcIds, ...entryArgs.pcIds];
+                                initiateCombatFromStore(allNamed, mookSpecs);
+                                toast.success('Combat started!');
+                                setStreaming(false);
+                                return;
                             }
-                            const allNamed = [...entryArgs.namedNpcIds, ...entryArgs.pcIds];
-                            initiateCombatFromStore(allNamed, mookSpecs);
-                            updateContext({ combatModeActive: true });
-                            toast.success('Combat started!');
-                            return;
                         } else if (decision === 'ask') {
                             setPendingCombatPrompt({ entitiesReferenced: scanResult.entitiesReferenced, originalInput: textToUse });
                             if (!overrideText) { setInput(''); resetTextareaHeight(); }
+                            setStreaming(false);
                             return;
                         }
                     } catch (err) {
@@ -204,6 +215,8 @@ export function ChatArea() {
                 }
             }
         }
+
+        if (turnAbort.signal.aborted) { setStreaming(false); return; }
 
         const useDeepScan = deepArmed && !!settings.enableDeepArchiveSearch;
         setDeepArmed(false);
@@ -216,8 +229,6 @@ export function ChatArea() {
         const arcSeed = useAppStore.getState().pendingArcSeed;
         if (arcSeed) setPendingArcSeed(null);
         const llmInput = arcSeed ? `${textToUse}\n\n[SYS: Introduce this arc naturally going forward — ${arcSeed}]` : textToUse;
-
-        abortControllerRef.current = new AbortController();
 
         await runTurn({
             input: llmInput,
@@ -514,6 +525,10 @@ export function ChatArea() {
                                 return `[${role}]: ${(m.content || '').slice(0, 400)}`;
                             }).join('\n\n');
                             const entryArgs = buildCombatEntryArgs(prompt.entitiesReferenced, npcLedger);
+                            if (entryArgs.pcIds.length === 0) {
+                                toast.warning('No player character set — mark an NPC as PC in the ledger to use combat');
+                                return;
+                            }
                             let mookSpecs = entryArgs.mookSpecs;
                             if (entryArgs.unknownFoeNames.length > 0 && auxProvider?.modelName) {
                                 const classified = await classifyUnknownFoes(entryArgs.unknownFoeNames, recentScene, auxProvider);
@@ -521,7 +536,6 @@ export function ChatArea() {
                             }
                             const allNamed = [...entryArgs.namedNpcIds, ...entryArgs.pcIds];
                             initiateCombatFromStore(allNamed, mookSpecs);
-                            updateContext({ combatModeActive: true });
                             toast.success('Combat started!');
                             console.log('[CombatEntry]', { decision: 'ask→yes' });
                         }}

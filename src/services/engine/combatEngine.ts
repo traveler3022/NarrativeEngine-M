@@ -325,8 +325,10 @@ export type MaterializeInput = {
     armorBonus?: number;
 };
 
+const JITTER_RANGE = 0.15;
+
 function jitter(value: number): number {
-    const factor = 0.9 + Math.random() * 0.2;
+    const factor = (1 - JITTER_RANGE) + Math.random() * (JITTER_RANGE * 2);
     return Math.round(value * factor);
 }
 

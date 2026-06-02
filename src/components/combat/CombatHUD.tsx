@@ -221,8 +221,16 @@ export function CombatHUD({ onActionCommitted }: CombatHUDProps) {
 
     if (!combatState || !pcCombatant) {
         return (
-            <div className="px-3 py-4 text-center text-text-dim text-xs uppercase tracking-widest">
-                No active combat
+            <div className="px-3 py-4 flex flex-col items-center gap-2">
+                <span className="text-text-dim text-xs uppercase tracking-widest">No active combat</span>
+                {combatState && (
+                    <button
+                        onClick={() => { terminateCombat({ writeBack: false }); toast.success('Combat ended'); onActionCommitted?.(); }}
+                        className="flex items-center gap-1 px-3 py-1.5 text-[10px] uppercase tracking-widest font-bold rounded border border-red-500/40 text-red-400 hover:bg-red-500/10 transition-all"
+                    >
+                        <LogOut size={12} /> End Combat
+                    </button>
+                )}
             </div>
         );
     }

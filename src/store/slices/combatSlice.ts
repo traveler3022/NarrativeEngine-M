@@ -87,6 +87,13 @@ export const createCombatSlice: StateCreator<CombatDeps, [], [], CombatSlice> = 
             }
         }
 
+        // Hard guard: combat needs a player character. Legacy campaigns may have no NPC
+        // flagged isPC — abort rather than dropping the player into a PC-less, unusable HUD.
+        if (!Object.values(combatants).some(c => c.isPC)) {
+            toast.error('Set a player character (mark an NPC as PC) before starting combat');
+            return {};
+        }
+
         // 3. Roll Initiative for all combatants
         const initiativeRolls = Object.values(combatants).map(c => {
             const roll = rollInitiative(c.id, c.stats.SPD);

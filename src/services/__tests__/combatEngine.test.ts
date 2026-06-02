@@ -233,15 +233,15 @@ describe('rollInitiative', () => {
 });
 
 describe('materializeCombatant', () => {
-    it('produces stats within ±10% of budget stat values', () => {
+    it('produces stats within ±15% of budget stat values', () => {
         const N = 500;
         const budget = ARCHETYPE_BUDGETS.bulwark;
         let allWithin = true;
         for (let i = 0; i < N; i++) {
             const c = materializeCombatant({ combatTier: 'grunt', archetype: 'bulwark' });
             for (const key of Object.keys(budget) as (keyof typeof budget)[]) {
-                const min = Math.floor(budget[key] * 0.9);
-                const max = Math.ceil(budget[key] * 1.1);
+                const min = Math.floor(budget[key] * 0.85);
+                const max = Math.ceil(budget[key] * 1.15);
                 if (c.stats[key] < min || c.stats[key] > max) {
                     allWithin = false;
                     break;
