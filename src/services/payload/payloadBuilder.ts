@@ -4,7 +4,7 @@ import { countTokens } from '../infrastructure';
 import { computeBudgets, type BudgetMap } from './payloadBudgeter';
 import { buildStablePreamble, buildDivergenceBlock } from './payloadStableContent';
 import { assembleWorldBlocks, trimWorldBlocks, type WorldBlock, type NpcStrategy } from './payloadWorldContext';
-import { fitHistory, spliceSceneNote, splicePinnedMemories, pinnedExcerptsTokenCost } from './payloadHistoryFitting';
+import { fitHistory, buildPinnedMemoriesBlock, pinnedExcerptsTokenCost } from './payloadHistoryFitting';
 
 export type { BudgetMap, WorldBlock, NpcStrategy };
 
@@ -107,23 +107,29 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
 
     const { worldContent, currentWorldTokens } = trimWorldBlocks(worldBlocks, budgetMap.world, addTrace);
 
+    let pinnedMemoriesContent = '';
+    let pinnedMemoriesTokens = 0;
+    if (pinnedExcerpts && pinnedExcerpts.length > 0) {
+        pinnedMemoriesContent = buildPinnedMemoriesBlock(pinnedExcerpts, history);
+        pinnedMemoriesTokens = countTokens(pinnedMemoriesContent);
+        addTrace({ source: 'Pinned Memories', classification: 'summary', tokens: pinnedMemoriesTokens, reason: `${pinnedExcerpts.length} pinned excerpts in stable block`, included: true, position: 'system_static' });
+    }
+
     const volatileParts: string[] = [];
     if (retrievedRulesContent) volatileParts.push(retrievedRulesContent);
     if (context.characterProfileActive && context.characterProfile) volatileParts.push(`[CHARACTER PROFILE]\n${context.characterProfile}`);
     if (context.inventoryActive && context.inventory) volatileParts.push(`[PLAYER INVENTORY]\n${context.inventory}`);
+    if (context.sceneNoteActive && context.sceneNote) volatileParts.push(`[SCENE NOTE: VOLATILE GUIDANCE]\n${context.sceneNote}`);
 
     const volatileContent = volatileParts.join('\n\n');
     const volatileTokens = countTokens(volatileContent);
-    addTrace({ source: 'Profile/Inventory', classification: 'volatile_state', tokens: volatileTokens, reason: 'Player state', included: true, position: 'system_dynamic' });
+    addTrace({ source: 'Profile/Inventory/SceneNote', classification: 'volatile_state', tokens: volatileTokens, reason: 'Player state + scene note', included: true, position: 'system_dynamic' });
 
-    const pinnedExcerptsTokens = pinnedExcerpts && pinnedExcerpts.length > 0
-        ? pinnedExcerptsTokenCost(pinnedExcerpts)
-        : 0;
     const { fitted, historyUsed, historyBudget } = fitHistory(
         history,
         condensedUpToIndex,
         userMessage,
-        stableTokens + divergenceTokens + currentWorldTokens + volatileTokens + pinnedExcerptsTokens,
+        stableTokens + divergenceTokens + pinnedMemoriesTokens + currentWorldTokens + volatileTokens,
         limit,
     );
 
@@ -136,17 +142,11 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
             return { role: m.role, tokens: countTokens(text), preview: text.slice(0, 80).replace(/\n/g, ' ') };
         }),
     });
-    const sceneNoteTrace = spliceSceneNote(context, fitted);
-    if (sceneNoteTrace) addTrace(sceneNoteTrace);
-
-    if (pinnedExcerpts && pinnedExcerpts.length > 0) {
-        const pinnedTraces = splicePinnedMemories(fitted, pinnedExcerpts, history);
-        for (const t of pinnedTraces) addTrace(t);
-    }
 
     const messages: OpenAIMessage[] = [];
     if (stableContent) messages.push({ role: 'system', content: stableContent, cache_control: { type: 'ephemeral' } });
     if (divergenceContent) messages.push({ role: 'system', content: divergenceContent, cache_control: { type: 'ephemeral' } });
+    if (pinnedMemoriesContent) messages.push({ role: 'system', content: pinnedMemoriesContent, cache_control: { type: 'ephemeral' } });
 
     messages.push(...fitted);
 
