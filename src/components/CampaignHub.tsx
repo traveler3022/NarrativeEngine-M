@@ -4,7 +4,7 @@ import { useAppStore } from '../store/useAppStore';
 import {
     listCampaigns, deleteCampaign, loadCampaignState,
     saveCampaign, saveCampaignState, saveLoreChunks,
-    getNPCLedger, saveNPCLedger,
+    getNPCLedger, saveNPCLedger, getLoreChunks,
 } from '../store/campaignStore';
 import { chunkLoreFile, extractEngineSeeds, parseNPCsFromLore } from '../services/lore';
 import { defaultContext } from '../store/slices/campaignSlice';
@@ -106,7 +106,17 @@ export function CampaignHub() {
 
         if (loreFile) {
             const loreText = await loreFile.text();
-            const chunks = chunkLoreFile(loreText);
+            const newChunks = chunkLoreFile(loreText);
+            const existingChunks = await getLoreChunks(campaign.id);
+            const preservedModes = new Map(
+                existingChunks
+                    .filter(c => c.modesUserEdited)
+                    .map(c => [c.id, { activationModes: c.activationModes, modesUserEdited: true as const }])
+            );
+            const chunks = newChunks.map(c => {
+                const p = preservedModes.get(c.id);
+                return p ? { ...c, ...p } : c;
+            });
             await saveLoreChunks(campaign.id, chunks);
 
             // Non-blocking LLM keyword enrichment — fire and forget

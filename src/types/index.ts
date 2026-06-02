@@ -332,6 +332,7 @@ export type LoreChunk = {
     enrichedVersion?: number;   // ENRICHER_VERSION the chunk was last enriched at; undefined = pre-versioning
     ragMode?: 'always' | 'keyword' | 'vector'; // explicit mode from <!-- rag: --> hint; authoritative over heuristics
     activationModes?: ('vector' | 'keyword' | 'always')[]; // undefined = derive from alwaysInclude/ragMode (back-compat)
+    modesUserEdited?: boolean; // true after UI toggle; preserved across re-imports
     embeddedModelId?: string; // last model id this chunk was embedded with (diff aid)
 };
 

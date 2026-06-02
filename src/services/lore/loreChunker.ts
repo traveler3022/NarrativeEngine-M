@@ -265,6 +265,17 @@ export function chunkLoreFile(markdown: string, category?: 'lore' | 'rule'): Lor
                 ? ragHint.mode === 'always'
                 : shouldAlwaysInclude(currentHeader);
 
+            let activationModes: ('vector' | 'keyword' | 'always')[];
+            if (ragHint?.mode === 'always' || alwaysInclude) {
+                activationModes = ['always'];
+            } else if (ragHint?.mode === 'keyword') {
+                activationModes = ['keyword'];
+            } else if (ragHint?.mode === 'vector') {
+                activationModes = ['vector'];
+            } else {
+                activationModes = ['vector'];
+            }
+
             const autoCategory = classifyCategory(currentHeader, content, parentHeader);
 
             let finalScanDepth = 3;
@@ -294,11 +305,13 @@ export function chunkLoreFile(markdown: string, category?: 'lore' | 'rule'): Lor
                 secondaryKeywords: ragHint?.secondary.length ? ragHint.secondary : undefined,
                 scanDepth: finalScanDepth,
                 category: autoCategory,
-                linkedEntities: [], // Populated post-processing
+                linkedEntities: [],
                 parentSection: parentHeader || undefined,
                 priority: chunkPriority,
                 summary: generateSummary(currentHeader, content),
                 ragMode: ragHint?.mode,
+                activationModes,
+                modesUserEdited: false,
             });
         }
     };
@@ -340,7 +353,9 @@ export function chunkLoreFile(markdown: string, category?: 'lore' | 'rule'): Lor
             category: 'world_overview',
             linkedEntities: [],
             priority: 10,
-            summary: generateSummary(title, preamble)
+            summary: generateSummary(title, preamble),
+            activationModes: ['always'] as const,
+            modesUserEdited: false,
         });
     }
 
