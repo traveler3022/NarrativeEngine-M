@@ -168,9 +168,10 @@ describe('Combat Mode Phase 1 Store & Lifecycle', () => {
             stats: { VIT: 8, PWR: 8, RES: 10, FOC: 16, SPD: 10, WIL: 18 },
         };
 
-        state.setNPCLedger([npc]);
+        const pc: NPCEntry = { ...npc, id: 'hero', name: 'Hero', isPC: true };
+        state.setNPCLedger([npc, pc]);
 
-        state.initiateCombat(['michiko'], []);
+        state.initiateCombat(['michiko', 'hero'], []);
 
         const liveState = useAppStore.getState().combatState;
         expect(liveState).not.toBeNull();
@@ -214,9 +215,10 @@ describe('Combat Mode Phase 1 Store & Lifecycle', () => {
             stats: { VIT: 12, PWR: 10, RES: 12, FOC: 10, SPD: 12, WIL: 10 },
         };
 
-        state.setNPCLedger([npc]);
+        const pc: NPCEntry = { ...npc, id: 'hero', name: 'Hero', isPC: true };
+        state.setNPCLedger([npc, pc]);
 
-        state.initiateCombat(['kael'], []);
+        state.initiateCombat(['kael', 'hero'], []);
 
         const liveState = useAppStore.getState().combatState;
         expect(liveState).not.toBeNull();
