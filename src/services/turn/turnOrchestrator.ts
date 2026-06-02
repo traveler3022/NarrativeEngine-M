@@ -21,7 +21,7 @@ import { sanitizePayloadForApi } from '../llm/payloadSanitizer';
 import { gatherContext } from './turnContext';
 import { handlePostTurn } from './turnPostProcess';
 import { getToolDefinitions, handleLoreTool, handleNotebookTool, handleDiceTool, handleAdjudicateTool, handleInitiateCombatTool } from './toolHandlers';
-import { scanCombatIntent, type CombatScanResult } from './combatScanner';
+
 import type { OpenAIMessage } from '../llm/llmService';
 import { buildAssistantToolCallMessage, buildToolResultMessage } from '../../types/llmMessages';
 
@@ -70,24 +70,6 @@ export async function runTurn(
         } catch (err) {
             console.warn('[TurnOrchestrator] Character intro engine failed:', err);
         }
-    }
-
-    // Combat scanner step 0 — run before narration when combat mode enabled
-    let combatScanResult: CombatScanResult | null = null;
-    const combatAssistantProvider = state.getFreshAuxiliaryProvider?.();
-    const inCombat = context.combatModeActive === true;
-    if (context.combatModeActive && combatAssistantProvider) {
-        const recentScene = state.messages.slice(-5).map(m => {
-            const role = m.role === 'assistant' ? 'GM' : m.role.toUpperCase();
-            return `[${role}]: ${(m.content || '').slice(0, 400)}`;
-        }).join('\n\n');
-        combatScanResult = await scanCombatIntent(
-            finalInput,
-            recentScene,
-            combatAssistantProvider,
-            inCombat
-        );
-        console.log('[TurnOrchestrator] Combat scan result:', JSON.stringify(combatScanResult));
     }
 
     callbacks.setLoadingStatus?.('[1/5] Extracting Lore & Stats...');
@@ -349,7 +331,28 @@ export async function runTurn(
                         reasoningContent || undefined,
                     ));
 
-                    const { toolResult } = handleInitiateCombatTool(toolCall.arguments);
+                    const { toolResult, foes } = handleInitiateCombatTool(toolCall.arguments);
+
+                    if (callbacks.initiateCombat) {
+                        const namedNpcIds: string[] = [];
+                        const mookSpecs: { combatTier: import('../../types').CombatTier; archetype: import('../../types').Archetype; count: number }[] = [];
+                        for (const foe of foes) {
+                            const npcMatch = npcLedger.find(n => {
+                                const allNames = [n.name, ...(n.aliases || '').split(',').map(a => a.trim()).filter(Boolean)];
+                                return allNames.some(nm => nm.toLowerCase() === foe.name.toLowerCase());
+                            });
+                            if (npcMatch) {
+                                namedNpcIds.push(npcMatch.id);
+                            } else {
+                                mookSpecs.push({ combatTier: foe.combatTier, archetype: foe.archetype, count: foe.count });
+                            }
+                        }
+                        const pcIds = npcLedger.filter(n => n.isPC).map(n => n.id);
+                        for (const pcId of pcIds) {
+                            if (!namedNpcIds.includes(pcId)) namedNpcIds.push(pcId);
+                        }
+                        callbacks.initiateCombat(namedNpcIds, pcIds, mookSpecs);
+                    }
 
                     const toolMsgId = uid();
                     callbacks.addMessage({
@@ -362,6 +365,8 @@ export async function runTurn(
                     });
 
                     currentPayload.push(buildToolResultMessage(toolCall.id, toolResult, toolCall.name));
+
+                    callbacks.updateContext({ combatModeActive: true });
 
                     setTimeout(() => {
                         if (abortController.signal.aborted) {

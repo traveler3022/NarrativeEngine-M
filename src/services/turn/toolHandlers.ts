@@ -1,4 +1,4 @@
-import type { DiceConfig, LoreChunk, NotebookNote } from '../../types';
+import type { DiceConfig, LoreChunk, NotebookNote, CombatTier, Archetype, OpenAITool } from '../../types';
 import { searchLoreByQuery } from '../lore';
 import { uid } from '../../utils/uid';
 import { mapTier } from '../engine';
@@ -22,6 +22,20 @@ export type NotebookHandlerResult = {
 
 export type DiceHandlerResult = {
     toolResult: string;
+};
+
+export type AdjudicateHandlerResult = {
+    toolResult: string;
+};
+
+export type InitiateCombatHandlerResult = {
+    toolResult: string;
+    foes: {
+        name: string;
+        count: number;
+        combatTier: CombatTier;
+        archetype: Archetype;
+    }[];
 };
 
 const BASE_TOOLS = [
@@ -83,8 +97,69 @@ const ROLL_DICE_TOOL = {
     }
 } as const;
 
-export function getToolDefinitions(opts: { allowDiceTool: boolean }) {
-    return opts.allowDiceTool ? [...BASE_TOOLS, ROLL_DICE_TOOL] : [...BASE_TOOLS];
+const ADJUDICATE_ACTION_TOOL = {
+    type: 'function' as const,
+    function: {
+        name: 'adjudicate_action',
+        description:
+            "Translate a player's freeform combat maneuver into bounded mechanical labels. Use ONLY " +
+            "when the player describes a creative action (e.g. a MOV:SETUP free-text stunt) that the " +
+            "fixed combat buttons don't cover. You decide WHICH stat governs it, whether the fiction " +
+            "earns advantage/disadvantage, what position it ends in, whether it grants a one-use " +
+            "momentum token for the NEXT attack, and what goes wrong on failure. NEVER output damage, " +
+            "HP, or dice — the engine owns all numbers. You only supply labels.",
+        parameters: {
+            type: 'object' as const,
+            properties: {
+                stat:        { type: 'string', enum: ['PWR','SPD','WIL','VIT','RES','FOC'], description: 'Which stat the maneuver is resolved against (PWR=force, SPD=agility/acrobatics, WIL=mental/magic, VIT=endurance, RES=bracing, FOC=technique fuel).' },
+                advantage:   { type: 'string', enum: ['advantage','normal','disadvantage'], description: "advantage if the fiction is clever/favorable (high ground, clear opening); disadvantage if reckless/awkward; otherwise normal." },
+                positionTag: { type: 'string', enum: ['cover','elevated','exposed','none'], description: 'Position the actor ends the maneuver in. elevated = high ground (benefits the actor); exposed = open/vulnerable; cover = shielded vs ranged; none = neutral.' },
+                momentumToken: { type: 'integer', enum: [0,1], description: '1 if the setup clearly earns a one-use boon for the NEXT attack (consumed immediately); else 0. Never more than 1.' },
+                riskOnFail:  { type: 'string', enum: ['none','prone','exposed','drop_weapon','self_stagger'], description: 'What befalls the actor if the maneuver fails its check.' },
+            },
+            required: ['stat','advantage','positionTag','momentumToken','riskOnFail'],
+        },
+    },
+} as const;
+
+const INITIATE_COMBAT_TOOL = {
+    type: 'function' as const,
+    function: {
+        name: 'initiate_combat',
+        description:
+            "Signal that physical combat is beginning. Call this the moment a fight actually starts " +
+            "(a strike is launched, an ambush triggers), NOT for threats or posturing. List the " +
+            "hostile parties so the engine can build the encounter. The engine owns all stats and " +
+            "resolution — you are only flagging that combat mode should open.",
+        parameters: {
+            type: 'object' as const,
+            properties: {
+                foes: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            name:       { type: 'string', description: 'Name or short label, e.g. "Drunk Pirate".' },
+                            count:      { type: 'integer', description: 'How many of this foe (mooks). Default 1.' },
+                            combatTier: { type: 'string', enum: ['minion','grunt','elite','boss','legendary'], description: 'Threat level.' },
+                            archetype:  { type: 'string', enum: ['bulwark','assassin','caster','skirmisher','brute'], description: 'Fighting style.' },
+                        },
+                        required: ['name'],
+                    },
+                    description: 'The hostile combatants entering the fight.',
+                },
+            },
+            required: ['foes'],
+        },
+    },
+} as const;
+
+export function getToolDefinitions(opts: { allowDiceTool: boolean; combatModeActive?: boolean }) {
+    const base = [...BASE_TOOLS as unknown as OpenAITool[], ...(opts.allowDiceTool ? [ROLL_DICE_TOOL] as unknown as OpenAITool[] : [])];
+    if (opts.combatModeActive) {
+        return [...base, ADJUDICATE_ACTION_TOOL, INITIATE_COMBAT_TOOL] as unknown as OpenAITool[];
+    }
+    return base;
 }
 
 export const TOOL_DEFINITIONS = BASE_TOOLS;
@@ -135,6 +210,81 @@ export function handleNotebookTool(
     console.log(`[Notebook] Updated: ${currentNotebook.length} notes active (${opsCount} ops)`);
 
     return { toolResult, updatedNotebook: currentNotebook };
+}
+
+const VALID_ADJUDICATE_STATS = new Set(['PWR', 'SPD', 'WIL', 'VIT', 'RES', 'FOC']);
+const VALID_ADVANTAGES = new Set(['advantage', 'normal', 'disadvantage']);
+const VALID_POSITION_TAGS = new Set(['cover', 'elevated', 'exposed', 'none']);
+const VALID_RISKS = new Set(['none', 'prone', 'exposed', 'drop_weapon', 'self_stagger']);
+const FORBIDDEN_KEYS = new Set(['damage', 'hp', 'dice']);
+
+export function handleAdjudicateTool(
+    toolArguments: string
+): AdjudicateHandlerResult {
+    let args: Record<string, unknown> = {};
+    try { args = JSON.parse(toolArguments); } catch { /* ignore */ }
+
+    let stat = typeof args.stat === 'string' ? args.stat : '';
+    if (!VALID_ADJUDICATE_STATS.has(stat)) stat = 'PWR';
+
+    let advantage = typeof args.advantage === 'string' ? args.advantage : '';
+    if (!VALID_ADVANTAGES.has(advantage)) advantage = 'normal';
+
+    let positionTag = typeof args.positionTag === 'string' ? args.positionTag : '';
+    if (!VALID_POSITION_TAGS.has(positionTag)) positionTag = 'none';
+
+    let momentumToken: number;
+    if (typeof args.momentumToken === 'number' && isFinite(args.momentumToken)) {
+        momentumToken = Math.round(args.momentumToken);
+        if (momentumToken > 1) momentumToken = 1;
+        if (momentumToken < 0) momentumToken = 0;
+    } else if (args.momentumToken) {
+        momentumToken = 1;
+    } else {
+        momentumToken = 0;
+    }
+
+    let riskOnFail = typeof args.riskOnFail === 'string' ? args.riskOnFail : '';
+    if (!VALID_RISKS.has(riskOnFail)) riskOnFail = 'none';
+
+    const result: Record<string, unknown> = { stat, advantage, positionTag, momentumToken, riskOnFail };
+
+    for (const key of Object.keys(args)) {
+        if (FORBIDDEN_KEYS.has(key)) {
+            delete result[key];
+        }
+    }
+
+    return { toolResult: JSON.stringify(result) };
+}
+
+const VALID_COMBAT_TIERS = new Set<string>(['minion', 'grunt', 'elite', 'boss', 'legendary']);
+const VALID_ARCHETYPES = new Set<string>(['bulwark', 'assassin', 'caster', 'skirmisher', 'brute']);
+
+export function handleInitiateCombatTool(
+    toolArguments: string
+): InitiateCombatHandlerResult {
+    let args: Record<string, unknown> = {};
+    try { args = JSON.parse(toolArguments); } catch { /* ignore */ }
+
+    const rawFoes = Array.isArray(args.foes) ? args.foes : [];
+
+    const foes = rawFoes.map((foe: Record<string, unknown>) => {
+        const name = typeof foe.name === 'string' && foe.name.trim() ? foe.name.trim() : 'Unknown Foe';
+        const rawCount = typeof foe.count === 'number' ? foe.count : 1;
+        const count = rawCount >= 1 ? Math.round(rawCount) : 1;
+        const rawTier = typeof foe.combatTier === 'string' ? foe.combatTier : '';
+        const combatTier: CombatTier = VALID_COMBAT_TIERS.has(rawTier) ? (rawTier as CombatTier) : 'grunt';
+        const rawArchetype = typeof foe.archetype === 'string' ? foe.archetype : '';
+        const archetype: Archetype = VALID_ARCHETYPES.has(rawArchetype) ? (rawArchetype as Archetype) : 'skirmisher';
+        return { name, count, combatTier, archetype };
+    });
+
+    if (foes.length === 0) {
+        foes.push({ name: 'Unknown Foe', count: 1, combatTier: 'grunt' as CombatTier, archetype: 'skirmisher' as Archetype });
+    }
+
+    return { toolResult: JSON.stringify({ foes }), foes };
 }
 
 function parseAndRoll(expr: string): { total: number; breakdown: string; isD20: boolean } {

@@ -8,10 +8,16 @@ import { debouncedSaveSettings } from './settingsSlice';
 import { runFullReindex, abortForCampaignSwitch } from '../../services/embedding';
 import { embeddingStorage } from '../../services/storage/embeddingStorage';
 import { EMPTY_REGISTER } from '../../services/campaign-state';
+import type { CombatSlice } from './combatSlice';
+import type { ItemSlice } from './itemSlice';
+import type { SkillSlice } from './skillSlice';
+import { backfillNPCCombatStats } from '../settingsMigration';
+import { CANON_SKILL_DEFS } from './skillSlice';
 import {
     DEFAULT_SURPRISE_TYPES, DEFAULT_SURPRISE_TONES,
     DEFAULT_ENCOUNTER_TYPES, DEFAULT_ENCOUNTER_TONES,
     DEFAULT_WORLD_WHO, DEFAULT_WORLD_WHERE, DEFAULT_WORLD_WHY, DEFAULT_WORLD_WHAT,
+    DEFAULT_COMBAT_CONFIG, DEFAULT_STAT_LABEL_MAP,
 } from './settingsSlice';
 
 // ── Debounced save helpers ─────────────────────────────────────────────
@@ -97,6 +103,9 @@ export const defaultContext: GameContext = {
     notebookActive: true,
     inventoryLastScene: 'Never',
     characterProfileLastScene: 'Never',
+    combatModeActive: false,
+    combatConfig: { ...DEFAULT_COMBAT_CONFIG },
+    statLabelMap: { ...DEFAULT_STAT_LABEL_MAP },
 };
 
 // ── Slice type ─────────────────────────────────────────────────────────
@@ -121,7 +130,7 @@ export type CampaignSlice = {
 
 // ── Combined state needed for cross-slice access ───────────────────────
 
-type CampaignDeps = CampaignSlice & ArchiveSlice & LoreSlice & NPCSlice & {
+type CampaignDeps = CampaignSlice & ArchiveSlice & LoreSlice & NPCSlice & CombatSlice & ItemSlice & SkillSlice & {
     settings: import('../../types').AppSettings;
     messages: ChatMessage[];
     condenser: CondenserState;
@@ -157,14 +166,18 @@ export const createCampaignSlice: StateCreator<CampaignDeps, [], [], CampaignSli
         const {
             loadCampaignState, getLoreChunks, getNPCLedger, loadArchiveIndex,
             loadDivergenceRegister, loadChapters, loadSemanticFacts, loadTimeline, loadEntities,
+            getCombatState, getItemCompendium, getSkillCompendium,
         } = await import('../../store/campaignStore');
 
-        const [campaignState, loreChunks, npcLedger, archiveIndex, divReg] = await Promise.all([
+        const [campaignState, loreChunks, rawNpcLedger, archiveIndex, divReg, combatState, items, skills] = await Promise.all([
             loadCampaignState(id),
             getLoreChunks(id),
             getNPCLedger(id),
             loadArchiveIndex(id),
             loadDivergenceRegister(id),
+            getCombatState(id),
+            getItemCompendium(id),
+            getSkillCompendium(id),
         ]);
         const [chapters, semanticFacts, timeline, entities] = await Promise.all([
             loadChapters(id).catch(() => []),
@@ -172,6 +185,9 @@ export const createCampaignSlice: StateCreator<CampaignDeps, [], [], CampaignSli
             loadTimeline(id).catch(() => []),
             loadEntities(id).catch(() => []),
         ]);
+
+        const npcLedger = backfillNPCCombatStats(rawNpcLedger);
+        const resolvedSkills = (skills && skills.length > 0) ? skills : [...CANON_SKILL_DEFS];
 
         set({
             activeCampaignId: id,
@@ -186,6 +202,9 @@ export const createCampaignSlice: StateCreator<CampaignDeps, [], [], CampaignSli
             semanticFacts,
             timeline,
             entities,
+            combatState,
+            items,
+            skills: resolvedSkills,
         } as Partial<CampaignDeps>);
 
         import('../../services/embedding').then(async ({ warmupEmbedder, getCurrentModelId }) => {

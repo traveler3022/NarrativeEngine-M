@@ -1,5 +1,5 @@
 import { get, set, del } from 'idb-keyval';
-import type { Campaign, LoreChunk, GameContext, ChatMessage, CondenserState, NPCEntry, ArchiveIndexEntry, ArchiveChapter, SemanticFact, TimelineEvent, EntityEntry, DivergenceRegister, PinnedExcerpt } from '../types';
+import type { Campaign, LoreChunk, GameContext, ChatMessage, CondenserState, NPCEntry, ArchiveIndexEntry, ArchiveChapter, SemanticFact, TimelineEvent, EntityEntry, DivergenceRegister, PinnedExcerpt, CombatState, ItemDef, SkillDef } from '../types';
 
 export type CampaignState = {
     context: GameContext;
@@ -39,6 +39,9 @@ export async function deleteCampaign(id: string): Promise<void> {
     await del(`npcs_${id}`);
     await del(`archive_index_${id}`);
     await del(`divergence_${id}`);
+    await del(`combat_${id}`);
+    await del(`items_${id}`);
+    await del(`skills_${id}`);
 }
 
 // ─── Campaign State ───
@@ -131,4 +134,41 @@ export async function loadDivergenceRegister(campaignId: string): Promise<Diverg
         chapterToggles: register.chapterToggles ?? {},
         categoryToggles: register.categoryToggles ?? {},
     };
+}
+
+// ─── Combat State ───
+
+export async function saveCombatState(campaignId: string, state: CombatState | null): Promise<void> {
+    if (state === null) {
+        await del(`combat_${campaignId}`);
+    } else {
+        await set(`combat_${campaignId}`, state);
+    }
+}
+
+export async function getCombatState(campaignId: string): Promise<CombatState | null> {
+    const state = await get(`combat_${campaignId}`);
+    return state || null;
+}
+
+// ─── Items Compendium ───
+
+export async function saveItemCompendium(campaignId: string, items: ItemDef[]): Promise<void> {
+    await set(`items_${campaignId}`, items);
+}
+
+export async function getItemCompendium(campaignId: string): Promise<ItemDef[]> {
+    const items = await get(`items_${campaignId}`);
+    return items || [];
+}
+
+// ─── Skills Compendium ───
+
+export async function saveSkillCompendium(campaignId: string, skills: SkillDef[]): Promise<void> {
+    await set(`skills_${campaignId}`, skills);
+}
+
+export async function getSkillCompendium(campaignId: string): Promise<SkillDef[]> {
+    const skills = await get(`skills_${campaignId}`);
+    return skills || [];
 }
