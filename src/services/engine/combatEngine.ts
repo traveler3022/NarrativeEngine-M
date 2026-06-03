@@ -1,4 +1,5 @@
-import type { CombatTier, Archetype, RecoveryBand, StatBlock, Combatant, CombatState, NPCOverride } from '../../types';
+import type { CombatTier, Archetype, RecoveryBand, StatBlock, Combatant, CombatState, NPCOverride, ItemDef, SkillDef } from '../../types';
+import { applyGearToAttack, applyGearToSkillUse } from './gearResolver';
 export type { CombatTier, Archetype, RecoveryBand, StatBlock, Combatant, CombatState, NPCOverride };
 
 export type PositionTag = 'cover' | 'elevated' | 'exposed';
@@ -29,9 +30,11 @@ export type InitiativeResult = {
 export type RiskOnFail = 'none' | 'prone' | 'exposed' | 'drop_weapon' | 'self_stagger';
 
 export type CombatAction = {
-    type: 'attack' | 'mental' | 'move' | 'defend';
+    type: 'attack' | 'mental' | 'heal' | 'move' | 'defend';
     actorId: string;
     targetId?: string;
+    weaponId?: string;
+    skillId?: string;
     attackBonus?: number;
     weaponDie?: number;
     scalingStatMod?: number;
@@ -51,10 +54,11 @@ export type CombatAction = {
 export type ActionResolution = {
     actorId: string;
     targetId?: string;
-    type: 'attack' | 'mental' | 'move' | 'defend';
+    type: 'attack' | 'mental' | 'heal' | 'move' | 'defend';
     hit?: boolean;
     critical?: boolean;
     damage?: number;
+    healed?: number;
     saved?: boolean;
     naturalRoll?: number;
     total?: number;
@@ -424,6 +428,14 @@ export function resolveActionQueue(
             };
         }
 
+        if (action.type === 'heal') {
+            return {
+                actorId: action.actorId,
+                targetId: action.targetId,
+                type: 'heal' as const,
+            };
+        }
+
         if (action.type === 'defend') {
             return {
                 actorId: action.actorId,
@@ -457,7 +469,7 @@ export function checkRangeLegality(input: {
     if (rangeRelation === 'Engaged') {
         return { legal: true };
     }
-    if (weaponRange === 'Ranged') {
+    if (weaponRange === 'Ranged' || weaponRange === 'Reach') {
         return { legal: true };
     }
     return {
@@ -525,6 +537,8 @@ export function checkTermination(state: CombatState): TerminationResult {
 export function runCombatRound(
     state: CombatState,
     actions: CombatAction[],
+    items?: Record<string, ItemDef>,
+    skills?: Record<string, SkillDef>,
 ): RoundResult {
     const combatants: Record<string, Combatant> = {};
     for (const [id, c] of Object.entries(state.combatants)) {
@@ -588,7 +602,7 @@ export function runCombatRound(
             continue;
         }
 
-        if (action.type === 'attack' || action.type === 'mental') {
+        if (action.type === 'attack' || action.type === 'mental' || action.type === 'heal') {
             const target = action.targetId ? combatants[action.targetId] : undefined;
             if (!target) {
                 resolutions.push({
@@ -613,7 +627,11 @@ export function runCombatRound(
             }
 
             if (action.type === 'attack') {
-                const weaponRange = action.weaponRange ?? 'Close';
+                const resolved = items
+                    ? applyGearToAttack(action, actor, items)
+                    : action;
+
+                const weaponRange = resolved.weaponRange ?? 'Close';
                 const rangeRel = rangeRelations[action.actorId]?.[action.targetId ?? ''] ?? 'Apart';
                 const legality = checkRangeLegality({
                     weaponRange,
@@ -633,10 +651,10 @@ export function runCombatRound(
                 }
 
                 const coverMod = applyCoverModifier(target.position, weaponRange, actor.position);
-                const attackBonus = action.attackBonus
+                const attackBonus = resolved.attackBonus
                     ?? (abilityMod(actor.stats.PWR) + actor.proficiencyBonus);
-                const scalingStatMod = action.scalingStatMod ?? abilityMod(actor.stats.PWR);
-                const weaponDie = action.weaponDie ?? 6;
+                const scalingStatMod = resolved.scalingStatMod ?? abilityMod(actor.stats.PWR);
+                const weaponDie = resolved.weaponDie ?? 6;
 
                 const result = resolveAttack({
                     attackBonus,
@@ -693,10 +711,54 @@ export function runCombatRound(
                 continue;
             }
 
-            if (action.type === 'mental') {
+            if (action.type === 'mental' || action.type === 'heal') {
+                let skillResult: import('./gearResolver').SkillUseResult | null = null;
+                if (action.skillId && skills) {
+                    skillResult = applyGearToSkillUse(action, actor, skills);
+                    if (skillResult.rejected) {
+                        resolutions.push({
+                            actorId: action.actorId,
+                            targetId: action.targetId,
+                            type: action.type,
+                            rejected: true,
+                            rejectionReason: skillResult.rejectionReason,
+                        });
+                        continue;
+                    }
+                    combatants[action.actorId] = {
+                        ...combatants[action.actorId],
+                        currentFOC: skillResult.updatedFOC,
+                    };
+                }
+
+                const skillType = skillResult?.resolvedType
+                    ?? (action.type === 'heal' ? 'heal' : 'attack');
+
                 const attackerWIL = action.attackerWIL ?? actor.stats.WIL;
                 const attackerProficiency = action.attackerProficiency ?? actor.proficiencyBonus;
                 const defenderWIL = action.defenderWIL ?? target.stats.WIL;
+
+                const scalingStat = skillResult?.resolvedScalingStat ?? 'WIL';
+                const scalingMod = abilityMod(actor.stats[scalingStat as keyof typeof actor.stats] ?? actor.stats.WIL);
+
+                if (skillType === 'heal') {
+                    const healDie = skillResult?.resolvedHealDice ?? 6;
+                    const healAmount = rollDie(healDie) + scalingMod;
+                    if (action.targetId && combatants[action.targetId]) {
+                        combatants[action.targetId] = {
+                            ...combatants[action.targetId],
+                            currentHP: Math.min(combatants[action.targetId].maxHP, combatants[action.targetId].currentHP + healAmount),
+                        };
+                    }
+                    resolutions.push({
+                        actorId: action.actorId,
+                        targetId: action.targetId,
+                        type: 'heal',
+                        healed: healAmount,
+                        focRecovered: skillResult?.focCost,
+                    });
+                    continue;
+                }
 
                 const result = resolveMentalSave({
                     attackerWIL,
@@ -707,6 +769,18 @@ export function runCombatRound(
                     forceRoll: action.forceRoll,
                 });
 
+                let damage = 0;
+                if (action.skillId && skills) {
+                    const mentalDie = skillResult?.resolvedDamageDice ?? 6;
+                    if (!result.saved && mentalDie > 0) {
+                        damage = rollDie(mentalDie) + scalingMod;
+                        combatants[action.targetId!] = {
+                            ...combatants[action.targetId!],
+                            currentHP: Math.max(0, target.currentHP - damage),
+                        };
+                    }
+                }
+
                 resolutions.push({
                     actorId: action.actorId,
                     targetId: action.targetId,
@@ -714,6 +788,7 @@ export function runCombatRound(
                     saved: result.saved,
                     naturalRoll: result.naturalRoll,
                     total: result.total,
+                    damage: damage > 0 ? damage : undefined,
                 });
                 continue;
             }

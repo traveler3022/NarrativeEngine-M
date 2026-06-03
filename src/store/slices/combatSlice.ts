@@ -2,6 +2,7 @@ import type { StateCreator } from 'zustand';
 import type { CombatState, Combatant, NPCEntry, CombatTier, Archetype } from '../../types';
 import { toast } from '../../components/Toast';
 import { rollInitiative, materializeCombatant, computeMaxHP, computeMaxFOC, computeAC, proficiencyBonusForTier } from '../../services/engine/combatEngine';
+import { resolveArmorBonus } from '../../services/engine/gearResolver';
 
 let combatTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -30,6 +31,7 @@ type CombatDeps = CombatSlice & {
     activeCampaignId: string | null;
     npcLedger: NPCEntry[];
     updateNPC: (id: string, patch: Partial<NPCEntry>) => void;
+    items: import('../../types').ItemDef[];
 };
 
 export const createCombatSlice: StateCreator<CombatDeps, [], [], CombatSlice> = (set) => ({
@@ -50,7 +52,9 @@ export const createCombatSlice: StateCreator<CombatDeps, [], [], CombatSlice> = 
                 const archetype = npc.archetype || 'skirmisher';
                 const maxHP = computeMaxHP(tier, stats.VIT);
                 const maxFOC = computeMaxFOC(tier, stats.WIL);
-                const ac = computeAC(stats.RES, 0); // TODO P2: resolve armor bonus from equippedWeapon/inventory via item compendium
+                const itemsMap = Object.fromEntries(s.items.map(i => [i.id, i]));
+                const armorBonus = resolveArmorBonus(npc, itemsMap);
+                const ac = computeAC(stats.RES, armorBonus);
 
                 const c: Combatant = {
                     id: npc.id,

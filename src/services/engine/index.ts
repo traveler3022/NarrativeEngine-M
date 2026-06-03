@@ -1,4 +1,13 @@
 export { rollEngines, rollDiceFairness } from './engineRolls';
+export {
+    resolveWeapon,
+    resolveSkill,
+    resolveArmorBonus,
+    applyGearToAttack,
+    applyGearToSkillUse,
+    UNARMED_WEAPON,
+} from './gearResolver';
+export type { ResolvedWeapon, ResolvedSkill, GearResolvedAttack, SkillUseResult } from './gearResolver';
 export type { EngineRollResult } from './engineRolls';
 export { rollCharacterIntroEngine } from './charIntroEngine';
 export type { CharIntroResult } from './charIntroEngine';

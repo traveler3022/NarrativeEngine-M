@@ -57,12 +57,12 @@ describe('Phase 2: Combat Turn Orchestrator & Engine Extensions', () => {
             expect(result.reason).toContain('range');
         });
 
-        it('rejects Reach weapon used at Ranged (Apart) range', () => {
+        it('allows Reach weapon at Apart range (polearms can reach)', () => {
             const result = checkRangeLegality({
                 weaponRange: 'Reach',
                 rangeRelation: 'Apart',
             });
-            expect(result.legal).toBe(false);
+            expect(result.legal).toBe(true);
         });
 
         it('allows Close weapon at Engaged range', () => {

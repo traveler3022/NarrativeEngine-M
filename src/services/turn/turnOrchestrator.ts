@@ -16,7 +16,7 @@ import {
     type ActionResolution,
     type RiskOnFail,
 } from '../engine';
-import type { ChatMessage, CombatState } from '../../types';
+import type { ChatMessage, CombatState, GameContext, ItemDef, SkillDef } from '../../types';
 import { toast } from '../../components/Toast';
 import { sanitizePayloadForApi } from '../llm/payloadSanitizer';
 import { gatherContext } from './turnContext';
@@ -461,6 +461,8 @@ export async function runTurn(
 export type CombatTurnInput = {
     combatState: CombatState;
     actions: CombatAction[];
+    items?: Record<string, ItemDef>;
+    skills?: Record<string, SkillDef>;
 };
 
 export type CombatTurnResult = {
@@ -499,7 +501,7 @@ export function runCombatTurn(input: CombatTurnInput): CombatTurnResult {
         return aIdx - bIdx;
     });
 
-    const result = runCombatRound(combatState, sortedActions);
+    const result = runCombatRound(combatState, sortedActions, input.items, input.skills);
 
     const updatedCombatants: Record<string, Combatant> = { ...result.updatedCombatants };
     const deadCombatantIds = Object.entries(updatedCombatants)
@@ -546,12 +548,14 @@ export type CombatActionSource =
 
 export type CombatActionCallbacks = {
     addMessage: (msg: ChatMessage) => void;
-    updateContext: (patch: Partial<import('../../types').GameContext>) => void;
+    updateContext: (patch: Partial<GameContext>) => void;
     setCombatState: (state: CombatState | null) => void;
     terminateCombat: (options?: { writeBack?: boolean }) => void;
     getAuxiliaryProvider: () => import('../../types').LLMProvider | undefined;
     getStoryProvider: () => import('../../types').LLMProvider | undefined;
     narrateCombatOutcome: (ledgerLine: string, resolutions: import('../engine/combatEngine').ActionResolution[], combatState: CombatState) => Promise<void>;
+    items: ItemDef[];
+    skills: SkillDef[];
 };
 
 export const ADJUDICATOR_PROMPT = `You are a combat maneuver adjudicator for a text RPG. The player has described a freeform
@@ -636,7 +640,9 @@ export async function handleCombatAction(
         }
     }
 
-    const turnResult = runCombatTurn({ combatState, actions });
+    const itemsMap = callbacks.items ? Object.fromEntries(callbacks.items.map(i => [i.id, i])) : undefined;
+    const skillsMap = callbacks.skills ? Object.fromEntries(callbacks.skills.map(s => [s.id, s])) : undefined;
+    const turnResult = runCombatTurn({ combatState, actions, items: itemsMap, skills: skillsMap });
 
     callbacks.setCombatState(turnResult.combatState);
 

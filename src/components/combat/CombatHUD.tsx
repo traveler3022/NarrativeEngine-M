@@ -118,21 +118,28 @@ export function CombatHUD({ onActionCommitted }: CombatHUDProps) {
         if (!pcCombatant || !combatState) throw new Error('No PC combatant');
 
         if (selectedAction === 'attack') {
+            const isSkillUse = !!selectedSkill;
             const isSkillAttack = selectedSkill && selectedSkill.type === 'attack';
+            const isSkillHeal = selectedSkill && selectedSkill.type === 'heal';
+            let actionType: 'attack' | 'mental' | 'heal' = 'attack';
+            if (isSkillAttack) actionType = 'mental';
+            else if (isSkillHeal) actionType = 'heal';
             return {
-                type: isSkillAttack ? 'mental' : 'attack',
+                type: actionType,
                 actorId: pcCombatant.id,
                 targetId: selectedTargetId ?? undefined,
-                attackBonus: isSkillAttack ? undefined : (pcCombatant.stats.PWR >= pcCombatant.stats.SPD || weaponRange === 'Close'
+                weaponId: isSkillUse ? undefined : (selectedWeapon?.id ?? undefined),
+                skillId: isSkillUse ? selectedSkill!.id : undefined,
+                attackBonus: isSkillUse ? undefined : (pcCombatant.stats.PWR >= pcCombatant.stats.SPD || weaponRange === 'Close'
                     ? (Math.floor((pcCombatant.stats.PWR - 10) / 2) + pcCombatant.proficiencyBonus)
                     : (Math.floor((pcCombatant.stats.SPD - 10) / 2) + pcCombatant.proficiencyBonus)),
-                weaponDie: isSkillAttack ? (selectedSkill!.damageDice ?? 6) : (selectedWeapon?.damageDice ?? 6),
-                scalingStatMod: isSkillAttack
-                    ? Math.floor((pcCombatant.stats.WIL - 10) / 2)
+                weaponDie: isSkillUse ? (selectedSkill!.damageDice ?? selectedSkill!.healDice ?? 6) : (selectedWeapon?.damageDice ?? 6),
+                scalingStatMod: isSkillUse
+                    ? Math.floor((pcCombatant.stats[selectedSkill!.scaling] - 10) / 2)
                     : Math.floor((pcCombatant.stats.PWR - 10) / 2),
                 weaponRange,
-                attackerWIL: isSkillAttack ? pcCombatant.stats.WIL : undefined,
-                attackerProficiency: isSkillAttack ? pcCombatant.proficiencyBonus : undefined,
+                attackerWIL: isSkillUse ? pcCombatant.stats.WIL : undefined,
+                attackerProficiency: isSkillUse ? pcCombatant.proficiencyBonus : undefined,
                 defenderWIL: isSkillAttack && selectedTargetId
                     ? combatState.combatants[selectedTargetId]?.stats.WIL : undefined,
             };
@@ -207,6 +214,8 @@ export function CombatHUD({ onActionCommitted }: CombatHUDProps) {
                         console.warn('[CombatHUD] Narration call failed:', err);
                     }
                 },
+                items,
+                skills,
             });
 
             setFreeformText('');
