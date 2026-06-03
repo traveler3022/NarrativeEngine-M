@@ -1,7 +1,7 @@
 import type { StateCreator } from 'zustand';
 import type { AppSettings, LLMProvider, AIPreset } from '../../types';
 import { get as idbGet, set as idbSet } from 'idb-keyval';
-import { encryptSettingsPresets, decryptSettingsPresets } from '../../services/infrastructure';
+import { encryptSettingsProviders, decryptSettingsProviders, decryptSettingsPresets } from '../../services/infrastructure';
 import { toast } from '../../components/Toast';
 import {
     applyTheme,
@@ -12,11 +12,8 @@ import {
     defaultSettings,
     migrateSettings
 } from '../settingsMigration';
+import { uid } from '../../utils/uid';
 
-// ── DEFAULT constants ──────────────────────────────────────────────────
-
-// Surprise Engine — mundane world-flavor events. Genre-agnostic archetypes;
-// the GM AI fills in world-appropriate specifics from context.
 export const DEFAULT_SURPRISE_TYPES = [
     "STREET_DRAMA", "FOUND_OBJECT", "OVERHEARD_GOSSIP", "ANIMAL_INCIDENT",
     "VENDOR_DISPUTE", "STRANGER_MOMENT", "MINOR_MISHAP", "CROWD_REACTION",
@@ -28,8 +25,6 @@ export const DEFAULT_SURPRISE_TONES = [
     "TENSE", "HEARTWARMING", "CHAOTIC", "BITTERSWEET"
 ];
 
-// Encounter Engine — threat SITUATIONS, not specific enemies. The GM AI
-// resolves what the threat actually is based on the current location.
 export const DEFAULT_ENCOUNTER_TYPES = [
     "HOSTILE_PRESENCE", "TERRITORIAL_THREAT", "PATROL_CONFRONTATION",
     "AMBUSH_LAID", "DESPERATE_ATTACKER", "SCAVENGING_PREDATOR",
@@ -41,8 +36,6 @@ export const DEFAULT_ENCOUNTER_TONES = [
     "CHAOTIC", "PREDATORY", "TERRITORIAL", "GRIM"
 ];
 
-// World Rumour Engine — quest hooks and local hearsay. NOT canon-changing
-// world events. WHO heard/spread it, WHAT happened, WHERE locally, WHY it matters.
 export const DEFAULT_WORLD_WHO = [
     "a passing merchant", "a frightened local", "a travelling soldier",
     "an inn regular", "a desperate farmer", "a wandering scout",
@@ -93,20 +86,17 @@ export const DEFAULT_STAT_LABEL_MAP = {
     WIL: 'Willpower'
 };
 
-// Debounced save to avoid hammering the API on rapid changes
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 export function debouncedSaveSettings(settings: AppSettings, activeCampaignId: string | null) {
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(async () => {
-        const encryptedPresets = await encryptSettingsPresets(settings.presets);
-        const encryptedSettings = { ...settings, presets: encryptedPresets };
+        const encryptedProviders = await encryptSettingsProviders(settings.providers);
+        const encryptedSettings = { ...settings, providers: encryptedProviders };
 
         idbSet('nn_settings', { settings: encryptedSettings, activeCampaignId })
             .catch((e) => { console.error(e); toast.error('Failed to save settings to browser storage'); });
     }, 500);
 }
-
-// ── Slice type ─────────────────────────────────────────────────────────
 
 export type SettingsSlice = {
     settings: AppSettings;
@@ -123,9 +113,11 @@ export type SettingsSlice = {
     getActiveSummarizerEndpoint: () => LLMProvider | undefined;
     getActiveUtilityEndpoint: () => LLMProvider | undefined;
     getActiveAuxiliaryEndpoint: () => LLMProvider | undefined;
-};
 
-// ── Slice creator ──────────────────────────────────────────────────────
+    addProvider: (provider: LLMProvider) => void;
+    updateProvider: (id: string, patch: Partial<LLMProvider>) => void;
+    removeProvider: (id: string) => void;
+};
 
 export const createSettingsSlice: StateCreator<SettingsSlice & { activeCampaignId: string | null }, [], [], SettingsSlice> = (set, get) => ({
     settings: { ...defaultSettings },
@@ -135,39 +127,49 @@ export const createSettingsSlice: StateCreator<SettingsSlice & { activeCampaignI
         try {
             const localSettings = await idbGet('nn_settings');
             if (localSettings && localSettings.settings) {
-                const migrated = migrateSettings(localSettings);
-                const decryptedPresets = await decryptSettingsPresets(migrated.presets);
-                const decrypted = { ...migrated, presets: decryptedPresets };
-                
+                const raw = localSettings as any;
+
+                const presetsPlain = await decryptSettingsPresets(raw.settings?.presets ?? []);
+                const providersPlain = await decryptSettingsProviders(raw.settings?.providers ?? []);
+
+                const migrated = migrateSettings({
+                    settings: {
+                        ...(raw.settings || {}),
+                        presets: presetsPlain,
+                        providers: providersPlain,
+                    },
+                });
+
                 set({
                     settings: {
-                        presets: decrypted.presets,
-                        activePresetId: decrypted.activePresetId,
-                        contextLimit: decrypted.contextLimit,
-                        autoCondenseEnabled: decrypted.autoCondenseEnabled,
-                        condenseAggressiveness: decrypted.condenseAggressiveness,
-                        enableDeepArchiveSearch: decrypted.enableDeepArchiveSearch,
-                        autoExtractDivergences: decrypted.autoExtractDivergences,
-                        divergenceTokenBudget: decrypted.divergenceTokenBudget,
-                        divergenceScanBudget: decrypted.divergenceScanBudget,
-                        autoArchiveStaleNPCsTurns: decrypted.autoArchiveStaleNPCsTurns,
-                        rulesBudgetPct: decrypted.rulesBudgetPct,
-                        autoGenerateRuleKeywords: decrypted.autoGenerateRuleKeywords,
-                        embeddingModel: decrypted.embeddingModel,
-                        utilityTimeoutSeconds: decrypted.utilityTimeoutSeconds,
-                        verboseUtilityLogging: decrypted.verboseUtilityLogging,
-                        aiTier: decrypted.aiTier,
-                        theme: decrypted.theme ?? 'system',
-                        uiScale: decrypted.uiScale ?? 1.0,
-                        debugMode: decrypted.debugMode ?? false,
-                        showReasoning: decrypted.showReasoning ?? true,
+                        presets: migrated.presets,
+                        activePresetId: migrated.activePresetId,
+                        providers: migrated.providers,
+                        contextLimit: migrated.contextLimit,
+                        autoCondenseEnabled: migrated.autoCondenseEnabled,
+                        condenseAggressiveness: migrated.condenseAggressiveness,
+                        enableDeepArchiveSearch: migrated.enableDeepArchiveSearch,
+                        autoExtractDivergences: migrated.autoExtractDivergences,
+                        divergenceTokenBudget: migrated.divergenceTokenBudget,
+                        divergenceScanBudget: migrated.divergenceScanBudget,
+                        autoArchiveStaleNPCsTurns: migrated.autoArchiveStaleNPCsTurns,
+                        rulesBudgetPct: migrated.rulesBudgetPct,
+                        autoGenerateRuleKeywords: migrated.autoGenerateRuleKeywords,
+                        embeddingModel: migrated.embeddingModel,
+                        utilityTimeoutSeconds: migrated.utilityTimeoutSeconds,
+                        verboseUtilityLogging: migrated.verboseUtilityLogging,
+                        aiTier: migrated.aiTier,
+                        theme: migrated.theme ?? 'system',
+                        uiScale: migrated.uiScale ?? 1.0,
+                        debugMode: migrated.debugMode ?? false,
+                        showReasoning: migrated.showReasoning ?? true,
                     },
                     settingsLoaded: true,
                 });
 
-                applyTheme(decrypted.theme ?? 'system');
+                applyTheme(migrated.theme ?? 'system');
                 watchSystemTheme();
-                applyUIScale(decrypted.uiScale ?? 1.0);
+                applyUIScale(migrated.uiScale ?? 1.0);
                 return;
             }
         } catch (e) {
@@ -238,27 +240,86 @@ export const createSettingsSlice: StateCreator<SettingsSlice & { activeCampaignI
     },
 
     getActiveStoryEndpoint: () => {
-        const preset = get().getActivePreset();
-        return preset?.storyAI;
+        const s = get();
+        const preset = s.getActivePreset();
+        if (!preset) return undefined;
+        return s.settings.providers.find(p => p.id === preset.storyAIProviderId);
     },
 
     getActiveSummarizerEndpoint: () => {
-        const preset = get().getActivePreset();
-        return preset?.summarizerAI;
+        const s = get();
+        const preset = s.getActivePreset();
+        if (!preset) return undefined;
+        if (!preset.summarizerAIProviderId) return undefined;
+        return s.settings.providers.find(p => p.id === preset.summarizerAIProviderId);
     },
 
     getActiveUtilityEndpoint: () => {
-        const preset = get().getActivePreset();
-        return preset?.utilityAI;
+        const s = get();
+        const preset = s.getActivePreset();
+        if (!preset) return undefined;
+        if (!preset.utilityAIProviderId) return undefined;
+        return s.settings.providers.find(p => p.id === preset.utilityAIProviderId);
     },
 
     getActiveAuxiliaryEndpoint: () => {
-        const preset = get().getActivePreset();
-        return preset?.auxiliaryAI;
+        const s = get();
+        const preset = s.getActivePreset();
+        if (!preset) return undefined;
+        if (!preset.auxiliaryAIProviderId) return undefined;
+        return s.settings.providers.find(p => p.id === preset.auxiliaryAIProviderId);
+    },
+
+    addProvider: (provider) => {
+        set((s) => {
+            const newSettings = {
+                ...s.settings,
+                providers: [...s.settings.providers, provider],
+            };
+            debouncedSaveSettings(newSettings, s.activeCampaignId);
+            return { settings: newSettings };
+        });
+    },
+
+    updateProvider: (id, patch) => {
+        set((s) => {
+            const newProviders = s.settings.providers.map((p) =>
+                p.id === id ? { ...p, ...patch } : p
+            );
+            const newSettings = { ...s.settings, providers: newProviders };
+            debouncedSaveSettings(newSettings, s.activeCampaignId);
+            return { settings: newSettings };
+        });
+    },
+
+    removeProvider: (id) => {
+        set((s) => {
+            if (s.settings.providers.length <= 1) return {};
+            const newProviders = s.settings.providers.filter(p => p.id !== id);
+            if (newProviders.length === 0) return {};
+            const firstProviderId = newProviders[0].id;
+            const newPresets = s.settings.presets.map(preset => {
+                let updated = { ...preset };
+                if (updated.storyAIProviderId === id) {
+                    updated.storyAIProviderId = firstProviderId;
+                }
+                if (updated.summarizerAIProviderId === id) {
+                    updated.summarizerAIProviderId = '';
+                }
+                if (updated.utilityAIProviderId === id) {
+                    updated.utilityAIProviderId = '';
+                }
+                if (updated.auxiliaryAIProviderId === id) {
+                    updated.auxiliaryAIProviderId = '';
+                }
+                return updated;
+            });
+            const newSettings = { ...s.settings, providers: newProviders, presets: newPresets };
+            debouncedSaveSettings(newSettings, s.activeCampaignId);
+            return { settings: newSettings };
+        });
     },
 });
 
-// Re-exports for backward compatibility
 export { resolveTheme } from '../../services/infrastructure/themeService';
 export { migrateSettings, defaultSettings } from '../settingsMigration';
-

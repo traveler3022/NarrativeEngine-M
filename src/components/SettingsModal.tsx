@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { X, ArrowLeft } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
+import { ProvidersPanel } from './settings/ProvidersPanel';
 import { PresetsPanel } from './settings/PresetsPanel';
 import { GlobalSettingsPanel } from './settings/GlobalSettingsPanel';
 import { AdvancedEmbeddingPanel } from './settings/AdvancedEmbeddingPanel';
 import { DebugPanel } from './settings/DebugPanel';
 
-type PanelKey = 'presets' | 'global' | 'advanced' | 'debug';
+type PanelKey = 'providers' | 'presets' | 'global' | 'advanced' | 'debug';
 
 const PANELS: { key: PanelKey; label: string }[] = [
+    { key: 'providers', label: 'Providers' },
     { key: 'presets', label: 'Presets' },
     { key: 'global', label: 'Global' },
     { key: 'advanced', label: 'Advanced' },
@@ -16,7 +18,7 @@ const PANELS: { key: PanelKey; label: string }[] = [
 ];
 
 export function SettingsModal() {
-    const [activePanel, setActivePanel] = useState<PanelKey>('presets');
+    const [activePanel, setActivePanel] = useState<PanelKey>('providers');
     const settingsOpen = useAppStore(s => s.settingsOpen);
     const toggleSettings = useAppStore(s => s.toggleSettings);
     const setMobileView = useAppStore(s => s.setMobileView);
@@ -66,6 +68,7 @@ export function SettingsModal() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 md:p-6 nav-clearance md:pb-6 relative">
+                    <div className={activePanel !== 'providers' ? 'hidden' : ''}><ProvidersPanel /></div>
                     <div className={activePanel !== 'presets' ? 'hidden' : ''}><PresetsPanel /></div>
                     <div className={activePanel !== 'global' ? 'hidden' : ''}><GlobalSettingsPanel /></div>
                     <div className={activePanel !== 'advanced' ? 'hidden' : ''}><AdvancedEmbeddingPanel /></div>

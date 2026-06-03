@@ -1,15 +1,9 @@
 import { useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Copy } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
-import { testConnection } from '../../services/chatEngine';
-import type { AIPreset, LLMProvider, ApiFormat, SamplingConfig } from '../../types';
-import { detectFormatFromEndpoint } from '../../utils/llmApiHelper';
-import { toast } from '../Toast';
+import type { AIPreset, SamplingConfig } from '../../types';
 import { uid } from '../../utils/uid';
 import { SamplingPanel } from '../SamplingPanel';
-import { ProviderConfigSection } from './ProviderConfigSection';
-
-type ProviderSection = 'storyAI' | 'summarizerAI' | 'utilityAI' | 'auxiliaryAI';
 
 export function PresetsPanel() {
     const settings = useAppStore(s => s.settings);
@@ -18,95 +12,43 @@ export function PresetsPanel() {
     const removePreset = useAppStore(s => s.removePreset);
 
     const [activeTab, setActiveTab] = useState(settings.presets[0]?.id || '');
-    const [testingSection, setTestingSection] = useState<ProviderSection | null>(null);
-    const [testResults, setTestResults] = useState<Record<string, { ok: boolean; detail: string } | null>>({});
-    const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-        storyAI: true,
-        summarizerAI: false,
-        utilityAI: false,
-        auxiliaryAI: false,
-    });
-
-    const toggleSection = (key: string) =>
-        setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
 
     const activePreset = settings.presets.find((p) => p.id === activeTab) || settings.presets[0];
 
-    const handleTest = async (section: ProviderSection) => {
-        if (!activePreset) return;
-        const config = activePreset[section];
-        if (!config || !config.endpoint) return;
-
-        setTestingSection(section);
-        setTestResults(prev => ({ ...prev, [section]: null }));
-        const result = await testConnection(config);
-        setTestResults(prev => ({ ...prev, [section]: result }));
-        setTestingSection(null);
-        if (result.ok) {
-            toast.success(`${section} connection successful`);
-        } else {
-            toast.error(`${section} connection failed: ${result.detail}`);
-        }
-    };
-
     const handleAddPreset = () => {
+        const firstProviderId = settings.providers[0]?.id || '';
         const newPreset: AIPreset = {
             id: uid(),
             name: `Preset ${settings.presets.length + 1}`,
-            storyAI: { endpoint: 'http://localhost:11434/v1', apiKey: '', modelName: 'llama3', apiFormat: 'openai' },
-            summarizerAI: { endpoint: 'http://localhost:11434/v1', apiKey: '', modelName: 'llama3', apiFormat: 'openai' },
-            utilityAI: { endpoint: '', apiKey: '', modelName: '' },
+            storyAIProviderId: firstProviderId,
+            summarizerAIProviderId: '',
+            utilityAIProviderId: '',
+            auxiliaryAIProviderId: '',
         };
         addPreset(newPreset);
         setActiveTab(newPreset.id);
-        setTestResults({});
+    };
+
+    const handleDuplicatePreset = () => {
+        if (!activePreset) return;
+        const duplicated: AIPreset = {
+            ...activePreset,
+            id: uid(),
+            name: `${activePreset.name} (copy)`,
+        };
+        addPreset(duplicated);
+        setActiveTab(duplicated.id);
     };
 
     const handleRemovePreset = (id: string) => {
         if (settings.presets.length <= 1) return;
         removePreset(id);
         setActiveTab(settings.presets[0]?.id || '');
-        setTestResults({});
     };
 
     const handleUpdatePresetName = (name: string) => {
         if (!activePreset) return;
         updatePreset(activePreset.id, { name });
-    };
-
-    const handleUpdateEndpoint = (section: ProviderSection, field: keyof LLMProvider, value: string | boolean | undefined) => {
-        if (!activePreset) return;
-        const updatedConfig = { ...activePreset[section], [field]: value };
-        updatePreset(activePreset.id, { [section]: updatedConfig });
-    };
-
-    const handleApiFormatChange = (section: ProviderSection, newFormat: ApiFormat) => {
-        if (!activePreset) return;
-        const config = activePreset[section] ?? { endpoint: '', apiKey: '', modelName: '' };
-        let endpoint = (config.endpoint || '').replace(/\/+$/, '');
-        if (newFormat === 'ollama') {
-            endpoint = endpoint.replace(/\/v1\/?$/, '').replace(/\/+$/, '');
-        } else if (newFormat === 'openai' || newFormat === 'claude') {
-            if (endpoint && !endpoint.endsWith('/v1') && /localhost:11434|127\.0\.0\.1:11434/.test(endpoint)) {
-                endpoint = endpoint + '/v1';
-            }
-        }
-        const updatedConfig = { ...config, apiFormat: newFormat, endpoint };
-        updatePreset(activePreset.id, { [section]: updatedConfig });
-    };
-
-    const handleEndpointBlur = (section: ProviderSection, endpoint: string) => {
-        if (!activePreset || !endpoint) return;
-        const detected = detectFormatFromEndpoint(endpoint);
-        if (!detected) return;
-        const config = activePreset[section] ?? { endpoint: '', apiKey: '', modelName: '' };
-        const currentFormat = config.apiFormat || 'openai';
-        if (currentFormat === detected) return;
-        let normalizedEndpoint = endpoint.replace(/\/+$/, '');
-        if (detected === 'ollama') {
-            normalizedEndpoint = normalizedEndpoint.replace(/\/v1\/?$/, '').replace(/\/+$/, '');
-        }
-        updatePreset(activePreset.id, { [section]: { ...config, apiFormat: detected, endpoint: normalizedEndpoint } });
     };
 
     return (
@@ -117,7 +59,7 @@ export function PresetsPanel() {
                     {settings.presets.map((p) => (
                         <button
                             key={p.id}
-                            onClick={() => { setActiveTab(p.id); setTestResults({}); }}
+                            onClick={() => setActiveTab(p.id)}
                             className={`px-4 py-3 md:py-2 text-xs md:text-[11px] uppercase tracking-wider whitespace-nowrap transition-all border-b-2 -mb-px ${activeTab === p.id
                                 ? 'text-terminal border-terminal bg-terminal/5 font-bold'
                                 : 'text-text-dim border-transparent hover:text-text-primary'
@@ -147,6 +89,13 @@ export function PresetsPanel() {
                                 className="w-full bg-void border border-border px-3 py-3 md:py-2 text-[16px] md:text-sm text-text-primary font-bold focus:border-terminal focus:outline-none"
                             />
                         </div>
+                        <button
+                            onClick={handleDuplicatePreset}
+                            className="bg-void border border-border text-text-dim hover:text-terminal hover:border-terminal transition-colors touch-btn px-3 py-2"
+                            title="Duplicate preset"
+                        >
+                            <Copy size={18} />
+                        </button>
                         {settings.presets.length > 1 && (
                             <button
                                 onClick={() => handleRemovePreset(activePreset.id)}
@@ -157,58 +106,62 @@ export function PresetsPanel() {
                         )}
                     </div>
 
-                    <ProviderConfigSection
-                        section="storyAI"
-                        title="Story & Logic AI"
-                        activePreset={activePreset}
-                        isExpanded={expandedSections.storyAI}
-                        isTesting={testingSection === 'storyAI'}
-                        testResult={testResults.storyAI || null}
-                        onToggle={() => toggleSection('storyAI')}
-                        onUpdateEndpoint={handleUpdateEndpoint}
-                        onApiFormatChange={handleApiFormatChange}
-                        onEndpointBlur={handleEndpointBlur}
-                        onTest={handleTest}
-                    />
-                    <ProviderConfigSection
-                        section="summarizerAI"
-                        title="Summarizer & Context AI"
-                        activePreset={activePreset}
-                        isExpanded={expandedSections.summarizerAI}
-                        isTesting={testingSection === 'summarizerAI'}
-                        testResult={testResults.summarizerAI || null}
-                        onToggle={() => toggleSection('summarizerAI')}
-                        onUpdateEndpoint={handleUpdateEndpoint}
-                        onApiFormatChange={handleApiFormatChange}
-                        onEndpointBlur={handleEndpointBlur}
-                        onTest={handleTest}
-                    />
-                    <ProviderConfigSection
-                        section="utilityAI"
-                        title="Utility AI (Context Recommender)"
-                        activePreset={activePreset}
-                        isExpanded={expandedSections.utilityAI}
-                        isTesting={testingSection === 'utilityAI'}
-                        testResult={testResults.utilityAI || null}
-                        onToggle={() => toggleSection('utilityAI')}
-                        onUpdateEndpoint={handleUpdateEndpoint}
-                        onApiFormatChange={handleApiFormatChange}
-                        onEndpointBlur={handleEndpointBlur}
-                        onTest={handleTest}
-                    />
-                    <ProviderConfigSection
-                        section="auxiliaryAI"
-                        title="Auxiliary AI (NPC Validator — use Haiku/Flash)"
-                        activePreset={activePreset}
-                        isExpanded={expandedSections.auxiliaryAI}
-                        isTesting={testingSection === 'auxiliaryAI'}
-                        testResult={testResults.auxiliaryAI || null}
-                        onToggle={() => toggleSection('auxiliaryAI')}
-                        onUpdateEndpoint={handleUpdateEndpoint}
-                        onApiFormatChange={handleApiFormatChange}
-                        onEndpointBlur={handleEndpointBlur}
-                        onTest={handleTest}
-                    />
+                    <div className="space-y-4 mb-6">
+                        <div>
+                            <label className="block text-[10px] text-text-dim uppercase tracking-wider mb-1">Story & Logic AI <span className="text-terminal">*</span></label>
+                            <select
+                                value={activePreset.storyAIProviderId}
+                                onChange={(e) => updatePreset(activePreset.id, { storyAIProviderId: e.target.value })}
+                                className="w-full bg-surface border border-border px-3 py-3 md:py-2 text-[16px] md:text-sm text-text-primary focus:border-terminal focus:outline-none appearance-none"
+                            >
+                                {settings.providers.map(p => (
+                                    <option key={p.id} value={p.id}>{p.label || p.modelName || p.endpoint}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-[10px] text-text-dim uppercase tracking-wider mb-1">Summarizer & Context AI</label>
+                            <select
+                                value={activePreset.summarizerAIProviderId || ''}
+                                onChange={(e) => updatePreset(activePreset.id, { summarizerAIProviderId: e.target.value })}
+                                className="w-full bg-surface border border-border px-3 py-3 md:py-2 text-[16px] md:text-sm text-text-primary focus:border-terminal focus:outline-none appearance-none"
+                            >
+                                <option value="">Fallback to Story AI</option>
+                                {settings.providers.map(p => (
+                                    <option key={p.id} value={p.id}>{p.label || p.modelName || p.endpoint}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-[10px] text-text-dim uppercase tracking-wider mb-1">Utility AI (Context Recommender)</label>
+                            <select
+                                value={activePreset.utilityAIProviderId || ''}
+                                onChange={(e) => updatePreset(activePreset.id, { utilityAIProviderId: e.target.value })}
+                                className="w-full bg-surface border border-border px-3 py-3 md:py-2 text-[16px] md:text-sm text-text-primary focus:border-terminal focus:outline-none appearance-none"
+                            >
+                                <option value="">None</option>
+                                {settings.providers.map(p => (
+                                    <option key={p.id} value={p.id}>{p.label || p.modelName || p.endpoint}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-[10px] text-text-dim uppercase tracking-wider mb-1">Auxiliary AI (NPC Validator)</label>
+                            <select
+                                value={activePreset.auxiliaryAIProviderId || ''}
+                                onChange={(e) => updatePreset(activePreset.id, { auxiliaryAIProviderId: e.target.value })}
+                                className="w-full bg-surface border border-border px-3 py-3 md:py-2 text-[16px] md:text-sm text-text-primary focus:border-terminal focus:outline-none appearance-none"
+                            >
+                                <option value="">None</option>
+                                {settings.providers.map(p => (
+                                    <option key={p.id} value={p.id}>{p.label || p.modelName || p.endpoint}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
 
                     <SamplingPanel
                         preset={activePreset}

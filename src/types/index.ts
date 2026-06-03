@@ -5,14 +5,14 @@ export type AiTier = 'lite' | 'pro' | 'max';
 export type ThinkingEffort = 'off' | 'low' | 'medium' | 'high' | 'max';
 
 export type LLMProvider = {
+    id: string;
+    label: string;
     endpoint: string;
     apiKey: string;
     modelName: string;
     streamingEnabled?: boolean;
     apiFormat?: ApiFormat;
     thinkingEffort?: ThinkingEffort;
-    id?: string;    // only present in saved presets / legacy migrations
-    label?: string; // only present in saved presets / legacy migrations
 };
 
 export type SamplingConfig = {
@@ -48,11 +48,15 @@ export type StreamingStats = {
 export type AIPreset = {
     id: string;
     name: string;
-    storyAI: LLMProvider;
-    summarizerAI: LLMProvider;
-    utilityAI?: LLMProvider; // Context recommender — optional, fallback to substring scan if empty
-    auxiliaryAI?: LLMProvider; // Cheap classifier for NPC validation etc — optional, fallback to storyAI
+    storyAIProviderId: string;
+    summarizerAIProviderId?: string;
+    utilityAIProviderId?: string;
+    auxiliaryAIProviderId?: string;
     sampling?: SamplingConfig;
+    storyAI?: LLMProvider;
+    summarizerAI?: LLMProvider;
+    utilityAI?: LLMProvider;
+    auxiliaryAI?: LLMProvider;
 };
 
 export type CondenseAggressiveness = 'aggressive' | 'balanced' | 'quality';
@@ -81,9 +85,7 @@ export type AppSettings = {
     utilityTimeoutSeconds?: number;   // soft deadline for utility AI calls (reranker, recommender, expandQuery). Default 45. User can EXTEND +1m mid-flight.
     verboseUtilityLogging?: boolean;  // when true, utility call tracker records extra detail (slot waits, retries, payload sizes)
     aiTier?: AiTier;
-
-    // Legacy fields kept for migration only
-    providers?: LLMProvider[];
+    providers: LLMProvider[];
     activeProviderId?: string;
     endpoint?: string;
     apiKey?: string;

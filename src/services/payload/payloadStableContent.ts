@@ -72,7 +72,8 @@ export function buildStablePreamble(opts: {
     if (context.continuePromptActive && context.continuePrompt) stableParts.push(context.continuePrompt);
 
     const activePreset = settings.presets.find(p => p.id === settings.activePresetId);
-    const modelName = activePreset?.storyAI?.modelName ?? '';
+    const storyProvider = activePreset ? settings.providers.find(p => p.id === activePreset.storyAIProviderId) : undefined;
+    const modelName = storyProvider?.modelName ?? '';
     const isReasoningModel = /deepseek-r|qwq|qwen.*think|r1/i.test(modelName);
     if (isReasoningModel) {
         stableParts.push("IMPORTANT: If you use a 'thinking' or 'reasoning' block (<think>...</think>), you MUST still provide the full narrative response AFTER the closing tag. Never end a turn with only a thinking block.");

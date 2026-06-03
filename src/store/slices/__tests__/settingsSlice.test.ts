@@ -24,13 +24,22 @@ describe('defaultSettings', () => {
     it('debugMode defaults to false', () => {
         expect(defaultSettings.debugMode).toBe(false);
     });
+    it('has at least one provider', () => {
+        expect(defaultSettings.providers.length).toBeGreaterThan(0);
+    });
+    it('preset references a provider', () => {
+        const preset = defaultSettings.presets[0];
+        expect(defaultSettings.providers.find(p => p.id === preset.storyAIProviderId)).toBeDefined();
+    });
 });
 
 describe('migrateSettings', () => {
-    it('passes through already-migrated settings', () => {
+    it('passes through already-migrated settings with providers', () => {
+        const providerId = 'prov-1';
         const existing: Record<string, unknown> = {
             settings: {
-                presets: [{ id: 'p1', name: 'Test', storyAI: { endpoint: 'http://test', apiKey: 'k', modelName: 'm' }, summarizerAI: { endpoint: 'http://test', apiKey: 'k', modelName: 'm' } }],
+                presets: [{ id: 'p1', name: 'Test', storyAIProviderId: providerId }],
+                providers: [{ id: providerId, label: 'Test', endpoint: 'http://test', apiKey: 'k', modelName: 'm' }],
                 activePresetId: 'p1',
                 contextLimit: 8192,
                 autoCondenseEnabled: true,
@@ -44,8 +53,39 @@ describe('migrateSettings', () => {
         const result = migrateSettings(existing);
         expect(result.presets).toHaveLength(1);
         expect(result.presets[0].id).toBe('p1');
+        expect(result.presets[0].storyAIProviderId).toBe(providerId);
+        expect(result.providers).toHaveLength(1);
         expect(result.contextLimit).toBe(8192);
         expect(result.theme).toBe('dark');
+    });
+
+    it('migrates legacy inline-config presets to id-based presets with providers', () => {
+        const existing: Record<string, unknown> = {
+            settings: {
+                presets: [{ id: 'p1', name: 'Test', storyAI: { endpoint: 'http://test', apiKey: 'k', modelName: 'm', apiFormat: 'openai' }, summarizerAI: { endpoint: 'http://test', apiKey: 'k', modelName: 'm', apiFormat: 'openai' } }],
+                activePresetId: 'p1',
+                contextLimit: 4096,
+            },
+        };
+        const result = migrateSettings(existing);
+        expect(result.presets).toHaveLength(1);
+        expect(result.presets[0].storyAIProviderId).toBeTruthy();
+        expect(result.presets[0].summarizerAIProviderId).toBeTruthy();
+        expect(result.presets[0].storyAI).toBeUndefined();
+        expect(result.presets[0].summarizerAI).toBeUndefined();
+        expect(result.providers).toHaveLength(1);
+    });
+
+    it('deduplicates identical role configs into a single provider', () => {
+        const existing: Record<string, unknown> = {
+            settings: {
+                presets: [{ id: 'p1', name: 'Test', storyAI: { endpoint: 'http://test', apiKey: 'k', modelName: 'm' }, summarizerAI: { endpoint: 'http://test', apiKey: 'k', modelName: 'm' } }],
+                activePresetId: 'p1',
+            },
+        };
+        const result = migrateSettings(existing);
+        expect(result.providers).toHaveLength(1);
+        expect(result.presets[0].storyAIProviderId).toBe(result.presets[0].summarizerAIProviderId);
     });
 
     it('migrates legacy single-provider settings', () => {
@@ -61,9 +101,11 @@ describe('migrateSettings', () => {
         };
         const result = migrateSettings(legacy);
         expect(result.presets).toHaveLength(1);
-        expect(result.presets[0].storyAI.endpoint).toBe('http://localhost:11434/v1');
-        expect(result.presets[0].storyAI.apiKey).toBe('test-key');
-        expect(result.presets[0].storyAI.modelName).toBe('llama3');
+        expect(result.providers).toHaveLength(1);
+        expect(result.providers[0].endpoint).toBe('http://localhost:11434/v1');
+        expect(result.providers[0].apiKey).toBe('test-key');
+        expect(result.providers[0].modelName).toBe('llama3');
+        expect(result.presets[0].storyAIProviderId).toBe(result.providers[0].id);
     });
 
     it('migrates legacy multi-provider settings', () => {
@@ -78,14 +120,16 @@ describe('migrateSettings', () => {
         };
         const result = migrateSettings(legacy);
         expect(result.presets).toHaveLength(1);
-        expect(result.presets[0].storyAI.endpoint).toBe('http://old-endpoint');
+        expect(result.providers).toHaveLength(1);
+        expect(result.providers[0].endpoint).toBe('http://old-endpoint');
         expect(result.contextLimit).toBe(16384);
     });
 
     it('uses defaults for missing fields', () => {
         const partial: Record<string, unknown> = {
             settings: {
-                presets: [{ id: 'x', name: 'P', storyAI: { endpoint: '', apiKey: '', modelName: '' }, summarizerAI: { endpoint: '', apiKey: '', modelName: '' } }],
+                presets: [{ id: 'x', name: 'P', storyAIProviderId: '' }],
+                providers: [{ id: 'prov-x', label: 'P', endpoint: 'http://e', apiKey: '', modelName: 'm' }],
                 activePresetId: 'x',
             },
         };
@@ -101,13 +145,16 @@ describe('migrateSettings', () => {
     it('handles empty settings object', () => {
         const result = migrateSettings({});
         expect(result.presets).toHaveLength(1);
+        expect(result.providers).toHaveLength(1);
         expect(result.contextLimit).toBe(4096);
     });
 
     it('aiTier defaults to pro on already-migrated settings without aiTier', () => {
+        const providerId = 'prov-1';
         const existing: Record<string, unknown> = {
             settings: {
-                presets: [{ id: 'p1', name: 'Test', storyAI: { endpoint: 'http://test', apiKey: 'k', modelName: 'm' }, summarizerAI: { endpoint: 'http://test', apiKey: 'k', modelName: 'm' } }],
+                presets: [{ id: 'p1', name: 'Test', storyAIProviderId: providerId }],
+                providers: [{ id: providerId, label: 'Test', endpoint: 'http://test', apiKey: 'k', modelName: 'm' }],
                 activePresetId: 'p1',
             },
         };
@@ -115,28 +162,56 @@ describe('migrateSettings', () => {
         expect(result.aiTier).toBe('pro');
     });
 
-    it('aiTier defaults to pro on legacy migration without aiTier', () => {
-        const legacy: Record<string, unknown> = {
-            settings: {
-                endpoint: 'http://localhost:11434/v1',
-                apiKey: '',
-                modelName: 'llama3',
-            },
-        };
-        const result = migrateSettings(legacy);
-        expect(result.aiTier).toBe('pro');
-    });
-
     it('preserves explicit aiTier through migration', () => {
+        const providerId = 'prov-1';
         const existing: Record<string, unknown> = {
             settings: {
-                presets: [{ id: 'p1', name: 'Test', storyAI: { endpoint: 'http://test', apiKey: 'k', modelName: 'm' }, summarizerAI: { endpoint: 'http://test', apiKey: 'k', modelName: 'm' } }],
+                presets: [{ id: 'p1', name: 'Test', storyAIProviderId: providerId }],
+                providers: [{ id: providerId, label: 'Test', endpoint: 'http://test', apiKey: 'k', modelName: 'm' }],
                 activePresetId: 'p1',
                 aiTier: 'lite',
             },
         };
         const result = migrateSettings(existing);
         expect(result.aiTier).toBe('lite');
+    });
+
+    it('strips legacy inline providers from presets', () => {
+        const existing: Record<string, unknown> = {
+            settings: {
+                presets: [{
+                    id: 'p1',
+                    name: 'Test',
+                    storyAI: { endpoint: 'http://test', apiKey: 'k', modelName: 'm' },
+                    summarizerAI: { endpoint: 'http://test', apiKey: 'k', modelName: 'm' },
+                    utilityAI: { endpoint: '', apiKey: '', modelName: '' },
+                    auxiliaryAI: { endpoint: '', apiKey: '', modelName: '' },
+                }],
+                activePresetId: 'p1',
+            },
+        };
+        const result = migrateSettings(existing);
+        expect(result.presets[0].storyAI).toBeUndefined();
+        expect(result.presets[0].summarizerAI).toBeUndefined();
+        expect(result.presets[0].utilityAI).toBeUndefined();
+        expect(result.presets[0].auxiliaryAI).toBeUndefined();
+    });
+
+    it('preserves sampling config through migration', () => {
+        const existing: Record<string, unknown> = {
+            settings: {
+                presets: [{
+                    id: 'p1',
+                    name: 'Test',
+                    storyAI: { endpoint: 'http://test', apiKey: 'k', modelName: 'm' },
+                    summarizerAI: { endpoint: 'http://test', apiKey: 'k', modelName: 'm' },
+                    sampling: { temperature: 0.7, top_p: 0.9 },
+                }],
+                activePresetId: 'p1',
+            },
+        };
+        const result = migrateSettings(existing);
+        expect(result.presets[0].sampling).toEqual({ temperature: 0.7, top_p: 0.9 });
     });
 });
 

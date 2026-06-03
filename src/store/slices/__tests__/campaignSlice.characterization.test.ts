@@ -79,6 +79,8 @@ vi.mock('../../../services/infrastructure/themeService', () => ({
 vi.mock('../../../services/infrastructure/settingsCrypto', () => ({
     encryptSettingsPresets: vi.fn(async (p: unknown) => p),
     decryptSettingsPresets: vi.fn(async (p: unknown) => p),
+    encryptSettingsProviders: vi.fn(async (p: unknown) => p),
+    decryptSettingsProviders: vi.fn(async (p: unknown) => p),
 }));
 
 // ── Real modules under test (imported after mocks are hoisted) ──────────────

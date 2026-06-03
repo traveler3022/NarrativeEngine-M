@@ -1,28 +1,13 @@
-/**
- * settingsCrypto.ts
- * ------------------
- * Client-side AES-GCM encryption for apiKey fields in AI presets.
- * The key is device-local: derived from a random salt stored in IndexedDB.
- * Keys are encrypted before hitting disk (idb / server file), decrypted at load time.
- *
- * Format stored:  "enc:<base64iv>:<base64ciphertext>"
- * Plain keys:     anything that does NOT start with "enc:"
- */
-
 import { get as idbGet, set as idbSet } from 'idb-keyval';
-import type { AIPreset } from '../../types';
+import type { AIPreset, LLMProvider } from '../../types';
 
 const IDB_DEVICE_KEY = 'nn_device_key';
 const ENC_PREFIX = 'enc:';
 
-// ─── Key bootstrap ───────────────────────────────────────────────────────────
-
-/** Returns the AES-GCM CryptoKey, generating + storing it on first use. */
 async function getDeviceCryptoKey(): Promise<CryptoKey> {
     let rawKey: ArrayBuffer | undefined = await idbGet(IDB_DEVICE_KEY);
 
     if (!rawKey) {
-        // First run: generate a fresh key and persist it
         const generated = await crypto.subtle.generateKey(
             { name: 'AES-GCM', length: 256 },
             true,
@@ -40,8 +25,6 @@ async function getDeviceCryptoKey(): Promise<CryptoKey> {
         ['encrypt', 'decrypt']
     );
 }
-
-// ─── Core helpers ─────────────────────────────────────────────────────────────
 
 async function encryptString(plaintext: string, key: CryptoKey): Promise<string> {
     if (!plaintext) return plaintext;
@@ -64,56 +47,69 @@ async function decryptString(ciphertext: string, key: CryptoKey): Promise<string
         const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
         return new TextDecoder().decode(plain);
     } catch {
-        // Key mismatch or tampered data — return empty so user can re-enter
         console.warn('[settingsCrypto] Failed to decrypt apiKey. Was the browser storage cleared?');
         return '';
     }
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────────
+export async function encryptProvider(provider: LLMProvider): Promise<LLMProvider> {
+    const key = await getDeviceCryptoKey();
+    const encryptedApiKey = await encryptString(provider.apiKey, key);
+    return { ...provider, apiKey: encryptedApiKey };
+}
 
-/** Encrypts apiKey fields in a preset and returns a new preset object. */
+export async function decryptProvider(provider: LLMProvider): Promise<LLMProvider> {
+    const key = await getDeviceCryptoKey();
+    const decryptedApiKey = await decryptString(provider.apiKey, key);
+    return { ...provider, apiKey: decryptedApiKey };
+}
+
+export async function encryptSettingsProviders(providers: LLMProvider[]): Promise<LLMProvider[]> {
+    return Promise.all(providers.map(encryptProvider));
+}
+
+export async function decryptSettingsProviders(providers: LLMProvider[]): Promise<LLMProvider[]> {
+    return Promise.all(providers.map(decryptProvider));
+}
+
 export async function encryptPreset(preset: AIPreset): Promise<AIPreset> {
     const key = await getDeviceCryptoKey();
     const [storyKey, summKey, utilKey, auxKey] = await Promise.all([
-        encryptString(preset.storyAI.apiKey, key),
-        encryptString(preset.summarizerAI.apiKey, key),
+        preset.storyAI ? encryptString(preset.storyAI.apiKey, key) : Promise.resolve(''),
+        preset.summarizerAI ? encryptString(preset.summarizerAI.apiKey, key) : Promise.resolve(''),
         preset.utilityAI ? encryptString(preset.utilityAI.apiKey, key) : Promise.resolve(''),
         preset.auxiliaryAI ? encryptString(preset.auxiliaryAI.apiKey, key) : Promise.resolve(''),
     ]);
     return {
         ...preset,
-        storyAI: { ...preset.storyAI, apiKey: storyKey },
-        summarizerAI: { ...preset.summarizerAI, apiKey: summKey },
+        ...(preset.storyAI ? { storyAI: { ...preset.storyAI, apiKey: storyKey } } : {}),
+        ...(preset.summarizerAI ? { summarizerAI: { ...preset.summarizerAI, apiKey: summKey } } : {}),
         ...(preset.utilityAI ? { utilityAI: { ...preset.utilityAI, apiKey: utilKey } } : {}),
         ...(preset.auxiliaryAI ? { auxiliaryAI: { ...preset.auxiliaryAI, apiKey: auxKey } } : {}),
     };
 }
 
-/** Decrypts apiKey fields in a preset and returns a new preset object. */
 export async function decryptPreset(preset: AIPreset): Promise<AIPreset> {
     const key = await getDeviceCryptoKey();
     const [storyKey, summKey, utilKey, auxKey] = await Promise.all([
-        decryptString(preset.storyAI.apiKey, key),
-        decryptString(preset.summarizerAI.apiKey, key),
+        preset.storyAI ? decryptString(preset.storyAI.apiKey, key) : Promise.resolve(''),
+        preset.summarizerAI ? decryptString(preset.summarizerAI.apiKey, key) : Promise.resolve(''),
         preset.utilityAI ? decryptString(preset.utilityAI.apiKey, key) : Promise.resolve(''),
         preset.auxiliaryAI ? decryptString(preset.auxiliaryAI.apiKey, key) : Promise.resolve(''),
     ]);
     return {
         ...preset,
-        storyAI: { ...preset.storyAI, apiKey: storyKey },
-        summarizerAI: { ...preset.summarizerAI, apiKey: summKey },
+        ...(preset.storyAI ? { storyAI: { ...preset.storyAI, apiKey: storyKey } } : {}),
+        ...(preset.summarizerAI ? { summarizerAI: { ...preset.summarizerAI, apiKey: summKey } } : {}),
         ...(preset.utilityAI ? { utilityAI: { ...preset.utilityAI, apiKey: utilKey } } : {}),
         ...(preset.auxiliaryAI ? { auxiliaryAI: { ...preset.auxiliaryAI, apiKey: auxKey } } : {}),
     };
 }
 
-/** Encrypt all presets in a settings object (for storage). */
 export async function encryptSettingsPresets(presets: AIPreset[]): Promise<AIPreset[]> {
     return Promise.all(presets.map(encryptPreset));
 }
 
-/** Decrypt all presets in a settings object (after loading from storage). */
 export async function decryptSettingsPresets(presets: AIPreset[]): Promise<AIPreset[]> {
     return Promise.all(presets.map(decryptPreset));
 }

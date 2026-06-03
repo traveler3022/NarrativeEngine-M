@@ -354,23 +354,24 @@ export function EnginesTab() {
                         <div className="flex flex-col">
                             <label className="text-[10px] text-text-dim uppercase tracking-wider mb-1">Combat Assistant Model</label>
                             <select
-                                value={useAppStore.getState().settings.presets.find(p => p.auxiliaryAI)?.id ?? ''}
+                                value={(() => {
+                                    const s = useAppStore.getState();
+                                    const preset = s.getActivePreset();
+                                    return preset?.auxiliaryAIProviderId || '';
+                                })()}
                                 onChange={(e) => {
-                                    const presetId = e.target.value;
                                     const store = useAppStore.getState();
-                                    if (presetId) {
-                                        const preset = store.settings.presets.find(p => p.id === presetId);
-                                        if (preset) {
-                                            store.updatePreset(presetId, { auxiliaryAI: preset.auxiliaryAI || preset.utilityAI || preset.storyAI });
-                                        }
+                                    const preset = store.getActivePreset();
+                                    if (preset) {
+                                        store.updatePreset(preset.id, { auxiliaryAIProviderId: e.target.value });
                                     }
                                 }}
                                 className="w-full bg-surface border border-border px-2 py-1.5 text-[16px] md:text-[11px] font-mono text-text-primary focus:border-terminal outline-none transition-colors min-h-[44px] md:min-h-0"
                             >
                                 <option value="">None (use initiate_combat backstop)</option>
-                                {useAppStore.getState().settings.presets.map(p => (
+                                {useAppStore.getState().settings.providers.map(p => (
                                     <option key={p.id} value={p.id}>
-                                        {p.name} — {(p.auxiliaryAI ?? p.utilityAI ?? p.storyAI)?.modelName ?? 'no model'}
+                                        {p.label || p.modelName}
                                     </option>
                                 ))}
                             </select>
