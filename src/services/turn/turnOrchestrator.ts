@@ -2,7 +2,8 @@ import { type TurnCallbacks, type TurnState } from './turnTypes';
 export type { TurnCallbacks, TurnState } from './turnTypes';
 import { tierAllows } from './aiTier';
 import { uid } from '../../utils/uid';
-import { sendMessage } from '../chatEngine';
+import { sendMessage, buildPayload } from '../chatEngine';
+import { retrieveRelevantLore } from '../lore';
 import { shouldCondense, computeTrimIndex, getCondenseBudgetRatio } from '../payload';
 import { rollEngines, rollDiceFairness, rollCharacterIntroEngine } from '../engine';
 import {
@@ -16,7 +17,7 @@ import {
     type ActionResolution,
     type RiskOnFail,
 } from '../engine';
-import type { ChatMessage, CombatState, GameContext, ItemDef, SkillDef } from '../../types';
+import type { AppSettings, ChatMessage, CombatState, GameContext, ItemDef, LoreChunk, NPCEntry, SkillDef } from '../../types';
 import { toast } from '../../components/Toast';
 import { sanitizePayloadForApi } from '../llm/payloadSanitizer';
 import { gatherContext } from './turnContext';
@@ -670,13 +671,21 @@ export function buildCombatNarrationPrompt(
     combatState: CombatState,
     playerDescription?: string,
 ): string {
+    const nameOf = (id?: string) => (id && combatState.combatants[id]?.name) || id || '?';
+
     const resolutionParts = resolutions.map(r => {
-        if (r.rejected) return `${r.actorId}: action rejected (${r.rejectionReason})`;
-        if (r.type === 'attack') return `${r.actorId} → ${r.targetId}: ${r.hit ? 'HIT' : 'MISS'}${r.critical ? ' (CRIT)' : ''} — ${r.damage ?? 0} damage (roll ${r.naturalRoll}+mod=${r.total})`;
-        if (r.type === 'mental') return `${r.actorId} → ${r.targetId}: ${r.saved ? 'SAVED' : 'FAILED'} (roll ${r.naturalRoll}+mod=${r.total} vs DC ${r.total})`;
-        if (r.type === 'defend') return `${r.actorId}: braced (+${r.focRecovered ?? 0} FOC)`;
-        if (r.type === 'move') return `${r.actorId}: moved${r.newPosition ? ` to ${r.newPosition}` : ''}${r.newRangeRelation ? ` (${r.newRangeRelation})` : ''}`;
-        return `${r.actorId}: ${r.type}`;
+        const actor = nameOf(r.actorId);
+        const target = nameOf(r.targetId);
+        if (r.rejected) return `${actor}: action rejected (${r.rejectionReason})`;
+        if (r.type === 'attack') return `${actor} → ${target}: ${r.hit ? 'HIT' : 'MISS'}${r.critical ? ' (CRIT)' : ''} — ${r.damage ?? 0} damage (roll ${r.naturalRoll}+mod=${r.total})`;
+        if (r.type === 'heal') {
+            const tgt = r.targetId && r.targetId !== r.actorId ? `${actor} → ${target}` : actor;
+            return `${tgt}: healed ${r.healed ?? 0} HP${r.focSpent ? ` (spent ${r.focSpent} FOC)` : ''}`;
+        }
+        if (r.type === 'mental') return `${actor} → ${target}: ${r.saved ? 'RESISTED' : 'AFFECTED'}${r.damage ? ` — ${r.damage} damage` : ''} (roll ${r.naturalRoll}+mod=${r.total})`;
+        if (r.type === 'defend') return `${actor}: braced (+${r.focRecovered ?? 0} FOC)`;
+        if (r.type === 'move') return `${actor}: moved${r.newPosition ? ` to ${r.newPosition}` : ''}${r.newRangeRelation ? ` (now ${r.newRangeRelation})` : ''}`;
+        return `${actor}: ${r.type}`;
     });
 
     const combatantSummary = Object.values(combatState.combatants)
@@ -692,4 +701,48 @@ export function buildCombatNarrationPrompt(
         prompt += `\nPlayer intent: ${playerDescription}`;
     }
     return prompt;
+}
+
+/**
+ * Phase C: build a FULL-context narration payload for a combat round.
+ *
+ * Instead of a naked one-shot prompt, the engine result is fed as the final user/context turn of
+ * the real story payload — system prompt + canon + volatile (incl. the live [COMBAT STATE] block)
+ * + lore RAG + active NPCs + recent history (ledger lines retained). The narration therefore reads
+ * in-voice and in-context.
+ *
+ * Cost discipline: this reuses the *synchronous* `buildPayload` + keyword lore retrieval only — it
+ * fires ZERO auxiliary LLM/embedding calls, preserving the per-round budget (adjudicate + narrate).
+ */
+export function buildCombatNarrationPayload(opts: {
+    settings: AppSettings;
+    context: GameContext;
+    messages: ChatMessage[];
+    npcLedger: NPCEntry[];
+    loreChunks: LoreChunk[];
+    combatState: CombatState;
+    ledgerLine: string;
+    resolutions: ActionResolution[];
+    playerDescription?: string;
+    onStageNpcIds?: string[];
+}): OpenAIMessage[] {
+    const resultBlock = buildCombatNarrationPrompt(opts.ledgerLine, opts.resolutions, opts.combatState, opts.playerDescription);
+
+    const loreQuery = [opts.playerDescription, opts.ledgerLine].filter(Boolean).join(' ');
+    const relevantLore = opts.loreChunks.length > 0
+        ? retrieveRelevantLore(opts.loreChunks, loreQuery, 1200, opts.messages)
+        : undefined;
+
+    const { messages } = buildPayload({
+        settings: opts.settings,
+        context: opts.context,
+        history: opts.messages,
+        userMessage: resultBlock,
+        relevantLore,
+        npcLedger: opts.npcLedger,
+        onStageNpcIds: opts.onStageNpcIds,
+        combatState: opts.combatState,
+    });
+
+    return messages;
 }

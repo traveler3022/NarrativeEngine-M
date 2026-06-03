@@ -775,8 +775,8 @@ describe('Phase 2: Combat Turn Orchestrator & Engine Extensions', () => {
     });
 });
 
-describe('payloadHistoryFitting — combat-ledger skip', () => {
-    it('skips messages with name combat-ledger (like scene-marker)', () => {
+describe('payloadHistoryFitting — combat-ledger retention (Phase C)', () => {
+    it('retains combat-ledger lines so the story AI keeps combat continuity', () => {
         const messages: ChatMessage[] = [
             { id: '1', role: 'user', content: 'I attack the goblin', timestamp: 100 },
             { id: '2', role: 'assistant', content: 'Round 1 · Hero 20/20', timestamp: 101, name: 'combat-ledger' },
@@ -787,13 +787,13 @@ describe('payloadHistoryFitting — combat-ledger skip', () => {
 
         const result = fitHistory(messages, undefined, 'next action', 0, 8192);
         const contents = result.fitted.map(m => m.content);
-        expect(contents).not.toContain('Round 1 · Hero 20/20');
-        expect(contents).not.toContain('Round 2 · Hero 18/20 · Goblin 5/12');
+        expect(contents).toContain('Round 1 · Hero 20/20');
+        expect(contents).toContain('Round 2 · Hero 18/20 · Goblin 5/12');
         expect(contents).toContain('I attack the goblin');
         expect(contents).toContain('The goblin staggers back!');
     });
 
-    it('still skips scene-marker alongside combat-ledger', () => {
+    it('still skips scene-marker while retaining combat-ledger', () => {
         const messages: ChatMessage[] = [
             { id: '1', role: 'assistant', content: 'Scene update', timestamp: 100, name: 'scene-marker' },
             { id: '2', role: 'assistant', content: 'Round 1 data', timestamp: 101, name: 'combat-ledger' },
@@ -803,7 +803,7 @@ describe('payloadHistoryFitting — combat-ledger skip', () => {
         const result = fitHistory(messages, undefined, 'test', 0, 8192);
         const contents = result.fitted.map(m => m.content);
         expect(contents).not.toContain('Scene update');
-        expect(contents).not.toContain('Round 1 data');
+        expect(contents).toContain('Round 1 data');
         expect(contents).toContain('Hello');
     });
 });

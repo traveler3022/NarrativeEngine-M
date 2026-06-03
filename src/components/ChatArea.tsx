@@ -240,6 +240,7 @@ export function ChatArea() {
             loreChunks,
             npcLedger,
             archiveIndex,
+            combatState: useAppStore.getState().combatState,
             semanticFacts: useAppStore.getState().semanticFacts,
             chapters: useAppStore.getState().chapters,
             activeCampaignId,

@@ -17,6 +17,14 @@ export function buildPinnedMemoriesBlock(pinnedExcerpts: PinnedExcerpt[], messag
 
 const THINK_TAG_REGEX = /<think>[\s\S]*?<\/think>\s*/gi;
 
+/**
+ * Phase C: combat-ledger lines are kept in fitted history (not dropped) so the story AI can
+ * reference what happened — both for narration continuity during a fight and on the first regular
+ * turn after it ends. They're terse by design; cap to the most recent N rounds to bound tokens
+ * (the live volatile [COMBAT STATE] block carries the current snapshot).
+ */
+const MAX_LEDGER_LINES_RETAINED = 6;
+
 export function fitHistory(
     history: ChatMessage[],
     condensedUpToIndex: number | undefined,
@@ -34,13 +42,18 @@ export function fitHistory(
 
     const fitted: OpenAIMessage[] = [];
     let historyUsed = 0;
+    let ledgerLinesKept = 0;
     for (let i = candidateMessages.length - 1; i >= 0; i--) {
         const msg = candidateMessages[i];
 
         if (msg.role === 'tool') continue;
         if (msg.role === 'assistant' && Array.isArray(msg.tool_calls) && msg.tool_calls.length > 0) continue;
         if (msg.name === 'scene-marker') continue;
-        if (msg.name === 'combat-ledger') continue;
+        if (msg.name === 'combat-ledger') {
+            // Retain only the most recent rounds (iterating newest→oldest); drop older ledger noise.
+            if (ledgerLinesKept >= MAX_LEDGER_LINES_RETAINED) continue;
+            ledgerLinesKept++;
+        }
 
         let content = msg.content ?? null;
         if (msg.role === 'user' && typeof content === 'string') {

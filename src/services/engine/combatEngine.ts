@@ -65,7 +65,10 @@ export type ActionResolution = {
     rejected?: boolean;
     rejectionReason?: string;
     coverApplied?: boolean;
+    /** FOC *gained* — DEF brace only. */
     focRecovered?: number;
+    /** FOC *spent* paying a skill's cost (e.g. a heal). Distinct from focRecovered. */
+    focSpent?: number;
     newPosition?: PositionTag;
     newRangeRelation?: RangeRelation;
     riskApplied?: RiskOnFail;
@@ -755,7 +758,7 @@ export function runCombatRound(
                         targetId: action.targetId,
                         type: 'heal',
                         healed: healAmount,
-                        focRecovered: skillResult?.focCost,
+                        focSpent: skillResult?.focCost,
                     });
                     continue;
                 }

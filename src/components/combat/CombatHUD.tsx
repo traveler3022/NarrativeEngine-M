@@ -5,8 +5,9 @@ import { useShallow } from 'zustand/react/shallow';
 import { checkRangeLegality } from '../../services/engine/combatEngine';
 import type { CombatAction } from '../../services/engine/combatEngine';
 import type { ItemDef, SkillDef } from '../../types';
-import { handleCombatAction, buildCombatNarrationPrompt, type CombatActionSource } from '../../services/turn/turnOrchestrator';
-import { llmCall } from '../../utils/llmCall';
+import { handleCombatAction, buildCombatNarrationPayload, type CombatActionSource } from '../../services/turn/turnOrchestrator';
+import { sendMessage } from '../../services/chatEngine';
+import { sanitizePayloadForApi } from '../../services/llm/payloadSanitizer';
 import { uid } from '../../utils/uid';
 import { toast } from '../Toast';
 
@@ -24,8 +25,13 @@ export function CombatHUD({ onActionCommitted }: CombatHUDProps) {
         terminateCombat,
         updateContext,
         addMessage,
+        updateLastAssistant,
+        deleteMessage,
         getActiveAuxiliaryEndpoint,
         getActiveStoryEndpoint,
+        settings,
+        gameContext,
+        loreChunks,
         npcLedger,
         items,
         skills,
@@ -35,8 +41,13 @@ export function CombatHUD({ onActionCommitted }: CombatHUDProps) {
         terminateCombat: s.terminateCombat,
         updateContext: s.updateContext,
         addMessage: s.addMessage,
+        updateLastAssistant: s.updateLastAssistant,
+        deleteMessage: s.deleteMessage,
         getActiveAuxiliaryEndpoint: s.getActiveAuxiliaryEndpoint,
         getActiveStoryEndpoint: s.getActiveStoryEndpoint,
+        settings: s.settings,
+        gameContext: s.context,
+        loreChunks: s.loreChunks,
         npcLedger: s.npcLedger,
         items: s.items,
         skills: s.skills,
@@ -195,24 +206,44 @@ export function CombatHUD({ onActionCommitted }: CombatHUDProps) {
                 getStoryProvider: () => storyProvider,
                 narrateCombatOutcome: async (ledgerLine, resolutions, updatedState) => {
                     if (!storyProvider) return;
-                    const prompt = buildCombatNarrationPrompt(ledgerLine, resolutions, updatedState, freeformText.trim() || undefined);
-                    try {
-                        const narration = await llmCall(storyProvider, prompt, {
-                            temperature: 0.7,
-                            priority: 'normal',
-                            maxTokens: 400,
-                        });
-                        if (narration?.trim()) {
-                            addMessage({
-                                id: uid(),
-                                role: 'assistant',
-                                content: narration.trim(),
-                                timestamp: Date.now(),
-                            });
-                        }
-                    } catch (err) {
-                        console.warn('[CombatHUD] Narration call failed:', err);
-                    }
+                    // Route the engine result through the real story context pipeline (system + canon +
+                    // volatile [incl. live combat state] + lore + NPCs + history), then stream in-voice.
+                    const payload = buildCombatNarrationPayload({
+                        settings,
+                        context: gameContext,
+                        messages: useAppStore.getState().messages,
+                        npcLedger,
+                        loreChunks,
+                        combatState: updatedState,
+                        ledgerLine,
+                        resolutions,
+                        playerDescription: freeformText.trim() || undefined,
+                    });
+                    const requestPayload = sanitizePayloadForApi(payload, false, storyProvider.modelName);
+
+                    const assistantId = uid();
+                    addMessage({ id: assistantId, role: 'assistant', content: '', timestamp: Date.now() });
+
+                    await new Promise<void>(resolve => {
+                        sendMessage(
+                            storyProvider,
+                            requestPayload,
+                            (fullText) => updateLastAssistant(fullText),
+                            (finalText) => {
+                                if (finalText?.trim()) {
+                                    updateLastAssistant(finalText.trim());
+                                } else {
+                                    deleteMessage(assistantId);
+                                }
+                                resolve();
+                            },
+                            (err) => {
+                                console.warn('[CombatHUD] Narration call failed:', err);
+                                deleteMessage(assistantId);
+                                resolve();
+                            },
+                        );
+                    });
                 },
                 items,
                 skills,

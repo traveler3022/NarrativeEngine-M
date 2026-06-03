@@ -14,6 +14,7 @@ import type {
     StreamingStats,
     DivergenceRegister,
     PayloadTrace,
+    CombatState,
 } from '../../types';
 
 export type TurnCallbacks = {
@@ -71,4 +72,6 @@ export type TurnState = {
     deepContextSearch?: boolean;
     divergenceRegister?: DivergenceRegister;
     onStageNpcIds?: string[];
+    /** Live combat snapshot (Phase C) — surfaced in the volatile block while a fight is active. */
+    combatState?: CombatState | null;
 };
