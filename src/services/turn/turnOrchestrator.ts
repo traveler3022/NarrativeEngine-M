@@ -9,6 +9,7 @@ import {
     runCombatRound,
     checkTermination,
     sortTurnOrderBySPD,
+    selectEnemyAction,
     abilityMod,
     type CombatAction,
     type Combatant,
@@ -473,8 +474,23 @@ export type CombatTurnResult = {
 export function runCombatTurn(input: CombatTurnInput): CombatTurnResult {
     const { combatState, actions } = input;
 
+    // Auto-generate one action per living enemy (non-PC) that has no submitted action.
+    // PCs only ever act from their own HUD/adjudicated submission. Enemies are pure
+    // functions (spec A7) — zero LLM, so this adds no calls to the round budget.
+    const actorIdsWithActions = new Set(actions.map(a => a.actorId));
+    const enemyActions: CombatAction[] = [];
+    for (const combatant of Object.values(combatState.combatants)) {
+        if (combatant.isPC) continue;
+        if (combatant.currentHP <= 0) continue;
+        if (actorIdsWithActions.has(combatant.id)) continue;
+        enemyActions.push(
+            selectEnemyAction(combatant, combatState, combatant.overrides ?? []),
+        );
+    }
+    const allActions = [...actions, ...enemyActions];
+
     const sortedTurnOrder = sortTurnOrderBySPD(combatState.combatants);
-    const sortedActions = [...actions].sort((a, b) => {
+    const sortedActions = [...allActions].sort((a, b) => {
         const aIdx = sortedTurnOrder.indexOf(a.actorId);
         const bIdx = sortedTurnOrder.indexOf(b.actorId);
         if (aIdx === -1 && bIdx === -1) return 0;

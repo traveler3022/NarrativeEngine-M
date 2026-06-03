@@ -67,6 +67,7 @@ export const createCombatSlice: StateCreator<CombatDeps, [], [], CombatSlice> = 
                     isPC: npc.isPC ?? false,
                     position: undefined,
                     statusEffects: [],
+                    overrides: npc.overrides ?? [],
                 };
                 combatants[npc.id] = c;
             }

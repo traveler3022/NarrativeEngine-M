@@ -438,7 +438,7 @@ export type NPCEntry = {
     lastCondition?: 'healthy' | 'wounded' | 'critical' | 'dead';
     lastSeenTimestamp?: number;
     recoveryNote?: string;
-    overrides?: { trigger: string; action: string }[];
+    overrides?: NPCOverride[];
 };
 
 
@@ -602,6 +602,15 @@ export type CombatTier = 'minion' | 'grunt' | 'elite' | 'boss' | 'legendary';
 export type Archetype = 'bulwark' | 'assassin' | 'caster' | 'skirmisher' | 'brute';
 export type RecoveryBand = 'healthy' | 'wounded' | 'critical';
 
+/**
+ * Deterministic enemy-AI personal override (spec A7, tier 1).
+ * `trigger` uses a bounded vocab parsed by the engine, e.g.
+ *   "onSelfBelow(30)" · "onAllyBelow(30)" · "onAllyFatal" · "onRound(2)"
+ * `action` is one of the bounded enemy action labels, e.g.
+ *   "attack" · "defend" · "guard" · "reposition" · "cast" · "interpose"
+ */
+export type NPCOverride = { trigger: string; action: string };
+
 export type StatBlock = {
     VIT: number;
     PWR: number;
@@ -626,6 +635,8 @@ export type Combatant = {
     isPC?: boolean;
     position?: 'cover' | 'elevated' | 'exposed';
     statusEffects?: string[];
+    /** Personal AI overrides copied from the ledger entry at materialize (named NPCs only). */
+    overrides?: NPCOverride[];
 };
 
 export type ItemDef = {

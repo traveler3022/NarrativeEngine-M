@@ -1059,8 +1059,10 @@ describe('Phase 4.1: Freeform combat path (adjudicated stat, riskOnFail)', () =>
         expect(mockLlmCall.mock.calls[0][1]).toContain('You are a combat maneuver adjudicator');
         expect(mockLlmCall.mock.calls[0][1]).toContain('----- PLAYER MANEUVER -----');
 
-        expect(capturedActions.length).toBe(1);
-        const action = capturedActions[0];
+        // Phase A: the PC's adjudicated action plus one auto-generated enemy action.
+        expect(capturedActions.length).toBe(2);
+        expect(capturedActions.some(a => a.actorId === 'enemy')).toBe(true);
+        const action = capturedActions.find(a => a.actorId === 'hero')!;
         expect(action.attackBonus).toBe(expectedAttackBonus);
         expect(action.scalingStatMod).toBe(expectedSPDMod);
         expect(action.advantage).toBe(true);
@@ -1348,10 +1350,12 @@ describe('Phase 4.1: Freeform combat path (adjudicated stat, riskOnFail)', () =>
             narrateCombatOutcome: async () => {},
         });
 
-        expect(capturedActions.length).toBe(1);
-        expect(capturedActions[0].attackBonus).toBe(5);
-        expect(capturedActions[0].scalingStatMod).toBe(3);
-        expect(capturedActions[0].riskOnFail).toBeUndefined();
+        // Phase A: the PC's base action plus one auto-generated enemy action.
+        expect(capturedActions.length).toBe(2);
+        const action = capturedActions.find(a => a.actorId === 'hero')!;
+        expect(action.attackBonus).toBe(5);
+        expect(action.scalingStatMod).toBe(3);
+        expect(action.riskOnFail).toBeUndefined();
 
         engineSpy.mockRestore();
     });

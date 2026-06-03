@@ -1,5 +1,5 @@
-import type { CombatTier, Archetype, RecoveryBand, StatBlock, Combatant, CombatState } from '../../types';
-export type { CombatTier, Archetype, RecoveryBand, StatBlock, Combatant, CombatState };
+import type { CombatTier, Archetype, RecoveryBand, StatBlock, Combatant, CombatState, NPCOverride } from '../../types';
+export type { CombatTier, Archetype, RecoveryBand, StatBlock, Combatant, CombatState, NPCOverride };
 
 export type PositionTag = 'cover' | 'elevated' | 'exposed';
 export type RangeRelation = 'Engaged' | 'Apart';
@@ -763,4 +763,227 @@ export function sortTurnOrderBySPD(
         .filter(c => c.currentHP > 0)
         .sort((a, b) => b.stats.SPD - a.stats.SPD)
         .map(c => c.id);
+}
+
+// ── Enemy AI — deterministic 3-tier cascade (spec A7) ──────────────────────
+// Zero LLM. Pure functions; `rng` is injected for deterministic tests.
+// Priority: (1) NPC personal override → (2) archetype conditional →
+// (3) archetype weighted roll + target-selection table.
+
+/** Probability that target selection ignores the archetype preference and picks
+ *  a fully random living enemy. Keeps enemies slightly unpredictable (anti-exploit). */
+const TARGET_RANDOM_CHANCE = 0.15;
+
+/** Living combatants on the opposite side of `actor` (PC vs non-PC is the binary side). */
+function enemiesOf(actor: Combatant, state: CombatState): Combatant[] {
+    return Object.values(state.combatants).filter(
+        c => c.currentHP > 0 && !!c.isPC !== !!actor.isPC,
+    );
+}
+
+/** Combatants on the same side as `actor` (excludes self). Includes downed by default
+ *  so callers can detect fatalities; filter on currentHP where "living ally" is meant. */
+function alliesOf(actor: Combatant, state: CombatState): Combatant[] {
+    return Object.values(state.combatants).filter(
+        c => c.id !== actor.id && !!c.isPC === !!actor.isPC,
+    );
+}
+
+function rangeBetween(state: CombatState, a: string, b: string): RangeRelation {
+    return state.rangeRelations[a]?.[b] ?? 'Apart';
+}
+
+function minBy<T>(arr: T[], key: (t: T) => number): T | undefined {
+    if (arr.length === 0) return undefined;
+    return arr.reduce((best, cur) => (key(cur) < key(best) ? cur : best), arr[0]);
+}
+
+function maxBy<T>(arr: T[], key: (t: T) => number): T | undefined {
+    if (arr.length === 0) return undefined;
+    return arr.reduce((best, cur) => (key(cur) > key(best) ? cur : best), arr[0]);
+}
+
+/** Parse a bounded override trigger string into a kind + optional numeric arg.
+ *  Accepts "onSelfBelow(30)", "onAllyBelow:30", "onAllyFatal", "onRound(2)".
+ *  Non-numeric args (e.g. "onAllyFatal(Chie)") are ignored — the v1 cascade treats
+ *  the trigger as "any ally fatal" (named targeting needs the deferred REACT system). */
+export function parseTrigger(trigger: string): { kind: string; arg?: number } {
+    const m = trigger.trim().match(/^([a-zA-Z]+)\s*(?:[:(]\s*([^)]*?)\s*\)?)?$/);
+    if (!m) return { kind: trigger.trim() };
+    const argRaw = m[2];
+    const arg =
+        argRaw !== undefined && argRaw !== '' && !Number.isNaN(Number(argRaw))
+            ? Number(argRaw)
+            : undefined;
+    return { kind: m[1], arg };
+}
+
+/** Evaluate a single override trigger against the live state. */
+export function triggerMatches(trigger: string, actor: Combatant, state: CombatState): boolean {
+    const { kind, arg } = parseTrigger(trigger);
+    const allies = alliesOf(actor, state);
+    switch (kind) {
+        case 'onSelfBelow':
+            return arg !== undefined && (actor.currentHP / actor.maxHP) * 100 < arg;
+        case 'onAllyBelow':
+            return arg !== undefined && allies.some(a => a.currentHP > 0 && (a.currentHP / a.maxHP) * 100 < arg);
+        case 'onAllyFatal':
+            return allies.some(a => a.currentHP <= 0);
+        case 'onRound':
+            return arg !== undefined && state.round === arg;
+        default:
+            return false;
+    }
+}
+
+/** Weighted sample from a behavior table. Falls back to the last entry if weights
+ *  under-sum (defensive). Deterministic given `rng`. */
+export function weightedPick(entries: BehaviorEntry[], rng: () => number): string {
+    const total = entries.reduce((s, e) => s + e.weight, 0);
+    let r = rng() * total;
+    for (const e of entries) {
+        r -= e.weight;
+        if (r < 0) return e.action;
+    }
+    return entries[entries.length - 1]?.action ?? 'defend';
+}
+
+/** Choose a target for `actor` among living enemies, per archetype preference. */
+export function selectEnemyTarget(
+    actor: Combatant,
+    state: CombatState,
+    rng: () => number,
+): string | undefined {
+    const living = enemiesOf(actor, state);
+    if (living.length === 0) return undefined;
+
+    // Anti-exploit: occasionally ignore the preference and pick at random.
+    if (rng() < TARGET_RANDOM_CHANCE) {
+        return living[Math.floor(rng() * living.length)].id;
+    }
+
+    switch (actor.archetype) {
+        case 'assassin':
+            return minBy(living, e => e.currentHP)!.id; // finish the weakest
+        case 'brute':
+            return maxBy(living, e => e.stats.PWR)!.id; // smash the biggest threat
+        case 'caster': {
+            const apart = living.filter(e => rangeBetween(state, actor.id, e.id) === 'Apart');
+            const pool = apart.length > 0 ? apart : living; // prefer staying ranged
+            return minBy(pool, e => e.currentHP)!.id;
+        }
+        case 'bulwark': {
+            // Protect: strike whoever is engaged with our most-wounded ally.
+            const allies = alliesOf(actor, state).filter(a => a.currentHP > 0);
+            const wounded = minBy(allies, a => a.currentHP / a.maxHP);
+            if (wounded) {
+                const threat = living.find(e => rangeBetween(state, wounded.id, e.id) === 'Engaged');
+                if (threat) return threat.id;
+            }
+            return maxBy(living, e => e.stats.PWR)!.id;
+        }
+        case 'skirmisher':
+        default:
+            return living[Math.floor(rng() * living.length)].id; // opportunistic
+    }
+}
+
+/** Map a bounded action label to a concrete, range-legal CombatAction. */
+export function buildEnemyAction(
+    label: string,
+    actor: Combatant,
+    state: CombatState,
+    rng: () => number,
+): CombatAction {
+    const brace: CombatAction = { type: 'defend', actorId: actor.id };
+
+    switch (label) {
+        case 'attack':
+        case 'defend_attack': {
+            const targetId = selectEnemyTarget(actor, state, rng);
+            if (!targetId) return brace;
+            // Enemies have no resolved weapon yet (gear arrives in Phase B) → assume melee.
+            // If the target is out of reach, close the gap instead of wasting the turn.
+            if (rangeBetween(state, actor.id, targetId) === 'Apart') {
+                return { type: 'move', actorId: actor.id, targetId, moveToTarget: true };
+            }
+            return { type: 'attack', actorId: actor.id, targetId, weaponRange: 'Close' };
+        }
+        case 'cast': {
+            const targetId = selectEnemyTarget(actor, state, rng);
+            if (!targetId) return brace;
+            // Mental/WIL strikes are not range-gated → casters can act from any range.
+            return { type: 'mental', actorId: actor.id, targetId };
+        }
+        case 'guard':      // TODO REACT: guard should interpose to shield an ally; degrade to brace for v1.
+        case 'interpose':  // TODO REACT: interpose needs the readied-action/interrupt subsystem (A11).
+        case 'defend':
+            return brace;
+        case 'reposition': {
+            const living = enemiesOf(actor, state);
+            const engaged = living.filter(e => rangeBetween(state, actor.id, e.id) === 'Engaged');
+            const apart = living.filter(e => rangeBetween(state, actor.id, e.id) === 'Apart');
+            const kites = actor.archetype === 'caster' || actor.archetype === 'skirmisher' || actor.archetype === 'assassin';
+            if (kites && engaged.length > 0) {
+                return { type: 'move', actorId: actor.id, targetId: engaged[0].id, moveToAway: true };
+            }
+            if (apart.length > 0) {
+                return { type: 'move', actorId: actor.id, targetId: apart[0].id, moveToTarget: true };
+            }
+            return { type: 'move', actorId: actor.id, newPosition: 'cover' };
+        }
+        case 'setup':
+            return { type: 'move', actorId: actor.id, newPosition: 'elevated' };
+        default:
+            return brace;
+    }
+}
+
+/** Tier 2 — small set of hardcoded archetype conditionals. Returns null to fall through. */
+function archetypeConditional(actor: Combatant, state: CombatState, rng: () => number): CombatAction | null {
+    switch (actor.archetype) {
+        case 'bulwark': {
+            const allyInDanger = alliesOf(actor, state).some(a => a.currentHP > 0 && a.currentHP / a.maxHP < 0.30);
+            if (allyInDanger) return buildEnemyAction('guard', actor, state, rng);
+            return null;
+        }
+        case 'brute': {
+            // Cornered berserk: below 30% self HP, all-out attack.
+            if (actor.currentHP / actor.maxHP < 0.30) return buildEnemyAction('attack', actor, state, rng);
+            return null;
+        }
+        default:
+            return null;
+    }
+}
+
+/**
+ * Resolve a single enemy combatant's action for the round (spec A7, zero LLM).
+ * Cascade: personal override → archetype conditional → archetype weighted roll.
+ */
+export function selectEnemyAction(
+    actor: Combatant,
+    state: CombatState,
+    overrides: NPCOverride[],
+    rng: () => number = Math.random,
+): CombatAction {
+    // Nothing to fight → brace.
+    if (enemiesOf(actor, state).length === 0) {
+        return { type: 'defend', actorId: actor.id };
+    }
+
+    // Tier 1: personal overrides (first match wins).
+    for (const ov of overrides) {
+        if (triggerMatches(ov.trigger, actor, state)) {
+            return buildEnemyAction(ov.action, actor, state, rng);
+        }
+    }
+
+    // Tier 2: archetype conditional.
+    const conditional = archetypeConditional(actor, state, rng);
+    if (conditional) return conditional;
+
+    // Tier 3: archetype weighted roll + target selection.
+    const label = weightedPick(ARCHETYPE_BEHAVIORS[actor.archetype], rng);
+    return buildEnemyAction(label, actor, state, rng);
 }
