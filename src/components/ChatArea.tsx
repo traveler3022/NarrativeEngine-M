@@ -24,6 +24,7 @@ import { CombatHUD } from './combat/CombatHUD';
 import { UtilityCallStrip } from './UtilityCallStrip';
 import { scanCombatIntent, combatKeywordPrefilter, routeCombatIntent } from '../services/turn/combatScanner';
 import { buildCombatEntryArgs, classifyUnknownFoes } from '../services/turn/combatEntry';
+import { PCCreationWizard } from './pc/PCCreationWizard';
 
 export function ChatArea() {
     const {
@@ -123,6 +124,7 @@ export function ChatArea() {
     const [loadingStatus, setLoadingStatus] = useState<string | null>(null);
     const [forcedAIs, setForcedAIs] = useState<('enemy' | 'neutral' | 'ally')[]>([]);
     const [showScrollFab, setShowScrollFab] = useState(false);
+    const [showPCCreator, setShowPCCreator] = useState(false);
 
     const [streamingStats, setStreamingStatsLocal] = useState<StreamingStats | null>(null);
     const streamStartRef = useRef<number>(0);
@@ -433,11 +435,31 @@ export function ChatArea() {
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-2 md:px-4 py-4 space-y-3 relative">
                 {messages.length === 0 && (
                     <div className="flex items-center justify-center h-full">
-                        <div className="text-center space-y-3">
+                        <div className="text-center space-y-4">
                             <div className="text-4xl">⚔</div>
                             <p className="text-text-dim text-xs uppercase tracking-widest">
                                 Awaiting transmission...
                             </p>
+                            <div className="space-y-2">
+                                <button
+                                    onClick={() => setShowPCCreator(true)}
+                                    className="block w-full px-6 py-2.5 bg-terminal/20 text-terminal border border-terminal/30 rounded hover:bg-terminal/30 transition-colors text-[11px] uppercase tracking-widest"
+                                >
+                                    Create Character
+                                </button>
+                                {(() => {
+                                    const auxProvider = useAppStore.getState().getActiveAuxiliaryEndpoint?.();
+                                    return auxProvider ? (
+                                        <p className="text-[9px] text-text-dim">
+                                            Or type a message to begin — you can create a character later from the NPC ledger.
+                                        </p>
+                                    ) : (
+                                        <p className="text-[9px] text-text-dim">
+                                            Type a message to begin. Configure an auxiliary AI in settings for guided character creation.
+                                        </p>
+                                    );
+                                })()}
+                            </div>
                         </div>
                     </div>
                 )}
@@ -584,6 +606,21 @@ export function ChatArea() {
             )}
 
             <CreateTroubleModal onSelect={(opt) => { setPendingArcSeed(opt); }} />
+
+            {showPCCreator && (
+                <PCCreationWizard
+                    onComplete={(result) => {
+                        useAppStore.getState().updateNPC(result.npcEntry.id, { ...result.npcEntry });
+                        useAppStore.getState().updateContext({
+                            characterProfile: result.characterProfile,
+                            characterProfileActive: true,
+                        });
+                        setShowPCCreator(false);
+                        toast.success(`Character "${result.npcEntry.name}" created!`);
+                    }}
+                    onCancel={() => setShowPCCreator(false)}
+                />
+            )}
         </div>
     );
 }

@@ -75,3 +75,18 @@ export type {
     RoundResult,
     RiskOnFail,
 } from './combatEngine';
+export {
+    PC_POINT_BUY,
+    STAT_KEYS,
+    getPointCost,
+    computePCDerived,
+    validateAllocation,
+    allocateStat,
+    ARCHETYPE_PRESETS,
+    CREATION_QUESTIONS,
+    getPCTier,
+    getPCBudget,
+    buildCharacterProfileText,
+    DEFAULT_STATS,
+} from './pcCreationScript';
+export type { PointBuyAllocation, DerivedPreview, CreationQuestion, StatKey } from './pcCreationScript';

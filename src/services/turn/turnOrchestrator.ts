@@ -354,7 +354,7 @@ export async function runTurn(
                             if (!namedNpcIds.includes(pcId)) namedNpcIds.push(pcId);
                         }
                         const auxProvider = state.getFreshAuxiliaryProvider?.();
-                        const recentContext = messages.slice(-5).map(m => {
+                        const recentContext = state.messages.slice(-5).map(m => {
                             const role = m.role === 'assistant' ? 'GM' : m.role.toUpperCase();
                             return `[${role}]: ${(m.content || '').slice(0, 400)}`;
                         }).join('\n\n');
