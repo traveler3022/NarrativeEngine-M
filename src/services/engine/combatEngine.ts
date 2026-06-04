@@ -169,6 +169,20 @@ export function recoveryBandToMaxHPPercent(band: RecoveryBand): number {
     }
 }
 
+export function applyRecoveryBand(maxHP: number, band: RecoveryBand): { currentHP: number; maxHP: number } {
+    const pct = recoveryBandToMaxHPPercent(band) / 100;
+    const currentHP = Math.max(1, Math.floor(maxHP * pct));
+    return { currentHP, maxHP };
+}
+
+export function lastConditionToRecoveryBand(condition: string): RecoveryBand {
+    switch (condition) {
+        case 'healthy': return 'healthy';
+        case 'critical': return 'critical';
+        default: return 'wounded';
+    }
+}
+
 function rollD20(): number {
     return Math.floor(Math.random() * 20) + 1;
 }
@@ -332,24 +346,24 @@ export type MaterializeInput = {
     armorBonus?: number;
 };
 
-const JITTER_RANGE = 0.15;
+const DEFAULT_JITTER_RANGE = 0.10;
 
-function jitter(value: number): number {
-    const factor = (1 - JITTER_RANGE) + Math.random() * (JITTER_RANGE * 2);
+export function jitter(value: number, range: number = DEFAULT_JITTER_RANGE): number {
+    const factor = (1 - range) + Math.random() * (range * 2);
     return Math.round(value * factor);
 }
 
-export function materializeCombatant(input: MaterializeInput): Combatant {
+export function materializeCombatant(input: MaterializeInput, jitterRange: number = DEFAULT_JITTER_RANGE): Combatant {
     const { combatTier, archetype, armorBonus = 0 } = input;
     const budget = ARCHETYPE_BUDGETS[archetype];
 
     const stats: StatBlock = {
-        VIT: jitter(budget.VIT),
-        PWR: jitter(budget.PWR),
-        RES: jitter(budget.RES),
-        FOC: jitter(budget.FOC),
-        SPD: jitter(budget.SPD),
-        WIL: jitter(budget.WIL),
+        VIT: jitter(budget.VIT, jitterRange),
+        PWR: jitter(budget.PWR, jitterRange),
+        RES: jitter(budget.RES, jitterRange),
+        FOC: jitter(budget.FOC, jitterRange),
+        SPD: jitter(budget.SPD, jitterRange),
+        WIL: jitter(budget.WIL, jitterRange),
     };
 
     const maxHP = computeMaxHP(combatTier, stats.VIT);
@@ -1065,3 +1079,23 @@ export function selectEnemyAction(
     const label = weightedPick(ARCHETYPE_BEHAVIORS[actor.archetype], rng);
     return buildEnemyAction(label, actor, state, rng);
 }
+
+export const OVERRIDE_TRIGGER_KINDS = ['onSelfBelow', 'onAllyBelow', 'onAllyFatal', 'onRound'] as const;
+export const ENEMY_ACTION_LABELS = ['attack', 'defend_attack', 'cast', 'guard', 'interpose', 'defend', 'reposition', 'setup'] as const;
+
+export function composeTriggerString(kind: string, arg?: number): string {
+    if (kind === 'onAllyFatal') return 'onAllyFatal';
+    return `${kind}(${arg ?? 0})`;
+}
+
+export function calculateDerivedPreviews(
+    stats: { VIT: number; RES: number; WIL: number },
+    combatTier: CombatTier,
+    armorBonus: number
+): { ac: number; maxHP: number; maxFOC: number } {
+    return {
+        ac: computeAC(stats.RES, armorBonus),
+        maxHP: computeMaxHP(combatTier, stats.VIT),
+        maxFOC: computeMaxFOC(combatTier, stats.WIL),
+    };
+}

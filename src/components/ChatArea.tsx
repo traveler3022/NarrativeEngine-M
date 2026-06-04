@@ -50,9 +50,11 @@ export function ChatArea() {
         getActiveUtilityEndpoint,
         getActiveAuxiliaryEndpoint,
         addMessage,
-        updateNPC,
-        addNPC,
-        archiveNPC,
+            updateNPC,
+            addNPC,
+            addItemDef,
+            addSkillDef,
+            archiveNPC,
         restoreNPC,
         updateLastMessage,
         setTimeline,
@@ -93,6 +95,8 @@ export function ChatArea() {
         addNPC: s.addNPC,
         archiveNPC: s.archiveNPC,
         restoreNPC: s.restoreNPC,
+        addItemDef: s.addItemDef,
+        addSkillDef: s.addSkillDef,
         updateLastMessage: s.updateLastMessage,
         setTimeline: s.setTimeline,
         deepArmed: s.deepArmed,
@@ -106,7 +110,7 @@ export function ChatArea() {
         pinnedExcerpts: s.pinnedExcerpts,
     })));
 
-    const initiateCombatFromStore = useAppStore(s => s.initiateCombat);
+    const initiateCombatWithRecovery = useAppStore(s => s.initiateCombatWithRecovery);
     const combatState = useAppStore(s => s.combatState);
     const items = useAppStore(s => s.items);
     const skills = useAppStore(s => s.skills);
@@ -198,7 +202,7 @@ export function ChatArea() {
                                     mookSpecs = [...mookSpecs, ...classified.map(c => ({ combatTier: c.combatTier, archetype: c.archetype, count: c.count }))];
                                 }
                                 const allNamed = [...entryArgs.namedNpcIds, ...entryArgs.pcIds];
-                                initiateCombatFromStore(allNamed, mookSpecs);
+                                await initiateCombatWithRecovery(allNamed, mookSpecs, auxProvider, recentScene);
                                 toast.success('Combat started!');
                                 setStreaming(false);
                                 return;
@@ -274,6 +278,8 @@ export function ChatArea() {
             deepContextSearch: useDeepScan,
             divergenceRegister: useAppStore.getState().divergenceRegister,
             onStageNpcIds: useAppStore.getState().onStageNpcIds,
+            items: useAppStore.getState().items,
+            skills: useAppStore.getState().skills,
         }, {
             onCheckingNotes: setIsCheckingNotes,
             addMessage,
@@ -284,7 +290,9 @@ export function ChatArea() {
             updateContext,
             setArchiveIndex,
             updateNPC,
-            addNPC,
+        addNPC,
+        addItemDef,
+        addSkillDef,
             archiveNPC,
             restoreNPC,
             setCondensed,
@@ -298,6 +306,9 @@ export function ChatArea() {
             setDivergenceRegister: (reg) => { setDivergenceRegister(reg); if (activeCampaignId) import('../store/campaignStore').then(m => m.saveDivergenceRegister(activeCampaignId, reg)); },
             updateMessageDivergence: updateMessageDivergence,
             setOnStageNpcIds: (ids) => useAppStore.getState().setOnStageNpcIds(ids),
+            initiateCombat: async (namedNpcIds, _pcIds, mookSpecs, auxProvider, recentContext) => {
+                await initiateCombatWithRecovery(namedNpcIds, mookSpecs, auxProvider, recentContext);
+            },
         }, abortControllerRef.current!);
 
         setForcedAIs([]);
@@ -536,7 +547,7 @@ export function ChatArea() {
                                 mookSpecs = [...mookSpecs, ...classified.map(c => ({ combatTier: c.combatTier, archetype: c.archetype, count: c.count }))];
                             }
                             const allNamed = [...entryArgs.namedNpcIds, ...entryArgs.pcIds];
-                            initiateCombatFromStore(allNamed, mookSpecs);
+                            await initiateCombatWithRecovery(allNamed, mookSpecs, auxProvider ?? undefined, recentScene);
                             toast.success('Combat started!');
                             console.log('[CombatEntry]', { decision: 'ask→yes' });
                         }}

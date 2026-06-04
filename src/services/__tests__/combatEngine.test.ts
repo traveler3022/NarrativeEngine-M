@@ -15,6 +15,9 @@ import {
     FOC_SPELL_COSTS,
     recoveryBandToMaxHPPercent,
     resolveActionQueue,
+    parseTrigger,
+    composeTriggerString,
+    calculateDerivedPreviews,
     type CombatAction,
     type Combatant,
     type Archetype,
@@ -395,3 +398,49 @@ describe('resolveActionQueue', () => {
         expect(resolveActionQueue([], {})).toEqual([]);
     });
 });
+
+describe('Phase E Helpers — Derived Previews and Overrides Trigger Composer', () => {
+    describe('calculateDerivedPreviews', () => {
+        it('correctly calculates derived AC, HP, and FOC', () => {
+            const stats = { VIT: 12, RES: 14, WIL: 16 };
+            const previews = calculateDerivedPreviews(stats, 'grunt', 2);
+            expect(previews.ac).toBe(10 + abilityMod(14) + 2); // 10 + 2 + 2 = 14
+            expect(previews.maxHP).toBe(computeMaxHP('grunt', 12));
+            expect(previews.maxFOC).toBe(computeMaxFOC('grunt', 16));
+        });
+    });
+
+    describe('composeTriggerString and parseTrigger roundtrip', () => {
+        it('handles parameterized trigger: onSelfBelow', () => {
+            const composed = composeTriggerString('onSelfBelow', 40);
+            expect(composed).toBe('onSelfBelow(40)');
+            const parsed = parseTrigger(composed);
+            expect(parsed.kind).toBe('onSelfBelow');
+            expect(parsed.arg).toBe(40);
+        });
+
+        it('handles parameterized trigger: onAllyBelow', () => {
+            const composed = composeTriggerString('onAllyBelow', 30);
+            expect(composed).toBe('onAllyBelow(30)');
+            const parsed = parseTrigger(composed);
+            expect(parsed.kind).toBe('onAllyBelow');
+            expect(parsed.arg).toBe(30);
+        });
+
+        it('handles non-parameterized trigger: onAllyFatal', () => {
+            const composed = composeTriggerString('onAllyFatal');
+            expect(composed).toBe('onAllyFatal');
+            const parsed = parseTrigger(composed);
+            expect(parsed.kind).toBe('onAllyFatal');
+            expect(parsed.arg).toBeUndefined();
+        });
+
+        it('handles parameterized trigger: onRound', () => {
+            const composed = composeTriggerString('onRound', 2);
+            expect(composed).toBe('onRound(2)');
+            const parsed = parseTrigger(composed);
+            expect(parsed.kind).toBe('onRound');
+            expect(parsed.arg).toBe(2);
+        });
+    });
+});

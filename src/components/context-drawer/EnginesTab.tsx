@@ -384,10 +384,11 @@ export function EnginesTab() {
                                     type="number"
                                     min={0}
                                     max={50}
-                                    value={context.combatConfig?.mookJitterRange ?? 10}
+                                    value={Math.round((context.combatConfig?.mookJitterRange ?? 0.10) * 100)}
                                     onChange={(e) => {
                                         const val = parseInt(e.target.value);
-                                        updateContext({ combatConfig: { ...(context.combatConfig || {}), mookJitterRange: isNaN(val) ? 10 : val } });
+                                        const fraction = isNaN(val) ? 0.10 : Math.min(0.50, Math.max(0, val / 100));
+                                        updateContext({ combatConfig: { ...(context.combatConfig || {}), mookJitterRange: fraction } });
                                     }}
                                     className="w-full bg-surface border border-border px-2 py-1.5 text-[16px] md:text-[11px] font-mono text-text-primary focus:border-terminal outline-none transition-colors min-h-[44px] md:min-h-0"
                                 />

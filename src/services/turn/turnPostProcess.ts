@@ -304,10 +304,10 @@ function queueNPCValidation(
                         const genTask = summarizerProvider
                             ? tryWithFallback(
                                 `NPC-Profile-${potentialName}`,
-                                () => generateNPCProfile(storyProvider, allMsgs, potentialName, callbacks.addNPC, npcLedger, activeCampaignId),
-                                () => generateNPCProfile(summarizerProvider, allMsgs, potentialName, callbacks.addNPC, npcLedger, activeCampaignId),
+                                () => generateNPCProfile(storyProvider, allMsgs, potentialName, callbacks.addNPC, npcLedger, activeCampaignId, state.items, callbacks.addItemDef, state.skills, callbacks.addSkillDef),
+                                () => generateNPCProfile(summarizerProvider, allMsgs, potentialName, callbacks.addNPC, npcLedger, activeCampaignId, state.items, callbacks.addItemDef, state.skills, callbacks.addSkillDef),
                               )
-                            : generateNPCProfile(storyProvider, allMsgs, potentialName, callbacks.addNPC, npcLedger, activeCampaignId);
+                            : generateNPCProfile(storyProvider, allMsgs, potentialName, callbacks.addNPC, npcLedger, activeCampaignId, state.items, callbacks.addItemDef, state.skills, callbacks.addSkillDef);
                         genTask.catch((e) => console.warn(`[TurnPostProcess] NPC profile gen failed for "${potentialName}":`, e));
                     }
                 }

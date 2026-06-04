@@ -92,6 +92,28 @@ describe('npcCombatGeneration', () => {
             const skill = createSkillDefFromTemplate('Quick Strike', 'minion', 'attack', 'SPD', 'Close');
             expect(skill.damageDice!).toBeLessThanOrEqual(TIER_DICE_BUDGETS.minion.skillDice);
         });
+
+        it('preserves caller-provided properties instead of defaulting to magic', () => {
+            const skill = createSkillDefFromTemplate('Power Strike', 'grunt', 'attack', 'PWR', 'Close', ['heavy']);
+            expect(skill.properties).toContain('heavy');
+            expect(skill.properties).not.toContain('magic');
+        });
+
+        it('falls back to magic for attack skills with no properties', () => {
+            const skill = createSkillDefFromTemplate('Slash', 'grunt', 'attack', 'PWR', 'Close');
+            expect(skill.properties).toContain('magic');
+        });
+
+        it('falls back to healing for heal skills with no properties', () => {
+            const skill = createSkillDefFromTemplate('Mend', 'elite', 'heal', 'WIL', 'Close');
+            expect(skill.properties).toContain('healing');
+        });
+
+        it('does not add fallback tag when caller provides properties for heal', () => {
+            const skill = createSkillDefFromTemplate('Drain', 'elite', 'heal', 'WIL', 'Ranged', ['necromancy']);
+            expect(skill.properties).toContain('necromancy');
+            expect(skill.properties).not.toContain('healing');
+        });
     });
 
     describe('resolveOrAddItemDef', () => {
@@ -227,6 +249,21 @@ describe('npcCombatGeneration', () => {
             const loadout = assignCombatLoadout('elite', 'bulwark', [], []);
             expect(loadout.overrides).toBeDefined();
             expect(loadout.overrides!.length).toBeGreaterThanOrEqual(1);
+        });
+
+        it('carries archetype skill properties through assignCombatLoadout (not overwritten with magic)', () => {
+            const loadout = assignCombatLoadout('elite', 'brute', [], []);
+            const powerStrike = loadout.newSkillDefs!.find(s => s.name === 'Power Strike');
+            expect(powerStrike).toBeDefined();
+            expect(powerStrike!.properties).toContain('heavy');
+            expect(powerStrike!.properties).not.toContain('magic');
+        });
+
+        it('caster attack skill retains magic property from template', () => {
+            const loadout = assignCombatLoadout('elite', 'caster', [], []);
+            const arcaneBolt = loadout.newSkillDefs!.find(s => s.name === 'Arcane Bolt');
+            expect(arcaneBolt).toBeDefined();
+            expect(arcaneBolt!.properties).toContain('magic');
         });
     });
 });

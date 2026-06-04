@@ -15,6 +15,8 @@ import type {
     DivergenceRegister,
     PayloadTrace,
     CombatState,
+    ItemDef,
+    SkillDef,
 } from '../../types';
 
 export type TurnCallbacks = {
@@ -39,7 +41,9 @@ export type TurnCallbacks = {
     archiveNPC?: (id: string, turn: number, reason: string) => void;
     restoreNPC?: (id: string) => void;
     setOnStageNpcIds?: (ids: string[]) => void;
-    initiateCombat?: (namedNpcIds: string[], pcIds: string[], mookSpecs: { combatTier: import('../../types').CombatTier; archetype: import('../../types').Archetype; count: number }[]) => void;
+    initiateCombat?: (namedNpcIds: string[], pcIds: string[], mookSpecs: { combatTier: import('../../types').CombatTier; archetype: import('../../types').Archetype; count: number }[], auxProvider?: import('../../types').LLMProvider, recentContext?: string) => Promise<void>;
+    addItemDef?: (item: ItemDef) => void;
+    addSkillDef?: (skill: SkillDef) => void;
 };
 
 export type TurnState = {
@@ -72,6 +76,8 @@ export type TurnState = {
     deepContextSearch?: boolean;
     divergenceRegister?: DivergenceRegister;
     onStageNpcIds?: string[];
+    items: ItemDef[];
+    skills: SkillDef[];
     /** Live combat snapshot (Phase C) — surfaced in the volatile block while a fight is active. */
     combatState?: CombatState | null;
 };

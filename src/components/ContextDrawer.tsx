@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { X, ScrollText, Globe, Zap, BookOpen, Bookmark, Brain, Sliders } from 'lucide-react';
+import { X, ScrollText, Globe, Zap, BookOpen, Bookmark, Brain, Sliders, Library } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { RulesTab } from './context-drawer/RulesTab';
 import { RulesManagerTab } from './context-drawer/RulesManagerTab';
@@ -10,6 +10,7 @@ import { ChapterTab } from './context-drawer/ChapterTab';
 import { BookkeepingTab } from './context-drawer/BookkeepingTab';
 import { ResolvedStatePanel } from './context-drawer/ResolvedStatePanel';
 import { MemoryTab } from './context-drawer/MemoryTab';
+import { CompendiumTab } from './context-drawer/CompendiumTab';
 
 const TABS = [
   { id: 'sys',      label: 'System',   icon: ScrollText },
@@ -18,6 +19,7 @@ const TABS = [
   { id: 'world-mgr', label: 'LoreMgr', icon: Sliders },
   { id: 'mem',      label: 'Memory',   icon: Brain },
   { id: 'eng',      label: 'Engines',  icon: Zap },
+  { id: 'comp',     label: 'Compendium', icon: Library },
   { id: 'chapters', label: 'Chapters', icon: BookOpen },
   { id: 'chr',      label: 'Bookkeep', icon: Bookmark },
 ] as const;
@@ -29,6 +31,21 @@ export function ContextDrawer() {
   const toggleDrawer = useAppStore((s) => s.toggleDrawer);
   const setMobileView = useAppStore((s) => s.setMobileView);
   const [activeTab, setActiveTab] = useState<TabId>('sys');
+
+  const combatActive = useAppStore((s) => s.combatState?.active ?? false);
+  const activeCampaignId = useAppStore((s) => s.activeCampaignId);
+
+  // If the active tab is comp but combat becomes active, fallback to sys
+  if (activeTab === 'comp' && (!activeCampaignId || combatActive)) {
+    setActiveTab('sys');
+  }
+
+  const visibleTabs = TABS.filter(tab => {
+    if (tab.id === 'comp') {
+      return !!activeCampaignId && !combatActive;
+    }
+    return true;
+  });
 
   // ── Swipe-to-dismiss logic ──
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -77,6 +94,7 @@ export function ContextDrawer() {
       {activeTab === 'world-mgr' && <LoreManagerTab onBack={() => setActiveTab('world')} />}
       {activeTab === 'mem' && <MemoryTab />}
       {activeTab === 'eng' && <EnginesTab />}
+      {activeTab === 'comp' && <CompendiumTab />}
       {activeTab === 'chapters' && <ChapterTab />}
       {activeTab === 'chr' && <><ResolvedStatePanel /><BookkeepingTab /></>}
     </>
@@ -84,7 +102,7 @@ export function ContextDrawer() {
 
   const tabBar = (
     <div className="flex border-b border-border overflow-x-auto flex-shrink-0">
-      {TABS.map(({ id, label, icon: Icon }) => (
+      {visibleTabs.map(({ id, label, icon: Icon }) => (
         <button
           key={id}
           onClick={() => setActiveTab(id)}

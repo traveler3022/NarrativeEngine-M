@@ -165,8 +165,15 @@ export function createSkillDefFromTemplate(
     type: SkillDef['type'],
     scaling: SkillDef['scaling'],
     range: SkillDef['range'],
+    properties: string[] = [],
 ): SkillDef {
     const budget = TIER_DICE_BUDGETS[tier];
+    const baseProperties = [...properties];
+    if (type === 'attack') {
+        baseProperties.push(...properties.length === 0 ? ['magic'] : []);
+    } else if (type === 'heal') {
+        baseProperties.push(...properties.length === 0 ? ['healing'] : []);
+    }
     const skill: SkillDef = {
         id: uid(),
         name,
@@ -174,15 +181,13 @@ export function createSkillDefFromTemplate(
         focCost: type === 'utility' ? 0 : (type === 'heal' ? Math.min(budget.skillDice - 2, 3) : Math.ceil(budget.skillDice / 2) + 1),
         type,
         scaling,
-        properties: [],
+        properties: baseProperties,
         range,
     };
     if (type === 'attack') {
         skill.damageDice = Math.min(budget.skillDice, 8);
-        skill.properties = ['magic'];
     } else if (type === 'heal') {
         skill.healDice = Math.min(budget.skillDice, 8);
-        skill.properties = ['healing'];
     }
     return skill;
 }
@@ -210,12 +215,13 @@ export function resolveOrAddSkillDef(
     scaling: SkillDef['scaling'],
     range: SkillDef['range'],
     existing: SkillDef[],
+    properties: string[] = [],
 ): { id: string; name: string; newDefs: SkillDef[] } {
     const existingSkill = existing.find(s => s.name.toLowerCase() === name.toLowerCase());
     if (existingSkill) {
         return { id: existingSkill.id, name: existingSkill.name, newDefs: [] };
     }
-    const def = createSkillDefFromTemplate(name, tier, type, scaling, range);
+    const def = createSkillDefFromTemplate(name, tier, type, scaling, range, properties);
     return { id: def.id, name: def.name, newDefs: [def] };
 }
 
@@ -265,8 +271,7 @@ export function assignCombatLoadout(
     const knownSkills: string[] = [];
     const skillsToTake = skillTemplates.slice(0, skillCount);
     for (const tmpl of skillsToTake) {
-        const skillResult = resolveOrAddSkillDef(tmpl.name, combatTier, tmpl.type, tmpl.scaling, tmpl.range, existingSkills);
-        newItemDefs.push(...([] as ItemDef[]));
+        const skillResult = resolveOrAddSkillDef(tmpl.name, combatTier, tmpl.type, tmpl.scaling, tmpl.range, existingSkills, tmpl.properties);
         newSkillDefs.push(...skillResult.newDefs);
         knownSkills.push(skillResult.id);
     }

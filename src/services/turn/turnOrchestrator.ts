@@ -353,7 +353,12 @@ export async function runTurn(
                         for (const pcId of pcIds) {
                             if (!namedNpcIds.includes(pcId)) namedNpcIds.push(pcId);
                         }
-                        callbacks.initiateCombat(namedNpcIds, pcIds, mookSpecs);
+                        const auxProvider = state.getFreshAuxiliaryProvider?.();
+                        const recentContext = messages.slice(-5).map(m => {
+                            const role = m.role === 'assistant' ? 'GM' : m.role.toUpperCase();
+                            return `[${role}]: ${(m.content || '').slice(0, 400)}`;
+                        }).join('\n\n');
+                        await callbacks.initiateCombat(namedNpcIds, pcIds, mookSpecs, auxProvider, recentContext);
                     }
 
                     const toolMsgId = uid();

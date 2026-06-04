@@ -15,6 +15,8 @@ import {
     joinPromptSections,
 } from '../infrastructure';
 import { COMBAT_TIER_ARCHETYPE_RUBRIC } from './npcDetector';
+import { assignCombatLoadout } from './npcCombatGeneration';
+import type { ItemDef, SkillDef } from '../../types';
 
 const RETRY_SUFFIX = '\n\nIMPORTANT: Your previous response was not valid JSON. Respond with ONLY valid JSON. No markdown fences, no comments, no trailing commas, no extra text before or after the JSON.';
 
@@ -96,7 +98,11 @@ export async function generateNPCProfile(
     npcName: string,
     addNPCToStore: (npc: NPCEntry) => void,
     existingLedger?: NPCEntry[],
-    campaignId?: string
+    campaignId?: string,
+    existingItems?: ItemDef[],
+    addItemDef?: (item: ItemDef) => void,
+    existingSkills?: SkillDef[],
+    addSkillDef?: (skill: SkillDef) => void,
 ): Promise<void> {
     try {
         console.log(`[NPC Generator] Initiating background profile generation for: ${npcName}`);
@@ -212,6 +218,33 @@ export async function generateNPCProfile(
                     ? (finalParsed.archetype as NPCEntry['archetype'])
                     : undefined,
             };
+
+            if (newEntry.combatTier && newEntry.archetype) {
+                const loadout = assignCombatLoadout(
+                    newEntry.combatTier,
+                    newEntry.archetype,
+                    existingItems ?? [],
+                    existingSkills ?? [],
+                );
+                newEntry.stats = loadout.stats;
+                newEntry.equippedWeapon = loadout.equippedWeapon;
+                newEntry.knownSkills = loadout.knownSkills;
+                newEntry.inventory = loadout.inventory;
+                newEntry.overrides = loadout.overrides;
+
+                if (addItemDef && loadout.newItemDefs.length > 0) {
+                    for (const itemDef of loadout.newItemDefs) {
+                        addItemDef(itemDef);
+                    }
+                }
+                if (addSkillDef && loadout.newSkillDefs.length > 0) {
+                    for (const skillDef of loadout.newSkillDefs) {
+                        addSkillDef(skillDef);
+                    }
+                }
+
+                console.log(`[NPC Generator] Assigned combat loadout for ${newEntry.name}: weapon=${loadout.equippedWeapon}, skills=${JSON.stringify(loadout.knownSkills)}`);
+            }
 
             addNPCToStore(newEntry);
             console.log(`[NPC Generator] Successfully generated and added profile for: ${newEntry.name} (tier=${newEntry.tier})`);
