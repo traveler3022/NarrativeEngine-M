@@ -14,6 +14,7 @@ import { NPCGalleryView } from './npc-ledger/NPCGalleryView';
 import { NPCEditForm } from './npc-ledger/NPCEditForm';
 import { uid } from '../utils/uid';
 import { getEntriesForNpc } from '../services/campaign-state';
+import { imageStorage } from '../services/storage/imageStorage';
 
 export function NPCLedgerModal() {
   const npcLedger = useAppStore(s => s.npcLedger);
@@ -170,6 +171,11 @@ export function NPCLedgerModal() {
     }
     const remaining = npcLedger.filter(n => !checkedIds.has(n.id));
     setNPCLedger(remaining);
+    if (activeCampaignId) {
+      for (const id of checkedIds) {
+        imageStorage.deletePortrait(activeCampaignId, id).catch(() => {});
+      }
+    }
     setCheckedIds(new Set());
     setSelectMode(false);
     toast.success(`Deleted ${checkedIds.size} NPCs`);

@@ -1,5 +1,21 @@
 import { User, Trash2, CheckSquare, Square } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import type { NPCEntry } from '../../types';
+import { useAppStore } from '../../store/useAppStore';
+import { imageStorage } from '../../services/storage/imageStorage';
+
+function PortraitThumb({ npc }: { npc: NPCEntry }) {
+    const activeCampaignId = useAppStore(s => s.activeCampaignId);
+    const [url, setUrl] = useState<string | null>(null);
+    useEffect(() => {
+        if (!npc.portrait || !activeCampaignId) return;
+        let cancelled = false;
+        imageStorage.getPortrait(activeCampaignId, npc.id).then(u => { if (!cancelled) setUrl(u); });
+        return () => { cancelled = true; };
+    }, [npc.id, npc.portrait, activeCampaignId]);
+    if (!url) return <User size={32} className="text-text-dim/30" />;
+    return <img src={url} alt={npc.name} className="w-full h-full object-cover object-top" />;
+}
 
 type Props = {
     npcLedger: NPCEntry[];
@@ -27,7 +43,7 @@ export function NPCGalleryView({ npcLedger, selectedId, selectMode, checkedIds, 
                         className={`relative aspect-[3/4] rounded overflow-hidden cursor-pointer border group transition-all ${isActive ? 'border-terminal ring-1 ring-terminal' : isChecked ? 'border-terminal/50 ring-1 ring-terminal/30' : 'border-border hover:border-terminal/50'}`}
                     >
                         <div className="w-full h-full bg-void-lighter flex flex-col items-center justify-center gap-2">
-                            <User size={32} className="text-text-dim/30" />
+                            <PortraitThumb npc={npc} />
                         </div>
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-void via-void/80 to-transparent p-3 pt-8">
                             <p className={`text-[14px] md:text-xs font-bold truncate ${isActive ? 'text-terminal glow-green-sm' : 'text-text-primary'}`}>{npc.name}</p>

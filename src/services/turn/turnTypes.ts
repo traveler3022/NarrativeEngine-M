@@ -17,6 +17,7 @@ import type {
     CombatState,
     ItemDef,
     SkillDef,
+    InventoryProposal,
 } from '../../types';
 
 export type TurnCallbacks = {
@@ -42,6 +43,7 @@ export type TurnCallbacks = {
     restoreNPC?: (id: string) => void;
     setOnStageNpcIds?: (ids: string[]) => void;
     initiateCombat?: (namedNpcIds: string[], pcIds: string[], mookSpecs: { combatTier: import('../../types').CombatTier; archetype: import('../../types').Archetype; count: number }[], auxProvider?: import('../../types').LLMProvider, recentContext?: string) => Promise<void>;
+    stageInventoryProposal?: (proposal: InventoryProposal) => void;
     addItemDef?: (item: ItemDef) => void;
     addSkillDef?: (skill: SkillDef) => void;
 };

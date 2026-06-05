@@ -3,6 +3,7 @@ import { Trash2, Save, Loader2, Sparkles, Users, ScrollText, Shield } from 'luci
 import type { NPCEntry, NPCBehavioralTrigger, DivergenceCategory, DivergenceEntry, CombatTier, Archetype } from '../../types';
 import { CATEGORY_LABELS } from '../../services/campaign-state';
 import { useAppStore } from '../../store/useAppStore';
+import { NPCPortraitSection } from './NPCPortraitSection';
 import {
     calculateDerivedPreviews,
     OVERRIDE_TRIGGER_KINDS,
@@ -122,6 +123,9 @@ export function NPCEditForm({
             </div>
 
             <div className="space-y-4 flex-1">
+                {selectedId && (
+                    <NPCPortraitSection npc={form as NPCEntry} isEditing={isEditing} />
+                )}
                 <div className="flex gap-4">
                     <div className="flex-1">
                         <label className="block text-text-dim text-[10px] uppercase tracking-wider mb-1">Primary Designation</label>

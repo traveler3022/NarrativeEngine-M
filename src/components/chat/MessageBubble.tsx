@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { Edit2, RotateCcw, Trash2, Loader2, Terminal, Zap, Check, X, Pin, PinOff } from 'lucide-react';
+import { Edit2, RotateCcw, Trash2, Loader2, Terminal, Zap, Check, X, Pin, PinOff, ImagePlus, AlertCircle, XCircle } from 'lucide-react';
 import type { ChatMessage } from '../../types';
 import { EngineTraceView } from '../engine-trace/EngineTraceView';
 import { ContentWithChips } from './ContentWithChips';
 import { useAppStore } from '../../store/useAppStore';
 import { toast } from '../Toast';
+import { illustrateMessage } from '../../services/image';
+import { imageStorage } from '../../services/storage/imageStorage';
 
 type MessageBubbleProps = {
     msg: ChatMessage;
@@ -20,6 +22,92 @@ type MessageBubbleProps = {
     debugMode: boolean;
     onTagDivergence?: (msg: ChatMessage) => void;
 };
+
+type ImageAttachmentProps = {
+    msg: ChatMessage;
+};
+
+function ImageAttachment({ msg }: ImageAttachmentProps) {
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
+    const [lightboxOpen, setLightboxOpen] = useState(false);
+    const activeCampaignId = useAppStore(s => s.activeCampaignId);
+    const image = msg.image;
+    const readyToLoad = image?.status === 'ready' && activeCampaignId;
+
+    useEffect(() => {
+        if (!readyToLoad) return;
+        let cancelled = false;
+        imageStorage.get(activeCampaignId!, msg.id).then(url => {
+            if (!cancelled) setImageUrl(url);
+        });
+        return () => { cancelled = true; };
+    }, [readyToLoad, activeCampaignId, msg.id]);
+
+    if (!image) return null;
+
+    if (image.status === 'pending') {
+        return (
+            <div className="mt-3 flex items-center gap-2 py-2 px-3 bg-void-darker border border-border rounded text-text-dim">
+                <Loader2 size={14} className="animate-spin" />
+                <span className="text-xs uppercase tracking-wider">Illustrating scene…</span>
+            </div>
+        );
+    }
+
+    if (image.status === 'error') {
+        return (
+            <div className="mt-3 flex items-center gap-2 py-2 px-3 bg-void-darker border border-red-500/30 rounded">
+                <AlertCircle size={12} className="text-red-400 shrink-0" />
+                <span className="text-[11px] text-red-400/80 truncate flex-1">{image.error || 'Illustration failed'}</span>
+                <button
+                    onClick={() => illustrateMessage(msg.id)}
+                    className="text-[10px] uppercase tracking-wider text-text-dim hover:text-ice shrink-0"
+                >
+                    Retry
+                </button>
+            </div>
+        );
+    }
+
+    if (imageUrl) {
+        return (
+            <>
+                <div
+                    className="mt-3 overflow-hidden rounded border border-border cursor-pointer hover:border-ice/40 transition-colors"
+                    onClick={() => setLightboxOpen(true)}
+                >
+                    <img
+                        src={imageUrl}
+                        alt="Scene illustration"
+                        className="w-full max-h-80 object-contain bg-void-darker"
+                        loading="lazy"
+                    />
+                </div>
+                {lightboxOpen && (
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+                        onClick={() => setLightboxOpen(false)}
+                    >
+                        <button
+                            className="absolute top-4 right-4 p-2 bg-void-darker/80 border border-border rounded-full text-text-dim hover:text-text-primary transition-colors z-10"
+                            onClick={() => setLightboxOpen(false)}
+                        >
+                            <XCircle size={24} />
+                        </button>
+                        <img
+                            src={imageUrl}
+                            alt="Scene illustration"
+                            className="max-w-[95vw] max-h-[90vh] object-contain rounded"
+                            onClick={e => e.stopPropagation()}
+                        />
+                    </div>
+                )}
+            </>
+        );
+    }
+
+    return null;
+}
 
 export function MessageBubble({
     msg,
@@ -220,6 +308,17 @@ export function MessageBubble({
                                 <RotateCcw size={10} />
                             </button>
                         )}
+                        {msg.role === 'assistant' && !isStreaming && !(msg.image?.status === 'pending') && (
+                            <button
+                                title="Illustrate scene"
+                                onClick={() => illustrateMessage(msg.id)}
+                                className={`p-1 bg-void-lighter rounded transition-colors ${
+                                    msg.image?.status === 'ready' ? 'text-ice hover:text-ice/60' : 'text-text-dim hover:text-ice'
+                                }`}
+                            >
+                                <ImagePlus size={10} />
+                            </button>
+                        )}
                         {msg.role === 'assistant' && onTagDivergence && (
                             <button
                                 title="Tag as Divergence"
@@ -351,8 +450,10 @@ export function MessageBubble({
                         )}
 
                         {hasDebugPayload && (
-                            <EngineTraceView payload={msg.debugPayload} />
-                        )}
+                             <EngineTraceView payload={msg.debugPayload} />
+                         )}
+
+                        <ImageAttachment msg={msg} />
                     </>
                 )}
             </div>

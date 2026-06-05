@@ -24,6 +24,7 @@ export function PresetsPanel() {
             summarizerAIProviderId: '',
             utilityAIProviderId: '',
             auxiliaryAIProviderId: '',
+            imageAIProviderId: '',
         };
         addPreset(newPreset);
         setActiveTab(newPreset.id);
@@ -153,6 +154,20 @@ export function PresetsPanel() {
                             <select
                                 value={activePreset.auxiliaryAIProviderId || ''}
                                 onChange={(e) => updatePreset(activePreset.id, { auxiliaryAIProviderId: e.target.value })}
+                                className="w-full bg-surface border border-border px-3 py-3 md:py-2 text-[16px] md:text-sm text-text-primary focus:border-terminal focus:outline-none appearance-none"
+                            >
+                                <option value="">None</option>
+                                {settings.providers.map(p => (
+                                    <option key={p.id} value={p.id}>{p.label || p.modelName || p.endpoint}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-[10px] text-text-dim uppercase tracking-wider mb-1">Image Generation AI</label>
+                            <select
+                                value={activePreset.imageAIProviderId || ''}
+                                onChange={(e) => updatePreset(activePreset.id, { imageAIProviderId: e.target.value })}
                                 className="w-full bg-surface border border-border px-3 py-3 md:py-2 text-[16px] md:text-sm text-text-primary focus:border-terminal focus:outline-none appearance-none"
                             >
                                 <option value="">None</option>

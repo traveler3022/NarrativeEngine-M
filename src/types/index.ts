@@ -52,11 +52,13 @@ export type AIPreset = {
     summarizerAIProviderId?: string;
     utilityAIProviderId?: string;
     auxiliaryAIProviderId?: string;
+    imageAIProviderId?: string;
     sampling?: SamplingConfig;
     storyAI?: LLMProvider;
     summarizerAI?: LLMProvider;
     utilityAI?: LLMProvider;
     auxiliaryAI?: LLMProvider;
+    imageAI?: LLMProvider;
 };
 
 export type CondenseAggressiveness = 'aggressive' | 'balanced' | 'quality';
@@ -85,6 +87,8 @@ export type AppSettings = {
     utilityTimeoutSeconds?: number;   // soft deadline for utility AI calls (reranker, recommender, expandQuery). Default 45. User can EXTEND +1m mid-flight.
     verboseUtilityLogging?: boolean;  // when true, utility call tracker records extra detail (slot waits, retries, payload sizes)
     aiTier?: AiTier;
+    imageStylePrompt?: string;       // prepended to every image generation prompt (e.g. "oil painting, fantasy art, dark atmosphere")
+    imageNegativePrompt?: string;    // negative prompt for models that support it
     providers: LLMProvider[];
     activeProviderId?: string;
     endpoint?: string;
@@ -255,6 +259,7 @@ export type ChatMessage = {
     reasoning_content?: string;
     ephemeral?: boolean;
     divergenceIds?: string[];
+    image?: { status: 'pending' | 'ready' | 'error'; prompt?: string; createdAt: number; error?: string };
 };
 
 /** Search index entry — one per scene, auto-built by server on every turn. */
@@ -441,6 +446,8 @@ export type NPCEntry = {
     lastSeenTimestamp?: number;
     recoveryNote?: string;
     overrides?: NPCOverride[];
+    portrait?: boolean;
+    portraitSeed?: number;
 };
 
 
@@ -673,5 +680,17 @@ export type CombatState = {
     activeTurnIndex: number;
     combatants: Record<string, Combatant>;
     rangeRelations: Record<string, Record<string, 'Engaged' | 'Apart'>>;
+};
+
+export type InventoryProposal = {
+    name: string;
+    op: 'grant' | 'remove' | 'equip';
+    kind: 'weapon' | 'armor' | 'consumable' | 'misc';
+    quality: ItemDef['rarity'];
+    scalingStat: 'PWR' | 'SPD' | 'WIL';
+    range: 'Close' | 'Reach' | 'Ranged';
+    properties: string[];
+    equip: boolean;
+    description: string;
 };
 

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import {
     Loader2, Zap, Trash2,
-    ChevronDown, X, Pin, Sword
+    ChevronDown, X, Pin, Sword, Package
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -24,6 +24,7 @@ import { CombatHUD } from './combat/CombatHUD';
 import { UtilityCallStrip } from './UtilityCallStrip';
 import { scanCombatIntent, combatKeywordPrefilter, routeCombatIntent } from '../services/turn/combatScanner';
 import { buildCombatEntryArgs, classifyUnknownFoes } from '../services/turn/combatEntry';
+import { createItemDefFromProposal } from '../services/npc/itemFactory';
 import { PCCreationWizard } from './pc/PCCreationWizard';
 
 export function ChatArea() {
@@ -67,6 +68,8 @@ export function ChatArea() {
         setPendingArcSeed,
         pendingCombatPrompt,
         setPendingCombatPrompt,
+        pendingInventoryProposal,
+        setPendingInventoryProposal,
         pinnedExcerpts,
     } = useAppStore(useShallow(s => ({
         messages: s.messages,
@@ -108,6 +111,8 @@ export function ChatArea() {
         setPendingArcSeed: s.setPendingArcSeed,
         pendingCombatPrompt: s.pendingCombatPrompt,
         setPendingCombatPrompt: s.setPendingCombatPrompt,
+        pendingInventoryProposal: s.pendingInventoryProposal,
+        setPendingInventoryProposal: s.setPendingInventoryProposal,
         pinnedExcerpts: s.pinnedExcerpts,
     })));
 
@@ -310,6 +315,9 @@ export function ChatArea() {
             setOnStageNpcIds: (ids) => useAppStore.getState().setOnStageNpcIds(ids),
             initiateCombat: async (namedNpcIds, _pcIds, mookSpecs, auxProvider, recentContext) => {
                 await initiateCombatWithRecovery(namedNpcIds, mookSpecs, auxProvider, recentContext);
+            },
+            stageInventoryProposal: (proposal) => {
+                useAppStore.getState().setPendingInventoryProposal(proposal);
             },
         }, abortControllerRef.current!);
 
@@ -587,6 +595,62 @@ export function ChatArea() {
                     <button onClick={() => setPendingCombatPrompt(null)} className="text-red-400/60 hover:text-red-400 shrink-0"><X size={12} /></button>
                 </div>
             )}
+
+            {pendingInventoryProposal && (() => {
+                const p = pendingInventoryProposal;
+                const kindLabel = p.kind === 'weapon' ? 'weapon' : p.kind === 'armor' ? 'armor' : p.kind;
+                const opLabel = p.op === 'grant' ? 'Add' : p.op === 'equip' ? 'Equip' : 'Remove';
+                return (
+                    <div className="px-2 md:px-4 py-2 flex items-center gap-2 bg-amber-500/10 border-t border-amber-500/20">
+                        <Package size={14} className="text-amber-400 shrink-0" />
+                        <span className="text-[9px] uppercase tracking-widest text-amber-400 font-bold flex-1 truncate">
+                            Gear change — {p.name} ({p.quality} {kindLabel}). {opLabel} to inventory?
+                        </span>
+                        <button
+                            onClick={() => {
+                                const proposal = useAppStore.getState().pendingInventoryProposal;
+                                if (!proposal) return;
+                                setPendingInventoryProposal(null);
+                                const currentItems = useAppStore.getState().items;
+                                const itemDef = createItemDefFromProposal(proposal, currentItems);
+                                const existingInCompendium = currentItems.find(i => i.name.toLowerCase() === proposal.name.toLowerCase());
+                                if (!existingInCompendium) {
+                                    useAppStore.getState().addItemDef(itemDef);
+                                }
+                                const targetId = itemDef.id;
+                                const pcNpc = useAppStore.getState().npcLedger.find(n => n.isPC);
+                                if (!pcNpc) {
+                                    toast.warning('No player character found');
+                                    return;
+                                }
+                                if (proposal.op === 'grant' || proposal.op === 'equip') {
+                                    const inv = pcNpc.inventory ? [...pcNpc.inventory] : [];
+                                    if (!inv.includes(targetId)) inv.push(targetId);
+                                    const patch: Partial<import('../types').NPCEntry> = { inventory: inv };
+                                    if ((proposal.equip || proposal.op === 'equip') && proposal.kind === 'weapon') {
+                                        patch.equippedWeapon = targetId;
+                                    }
+                                    useAppStore.getState().updateNPC(pcNpc.id, patch);
+                                    toast.success(`${proposal.name} added to inventory`);
+                                } else if (proposal.op === 'remove') {
+                                    const inv = pcNpc.inventory ? pcNpc.inventory.filter(id => id !== targetId) : [];
+                                    const patch: Partial<import('../types').NPCEntry> = { inventory: inv };
+                                    if (pcNpc.equippedWeapon === targetId) {
+                                        patch.equippedWeapon = undefined;
+                                    }
+                                    useAppStore.getState().updateNPC(pcNpc.id, patch);
+                                    toast.success(`${proposal.name} removed from inventory`);
+                                }
+                            }}
+                            className="px-2 py-0.5 text-[9px] uppercase tracking-widest font-bold bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 rounded hover:bg-emerald-500/30 transition-colors"
+                        >Confirm</button>
+                        <button
+                            onClick={() => setPendingInventoryProposal(null)}
+                            className="px-2 py-0.5 text-[9px] uppercase tracking-widest font-bold bg-red-500/20 border border-red-500/50 text-red-400 rounded hover:bg-red-500/30 transition-colors"
+                        >Dismiss</button>
+                    </div>
+                );
+            })()}
 
             {combatState?.active ? (
                 <CombatHUD onActionCommitted={() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' })} />

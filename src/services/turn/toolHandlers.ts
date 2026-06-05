@@ -1,4 +1,4 @@
-import type { DiceConfig, LoreChunk, NotebookNote, CombatTier, Archetype, OpenAITool } from '../../types';
+import type { DiceConfig, LoreChunk, NotebookNote, CombatTier, Archetype, OpenAITool, InventoryProposal, ItemDef } from '../../types';
 import { searchLoreByQuery } from '../lore';
 import { uid } from '../../utils/uid';
 import { mapTier } from '../engine';
@@ -36,6 +36,11 @@ export type InitiateCombatHandlerResult = {
         combatTier: CombatTier;
         archetype: Archetype;
     }[];
+};
+
+export type ProposeInventoryHandlerResult = {
+    toolResult: string;
+    proposal: InventoryProposal;
 };
 
 const BASE_TOOLS = [
@@ -141,7 +146,7 @@ const INITIATE_COMBAT_TOOL = {
                         properties: {
                             name:       { type: 'string', description: 'Name or short label, e.g. "Drunk Pirate".' },
                             count:      { type: 'integer', description: 'How many of this foe (mooks). Default 1.' },
-                            combatTier: { type: 'string', enum: ['minion','grunt','elite','boss','legendary'], description: 'Threat level.' },
+                            combatTier: { type: 'string', enum: ['minion','grunt','elite','boss','legendary'], description: "Threat level. Use 'minion' for basic/weak/fodder foes (e.g. 'basic golem', 'street thug'); reserve 'elite'+ for standout, named, or clearly-dangerous foes." },
                             archetype:  { type: 'string', enum: ['bulwark','assassin','caster','skirmisher','brute'], description: 'Fighting style.' },
                         },
                         required: ['name'],
@@ -154,10 +159,34 @@ const INITIATE_COMBAT_TOOL = {
     },
 } as const;
 
+const PROPOSE_INVENTORY_TOOL = {
+    type: 'function' as const,
+    function: {
+        name: 'propose_inventory_change',
+        description:
+            "Propose adding, removing, or equipping an item in the player's inventory when the fiction materially changes their gear (loot found, a weapon gifted/bought/broken, armor donned). This only *proposes* — the player must confirm before anything changes. Supply bounded labels ONLY; the engine sets all numbers (damage dice, bonus, AC). NEVER output damageDice, bonus, hp, or AC. Do NOT call for flavor mentions the player won't use mechanically. Default quality to 'common'; reserve 'rare'+ for clearly special, story-significant items.",
+        parameters: {
+            type: 'object' as const,
+            properties: {
+                name:        { type: 'string', description: 'Item name.' },
+                op:          { type: 'string', enum: ['grant','remove','equip'], description: "Operation. Default 'grant'." },
+                kind:        { type: 'string', enum: ['weapon','armor','consumable','misc'], description: "Item kind. Default 'misc'." },
+                quality:     { type: 'string', enum: ['common','uncommon','rare','epic','legendary'], description: "Rarity/quality tier. Default 'common'." },
+                scalingStat: { type: 'string', enum: ['PWR','SPD','WIL'], description: "Scaling stat for weapons. Default 'PWR'." },
+                range:       { type: 'string', enum: ['Close','Reach','Ranged'], description: "Weapon range. Default 'Close'." },
+                properties:  { type: 'array', items: { type: 'string' }, description: 'Flavor tags, e.g. ["fire","heavy"].' },
+                equip:       { type: 'boolean', description: 'Equip on confirm (weapons/armor). Default false.' },
+                description: { type: 'string', description: 'Short flavor text.' },
+            },
+            required: ['name'],
+        },
+    },
+} as const;
+
 export function getToolDefinitions(opts: { allowDiceTool: boolean; combatModeActive?: boolean }) {
     const base = [...BASE_TOOLS as unknown as OpenAITool[], ...(opts.allowDiceTool ? [ROLL_DICE_TOOL] as unknown as OpenAITool[] : [])];
     if (opts.combatModeActive) {
-        return [...base, ADJUDICATE_ACTION_TOOL, INITIATE_COMBAT_TOOL] as unknown as OpenAITool[];
+        return [...base, ADJUDICATE_ACTION_TOOL, INITIATE_COMBAT_TOOL, PROPOSE_INVENTORY_TOOL] as unknown as OpenAITool[];
     }
     return base;
 }
@@ -285,6 +314,68 @@ export function handleInitiateCombatTool(
     }
 
     return { toolResult: JSON.stringify({ foes }), foes };
+}
+
+const VALID_OPS = new Set<string>(['grant', 'remove', 'equip']);
+const VALID_KINDS = new Set<string>(['weapon', 'armor', 'consumable', 'misc']);
+const VALID_QUALITIES = new Set<string>(['common', 'uncommon', 'rare', 'epic', 'legendary']);
+const VALID_SCALING_STATS = new Set<string>(['PWR', 'SPD', 'WIL']);
+const VALID_RANGES = new Set<string>(['Close', 'Reach', 'Ranged']);
+const FORBIDDEN_NUMERIC_KEYS = new Set(['damageDice', 'bonus', 'hp', 'dice', 'ac', 'armorBonus']);
+
+export function handleProposeInventoryTool(
+    toolArguments: string
+): ProposeInventoryHandlerResult {
+    let args: Record<string, unknown> = {};
+    try { args = JSON.parse(toolArguments); } catch { /* ignore */ }
+
+    const name = typeof args.name === 'string' && args.name.trim() ? args.name.trim() : 'Unknown Item';
+
+    const rawOp = typeof args.op === 'string' ? args.op : '';
+    const op: InventoryProposal['op'] = VALID_OPS.has(rawOp) ? (rawOp as InventoryProposal['op']) : 'grant';
+
+    const rawKind = typeof args.kind === 'string' ? args.kind : '';
+    const kind: InventoryProposal['kind'] = VALID_KINDS.has(rawKind) ? (rawKind as InventoryProposal['kind']) : 'misc';
+
+    const rawQuality = typeof args.quality === 'string' ? args.quality : '';
+    const quality: ItemDef['rarity'] = VALID_QUALITIES.has(rawQuality) ? (rawQuality as ItemDef['rarity']) : 'common';
+
+    const rawScalingStat = typeof args.scalingStat === 'string' ? args.scalingStat : '';
+    const scalingStat: InventoryProposal['scalingStat'] = VALID_SCALING_STATS.has(rawScalingStat) ? (rawScalingStat as InventoryProposal['scalingStat']) : 'PWR';
+
+    const rawRange = typeof args.range === 'string' ? args.range : '';
+    const range: InventoryProposal['range'] = VALID_RANGES.has(rawRange) ? (rawRange as InventoryProposal['range']) : 'Close';
+
+    let properties: string[] = [];
+    if (Array.isArray(args.properties)) {
+        properties = args.properties.filter((p: unknown) => typeof p === 'string').map((p: string) => p.trim()).filter(Boolean);
+    }
+
+    const equip = typeof args.equip === 'boolean' ? args.equip : false;
+    const description = typeof args.description === 'string' ? args.description : '';
+
+    for (const key of Object.keys(args)) {
+        if (FORBIDDEN_NUMERIC_KEYS.has(key)) {
+            delete args[key];
+        }
+    }
+
+    const proposal: InventoryProposal = {
+        name,
+        op,
+        kind,
+        quality,
+        scalingStat,
+        range,
+        properties,
+        equip,
+        description,
+    };
+
+    return {
+        toolResult: JSON.stringify({ status: 'staged', name, op, kind, quality }),
+        proposal,
+    };
 }
 
 function parseAndRoll(expr: string): { total: number; breakdown: string; isD20: boolean } {

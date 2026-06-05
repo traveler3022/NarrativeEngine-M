@@ -1,5 +1,6 @@
 import { get, set, del } from 'idb-keyval';
 import type { Campaign, LoreChunk, GameContext, ChatMessage, CondenserState, NPCEntry, ArchiveIndexEntry, ArchiveChapter, SemanticFact, TimelineEvent, EntityEntry, DivergenceRegister, PinnedExcerpt, CombatState, ItemDef, SkillDef } from '../types';
+import { imageStorage } from '../services/storage/imageStorage';
 
 export type CampaignState = {
     context: GameContext;
@@ -42,6 +43,7 @@ export async function deleteCampaign(id: string): Promise<void> {
     await del(`combat_${id}`);
     await del(`items_${id}`);
     await del(`skills_${id}`);
+    await imageStorage.deleteAll(id);
 }
 
 // ─── Campaign State ───

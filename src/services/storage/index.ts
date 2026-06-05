@@ -8,6 +8,7 @@ import { timelineStorage } from './timelineStorage';
 import { entityStorage } from './entityStorage';
 import { backupStorage } from './backupStorage';
 import { embeddingStorage } from './embeddingStorage';
+import { imageStorage } from './imageStorage';
 
 export const offlineStorage = {
     archive: {
@@ -102,4 +103,5 @@ export const offlineStorage = {
     entities: entityStorage,
     backup: backupStorage,
     embeddings: embeddingStorage,
+    images: imageStorage,
 };

@@ -1,5 +1,5 @@
 import type { StatBlock, CombatTier, Archetype, ItemDef, SkillDef, NPCOverride } from '../../types';
-import { ARCHETYPE_BUDGETS } from '../engine/combatEngine';
+import { ARCHETYPE_BUDGETS, TIER_STAT_SCALE, clampStat } from '../engine/combatEngine';
 import { uid } from '../../utils/uid';
 
 // ─── Tier-Scaled Dice Budgets (A3 anti-inflation) ─────────────────────────
@@ -14,21 +14,6 @@ export const TIER_DICE_BUDGETS: Record<CombatTier, { weaponDice: number; skillDi
 };
 
 // ─── Stat Derivation ────────────────────────────────────────────────────────
-
-const TIER_STAT_SCALE: Record<CombatTier, number> = {
-    minion: 0.75,
-    grunt: 1.0,
-    elite: 1.2,
-    boss: 1.4,
-    legendary: 1.7,
-};
-
-const MIN_STAT = 6;
-const MAX_STAT = 20;
-
-function clampStat(val: number): number {
-    return Math.max(MIN_STAT, Math.min(MAX_STAT, Math.round(val)));
-}
 
 export function deriveStatsFromBudget(tier: CombatTier, archetype: Archetype): StatBlock {
     const budget = ARCHETYPE_BUDGETS[archetype];

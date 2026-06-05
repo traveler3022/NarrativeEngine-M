@@ -4,6 +4,7 @@ import { EMPTY_REGISTER, toggleChapter, toggleCategory, pinFact, editFact, delet
 import { debouncedSaveCampaignState } from './campaignSlice';
 import { countTokens } from '../../services/infrastructure';
 import { uid } from '../../utils/uid';
+import { imageStorage } from '../../services/storage/imageStorage';
 
 // Re-export PinnedExcerpt from types for consumers that import from this slice
 export type { PinnedExcerpt };
@@ -76,6 +77,7 @@ export type ChatSlice = {
     setLoreCheckResult: (result: LoreCheckResult) => void;
     setLoreCheckError: (err: string) => void;
     closeLoreCheck: () => void;
+    setMessageImage: (messageId: string, image: ChatMessage['image']) => void;
 };
 
 // ── Cross-slice dependencies ───────────────────────────────────────────
@@ -282,6 +284,7 @@ export const createChatSlice: StateCreator<ChatDeps, [], [], ChatSlice> = (set) 
     deleteMessage: (id) =>
         set((s) => {
             const msgs = s.messages.filter(m => m.id !== id);
+            if (s.activeCampaignId) imageStorage.delete(s.activeCampaignId, id).catch(() => {});
             debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: msgs, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { messages: msgs };
         }),
@@ -289,6 +292,12 @@ export const createChatSlice: StateCreator<ChatDeps, [], [], ChatSlice> = (set) 
         set((s) => {
             const index = s.messages.findIndex(m => m.id === id);
             if (index === -1) return { messages: s.messages };
+            const removed = s.messages.slice(index);
+            if (s.activeCampaignId) {
+                for (const m of removed) {
+                    imageStorage.delete(s.activeCampaignId, m.id).catch(() => {});
+                }
+            }
             const msgs = s.messages.slice(0, index);
             debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: msgs, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { messages: msgs };
@@ -297,6 +306,7 @@ export const createChatSlice: StateCreator<ChatDeps, [], [], ChatSlice> = (set) 
     clearChat: () => set((s) => {
         const newCondenser = { condensedUpToIndex: -1 };
         const newDivReg = { ...EMPTY_REGISTER };
+        if (s.activeCampaignId) imageStorage.deleteAll(s.activeCampaignId).catch(() => {});
         debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: [], condenser: newCondenser, pinnedExcerpts: [] });
         return { messages: [], condenser: newCondenser, divergenceRegister: newDivReg, pinnedExcerpts: [] };
     }),
@@ -366,5 +376,13 @@ export const createChatSlice: StateCreator<ChatDeps, [], [], ChatSlice> = (set) 
             loreCheckResult: null,
             loreCheckStatus: '',
             loreCheckError: null,
+        }),
+    setMessageImage: (messageId, image) =>
+        set((s) => {
+            const msgs = s.messages.map(m =>
+                m.id === messageId ? { ...m, image } : m
+            );
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: msgs, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
+            return { messages: msgs };
         }),
 });

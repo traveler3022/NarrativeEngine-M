@@ -24,7 +24,7 @@ recent scene, infer each foe's combat threat level, fighting style, and quantity
 Use these rubrics EXACTLY:
 
 combatTier (raw threat / how dangerous in a fight):
-- "minion": fodder, untrained, dies fast (street thug, conscript, rat, mob goon).
+- "minion": fodder, untrained, dies fast (street thug, conscript, rat, mob goon) — this includes anything described as basic/simple/crude/weak/unskilled or a generic mass-produced construct (e.g. a 'basic golem').
 - "grunt": competent rank-and-file (trained soldier, seasoned bandit, city guard). DEFAULT if unsure.
 - "elite": a standout threat (captain, veteran duelist, skilled mage, gang boss).
 - "boss": a major antagonist who anchors an encounter (warlord, dragon, crime lord).

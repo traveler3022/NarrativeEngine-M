@@ -119,14 +119,16 @@ export function migrateSettings(data: Record<string, unknown>): AppSettings {
             const summarizerAIProviderId = p.summarizerAIProviderId || getOrAddProvider(p.summarizerAI) || '';
             const utilityAIProviderId = p.utilityAIProviderId || getOrAddProvider(p.utilityAI) || '';
             const auxiliaryAIProviderId = p.auxiliaryAIProviderId || getOrAddProvider(p.auxiliaryAI) || '';
+            const imageAIProviderId = p.imageAIProviderId || getOrAddProvider(p.imageAI) || '';
 
-            const { storyAI: _s, summarizerAI: _sm, utilityAI: _u, auxiliaryAI: _ax, ...presetRest } = rest;
+            const { storyAI: _s, summarizerAI: _sm, utilityAI: _u, auxiliaryAI: _ax, imageAI: _img, ...presetRest } = rest;
             return {
                 ...presetRest,
                 storyAIProviderId,
                 summarizerAIProviderId,
                 utilityAIProviderId,
                 auxiliaryAIProviderId,
+                imageAIProviderId,
             } as AIPreset;
         });
     } else {

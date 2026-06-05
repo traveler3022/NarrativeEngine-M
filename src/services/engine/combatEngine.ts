@@ -110,6 +110,21 @@ export const COMBAT_TIER_LEVEL_BANDS: Record<CombatTier, number> = {
     legendary: 15,
 };
 
+export const TIER_STAT_SCALE: Record<CombatTier, number> = {
+    minion: 0.75,
+    grunt: 1.0,
+    elite: 1.2,
+    boss: 1.4,
+    legendary: 1.7,
+};
+
+export const STAT_MIN = 6;
+export const STAT_MAX = 20;
+
+export function clampStat(v: number): number {
+    return Math.max(STAT_MIN, Math.min(STAT_MAX, Math.round(v)));
+}
+
 export const FOC_SPELL_COSTS: Record<number, number> = {
     1: 2,
     2: 3,
@@ -356,14 +371,15 @@ export function jitter(value: number, range: number = DEFAULT_JITTER_RANGE): num
 export function materializeCombatant(input: MaterializeInput, jitterRange: number = DEFAULT_JITTER_RANGE): Combatant {
     const { combatTier, archetype, armorBonus = 0 } = input;
     const budget = ARCHETYPE_BUDGETS[archetype];
+    const scale = TIER_STAT_SCALE[combatTier];
 
     const stats: StatBlock = {
-        VIT: jitter(budget.VIT, jitterRange),
-        PWR: jitter(budget.PWR, jitterRange),
-        RES: jitter(budget.RES, jitterRange),
-        FOC: jitter(budget.FOC, jitterRange),
-        SPD: jitter(budget.SPD, jitterRange),
-        WIL: jitter(budget.WIL, jitterRange),
+        VIT: clampStat(jitter(budget.VIT * scale, jitterRange)),
+        PWR: clampStat(jitter(budget.PWR * scale, jitterRange)),
+        RES: clampStat(jitter(budget.RES * scale, jitterRange)),
+        FOC: clampStat(jitter(budget.FOC * scale, jitterRange)),
+        SPD: clampStat(jitter(budget.SPD * scale, jitterRange)),
+        WIL: clampStat(jitter(budget.WIL * scale, jitterRange)),
     };
 
     const maxHP = computeMaxHP(combatTier, stats.VIT);

@@ -3,6 +3,7 @@ import type { NPCEntry } from '../../types';
 import { toast } from '../../components/Toast';
 import { embedText, getCurrentModelId } from '../../services/embedding';
 import { embeddingStorage } from '../../services/storage/embeddingStorage';
+import { imageStorage } from '../../services/storage/imageStorage';
 import { buildNPCEmbeddingText } from '../../services/npc';
 
 const NPC_EMBED_FIELDS: (keyof NPCEntry)[] = ['name', 'aliases', 'faction', 'tier', 'appearance', 'personality', 'voice', 'goals', 'storyRelevance'];
@@ -141,6 +142,8 @@ export const createNPCSlice: StateCreator<NPCDeps, [], [], NPCSlice> = (set) => 
         if (s.activeCampaignId) {
             embeddingStorage.deleteByTypeAndId(s.activeCampaignId, 'npc', id)
                 .catch(e => console.warn('[NPC] Vector delete failed:', e));
+            imageStorage.deletePortrait(s.activeCampaignId, id)
+                .catch(e => console.warn('[NPC] Portrait delete failed:', e));
         }
         return { npcLedger: newLedger };
     }),

@@ -248,6 +248,30 @@ export function GlobalSettingsPanel() {
                     ))}
                 </div>
             </div>
+
+            <div className="flex flex-col bg-void p-4 border border-border rounded">
+                <label className="text-[11px] text-text-primary uppercase tracking-wider font-bold mb-1">Image Style Prompt</label>
+                <p className="text-[10px] text-text-dim mb-2">Prepended to every illustration request. Leave empty for the default style scaffold.</p>
+                <input
+                    type="text"
+                    value={settings.imageStylePrompt || ''}
+                    onChange={(e) => updateSettings({ imageStylePrompt: e.target.value })}
+                    placeholder="e.g. oil painting, fantasy art, dark atmosphere"
+                    className="w-full bg-surface border border-border px-3 py-3 md:py-2 text-[16px] md:text-sm text-text-primary focus:border-terminal focus:outline-none"
+                />
+            </div>
+
+            <div className="flex flex-col bg-void p-4 border border-border rounded">
+                <label className="text-[11px] text-text-primary uppercase tracking-wider font-bold mb-1">Image Negative Prompt</label>
+                <p className="text-[10px] text-text-dim mb-2">Elements to exclude from generated images. Only supported by some models (e.g. DALL-E 2, Stable Diffusion).</p>
+                <input
+                    type="text"
+                    value={settings.imageNegativePrompt || ''}
+                    onChange={(e) => updateSettings({ imageNegativePrompt: e.target.value })}
+                    placeholder="e.g. text, watermark, blurry, deformed"
+                    className="w-full bg-surface border border-border px-3 py-3 md:py-2 text-[16px] md:text-sm text-text-primary focus:border-terminal focus:outline-none"
+                />
+            </div>
         </div>
     );
 }

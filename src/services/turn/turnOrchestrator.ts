@@ -22,7 +22,7 @@ import { toast } from '../../components/Toast';
 import { sanitizePayloadForApi } from '../llm/payloadSanitizer';
 import { gatherContext } from './turnContext';
 import { handlePostTurn } from './turnPostProcess';
-import { getToolDefinitions, handleLoreTool, handleNotebookTool, handleDiceTool, handleAdjudicateTool, handleInitiateCombatTool } from './toolHandlers';
+import { getToolDefinitions, handleLoreTool, handleNotebookTool, handleDiceTool, handleAdjudicateTool, handleInitiateCombatTool, handleProposeInventoryTool } from './toolHandlers';
 
 import type { OpenAIMessage } from '../llm/llmService';
 import { buildAssistantToolCallMessage, buildToolResultMessage } from '../../types/llmMessages';
@@ -386,6 +386,56 @@ export async function runTurn(
                     }, 800);
                     return;
                 }
+
+                if (toolCall && toolCall.name === 'propose_inventory_change') {
+                    callbacks.setStreaming(false);
+                    callbacks.updateLastAssistant(finalText);
+
+                    callbacks.updateLastMessage({
+                        tool_calls: [{
+                            id: toolCall.id,
+                            type: 'function' as const,
+                            function: { name: toolCall.name, arguments: toolCall.arguments }
+                        }],
+                        ...(reasoningContent ? { reasoning_content: reasoningContent } : {})
+                    });
+
+                    currentPayload.push(buildAssistantToolCallMessage(
+                        finalText || "",
+                        [{ id: toolCall.id, type: 'function', function: { name: toolCall.name, arguments: toolCall.arguments } }],
+                        reasoningContent || undefined,
+                    ));
+
+                    const { toolResult, proposal } = handleProposeInventoryTool(toolCall.arguments);
+
+                    if (callbacks.stageInventoryProposal) {
+                        callbacks.stageInventoryProposal(proposal);
+                    }
+
+                    const toolMsgId = uid();
+                    callbacks.addMessage({
+                        id: toolMsgId,
+                        role: 'tool' as const,
+                        content: toolResult,
+                        timestamp: Date.now(),
+                        name: toolCall.name,
+                        tool_call_id: toolCall.id
+                    });
+
+                    currentPayload.push(buildToolResultMessage(toolCall.id, toolResult, toolCall.name));
+
+                    setTimeout(() => {
+                        if (abortController.signal.aborted) {
+                            callbacks.setStreaming(false);
+                            callbacks.setPipelinePhase?.('idle');
+                            callbacks.setStreamingStats?.(null);
+                            return;
+                        }
+                        executeTurn(currentPayload, toolCallCount + 1);
+                    }, 800);
+                    return;
+                }
+
                 callbacks.onCheckingNotes(false);
                 callbacks.setPipelinePhase?.('post-processing');
                 callbacks.updateLastAssistant(finalText);
@@ -538,11 +588,65 @@ export function runCombatTurn(input: CombatTurnInput): CombatTurnResult {
     };
 }
 
-export function emitCombatLedgerMessage(ledgerLine: string, _round: number): ChatMessage {
+export function formatCombatLogForChat(
+    _round: number,
+    resolutions: ActionResolution[],
+    combatState: CombatState,
+): string {
+    const nameOf = (id?: string) => (id && combatState.combatants[id]?.name) || id || '?';
+
+    const lines: string[] = [];
+    for (const r of resolutions) {
+        const actor = nameOf(r.actorId);
+        const target = nameOf(r.targetId);
+        if (r.rejected) {
+            lines.push(`- ${actor}: action rejected (${r.rejectionReason})`);
+            continue;
+        }
+        if (r.type === 'attack') {
+            const targetAC = r.targetId ? combatState.combatants[r.targetId]?.ac : undefined;
+            const acStr = targetAC !== undefined ? ` vs AC ${targetAC}` : '';
+            if (r.hit) {
+                lines.push(`- ${actor} → ${target}: HIT ${r.damage ?? 0} dmg (d20 ${r.naturalRoll}+mod=${r.total}${acStr})`);
+            } else {
+                lines.push(`- ${actor} → ${target}: MISS (d20 ${r.naturalRoll}+mod=${r.total}${acStr})`);
+            }
+            continue;
+        }
+        if (r.type === 'heal') {
+            const tgt = r.targetId && r.targetId !== r.actorId ? `${actor} → ${target}` : actor;
+            lines.push(`- ${tgt}: healed ${r.healed ?? 0} HP${r.focSpent ? ` (spent ${r.focSpent} FOC)` : ''}`);
+            continue;
+        }
+        if (r.type === 'mental') {
+            const label = r.saved ? 'RESISTED' : 'AFFECTED';
+            const dmg = r.damage ? ` — ${r.damage} damage` : '';
+            lines.push(`- ${actor} → ${target}: ${label}${dmg} (roll ${r.naturalRoll}+mod=${r.total})`);
+            continue;
+        }
+        if (r.type === 'defend') {
+            lines.push(`- ${actor}: braced (+${r.focRecovered ?? 0} FOC)`);
+            continue;
+        }
+        if (r.type === 'move') {
+            lines.push(`- ${actor}: moved${r.newPosition ? ` to ${r.newPosition}` : ''}${r.newRangeRelation ? ` (now ${r.newRangeRelation})` : ''}`);
+            continue;
+        }
+        lines.push(`- ${actor}: ${r.type}`);
+    }
+    return lines.join('\n');
+}
+
+export function emitCombatLedgerMessage(ledgerLine: string, round: number, resolutions?: ActionResolution[], combatState?: CombatState): ChatMessage {
+    let content = `⚔️ ${ledgerLine}`;
+    if (resolutions && combatState) {
+        const log = formatCombatLogForChat(round, resolutions, combatState);
+        content += `\n${log}`;
+    }
     return {
         id: uid(),
         role: 'assistant',
-        content: `⚔️ ${ledgerLine}`,
+        content,
         timestamp: Date.now(),
         name: 'combat-ledger',
     };
@@ -652,7 +756,7 @@ export async function handleCombatAction(
 
     callbacks.setCombatState(turnResult.combatState);
 
-    const ledgerMsg = emitCombatLedgerMessage(turnResult.ledgerLine, turnResult.combatState.round);
+    const ledgerMsg = emitCombatLedgerMessage(turnResult.ledgerLine, turnResult.combatState.round, turnResult.resolutions, turnResult.combatState);
     callbacks.addMessage(ledgerMsg);
 
     if (turnResult.terminated) {

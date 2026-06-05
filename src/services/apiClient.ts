@@ -104,6 +104,20 @@ export const api = {
             return offlineStorage.entities.merge(campaignId, survivorId, absorbedId);
         },
     },
+    images: {
+        store: async (campaignId: string, messageId: string, dataUrl: string): Promise<void> => {
+            await offlineStorage.images.store(campaignId, messageId, dataUrl);
+        },
+        get: async (campaignId: string, messageId: string): Promise<string | null> => {
+            return offlineStorage.images.get(campaignId, messageId);
+        },
+        delete: async (campaignId: string, messageId: string): Promise<void> => {
+            await offlineStorage.images.delete(campaignId, messageId);
+        },
+        deleteAll: async (campaignId: string): Promise<void> => {
+            await offlineStorage.images.deleteAll(campaignId);
+        },
+    },
     settings: {
         async get(): Promise<any> {
             const localSettings = await idbGet('nn_settings');
