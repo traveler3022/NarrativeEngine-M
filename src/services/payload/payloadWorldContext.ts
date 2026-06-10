@@ -3,6 +3,30 @@ import { countTokens } from '../infrastructure';
 import { buildBehaviorDirective, buildDriftAlert } from '../npc';
 import { minifyLoreChunk, minifyNPC } from './contextMinifier';
 
+export function computeOpenThreads(chapters: ArchiveChapter[]): { text: string; chapterId: string }[] {
+    const allUnresolved: { text: string; chapterId: string }[] = [];
+    for (const ch of chapters) {
+        // Invalidated chapters have stale summaries, so their threads are stale too
+        // (same exclusion as troublemaker.ts); their resolvedThreads still count below.
+        if (ch.invalidated) continue;
+        if (ch.unresolvedThreads) {
+            for (const t of ch.unresolvedThreads) {
+                allUnresolved.push({ text: t, chapterId: ch.chapterId });
+            }
+        }
+    }
+    const allResolved = new Set<string>();
+    for (const ch of chapters) {
+        if (ch.resolvedThreads) {
+            for (const t of ch.resolvedThreads) {
+                allResolved.add(t);
+            }
+        }
+    }
+    const open = allUnresolved.filter(t => !allResolved.has(t.text));
+    return open.slice(-12);
+}
+
 export interface WorldBlock {
     source: string;
     content: string;
@@ -171,6 +195,7 @@ export function assembleWorldBlocks(opts: {
     semanticFactText?: string;
     deepContextSummary?: string;
     chapters?: ArchiveChapter[];
+    sealedChapters?: ArchiveChapter[];
     addTrace: (t: PayloadTrace) => void;
 }): WorldBlock[] {
     const {
@@ -187,8 +212,11 @@ export function assembleWorldBlocks(opts: {
         semanticFactText,
         deepContextSummary,
         chapters,
+        sealedChapters: sealedChaptersOverride,
         addTrace,
     } = opts;
+
+    const sealedChapters = sealedChaptersOverride ?? (chapters ? chapters.filter(c => c.sealedAt !== undefined) : undefined);
 
     const worldBlocks: WorldBlock[] = [];
 
@@ -207,10 +235,22 @@ export function assembleWorldBlocks(opts: {
 
         if (filteredRecall.length > 0) {
             const indexMap = archiveIndex ? new Map(archiveIndex.map(e => [e.sceneId, e])) : new Map();
+            const npcNameById = new Map((npcLedger ?? []).map(n => [n.id, n.name]));
 
             const sceneLines = filteredRecall.map(s => {
-                let lines = [`[SCENE #${s.sceneId}]`];
                 const idxEntry = indexMap.get(s.sceneId);
+                let header: string;
+                if (idxEntry?.npcsWitnessed && idxEntry.npcsWitnessed.length > 0) {
+                    const witnessNames = idxEntry.npcsWitnessed.map((id: string) => npcNameById.get(id)).filter((n: string | undefined): n is string => !!n);
+                    if (witnessNames.length > 0) {
+                        header = `[SCENE #${s.sceneId} | Witnessed by: ${witnessNames.join(', ')} — NPCs not listed were NOT present and do NOT know these events]`;
+                    } else {
+                        header = `[SCENE #${s.sceneId}]`;
+                    }
+                } else {
+                    header = `[SCENE #${s.sceneId}]`;
+                }
+                const lines = [header];
                 if (idxEntry?.events && idxEntry.events.length > 0) {
                     const eventsText = renderSceneEvents(idxEntry.events);
                     if (eventsText) {
@@ -225,6 +265,15 @@ export function assembleWorldBlocks(opts: {
 
             const text = `[ARCHIVE RECALL — VERBATIM PAST SCENES]\n${sceneLines}\n[END ARCHIVE RECALL]`;
             worldBlocks.push({ source: 'Archive Recall', content: text, tokens: countTokens(text), reason: `Verbatim history (${filteredRecall.length} scenes${archiveIndex?.some(e => e.npcsWitnessed !== undefined) ? ', perception-bounded' : ''})` });
+        }
+    }
+
+    if (sealedChapters && sealedChapters.length > 0) {
+        const openThreads = computeOpenThreads(sealedChapters);
+        if (openThreads.length > 0) {
+            const threadLines = openThreads.map(t => `• ${t.text} (${t.chapterId})`).join('\n');
+            const content = `[OPEN THREADS — unresolved setups the story may pay off]\n${threadLines}\n[END OPEN THREADS]`;
+            worldBlocks.push({ source: 'Open Threads', content, tokens: countTokens(content), reason: `${openThreads.length} unresolved threads` });
         }
     }
 

@@ -506,6 +506,7 @@ export type ArchiveChapter = {
     invalidated?: boolean;
     _lastSeenSessionId?: string;
     npcInnerState?: Record<string, string>; // NPC name -> 1-2 sentence belief/posture note
+    resolvedThreads?: string[]; // exact strings from earlier chapters' unresolvedThreads that this chapter settled
 };
 
 export type NotebookNote = {

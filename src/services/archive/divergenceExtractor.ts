@@ -24,7 +24,8 @@ function buildCombinedSealPrompt(
     chapterTitle: string,
     sceneIds: string[],
     npcLedger: { id: string; name: string; aliases: string }[],
-    indexEntries?: { sceneId: string; npcsWitnessed?: string[] }[]
+    indexEntries?: { sceneId: string; npcsWitnessed?: string[] }[],
+    openThreads?: string[]
 ): string {
     const truncated = truncateScenesToBudget(scenes, COMBINED_SEAL_TOKEN_BUDGET);
     const sceneContent = truncated.map(s => `--- SCENE ${s.sceneId} ---\n${s.content}`).join('\n\n');
@@ -102,6 +103,9 @@ ${knownByExample},
     "015": []
 }`;
 
+    const resolvedThreadsShape = `The "resolvedThreads" value must be an array of the EXACT strings from the OPEN THREADS list below that this chapter's events settled, or [] if none. Example:
+["The missing heir to House Brightblade", "The cursed amulet in the swamp"]`;
+
     const categoryDefinitions = `Category definitions:
 
 ${divergenceSlots}
@@ -160,12 +164,13 @@ Corrected — rewrite as the NPC's current inner world:
 TASK 1 — Generate a structured chapter summary.
 TASK 2 — Extract established facts that would BREAK A FUTURE SCENE if the AI contradicted them.`,
 
-        'OUTPUT FORMAT — a single JSON object with the keys "summary", "divergences", and optionally "sceneEvents".',
+        'OUTPUT FORMAT — a single JSON object with the keys "summary", "divergences", and optionally "sceneEvents" and "resolvedThreads".',
 
         summaryShape,
         NPC_INNER_STATE_RULES,
         divergencesShape,
         sceneEventsShape,
+        resolvedThreadsShape,
         SCENE_EVENT_RULES,
         categoryDefinitions,
         KNOWNBY_RULES,
@@ -182,6 +187,9 @@ TASK 2 — Extract established facts that would BREAK A FUTURE SCENE if the AI c
         `SCENE IDs IN THIS CHAPTER: ${sceneIds.join(', ')}`,
         `NPC LEDGER (resolve names to IDs):\n${npcList || '(no NPCs in ledger)'}`,
         witnessAuditSection ? witnessAuditSection.trim() : '',
+        ...(openThreads && openThreads.length > 0
+            ? [`OPEN THREADS FROM EARLIER CHAPTERS (verbatim — do not rephrase):\n${openThreads.map(t => '- ' + t).join('\n')}`]
+            : []),
         `SCENE CONTENT:\n${sceneContent}`,
     );
 }
@@ -193,6 +201,7 @@ export type CombinedSealResult = {
     witnessCorrections?: Record<string, string[]>;
     sceneEventMap?: Record<string, SceneEvent[]>;
     sceneEventsParseError?: boolean;
+    resolvedThreads?: string[];
 };
 
 function buildDivergenceEntries(
@@ -315,7 +324,8 @@ export function parseCombinedSealOutput(
     raw: string,
     chapterId: string,
     sceneIds: string[],
-    npcLedger: { id: string; name: string; aliases: string }[]
+    npcLedger: { id: string; name: string; aliases: string }[],
+    openThreads?: string[]
 ): CombinedSealResult {
     const cleaned = stripReasoning(raw);
     const jsonStr = extractJson(cleaned);
@@ -412,7 +422,28 @@ export function parseCombinedSealOutput(
         sceneEventsParseError = true;
     }
 
-    return { summary, divergences: entries, divergenceParseError: divergenceParseError || undefined, witnessCorrections, sceneEventMap, sceneEventsParseError };
+    let resolvedThreads: string[] | undefined;
+    try {
+        const rawResolved = (parsed as Record<string, unknown>).resolvedThreads;
+        if (rawResolved !== undefined) {
+            if (Array.isArray(rawResolved)) {
+                const openSet = openThreads ? new Set(openThreads) : undefined;
+                const filtered = rawResolved
+                    .filter((v: unknown): v is string => typeof v === 'string')
+                    .map((s: string) => s.trim())
+                    .filter((s: string) => s.length > 0);
+                if (openSet) {
+                    resolvedThreads = filtered.filter((s: string) => openSet.has(s));
+                } else {
+                    resolvedThreads = filtered;
+                }
+            }
+        }
+    } catch {
+        // never fail the seal over malformed resolvedThreads
+    }
+
+    return { summary, divergences: entries, divergenceParseError: divergenceParseError || undefined, witnessCorrections, sceneEventMap, sceneEventsParseError, resolvedThreads };
 }
 
 export async function sealChapterCombined(
@@ -423,7 +454,8 @@ export async function sealChapterCombined(
     sceneIds: string[],
     npcLedger: { id: string; name: string; aliases: string }[],
     indexEntries?: { sceneId: string; npcsWitnessed?: string[] }[],
-    maxRetries = 2
+    maxRetries = 2,
+    openThreads?: string[]
 ): Promise<CombinedSealResult> {
     const sealEffort: ThinkingEffort = 'off';
     const maxTokens = SEAL_MAX_TOKENS;
@@ -431,7 +463,7 @@ export async function sealChapterCombined(
     console.log(`[CombinedSeal] Config: maxTokens=${maxTokens}, thinkingEffort=${sealEffort}, provider.effort=${provider.thinkingEffort ?? 'none'}, apiFormat=${provider.apiFormat ?? 'openai'}`);
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        const prompt = buildCombinedSealPrompt(scenes, chapterTitle, sceneIds, npcLedger, indexEntries);
+        const prompt = buildCombinedSealPrompt(scenes, chapterTitle, sceneIds, npcLedger, indexEntries, openThreads);
         const label = attempt === 0 ? '' : ' (retry)';
 
         console.log(`[CombinedSeal] Generating summary + divergences${label}...`, {
@@ -453,7 +485,7 @@ export async function sealChapterCombined(
         const tail = output.length > 200 ? output.slice(-200) : '';
         console.warn(`[CombinedSeal] Output length=${output.length}, head=${JSON.stringify(head)}, tail=${JSON.stringify(tail)}`);
 
-        const result = parseCombinedSealOutput(output, chapterId, sceneIds, npcLedger);
+        const result = parseCombinedSealOutput(output, chapterId, sceneIds, npcLedger, openThreads);
 
         if (result.summary && !result.divergenceParseError) {
             return result;

@@ -7,6 +7,7 @@ import { api } from '../apiClient';
 import { uid } from '../../utils/uid';
 import { toast } from '../../components/Toast';
 import { shouldAutoSeal, sealChapter, sealChapterCombined, type CombinedSealResult, rateImportance } from '../archive';
+import { computeOpenThreads } from '../payload/payloadWorldContext';
 import { fetchFacts, scanCharacterProfile, scanInventory, mergeSealEntries } from '../campaign-state';
 import { loadChapters } from '../../store/campaignStore';
 import { scanPressure, buildPressurePatch, shouldArchiveNPC, findArchivedToRestore } from '../npc';
@@ -84,6 +85,7 @@ export async function runCombinedSeal(
     provider: LLMProvider,
     npcLedger: NPCEntry[],
     archiveIndex?: ArchiveIndexEntry[],
+    openThreads?: string[]
 ): Promise<CombinedSealResult> {
     const allScenes = await api.archive.getIndex(activeCampaignId);
     const startNum = parseInt(chapter.sceneRange[0], 10);
@@ -114,7 +116,7 @@ export async function runCombinedSeal(
         }).map(e => ({ sceneId: e.sceneId, npcsWitnessed: e.npcsWitnessed }))
         : undefined;
 
-    return sealChapterCombined(provider, scenesContent, chapter.chapterId, chapter.title, sceneIds, npcInfo, indexEntries);
+    return sealChapterCombined(provider, scenesContent, chapter.chapterId, chapter.title, sceneIds, npcInfo, indexEntries, 2, openThreads);
 }
 
 export async function handlePostTurn(
@@ -456,10 +458,12 @@ async function handleSealChapter(state: TurnState, callbacks: TurnCallbacks, act
             const storyProvider = state.getFreshProvider();
             const sealProvider = summarizerProvider ?? storyProvider;
             if (sealProvider && tierAllows(state.settings.aiTier, 'sealChapter')) {
+                const alreadySealedChapters = currentChapters.filter(c => c.sealedAt && c.chapterId !== sealed.chapterId);
+                const openThreadsList = computeOpenThreads(alreadySealedChapters).map(t => t.text);
                 const sealResult = await tryWithFallback(
                     'SealChapter',
-                    () => runCombinedSeal(activeCampaignId, sealed, summarizerProvider ?? storyProvider!, state.npcLedger ?? [], state.archiveIndex),
-                    () => runCombinedSeal(activeCampaignId, sealed, storyProvider!, state.npcLedger ?? [], state.archiveIndex),
+                    () => runCombinedSeal(activeCampaignId, sealed, summarizerProvider ?? storyProvider!, state.npcLedger ?? [], state.archiveIndex, openThreadsList),
+                    () => runCombinedSeal(activeCampaignId, sealed, storyProvider!, state.npcLedger ?? [], state.archiveIndex, openThreadsList),
                 );
 
                 if (sealResult.summary) {
@@ -473,6 +477,7 @@ async function handleSealChapter(state: TurnState, callbacks: TurnCallbacks, act
                         tone: sealResult.summary.tone,
                         themes: sealResult.summary.themes,
                         ...(sealResult.summary.npcInnerState && { npcInnerState: sealResult.summary.npcInnerState }),
+                        ...(sealResult.resolvedThreads && sealResult.resolvedThreads.length > 0 && { resolvedThreads: sealResult.resolvedThreads }),
                     });
                 }
 

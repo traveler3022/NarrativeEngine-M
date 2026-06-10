@@ -163,7 +163,7 @@ async function summarizeSceneContent(
         const prompt = joinPromptSections(
             'You are a narrative memory synthesizer for a tabletop RPG.',
 
-            `TASK: Compress the archived scenes below into an essential context brief. Preserve NPC states, decisions, outcomes, relationships, and unresolved threads. Target approximately ${targetTokens} tokens. Preserve specificity — names, places, consequences matter.`,
+            `TASK: Output terse fact bullets and short verbatim quotes only. No narrative prose, no interpretation. Preserve names, places, numbers, outcomes, and unresolved threads. Target approximately ${targetTokens} tokens.`,
 
             ANCHOR_BEFORE_INPUT,
             INPUT_DELIMITER,
@@ -184,7 +184,7 @@ async function summarizeSceneContent(
 
     onStatus(`[3/5] Deep Archive — summarizing ${partitions.length} parts...`);
     const partitionSummaries: string[] = await Promise.all(partitions.map((partition) => {
-        const prompt = `Compress these narrative scenes to ~${partitionQuota} tokens. Preserve NPC names, key decisions, outcomes, unresolved threads.
+        const prompt = `Output terse fact bullets and short verbatim quotes only. No narrative prose, no interpretation. Preserve names, places, numbers, outcomes, and unresolved threads. Target approximately ${partitionQuota} tokens.
 
 ${partition}
 
@@ -193,7 +193,7 @@ Summary:`;
     }));
 
     onStatus('[3/5] Deep Archive — combining summaries...');
-    const combinedPrompt = `Merge these narrative summaries into one coherent context brief. Target approximately ${targetTokens} tokens. Preserve all critical lore, NPC states, and unresolved threads.
+    const combinedPrompt = `Merge these fact bullets and quotes into one coherent set. Target approximately ${targetTokens} tokens. Preserve all critical lore, NPC states, and unresolved threads. No narrative prose, no interpretation.
 
 ${partitionSummaries.map((s, i) => `[Part ${i + 1}]\n${s}`).join('\n\n')}
 

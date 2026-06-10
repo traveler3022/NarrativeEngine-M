@@ -79,6 +79,14 @@ export function buildStablePreamble(opts: {
         stableParts.push("IMPORTANT: If you use a 'thinking' or 'reasoning' block (<think>...</think>), you MUST still provide the full narrative response AFTER the closing tag. Never end a turn with only a thinking block.");
     }
 
+    stableParts.push(
+        '[NPC KNOWLEDGE BOUNDARY]\n' +
+        'Archive scenes are YOUR memory as narrator. NPCs only know events from scenes they are\n' +
+        'listed as witnessing. An NPC must never reference, react to, or act on events they did\n' +
+        'not witness, unless another character tells them in-story.\n' +
+        '[END NPC KNOWLEDGE BOUNDARY]'
+    );
+
     const stableContent = stableParts.join('\n\n');
     const stableTokens = countTokens(stableContent);
     addTrace({ source: 'Stable Preamble', classification: 'stable_truth', tokens: stableTokens, reason: 'Rules & Core state', included: true, position: 'system_static' });

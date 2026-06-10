@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { rollEngines, rollDiceFairness, mapTier } from '../engine';
 import type { GameContext } from '../../types';
 import {
@@ -56,9 +56,11 @@ describe('rollEngines', () => {
     });
 
     it('decrements surprise DC when engine is active', () => {
+        const spy = vi.spyOn(Math, 'random').mockReturnValue(0.1);
         const ctx = { ...baseContext, surpriseDC: 95, encounterDC: 9999, worldEventDC: 9999 };
         const result = rollEngines(ctx);
         expect(result.updatedDCs.surpriseDC).toBeLessThan(95);
+        spy.mockRestore();
     });
 
     it('resets DC to initial when engine triggers (very low DC forces trigger)', () => {

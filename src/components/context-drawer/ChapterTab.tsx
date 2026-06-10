@@ -176,6 +176,17 @@ export function ChapterTab() {
         }
     }, [activeCampaignId, refreshChapters]);
 
+    const handleDismissThread = useCallback(async (chapterId: string, threadText: string) => {
+        if (!activeCampaignId) return;
+        const chapter = chapters.find(c => c.chapterId === chapterId);
+        if (!chapter) return;
+        const existing = chapter.resolvedThreads ?? [];
+        if (existing.includes(threadText)) return;
+        const updated = [...existing, threadText];
+        await api.chapters.update(activeCampaignId, chapterId, { resolvedThreads: updated });
+        await refreshChapters();
+    }, [activeCampaignId, chapters, refreshChapters]);
+
     return (
         <div className="flex flex-col gap-3 p-3">
             <div className="flex items-center justify-between">
@@ -243,6 +254,7 @@ export function ChapterTab() {
                                 isProcessing={isRegenerating === ch.chapterId}
                                 isPinned={pinnedChapterIds.includes(ch.chapterId)}
                                 onTogglePin={() => pinChapter(ch.chapterId)}
+                                onDismissThread={(threadText) => handleDismissThread(ch.chapterId, threadText)}
                             />
                         );
                     })
