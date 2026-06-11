@@ -42,9 +42,11 @@ For "who betrayed us in the mountains", the metaphorical keyword-trap *"you betr
 
 **D — the 768 "high" model roughly doubles vector recall — the upgrade is worth it, but doesn't replace the reranker.** bge-base lifts mean recall@5 from 0.333 → **0.667** and precision from 0.083 → **0.200**, recovering both queries MiniLM zeroed (Findings A & B each go 0 → 0.5). But it still finds only 1 of 2 relevant scenes on the hard queries and precision is still low (0.20) — so even the strong embedder is beaten by the harder trap each time. Conclusion: recommending `high` to capable devices (e.g. an S25 Ultra) is well-founded, **and** the lexical/reranker/funnel layers remain necessary on top of either model.
 
+**E — the bge query-instruction prefix is NOT worth adding (measured, settled).** Common best practice says bge retrieval models want a query prefix ("Represent this sentence for searching relevant passages:"). Tested via the `highPrefix` preset (prefix on queries only, passages raw — the asymmetric setup): recall@5 and precision@5 were **identical** to plain `high` (0.667 / 0.200), and at the raw-cosine level the prefix **lowered** every relevant scene's score by 0.06–0.12 (e.g. s008: 0.718 → 0.620). Reason: `bge-base-en-v1.5` was retrained to *not* need the instruction, so prefixing only the query shifts it away from the raw passages. **Conclusion: keep the app's model-agnostic, no-prefix path — it is correct for both MiniLM (symmetric) and bge-v1.5. Do not add prefix plumbing to the production embedder.** (Would differ for original bge-v1 or e5-style models; version-specific.)
+
 **Caveats:**
 - 384 numbers are for the **q8-quantized** MiniLM (bundled default); 768 for q8 bge-base. Both match what the app ships (the worker uses `dtype: 'q8'` for every model).
-- **Possible app gap, not yet tested:** bge retrieval models were trained expecting a query **instruction prefix** ("Represent this sentence for searching relevant passages:"). The app's worker applies no prefix for any model, so the 768 numbers above may *understate* bge's ceiling. A `high+prefix` preset would quantify it — a candidate next finding.
+- Findings are on one small fixture (3 queries); directions are consistent and match documented model behavior, but absolute magnitudes will firm up as fixtures grow.
 
 ## What is NOT yet built (scoped for review / next increments)
 

@@ -14,9 +14,12 @@ import { pipeline, env } from '@huggingface/transformers';
 import fs from 'node:fs';
 import path from 'node:path';
 
+// queryPrefix is applied to QUERIES ONLY (passages stay raw) — the asymmetric
+// retrieval setup bge expects. MiniLM is symmetric, so it gets no prefix.
 const PRESETS = {
-    standard: { model: 'Xenova/all-MiniLM-L6-v2', bundled: true },
-    high: { model: 'Xenova/bge-base-en-v1.5', bundled: false },
+    standard: { model: 'Xenova/all-MiniLM-L6-v2', bundled: true, queryPrefix: '' },
+    high: { model: 'Xenova/bge-base-en-v1.5', bundled: false, queryPrefix: '' },
+    highPrefix: { model: 'Xenova/bge-base-en-v1.5', bundled: false, queryPrefix: 'Represent this sentence for searching relevant passages: ' },
 };
 
 const preset = process.argv[2] ?? 'standard';
@@ -77,8 +80,11 @@ for (const dir of dirs) {
     for (const l of campaign.lore ?? []) docs.lore.push({ id: l.id, vector: await embed(l.content) });
     for (const n of campaign.npcs ?? []) docs.npc.push({ id: n.id, vector: await embed(n.profile ?? n.content ?? '') });
 
+    // Key by the RAW query text (what retrieval passes), but embed with the
+    // preset's query prefix — so the cached vector is the prefixed embedding
+    // while passages above stay raw. That is the asymmetric query/passage setup.
     const queries = {};
-    for (const q of campaign.queries ?? []) queries[q.query] = await embed(q.query);
+    for (const q of campaign.queries ?? []) queries[q.query] = await embed(cfg.queryPrefix + q.query);
 
     const out = {
         preset,

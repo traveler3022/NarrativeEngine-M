@@ -15,7 +15,8 @@
     "test:coverage": "vitest run --coverage",
     "eval": "vitest run --config vitest.eval.config.ts",
     "eval:build": "node scripts/build-eval-fixtures.mjs",
-    "eval:build:high": "node scripts/build-eval-fixtures.mjs high"
+    "eval:build:high": "node scripts/build-eval-fixtures.mjs high",
+    "eval:build:high-prefix": "node scripts/build-eval-fixtures.mjs highPrefix"
   },
   "dependencies": {
     "@capacitor/android": "^8.1.0",

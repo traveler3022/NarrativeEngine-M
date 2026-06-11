@@ -10,6 +10,7 @@ import type { EvalCampaign, VectorsCache } from './evalTypes';
 export const PRESETS = {
     standard: { model: 'Xenova/all-MiniLM-L6-v2', dims: 384 },
     high: { model: 'Xenova/bge-base-en-v1.5', dims: 768 },
+    highPrefix: { model: 'Xenova/bge-base-en-v1.5', dims: 768 },
 } as const;
 
 export type PresetKey = keyof typeof PRESETS;
