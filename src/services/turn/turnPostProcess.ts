@@ -10,7 +10,7 @@ import { shouldAutoSeal, sealChapter, sealChapterCombined, type CombinedSealResu
 import { computeOpenThreads } from '../payload/payloadWorldContext';
 import { fetchFacts, scanCharacterProfile, scanInventory, mergeSealEntries } from '../campaign-state';
 import { loadChapters } from '../../store/campaignStore';
-import { scanPressure, buildPressurePatch, shouldArchiveNPC, findArchivedToRestore } from '../npc';
+import { scanPressure, buildPressurePatch, shouldArchiveNPC, findArchivedToRestore, applyDecay } from '../npc';
 import { llmCall } from '../../utils/llmCall';
 import {
     backgroundQueue,
@@ -423,15 +423,34 @@ function runNPCPressureScan(
         }
 
         const pressureUpdates = scanPressure(displayInput, activeNPCs, lastAssistantContent);
+        const updatedIds = new Set<string>();
         if (pressureUpdates.length > 0) {
             for (const update of pressureUpdates) {
                 const npc = activeNPCs.find(n => n.id === update.npcId);
                 if (!npc) continue;
                 const patch = buildPressurePatch(npc, update, sceneNumber);
                 callbacks.updateNPC(npc.id, patch);
+                updatedIds.add(npc.id);
                 if (update.reasons.length > 0) {
                     console.log(`[PressureTracker] ${npc.name}: ignored=${patch.pressure?.ignored?.toFixed(1)}, engaged=${patch.pressure?.engaged?.toFixed(1)} — ${update.reasons.join(', ')}`);
                 }
+            }
+        }
+
+        // Passive decay: apply decay to all NPCs with pressure data that weren't updated this turn
+        for (const npc of activeNPCs) {
+            if (!npc.pressure || updatedIds.has(npc.id)) continue;
+            const decayedIgnored = applyDecay(npc.pressure.ignored, npc.pressure.lastDecayTurn, sceneNumber);
+            const decayedEngaged = applyDecay(npc.pressure.engaged, npc.pressure.lastDecayTurn, sceneNumber);
+            if (decayedIgnored !== npc.pressure.ignored || decayedEngaged !== npc.pressure.engaged) {
+                callbacks.updateNPC(npc.id, {
+                    pressure: {
+                        ignored: decayedIgnored,
+                        engaged: decayedEngaged,
+                        lastDecayTurn: sceneNumber,
+                        history: npc.pressure.history,
+                    },
+                });
             }
         }
 

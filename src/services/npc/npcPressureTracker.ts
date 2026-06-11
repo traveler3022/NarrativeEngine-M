@@ -1,6 +1,6 @@
 import type { NPCEntry, NPCPressureHistory } from '../../types';
 
-const DECAY_RATE = 0.1;
+export const DECAY_RATE = 0.1;
 const MAX_HISTORY = 50;
 
 function npcNamePatterns(npc: NPCEntry): string[] {
@@ -128,7 +128,7 @@ export function scanPressure(
     return updates;
 }
 
-function applyDecay(current: number, lastDecayTurn: number, currentTurn: number): number {
+export function applyDecay(current: number, lastDecayTurn: number, currentTurn: number): number {
     const turnsSinceDecay = currentTurn - lastDecayTurn;
     if (turnsSinceDecay <= 0) return current;
     return Math.max(0, current - DECAY_RATE * turnsSinceDecay);
