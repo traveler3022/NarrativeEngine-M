@@ -3,8 +3,6 @@ import type { TurnCallbacks, TurnState, UtilityLLM } from './turnTypes';
 import { realUtilityLLM } from './utilityLLM';
 import { tierAllows } from './aiTier';
 import { buildPayload } from '../chatEngine';
-import { offlineStorage } from '../storage';
-import { recommendContext } from '../payload';
 import type { SearchHit } from '../embedding/vectorSearch';
 import { runPlannerCall, type PlannerResult } from './stages/plannerStage';
 import { gatherFactsAndTimeline } from './stages/factsTimelineStage';
@@ -15,6 +13,8 @@ import { loreStage } from './stages/loreStage';
 import { rulesStage } from './stages/rulesStage';
 import { archiveRecallStage } from './stages/archiveRecallStage';
 import { deepScanStage } from './stages/deepScanStage';
+import { sceneNumberStage } from './stages/sceneNumberStage';
+import { recommenderStage } from './stages/recommenderStage';
 
 export type GatheredContext = {
     relevantLore: LoreChunk[] | undefined;
@@ -68,16 +68,7 @@ export async function gatherContext(
     const relevantLore = loreStage({ loreChunks, finalInput, messages, semanticLoreIds });
     const relevantRules = await rulesStage({ context: state.context, settings, finalInput, messages, semanticRuleIds });
 
-    let sceneNumber: string | undefined;
-    if (activeCampaignId) {
-        callbacks.setLoadingStatus?.('[2/5] Fetching Timeline...');
-        try {
-            const nextScene = await offlineStorage.archive.getNextSceneNumber(activeCampaignId);
-            sceneNumber = String(nextScene).padStart(3, '0');
-        } catch (err) {
-            console.warn('[TurnContext] Failed to get next scene number:', err);
-        }
-    }
+    const sceneNumber = await sceneNumberStage({ state, callbacks });
 
     // If the embedder path didn't run, still resolve the planner before archive recall.
     if (!plannerResult && tierAllows(settings.aiTier, 'planner') && plannerEndpoint?.endpoint) {
@@ -102,41 +93,10 @@ export async function gatherContext(
         semanticFacts: state.semanticFacts, finalInput, messages, npcLedger, timeline: state.timeline,
     });
 
-    let recommendedNPCNames: string[] | undefined;
-    const utilityEndpoint = utilityLLM.endpoint();
-    const pinnedChaptersForRecommender = state.pinnedChapterIds.length > 0
-        ? state.chapters.filter(c => state.pinnedChapterIds.includes(c.chapterId))
-        : undefined;
-    if (tierAllows(settings.aiTier, 'recommender') && utilityEndpoint?.endpoint) {
-        callbacks.setLoadingStatus?.('[4/5] Consulting AI Recommender...');
-        try {
-            const recommenderResult = await recommendContext(utilityEndpoint, npcLedger, loreChunks, messages, finalInput, pinnedChaptersForRecommender, utilityTimeoutMs);
-            if (recommenderResult) {
-                recommendedNPCNames = recommenderResult.relevantNPCNames;
-
-                // Inject lore chunks the recommender picked that keyword/semantic retrieval missed
-                const { relevantLoreIds } = recommenderResult;
-                if (relevantLoreIds.length > 0 && loreChunks.length > 0 && relevantLore) {
-                    const alreadyIn = new Set(relevantLore.map(c => c.id));
-                    const RECOMMENDER_EXTRA_BUDGET = 600;
-                    let extraTokens = 0;
-
-                    for (const id of relevantLoreIds) {
-                        const chunk = loreChunks.find(c => c.id === id);
-                        if (!chunk || alreadyIn.has(chunk.id) || chunk.alwaysInclude) continue;
-                        if (extraTokens + chunk.tokens > RECOMMENDER_EXTRA_BUDGET) continue;
-                        relevantLore.push(chunk);
-                        alreadyIn.add(chunk.id);
-                        extraTokens += chunk.tokens;
-                    }
-
-                    if (extraTokens > 0) console.log(`[TurnContext] Recommender injected lore (${extraTokens} extra tokens)`);
-                }
-            }
-        } catch (err) {
-            console.warn('[TurnOrchestrator] UtilityAI recommender failed:', err);
-        }
-    }
+    // Stage 7 — AI recommender (NPC names + missed-lore injection into relevantLore).
+    const recommendedNPCNames = await recommenderStage({
+        state, callbacks, finalInput, messages, relevantLore, utilityLLM, utilityTimeoutMs,
+    });
 
     const freshMessages = state.getMessages().filter(m => m.id !== userMsgId);
     callbacks.setLoadingStatus?.('[5/5] Architecting AI Prompt...');
