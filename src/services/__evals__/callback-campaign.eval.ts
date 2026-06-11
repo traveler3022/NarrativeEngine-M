@@ -4,18 +4,20 @@ import path from 'node:path';
 
 // Inject deterministic substitutes for the two nondeterministic seams in the
 // vector-search path: the live embedder and the embeddings store. Everything
-// else (cosine, MMR, floors, dedupe) is the REAL retrieval code.
+// else (cosine, MMR, floors, dedupe) is the REAL retrieval code. The mocks read
+// the *active* preset's cache at call time (see evalFixtures.setActivePreset),
+// so this one file can iterate every built embedding preset.
 vi.mock('../embedding/embedder', async () => {
     const { buildEmbedderMock } = await import('./evalFixtures');
-    return buildEmbedderMock('callback-campaign');
+    return buildEmbedderMock();
 });
 vi.mock('../storage', async () => {
     const { buildStorageMock } = await import('./evalFixtures');
-    return buildStorageMock('callback-campaign');
+    return buildStorageMock();
 });
 
 import { semanticSearchScored } from '../embedding/vectorSearch';
-import { loadCampaign } from './evalFixtures';
+import { loadCampaign, availablePresets, setActivePreset, PRESETS, type PresetKey } from './evalFixtures';
 import { scoreRetrieval, mean, round3, type StageResult } from './metrics';
 
 // Tuning knobs under test — overridable via env so a deliberate break (e.g.
@@ -29,11 +31,14 @@ const CAMPAIGN = 'callback-campaign';
 const BASELINE_PATH = path.resolve(process.cwd(), 'src/services/__evals__/baseline.json');
 
 const campaign = loadCampaign(CAMPAIGN);
+// Assumed default is 'standard' (384); 'high' (768) is measured too once its cache is built.
+const presets = availablePresets(CAMPAIGN);
 
-describe(`eval: ${CAMPAIGN} — semantic scene recall (tier-low / pure vector)`, () => {
+describe.each(presets)(`eval: ${CAMPAIGN} [%s] — semantic scene recall (tier-low / pure vector)`, (preset: PresetKey) => {
     const results: Record<string, StageResult> = {};
 
     beforeAll(async () => {
+        setActivePreset(CAMPAIGN, preset);
         for (const q of campaign.queries) {
             const hits = await semanticSearchScored(CAMPAIGN, [q.query], 'scene', TOPK_CANDIDATES, FLOOR);
             results[q.query] = scoreRetrieval((hits ?? []).map(h => h.id), q, K);
@@ -41,13 +46,13 @@ describe(`eval: ${CAMPAIGN} — semantic scene recall (tier-low / pure vector)`,
     });
 
     // The ONLY absolute pass/fail is a hard violation (mustNotRecall leak — a
-    // witness/divergence breach). Low recall is a measurement, not a failure; it
-    // is gated relatively against the committed baseline below.
+    // witness/divergence breach). Low recall is a measurement, gated relatively
+    // against the committed baseline below.
     it.each(campaign.queries.map(q => q.query))('no hard violations (mustNotRecall) for: %s', (query) => {
         expect(results[query].hardViolations).toEqual([]);
     });
 
-    it('aggregate recall@K/precision@K — report, snapshot, and gate against baseline', () => {
+    it(`[${preset}/${PRESETS[preset].dims}d] aggregate recall@K/precision@K — report, snapshot, gate`, () => {
         const perQuery = campaign.queries.map(q => ({
             query: q.query,
             [`recall@${K}`]: round3(results[q.query].recallAtK),
@@ -59,9 +64,11 @@ describe(`eval: ${CAMPAIGN} — semantic scene recall (tier-low / pure vector)`,
         const meanPrecisionAtK = round3(mean(campaign.queries.map(q => results[q.query].precisionAtK)));
 
         console.table(perQuery);
-        console.log(`[eval:${CAMPAIGN}] k=${K} floor=${FLOOR} candidates=${TOPK_CANDIDATES} → mean recall@${K}=${meanRecallAtK} precision@${K}=${meanPrecisionAtK}`);
+        console.log(`[eval:${CAMPAIGN}/${preset}] ${PRESETS[preset].dims}d k=${K} floor=${FLOOR} → mean recall@${K}=${meanRecallAtK} precision@${K}=${meanPrecisionAtK}`);
 
         const current = {
+            model: PRESETS[preset].model,
+            dims: PRESETS[preset].dims,
             k: K,
             floor: FLOOR,
             candidates: TOPK_CANDIDATES,
@@ -75,18 +82,17 @@ describe(`eval: ${CAMPAIGN} — semantic scene recall (tier-low / pure vector)`,
             }])),
         };
 
-        const allBaselines = fs.existsSync(BASELINE_PATH)
-            ? JSON.parse(fs.readFileSync(BASELINE_PATH, 'utf8'))
-            : {};
-        const baseline = allBaselines[CAMPAIGN];
+        const all = fs.existsSync(BASELINE_PATH) ? JSON.parse(fs.readFileSync(BASELINE_PATH, 'utf8')) : {};
+        all[CAMPAIGN] ??= {};
+        const baseline = all[CAMPAIGN][preset];
 
         if (baseline && !process.env.UPDATE_BASELINE) {
-            // Regression gate: recall must not drop more than the tolerance vs. the committed baseline.
+            // Regression gate: recall must not drop more than the tolerance vs. the committed baseline for this preset.
             expect(current.meanRecallAtK).toBeGreaterThanOrEqual(baseline.meanRecallAtK - RECALL_REGRESSION_TOLERANCE);
         } else {
-            allBaselines[CAMPAIGN] = current;
-            fs.writeFileSync(BASELINE_PATH, JSON.stringify(allBaselines, null, 2) + '\n');
-            console.log(`[eval:${CAMPAIGN}] baseline ${baseline ? 'updated' : 'written'} → ${BASELINE_PATH}`);
+            all[CAMPAIGN][preset] = current;
+            fs.writeFileSync(BASELINE_PATH, JSON.stringify(all, null, 2) + '\n');
+            console.log(`[eval:${CAMPAIGN}/${preset}] baseline ${baseline ? 'updated' : 'written'} → ${BASELINE_PATH}`);
         }
     });
 });

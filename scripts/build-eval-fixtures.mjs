@@ -1,30 +1,44 @@
 // Eval fixture builder (Plan 3). Embeds every fixture campaign's scenes/lore and
-// queries with the REAL bundled MiniLM model (Node, offline) and caches the
-// vectors to `vectors.json` next to each `campaign.json`. The eval suite then
-// runs entirely offline against the cache, so it is deterministic and fast.
+// queries with the REAL model for a given preset, caching vectors to
+// `vectors.<preset>.json` next to each `campaign.json`. The eval suite then runs
+// entirely offline against the cache(s), deterministic and fast.
 //
-// Run: npm run eval:build   (re-run only when fixture text changes)
+//   npm run eval:build         # 'standard' preset — 384-dim MiniLM (bundled, offline)
+//   npm run eval:build:high    # 'high' preset     — 768-dim bge-base (downloads from HF once)
 //
-// The embedding call mirrors src/services/embedding/embedder.worker.ts exactly
-// (mean pooling, L2-normalize, 1500-char single-pass limit + windowed pooling
-// for longer text) so cached vectors match what the app would produce.
+// Presets mirror the app's `settings.embeddingModel` ('standard' | 'high'). The
+// embedding call matches src/services/embedding/embedder.worker.ts exactly (mean
+// pool, L2-normalize, 1500-char single-pass + windowed pooling, dtype q8, and —
+// like the app — NO query instruction prefix, even for bge).
 import { pipeline, env } from '@huggingface/transformers';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const MODEL = 'Xenova/all-MiniLM-L6-v2';
+const PRESETS = {
+    standard: { model: 'Xenova/all-MiniLM-L6-v2', bundled: true },
+    high: { model: 'Xenova/bge-base-en-v1.5', bundled: false },
+};
+
+const preset = process.argv[2] ?? 'standard';
+const cfg = PRESETS[preset];
+if (!cfg) {
+    console.error(`[eval:build] unknown preset "${preset}" — use one of: ${Object.keys(PRESETS).join(', ')}`);
+    process.exit(1);
+}
+
 const SINGLE_PASS_LIMIT = 1500;
 const WINDOW_SIZE = 1000;
 const WINDOW_STRIDE = 700;
 
-env.allowRemoteModels = false;
-env.localModelPath = path.resolve('public/models');
+env.allowLocalModels = true;
+env.localModelPath = path.resolve('public/models'); // bundled 'standard' loads from here
+env.allowRemoteModels = !cfg.bundled;               // 'high' downloads from HF the first time
 
 const FIXTURES_ROOT = path.resolve('src/services/__evals__/fixtures');
-
 const round = (v) => Math.round(v * 1e6) / 1e6;
 
-const pipe = await pipeline('feature-extraction', MODEL, { dtype: 'q8' });
+console.log(`[eval:build] preset=${preset} model=${cfg.model} (${cfg.bundled ? 'bundled/offline' : 'remote download'})`);
+const pipe = await pipeline('feature-extraction', cfg.model, { dtype: 'q8' });
 
 async function embedOnce(text) {
     const out = await pipe(text, { pooling: 'mean', normalize: true });
@@ -67,14 +81,15 @@ for (const dir of dirs) {
     for (const q of campaign.queries ?? []) queries[q.query] = await embed(q.query);
 
     const out = {
-        model: MODEL,
+        preset,
+        model: cfg.model,
         generatedAt: new Date().toISOString(),
         dims: docs.scene[0]?.vector.length ?? docs.lore[0]?.vector.length ?? 0,
         docs,
         queries,
     };
-    fs.writeFileSync(path.join(FIXTURES_ROOT, dir, 'vectors.json'), JSON.stringify(out));
-    console.log(`[eval:build] ${dir}: ${docs.scene.length} scenes, ${docs.lore.length} lore, ${Object.keys(queries).length} queries -> vectors.json`);
+    fs.writeFileSync(path.join(FIXTURES_ROOT, dir, `vectors.${preset}.json`), JSON.stringify(out));
+    console.log(`[eval:build] ${dir}: ${docs.scene.length} scenes, ${docs.lore.length} lore, ${Object.keys(queries).length} queries → vectors.${preset}.json (${out.dims}d)`);
 }
 
 console.log('[eval:build] done.');

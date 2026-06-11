@@ -30,6 +30,7 @@ export interface VectorEntry {
 }
 
 export interface VectorsCache {
+    preset?: string;
     model: string;
     dims: number;
     docs: Record<'scene' | 'lore' | 'npc' | 'rule', VectorEntry[]>;
