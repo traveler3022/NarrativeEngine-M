@@ -66,6 +66,7 @@ export function BackupModal() {
         setRestoringTs(ts);
         const ok = await api.backup.restore(activeCampaignId, ts);
         if (ok) {
+            await useAppStore.getState().setActiveCampaign(activeCampaignId);
             toast.success('Restored from backup');
         } else {
             toast.error('Restore failed');

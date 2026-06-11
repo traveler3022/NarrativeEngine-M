@@ -1,5 +1,6 @@
 import type { ArchiveChapter, SemanticFact, TimelineEvent, BackupMeta } from '../../types';
 import { getList, setList, k, computeHash, type SceneRecord } from './_helpers';
+import { get as idbGet, set as idbSet } from 'idb-keyval';
 
 export const backupStorage = {
     async create(cid: string, opts: { label?: string; trigger?: string; isAuto?: boolean }): Promise<any> {
@@ -10,8 +11,9 @@ export const backupStorage = {
         const chapters = await getList<ArchiveChapter>(k(cid, 'chapters'));
         const facts = await getList<SemanticFact>(k(cid, 'facts'));
         const timeline = await getList<TimelineEvent>(k(cid, 'timeline'));
+        const chatState = await idbGet(`state_${cid}`);
 
-        const hash = computeHash(JSON.stringify({ scenes, index, chapters, facts, timeline }));
+        const hash = computeHash(JSON.stringify({ scenes, index, chapters, facts, timeline, chatState }));
         const backups = await getList<{ timestamp: number; meta: BackupMeta; data: unknown }>(k(cid, 'backups'));
 
         if (opts.isAuto) {
@@ -32,7 +34,7 @@ export const backupStorage = {
             campaignName: '',
         };
 
-        backups.push({ timestamp: now, meta, data: { scenes, index, chapters, facts, timeline } });
+        backups.push({ timestamp: now, meta, data: { scenes, index, chapters, facts, timeline, chatState } });
 
         if (opts.isAuto) {
             const autoBackups = backups.filter(b => b.meta.isAuto).sort((a, b) => b.timestamp - a.timestamp);
@@ -73,6 +75,7 @@ export const backupStorage = {
         if (d.chapters) await setList(k(cid, 'chapters'), d.chapters);
         if (d.facts) await setList(k(cid, 'facts'), d.facts);
         if (d.timeline) await setList(k(cid, 'timeline'), d.timeline);
+        if (d.chatState) await idbSet(`state_${cid}`, d.chatState);
 
         return { ok: true };
     },

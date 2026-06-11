@@ -37,6 +37,8 @@ export function Header() {
 
     const [loreSel, setLoreSel] = useState<SelectionSnapshot | null>(null);
     const [pinSel, setPinSel] = useState<SelectionSnapshot | null>(null);
+    const [showClearConfirm, setShowClearConfirm] = useState(false);
+    const [clearConfirmText, setClearConfirmText] = useState('');
 
     const captureFromBubble = (selector: string): SelectionSnapshot | null => {
         const sel = window.getSelection();
@@ -99,10 +101,14 @@ export function Header() {
     };
 
     const handleClearChat = async () => {
-        if (activeCampaignId) {
-            await api.backup.create(activeCampaignId, { trigger: 'pre-clear', isAuto: true }).catch(() => {});
+        if (clearConfirmText.toLowerCase() === 'delete') {
+            if (activeCampaignId) {
+                await api.backup.create(activeCampaignId, { trigger: 'pre-clear', isAuto: true }).catch(() => {});
+            }
+            clearChat();
+            setShowClearConfirm(false);
+            setClearConfirmText('');
         }
-        clearChat();
     };
 
     const handleExit = async () => {
@@ -125,7 +131,7 @@ export function Header() {
             </div>
 
             <button
-                onClick={handleClearChat}
+                onClick={() => { setShowClearConfirm(true); setClearConfirmText(''); }}
                 className="text-text-dim hover:text-danger transition-colors p-1 touch-btn md:p-1 md:min-h-0 md:min-w-0"
                 title="Clear chat history"
                 aria-label="Clear chat history"
@@ -232,6 +238,33 @@ export function Header() {
             >
                 <LogOut size={16} />
             </button>
+            {showClearConfirm && (
+                <div className="fixed inset-0 bg-ember/40 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowClearConfirm(false)}>
+                    <div className="bg-surface border border-danger rounded-lg p-6 max-w-sm" onClick={(e) => e.stopPropagation()}>
+                        <p className="text-text-primary text-sm mb-2 font-bold">Clear all chat history?</p>
+                        <p className="text-text-dim text-xs mb-4">This will permanently delete all messages, pinned excerpts, and stored images. A backup will be created automatically.</p>
+                        <label className="block text-text-dim text-xs mb-1">Type <span className="text-danger font-bold">delete</span> to confirm:</label>
+                        <input
+                            value={clearConfirmText}
+                            onChange={(e) => setClearConfirmText(e.target.value)}
+                            className="w-full bg-void border border-border rounded px-3 py-2 text-sm text-text-primary mb-4 focus:outline-none focus:border-danger"
+                            autoFocus
+                        />
+                        <div className="flex gap-3 justify-end">
+                            <button onClick={() => setShowClearConfirm(false)} className="px-4 py-2 text-xs text-text-dim hover:text-text-primary border border-border rounded transition-colors">
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleClearChat}
+                                disabled={clearConfirmText.toLowerCase() !== 'delete'}
+                                className="px-4 py-2 text-xs text-void bg-danger rounded transition-colors font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110"
+                            >
+                                Clear Chat
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </header>
     );
 }
