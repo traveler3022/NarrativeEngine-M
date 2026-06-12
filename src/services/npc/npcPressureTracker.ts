@@ -148,7 +148,11 @@ export function applyDecay(current: number, lastDecayTurn: number, currentTurn: 
 
 const ARCHIVE_THRESHOLD_TURNS = 15;
 const ARCHIVE_PRESSURE_FLOOR = 0.5;
-const ARCHIVE_AFFINITY_PROTECT = 7;
+// Affinity is a 0-100 scale (0=Nemesis, 50=Neutral, 100=Ally) and NPCs are
+// CREATED at 50 — see npcGeneration.ts. Only protect NPCs the player has built
+// a genuine bond with. A previous value of 7 protected every default NPC (50 >= 7),
+// which silently disabled auto-archive entirely and let ledgers grow to 295+.
+const ARCHIVE_AFFINITY_PROTECT = 70;
 
 function lastEngagedTurn(npc: NPCEntry): number {
     const history = npc.pressure?.history ?? [];

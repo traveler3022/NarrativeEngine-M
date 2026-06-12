@@ -91,7 +91,7 @@ export function NPCPressureInspector() {
     const npcLedger = useAppStore(s => s.npcLedger);
     const debugMode = useAppStore(s => s.settings.debugMode);
     const archiveIndex = useAppStore(s => s.archiveIndex);
-    const archiveThreshold = useAppStore(s => s.settings.autoArchiveStaleNPCsTurns ?? 15);
+    const onStageNpcIds = useAppStore(s => s.onStageNpcIds);
 
     if (!debugMode) return null;
 
@@ -102,13 +102,15 @@ export function NPCPressureInspector() {
         ? parseInt(archiveIndex[archiveIndex.length - 1].sceneId, 10) || 0
         : 0;
 
-    const handlePurge = (e: React.MouseEvent) => {
+    const handleClear = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        const threshold = archiveThreshold > 0 ? archiveThreshold : 15;
-        const n = useAppStore.getState().archiveStaleNPCs(currentTurn, threshold);
-        if (n > 0) toast.success(`Archived ${n} stale NPC${n === 1 ? '' : 's'}`);
-        else toast.info('No stale NPCs to archive');
+        const offStageCount = activeNPCs.filter(n => !onStageNpcIds.includes(n.id)).length;
+        if (offStageCount === 0) { toast.info('No off-stage NPCs to clear'); return; }
+        if (!window.confirm(`Archive ${offStageCount} active NPC${offStageCount === 1 ? '' : 's'}? On-stage NPCs are kept, and any archived NPC auto-restores when mentioned again.`)) return;
+        const n = useAppStore.getState().clearActiveNPCs(currentTurn);
+        if (n > 0) toast.success(`Archived ${n} NPC${n === 1 ? '' : 's'}`);
+        else toast.info('Nothing to clear');
     };
     const npcsWithPressure = activeNPCs.filter(n => n.drives || n.pressure);
     const npcsWithoutPressure = activeNPCs.filter(n => !n.drives && !n.pressure);
@@ -121,11 +123,11 @@ export function NPCPressureInspector() {
                 <span className="text-[9px] text-text-dim/40">({npcsWithPressure.length} tracked / {activeNPCs.length} active{archivedNPCs.length > 0 ? `, ${archivedNPCs.length} archived` : ''})</span>
                 {activeNPCs.length > 10 && (
                     <button
-                        onClick={handlePurge}
-                        title="Archive all stale NPCs now (no engagement past the auto-archive threshold)"
+                        onClick={handleClear}
+                        title="Archive all active NPCs except those currently on-stage. They auto-restore when mentioned again."
                         className="ml-auto text-[9px] text-amber-400 hover:text-amber-300 px-1.5 py-0.5 rounded bg-amber-500/10"
                     >
-                        Purge stale
+                        Clear list
                     </button>
                 )}
             </summary>
