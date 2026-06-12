@@ -22,7 +22,6 @@ import { toast } from '../../components/Toast';
 import { sanitizePayloadForApi } from '../llm/payloadSanitizer';
 import { gatherContext } from './turnContext';
 import { handlePostTurn } from './turnPostProcess';
-import { swapDuplicateNames } from '../npc';
 import { getToolDefinitions, handleLoreTool, handleNotebookTool, handleDiceTool, handleAdjudicateTool, handleInitiateCombatTool, handleProposeInventoryTool } from './toolHandlers';
 
 import type { OpenAIMessage } from '../llm/llmService';
@@ -440,31 +439,15 @@ export async function runTurn(
                 callbacks.onCheckingNotes(false);
                 callbacks.setPipelinePhase?.('post-processing');
 
-                // ── Plan 05: deterministic NPC name-swap (the single canonical rewrite point) ──
-                // Runs synchronously on the final prose BEFORE display commit, archive append,
-                // and NPC detection, so display / archive / detection all read post-swap text
-                // (no Voss-says-Maddox ghost). Swaps only fire when the engine can prove the
-                // model couldn't have meant an existing NPC; ambiguous collisions are flagged,
-                // not touched. Post-stream correction (Decision 1a): a rare one-frame update.
-                let committedText = finalText;
-                try {
-                    const swapRes = swapDuplicateNames(finalText, {
-                        ledger: npcLedger,
-                        onStageNpcIds: state.onStageNpcIds,
-                        activeNpcIds: gathered.payloadResult.activeNpcIds,
-                    });
-                    committedText = swapRes.text;
-                    if (swapRes.swaps.length > 0) {
-                        console.log('[NameSwap] swapped:', swapRes.swaps.map(s => `${s.from}→${s.to}`).join(', '));
-                    }
-                    if (swapRes.flags.length > 0) {
-                        console.log('[NameSwap] flagged (ambiguous — left as-is):', swapRes.flags.map(f => f.name).join(', '));
-                    }
-                } catch (e) {
-                    console.warn('[NameSwap] swap pass failed, using original text:', e);
-                }
-
-                callbacks.updateLastAssistant(committedText);
+                // NOTE: the Plan 05 *automatic* deterministic name-swap was REMOVED here.
+                // It mutated GM prose on a "this NPC isn't in the current payload → it must
+                // be a coincidental new character" guess, but the model references characters
+                // from the full chat history, not just the payload NPC block. That false
+                // premise hot-swapped legitimately-referenced legacy NPCs (e.g. Elara Nimue)
+                // and the rewritten prose then spawned phantom NPCs via detection.
+                // Name de-duplication is now USER-DRIVEN (highlight → rename) instead.
+                // The proactive reserved-names prompt guard (non-mutating) stays.
+                callbacks.updateLastAssistant(finalText);
                 if (reasoningContent) {
                     callbacks.updateLastMessage({ reasoning_content: reasoningContent });
                 }
