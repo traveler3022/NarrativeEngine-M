@@ -1,4 +1,5 @@
 import { poolEmbed, terminatePool, getForegroundPoolSize } from './embedderPool';
+import { getCurrentModelId } from './embedder';
 import { embeddingStorage } from '../storage/embeddingStorage';
 import type { ReindexState } from '../../store/slices/uiSlice';
 
@@ -145,7 +146,7 @@ async function drainQueue(): Promise<void> {
                             entry.id,
                             Array.from(vec),
                             entry.type,
-                            undefined
+                            getCurrentModelId()
                         );
                     } catch (err) {
                         // Survivable: the chunk is retried on next app start via

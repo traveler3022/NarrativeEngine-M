@@ -20,6 +20,10 @@ vi.mock('../embedding/embedderPool', () => ({
     getForegroundPoolSize: vi.fn(() => 3),
 }));
 
+vi.mock('../embedding/embedder', () => ({
+    getCurrentModelId: vi.fn(() => 'test-model-v1'),
+}));
+
 vi.mock('../storage/embeddingStorage', () => ({
     embeddingStorage: {
         getAll: vi.fn(() => Promise.resolve([])),
@@ -261,6 +265,22 @@ describe('embeddingScheduler', () => {
 
             const finalCall = mockSetReindexing.mock.calls[mockSetReindexing.mock.calls.length - 1];
             expect(finalCall[0].active).toBe(false);
+        });
+
+        it('stores vectors with the current model ID', async () => {
+            const { getCurrentModelId } = await import('../embedding/embedder');
+            const chunks: ProgressiveChunk[] = [
+                { id: 'mid1', content: 'model id content', modes: ['vector'], priority: 5 },
+            ];
+
+            enqueueProgressive({ campaignId: 'c1', type: 'lore', chunks });
+
+            await new Promise((r) => setTimeout(r, 150));
+
+            const storeCalls = (embeddingStorage.store as ReturnType<typeof vi.fn>).mock.calls;
+            expect(storeCalls.length).toBeGreaterThanOrEqual(1);
+            const lastCall = storeCalls[storeCalls.length - 1];
+            expect(lastCall[4]).toBe(getCurrentModelId());
         });
     });
 
