@@ -127,7 +127,13 @@ function transformClaudeMessages(messages: { role: string; content: string | nul
                     try { input = JSON.parse(t.function.arguments); } catch { input = { _raw: t.function.arguments }; }
                     content.push({ type: 'tool_use', id: t.id, name: t.function.name, input });
                 }
+                if (m.cache_control) {
+                    const lastBlock = content[content.length - 1] as Record<string, unknown>;
+                    content[content.length - 1] = { ...lastBlock, cache_control: m.cache_control };
+                }
                 transformed.push({ role: 'assistant', content });
+            } else if (m.cache_control) {
+                transformed.push({ role: 'assistant', content: [{ type: 'text', text: m.content || '', cache_control: m.cache_control }] });
             } else {
                 transformed.push({ role: 'assistant', content: m.content || '' });
             }
@@ -146,7 +152,11 @@ function transformClaudeMessages(messages: { role: string; content: string | nul
             continue;
         }
 
-        transformed.push({ role: m.role, content: m.content || '' });
+        if (m.cache_control) {
+            transformed.push({ role: m.role, content: [{ type: 'text', text: m.content || '', cache_control: m.cache_control }] });
+        } else {
+            transformed.push({ role: m.role, content: m.content || '' });
+        }
     }
 
     const result: { system?: string | ClaudeSystemBlock[]; messages: { role: string; content: string | unknown[] }[] } = { messages: transformed };

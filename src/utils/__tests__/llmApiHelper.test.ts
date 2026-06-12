@@ -213,3 +213,108 @@ describe('extractStreamDelta', () => {
         expect(extractStreamDelta(data, geminiProvider)).toBe('Hi');
     });
 });
+
+describe('cache_control on messages (prompt-caching regression)', () => {
+    it('passes cache_control on system blocks through to Claude system array', () => {
+        const messages = [
+            { role: 'system' as const, content: 'You are a GM', cache_control: { type: 'ephemeral' as const } },
+            { role: 'system' as const, content: 'Facts here', cache_control: { type: 'ephemeral' as const } },
+            { role: 'user' as const, content: 'Hello' },
+        ];
+        const body = buildChatBody(claudeProvider, messages);
+        const system = body.system as { type: string; text: string; cache_control?: { type: string } }[];
+        expect(system).toHaveLength(2);
+        expect(system[0].cache_control).toEqual({ type: 'ephemeral' });
+        expect(system[1].cache_control).toEqual({ type: 'ephemeral' });
+    });
+
+    it('adds cache_control to plain user message as content block array', () => {
+        const messages = [
+            { role: 'system' as const, content: 'System', cache_control: { type: 'ephemeral' as const } },
+            { role: 'user' as const, content: 'First user', cache_control: { type: 'ephemeral' as const } },
+            { role: 'user' as const, content: 'Second user' },
+        ];
+        const body = buildChatBody(claudeProvider, messages);
+        const convMessages = body.messages as { role: string; content: string | unknown[] }[];
+
+        const firstUser = convMessages.find(m => m.role === 'user' && Array.isArray(m.content)) as { role: string; content: unknown[] } | undefined;
+        expect(firstUser).toBeDefined();
+        const firstBlock = firstUser!.content[0] as { type: string; text: string; cache_control?: { type: string } };
+        expect(firstBlock.type).toBe('text');
+        expect(firstBlock.cache_control).toEqual({ type: 'ephemeral' });
+
+        const secondUser = convMessages.filter(m => m.role === 'user')[1];
+        expect(typeof secondUser.content).toBe('string');
+    });
+
+    it('adds cache_control to plain assistant message as content block array', () => {
+        const messages = [
+            { role: 'system' as const, content: 'System', cache_control: { type: 'ephemeral' as const } },
+            { role: 'user' as const, content: 'Hello' },
+            { role: 'assistant' as const, content: 'Hi there!', cache_control: { type: 'ephemeral' as const } },
+        ];
+        const body = buildChatBody(claudeProvider, messages);
+        const convMessages = body.messages as { role: string; content: string | unknown[] }[];
+
+        const assistant = convMessages.find(m => m.role === 'assistant')!;
+        expect(Array.isArray(assistant.content)).toBe(true);
+        const block = (assistant.content as unknown[])[0] as { type: string; text: string; cache_control?: { type: string } };
+        expect(block.type).toBe('text');
+        expect(block.cache_control).toEqual({ type: 'ephemeral' });
+    });
+
+    it('adds cache_control to last tool_calls content block for assistant with tool_calls', () => {
+        const messages = [
+            { role: 'system' as const, content: 'System', cache_control: { type: 'ephemeral' as const } },
+            { role: 'user' as const, content: 'Roll dice' },
+            { role: 'assistant' as const, content: 'Let me roll', tool_calls: [{ id: 'tc1', type: 'function' as const, function: { name: 'roll_dice', arguments: '{"dice":"1d20"}' } }], cache_control: { type: 'ephemeral' as const } },
+        ];
+        const body = buildChatBody(claudeProvider, messages);
+        const convMessages = body.messages as { role: string; content: string | unknown[] }[];
+
+        const assistant = convMessages.find(m => m.role === 'assistant')!;
+        expect(Array.isArray(assistant.content)).toBe(true);
+        const lastBlock = (assistant.content as unknown[])[(assistant.content as unknown[]).length - 1] as Record<string, unknown>;
+        expect(lastBlock.cache_control).toEqual({ type: 'ephemeral' });
+    });
+
+    it('strips cache_control for OpenAI format', () => {
+        const messages = [
+            { role: 'system' as const, content: 'System' },
+            { role: 'user' as const, content: 'Hello', cache_control: { type: 'ephemeral' as const } },
+            { role: 'assistant' as const, content: 'Hi', cache_control: { type: 'ephemeral' as const } },
+        ];
+        const body = buildChatBody(openaiProvider, messages);
+        const convMessages = body.messages as { role: string; content: string; cache_control?: unknown }[];
+        expect(convMessages.every(m => m.cache_control === undefined)).toBe(true);
+    });
+
+    it('total cache breakpoints do not exceed 4 (3 system + 1 history)', () => {
+        const messages = [
+            { role: 'system' as const, content: 'Stable preamble', cache_control: { type: 'ephemeral' as const } },
+            { role: 'system' as const, content: 'Divergence facts', cache_control: { type: 'ephemeral' as const } },
+            { role: 'system' as const, content: 'Pinned memories', cache_control: { type: 'ephemeral' as const } },
+            { role: 'user' as const, content: 'Turn 1' },
+            { role: 'assistant' as const, content: 'Response 1' },
+            { role: 'user' as const, content: 'Turn 2' },
+            { role: 'assistant' as const, content: 'Response 2', cache_control: { type: 'ephemeral' as const } },
+            { role: 'user' as const, content: 'Turn 3 (volatile)' },
+        ];
+        const body = buildChatBody(claudeProvider, messages);
+        const system = body.system as { cache_control?: { type: string } }[] | undefined;
+        const convMessages = body.messages as { role: string; content: string | unknown[] }[];
+
+        let breakpointCount = 0;
+        if (Array.isArray(system)) {
+            breakpointCount += system.filter(b => b.cache_control).length;
+        }
+        for (const m of convMessages) {
+            if (Array.isArray(m.content)) {
+                for (const block of m.content as unknown[]) {
+                    if ((block as Record<string, unknown>).cache_control) breakpointCount++;
+                }
+            }
+        }
+        expect(breakpointCount).toBeLessThanOrEqual(4);
+    });
+});

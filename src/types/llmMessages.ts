@@ -18,12 +18,14 @@ export interface AssistantMessage {
     content: string | null;
     tool_calls?: ToolCall[];
     reasoning_content?: string;
+    cache_control?: { type: 'ephemeral' };
 }
 
 export interface UserMessage {
     role: 'user';
     content: string;
     reasoning_content?: never;
+    cache_control?: { type: 'ephemeral' };
 }
 
 export interface SystemMessage {
