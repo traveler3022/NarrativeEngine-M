@@ -4,7 +4,7 @@ import { toast } from '../../components/Toast';
 import { embedText, getCurrentModelId } from '../../services/embedding';
 import { embeddingStorage } from '../../services/storage/embeddingStorage';
 import { imageStorage } from '../../services/storage/imageStorage';
-import { buildNPCEmbeddingText } from '../../services/npc';
+import { buildNPCEmbeddingText, shouldArchiveNPC } from '../../services/npc';
 
 const NPC_EMBED_FIELDS: (keyof NPCEntry)[] = ['name', 'aliases', 'faction', 'tier', 'appearance', 'personality', 'voice', 'goals', 'storyRelevance'];
 
@@ -90,6 +90,7 @@ export type NPCSlice = {
     updateNPC: (id: string, patch: Partial<NPCEntry>) => void;
     removeNPC: (id: string) => void;
     archiveNPC: (id: string, turn: number, reason: string) => void;
+    archiveStaleNPCs: (currentTurn: number, threshold: number) => number;
     restoreNPC: (id: string) => void;
 
     // On-stage NPC tracking (perception bounding)
@@ -154,6 +155,27 @@ export const createNPCSlice: StateCreator<NPCDeps, [], [], NPCSlice> = (set) => 
         debouncedSaveNPCLedger(s.activeCampaignId, newLedger);
         return { npcLedger: newLedger };
     }),
+    // One-shot bulk cull: archive every active NPC that qualifies as stale right
+    // now. Same predicate the per-turn auto-archive uses (affinity/shiftNote
+    // protected, no engagement for `threshold` turns, pressure decayed below the
+    // floor), but applied to the whole ledger at once to unclog a campaign that
+    // has accumulated far more NPCs than auto-archive could keep up with.
+    archiveStaleNPCs: (currentTurn, threshold) => {
+        let count = 0;
+        set((s) => {
+            const newLedger = s.npcLedger.map(n => {
+                if (n.archived) return n;
+                const { shouldArchive, turnsSince } = shouldArchiveNPC(n, currentTurn, threshold);
+                if (!shouldArchive) return n;
+                count++;
+                return { ...n, archived: true, archivedAtTurn: currentTurn, archivedReason: `bulk purge: stale ${turnsSince} turns` };
+            });
+            if (count === 0) return {};
+            debouncedSaveNPCLedger(s.activeCampaignId, newLedger);
+            return { npcLedger: newLedger };
+        });
+        return count;
+    },
     restoreNPC: (id) => set((s) => {
         const newLedger = s.npcLedger.map(n =>
             n.id === id ? { ...n, archived: false, archivedAtTurn: undefined, archivedReason: undefined } : n

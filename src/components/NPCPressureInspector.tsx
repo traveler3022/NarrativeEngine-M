@@ -1,5 +1,6 @@
 import type { NPCEntry, NPCPressureHistory } from '../types';
 import { useAppStore } from '../store/useAppStore';
+import { toast } from './Toast';
 
 function miniSparkline(history: NPCPressureHistory[] | undefined, type: 'ignored' | 'engaged'): string {
     if (!history || history.length === 0) return '—';
@@ -89,11 +90,26 @@ function NPCCard({ npc, archived }: { npc: NPCEntry; archived?: boolean }) {
 export function NPCPressureInspector() {
     const npcLedger = useAppStore(s => s.npcLedger);
     const debugMode = useAppStore(s => s.settings.debugMode);
+    const archiveIndex = useAppStore(s => s.archiveIndex);
+    const archiveThreshold = useAppStore(s => s.settings.autoArchiveStaleNPCsTurns ?? 15);
 
     if (!debugMode) return null;
 
     const activeNPCs = npcLedger.filter(n => !n.archived);
     const archivedNPCs = npcLedger.filter(n => n.archived);
+
+    const currentTurn = archiveIndex.length > 0
+        ? parseInt(archiveIndex[archiveIndex.length - 1].sceneId, 10) || 0
+        : 0;
+
+    const handlePurge = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const threshold = archiveThreshold > 0 ? archiveThreshold : 15;
+        const n = useAppStore.getState().archiveStaleNPCs(currentTurn, threshold);
+        if (n > 0) toast.success(`Archived ${n} stale NPC${n === 1 ? '' : 's'}`);
+        else toast.info('No stale NPCs to archive');
+    };
     const npcsWithPressure = activeNPCs.filter(n => n.drives || n.pressure);
     const npcsWithoutPressure = activeNPCs.filter(n => !n.drives && !n.pressure);
     const archivedWithPressure = archivedNPCs.filter(n => n.drives || n.pressure);
@@ -103,6 +119,15 @@ export function NPCPressureInspector() {
             <summary className="cursor-pointer text-[10px] text-terminal/60 hover:text-terminal transition-colors select-none px-2 py-1 flex items-center gap-2">
                 <span className="font-bold uppercase tracking-wider">NPC Pressure Inspector</span>
                 <span className="text-[9px] text-text-dim/40">({npcsWithPressure.length} tracked / {activeNPCs.length} active{archivedNPCs.length > 0 ? `, ${archivedNPCs.length} archived` : ''})</span>
+                {activeNPCs.length > 10 && (
+                    <button
+                        onClick={handlePurge}
+                        title="Archive all stale NPCs now (no engagement past the auto-archive threshold)"
+                        className="ml-auto text-[9px] text-amber-400 hover:text-amber-300 px-1.5 py-0.5 rounded bg-amber-500/10"
+                    >
+                        Purge stale
+                    </button>
+                )}
             </summary>
             <div className="p-2 space-y-2 max-h-96 overflow-y-auto">
                 {npcsWithPressure.length === 0 && (

@@ -5,12 +5,24 @@ const MAX_HISTORY = 50;
 
 function npcNamePatterns(npc: NPCEntry): string[] {
     const aliases = (npc.aliases || '').split(',').map(a => a.trim().toLowerCase()).filter(Boolean);
-    return [npc.name.toLowerCase(), ...aliases];
+    return [npc.name.toLowerCase(), ...aliases].filter(Boolean);
 }
 
+function escapeRegExp(s: string): string {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Word-boundary match, not bare substring. Substring matching caused short or
+// common NPC names to "match" any prose that happened to contain those letters
+// (e.g. "Al" inside "alley", "Tom" inside "tomorrow"), which falsely registered
+// engagement every turn and reset the staleness clock so NPCs never archived —
+// and likewise restored archived NPCs by accident. \b anchors to whole words.
 function mentionsName(text: string, patterns: string[]): boolean {
     const lower = text.toLowerCase();
-    return patterns.some(p => lower.includes(p));
+    return patterns.some(p => {
+        if (!p) return false;
+        return new RegExp(`\\b${escapeRegExp(p)}\\b`).test(lower);
+    });
 }
 
 function pronounNearName(text: string, patterns: string[]): boolean {
