@@ -1,12 +1,48 @@
 import { useState } from 'react';
+import { RotateCcw } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import type { LoreChunk } from '../../types';
+import { indexLore, deriveDefaultLoreMeta } from '../../services/lore/loreIndexer';
+import type { IndexingProgress } from '../../services/lore/loreIndexer';
 
-export function LoreTab({ onOpenManager }: { onOpenManager?: () => void }) {
+type ActivationMode = 'vector' | 'keyword' | 'always';
+
+function getModes(chunk: LoreChunk): ActivationMode[] {
+    return deriveDefaultLoreMeta(chunk);
+}
+
+export function LoreTab() {
     const loreChunks = useAppStore((s) => s.loreChunks);
     const updateLoreChunk = useAppStore((s) => s.updateLoreChunk);
+    const setLoreChunks = useAppStore((s) => s.setLoreChunks);
+    const activeCampaignId = useAppStore((s) => s.activeCampaignId);
+    const settings = useAppStore((s) => s.settings);
+
     const [newKeyword, setNewKeyword] = useState<Record<string, string>>({});
     const [newSecondary, setNewSecondary] = useState<Record<string, string>>({});
+    const [indexing, setIndexing] = useState(false);
+    const [progress, setProgress] = useState<IndexingProgress | null>(null);
+    const [confirmRegenId, setConfirmRegenId] = useState<string | null>(null);
+
+    const runIndex = async () => {
+        if (!activeCampaignId || loreChunks.length === 0) return;
+        setIndexing(true);
+        try {
+            await indexLore(activeCampaignId, loreChunks, (p) => setProgress(p));
+            const updated = loreChunks.map(c => ({
+                ...c,
+                activationModes: deriveDefaultLoreMeta(c),
+            }));
+            setLoreChunks(updated);
+            const { saveLoreChunks } = await import('../../store/campaignStore');
+            await saveLoreChunks(activeCampaignId, updated);
+        } catch (e) {
+            console.warn('[LoreTab] Indexing failed:', e);
+        } finally {
+            setIndexing(false);
+            setProgress(null);
+        }
+    };
 
     const addKeyword = (chunkId: string) => {
         const kw = (newKeyword[chunkId] || '').trim().toLowerCase();
@@ -24,10 +60,10 @@ export function LoreTab({ onOpenManager }: { onOpenManager?: () => void }) {
         updateLoreChunk(chunkId, { triggerKeywords: chunk.triggerKeywords.filter(k => k !== kw) });
     };
 
-    const toggleMode = (chunkId: string, mode: 'vector' | 'keyword' | 'always') => {
+    const toggleMode = (chunkId: string, mode: ActivationMode) => {
         const chunk = loreChunks.find(c => c.id === chunkId);
         if (!chunk) return;
-        const current = chunk.activationModes ?? ['keyword', 'vector'];
+        const current = getModes(chunk);
         const modes = current.includes(mode)
             ? current.filter(m => m !== mode)
             : [...current, mode];
@@ -40,7 +76,7 @@ export function LoreTab({ onOpenManager }: { onOpenManager?: () => void }) {
         if (!kw) return;
         const chunk = loreChunks.find(c => c.id === chunkId);
         if (!chunk) return;
-        const existing = chunk.secondaryKeywords || [];
+        const existing = chunk.secondaryKeywords ?? [];
         if (existing.includes(kw)) return;
         updateLoreChunk(chunkId, { secondaryKeywords: [...existing, kw] });
         setNewSecondary(prev => ({ ...prev, [chunkId]: '' }));
@@ -52,8 +88,23 @@ export function LoreTab({ onOpenManager }: { onOpenManager?: () => void }) {
         updateLoreChunk(chunkId, { secondaryKeywords: (chunk.secondaryKeywords || []).filter(k => k !== kw) });
     };
 
+    const regenerateKeywords = (chunkId: string) => {
+        const chunk = loreChunks.find(c => c.id === chunkId);
+        if (!chunk) return;
+        if (confirmRegenId !== chunkId) {
+            setConfirmRegenId(chunkId);
+            return;
+        }
+        const fresh = deriveDefaultLoreMeta(chunk);
+        updateLoreChunk(chunkId, {
+            activationModes: fresh,
+            modesUserEdited: false,
+        });
+        setConfirmRegenId(null);
+    };
+
     const renderChunk = (chunk: LoreChunk) => {
-        const modes = chunk.activationModes ?? ['keyword', 'vector'];
+        const modes = getModes(chunk);
         const isVector = modes.includes('vector');
         const isKeyword = modes.includes('keyword');
         const isAlways = modes.includes('always');
@@ -177,62 +228,94 @@ export function LoreTab({ onOpenManager }: { onOpenManager?: () => void }) {
                     >
                         +
                     </button>
+                    <button
+                        onClick={() => regenerateKeywords(chunk.id)}
+                        onBlur={() => setConfirmRegenId(null)}
+                        className={`text-[9px] transition-colors ${
+                            confirmRegenId === chunk.id
+                                ? 'text-danger font-bold'
+                                : 'text-text-dim hover:text-terminal'
+                        }`}
+                        title={confirmRegenId === chunk.id ? 'Click again to confirm — resets activation modes to defaults' : 'Reset activation modes to defaults'}
+                    >
+                        {confirmRegenId === chunk.id ? 'Confirm?' : <RotateCcw size={10} />}
+                    </button>
                 </div>
             </div>
         );
     };
 
+    const alwaysChunks = loreChunks.filter(c => {
+        const modes = getModes(c);
+        return modes.includes('always');
+    });
+    const conditionalChunks = loreChunks.filter(c => {
+        const modes = getModes(c);
+        return !modes.includes('always');
+    });
+
+    const totalTokens = loreChunks.reduce((sum, c) => sum + c.tokens, 0);
+
     return (
         <div className="px-4 py-4 space-y-4">
             <div className="flex items-center justify-between">
                 <p className="text-[9px] text-text-dim/50">
-                    Chunks trigger when keywords appear in recent messages
+                    Always On = included every turn (AI is stateless). Conditional = triggered by keyword / vector match only.
                 </p>
-                {onOpenManager && (
-                    <button
-                        onClick={onOpenManager}
-                        className="flex items-center gap-1 text-[9px] text-terminal hover:text-text-primary transition-colors"
-                    >
-                        Manage
-                    </button>
-                )}
             </div>
+
+            <div className="text-[9px] text-text-dim/70 space-y-1">
+                <div>Total lore: {totalTokens} tokens across {loreChunks.length} chunks</div>
+                <div>Token budget: {settings.contextLimit || 8192} tokens/turn</div>
+            </div>
+
+            <button
+                onClick={runIndex}
+                disabled={indexing || loreChunks.length === 0}
+                className={`w-full py-2 text-[10px] uppercase tracking-wider font-bold rounded transition-colors ${
+                    indexing
+                        ? 'bg-surface text-text-dim cursor-not-allowed'
+                        : 'bg-terminal/10 text-terminal hover:bg-terminal/20'
+                }`}
+            >
+                {indexing
+                    ? `Indexing... ${progress ? `${progress.current}/${progress.total} (${progress.phase})` : ''}`
+                    : 'Re-index Lore'}
+            </button>
+
+            {indexing && progress && (
+                <div className="h-1 bg-void-lighter rounded overflow-hidden">
+                    <div
+                        className="h-full bg-terminal transition-all duration-200"
+                        style={{ width: `${progress.total > 0 ? (progress.current / progress.total) * 100 : 0}%` }}
+                    />
+                </div>
+            )}
+
             {loreChunks.length === 0 ? (
                 <p className="text-text-dim/50 text-xs text-center mt-8">
                     No lore uploaded for this campaign.
                 </p>
             ) : (
                 <div className="space-y-3">
-                    {(() => {
-                        const alwaysOn = loreChunks.filter(c =>
-                            (c.activationModes ?? ['keyword', 'vector']).includes('always') ||
-                            (!c.activationModes && c.alwaysInclude)
-                        );
-                        const conditional = loreChunks.filter(c => !alwaysOn.includes(c));
-
-                        return (
-                            <>
-                                {alwaysOn.length > 0 && (
-                                    <div className="space-y-2 mb-4">
-                                        <div className="text-[10px] text-terminal uppercase tracking-wider font-bold mb-1 border-b border-terminal/20 pb-1 flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-terminal animate-pulse" />
-                                            Always On
-                                        </div>
-                                        {alwaysOn.map(renderChunk)}
-                                    </div>
-                                )}
-                                {conditional.length > 0 && (
-                                    <div className="space-y-2">
-                                        <div className="text-[10px] text-text-dim uppercase tracking-wider font-bold mb-1 border-b border-border/50 pb-1 flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-text-dim/50" />
-                                            Conditional Triggers
-                                        </div>
-                                        {conditional.map(renderChunk)}
-                                    </div>
-                                )}
-                            </>
-                        );
-                    })()}
+                    {alwaysChunks.length > 0 && (
+                        <div className="space-y-2 mb-4">
+                            <div className="text-[10px] text-terminal uppercase tracking-wider font-bold mb-1 border-b border-terminal/20 pb-1 flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-terminal animate-pulse" />
+                                Always On ({alwaysChunks.length})
+                            </div>
+                            {alwaysChunks.map(renderChunk)}
+                        </div>
+                    )}
+                    {conditionalChunks.length > 0 && (
+                        <div className="space-y-2">
+                            <div className="text-[10px] text-text-dim uppercase tracking-wider font-bold mb-1 border-b border-border/50 pb-1 flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-text-dim/50" />
+                                Conditional ({conditionalChunks.length})
+                            </div>
+                            {conditionalChunks.map(renderChunk)}
+                        </div>
+                    )}
                 </div>
             )}
         </div>
