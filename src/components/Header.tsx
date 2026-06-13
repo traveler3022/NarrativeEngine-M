@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
-import { Settings, Trash2, LogOut, Users, Save, Archive, ScanSearch, BookCheck, Pin, Replace } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { LogOut, ScanSearch, BookCheck, Pin, Replace, MoreVertical, Save, Archive } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import type { AiTier } from '../types';
 
 const TIER_CYCLE: Record<AiTier, AiTier> = { lite: 'pro', pro: 'max', max: 'lite' };
-const TIER_NEXT_LABEL: Record<AiTier, string> = { lite: 'Switch to Pro', pro: 'Switch to Max', max: 'Switch to Lite' };
+
 import { TokenGauge } from './TokenGauge';
 import { saveCampaignState, saveDivergenceRegister } from '../store/campaignStore';
 import { api } from '../services/apiClient';
@@ -19,10 +19,8 @@ type SelectionSnapshot = {
 };
 
 export function Header() {
-    const toggleSettings = useAppStore(s => s.toggleSettings);
-    const toggleNPCLedger = useAppStore(s => s.toggleNPCLedger);
+
     const toggleBackupModal = useAppStore(s => s.toggleBackupModal);
-    const clearChat = useAppStore(s => s.clearChat);
     const activeCampaignId = useAppStore(s => s.activeCampaignId);
     const setActiveCampaign = useAppStore(s => s.setActiveCampaign);
     const context = useAppStore(s => s.context);
@@ -39,8 +37,8 @@ export function Header() {
     const [loreSel, setLoreSel] = useState<SelectionSnapshot | null>(null);
     const [pinSel, setPinSel] = useState<SelectionSnapshot | null>(null);
     const [renameSel, setRenameSel] = useState<SelectionSnapshot | null>(null);
-    const [showClearConfirm, setShowClearConfirm] = useState(false);
-    const [clearConfirmText, setClearConfirmText] = useState('');
+    const [overflowOpen, setOverflowOpen] = useState(false);
+    const overflowRef = useRef<HTMLDivElement>(null);
 
     const captureFromBubble = (selector: string): SelectionSnapshot | null => {
         const sel = window.getSelection();
@@ -70,6 +68,17 @@ export function Header() {
         document.addEventListener('selectionchange', handle);
         return () => document.removeEventListener('selectionchange', handle);
     }, []);
+
+    useEffect(() => {
+        if (!overflowOpen) return;
+        const handler = (e: MouseEvent) => {
+            if (overflowRef.current && !overflowRef.current.contains(e.target as Node)) {
+                setOverflowOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [overflowOpen]);
 
     const handleLoreCheck = (e: React.MouseEvent | React.TouchEvent) => {
         e.preventDefault();
@@ -114,17 +123,6 @@ export function Header() {
         setLoreSel(null);
     };
 
-    const handleClearChat = async () => {
-        if (clearConfirmText.toLowerCase() === 'delete') {
-            if (activeCampaignId) {
-                await api.backup.create(activeCampaignId, { trigger: 'pre-clear', isAuto: true }).catch(() => {});
-            }
-            clearChat();
-            setShowClearConfirm(false);
-            setClearConfirmText('');
-        }
-    };
-
     const handleExit = async () => {
         if (activeCampaignId) {
             await saveCampaignState(activeCampaignId, { context, messages, condenser });
@@ -144,156 +142,119 @@ export function Header() {
                 <TokenGauge />
             </div>
 
-            <button
-                onClick={() => { setShowClearConfirm(true); setClearConfirmText(''); }}
-                className="text-text-dim hover:text-danger transition-colors p-1 touch-btn md:p-1 md:min-h-0 md:min-w-0"
-                title="Clear chat history"
-                aria-label="Clear chat history"
-            >
-                <Trash2 size={16} />
-            </button>
-
-            <button
-                onClick={() => { if (activeCampaignId) api.backup.create(activeCampaignId, { trigger: 'manual', isAuto: false }); }}
-                className="hidden md:inline-flex text-text-dim hover:text-terminal transition-colors p-1 touch-btn"
-                title="Create Backup"
-                aria-label="Create Backup"
-            >
-                <Save size={16} />
-            </button>
-
-            <button
-                onClick={toggleBackupModal}
-                className="hidden md:inline-flex text-text-dim hover:text-terminal transition-colors p-1 touch-btn"
-                title="Manage Backups"
-                aria-label="Manage Backups"
-            >
-                <Archive size={16} />
-            </button>
-
-            <button
-                onClick={toggleNPCLedger}
-                className="hidden md:inline-flex text-text-dim hover:text-terminal transition-colors p-1"
-                title="NPC Ledger"
-                aria-label="Open NPC Ledger"
-            >
-                <Users size={18} />
-            </button>
-
-            <button
-                onClick={toggleSettings}
-                className="hidden md:inline-flex text-text-dim hover:text-terminal transition-colors p-1"
-                title="Settings"
-                aria-label="Open settings"
-            >
-                <Settings size={18} />
-            </button>
-
-            {settings.enableDeepArchiveSearch && (
+            <div className="flex items-center gap-1">
                 <button
-                    onClick={toggleDeepArmed}
-                    className={`transition-colors p-1 touch-btn md:p-1 md:min-h-0 md:min-w-0 ${
-                        deepArmed
-                            ? 'text-amber-400 animate-pulse'
+                    onMouseDown={handlePinSelection}
+                    onTouchStart={handlePinSelection}
+                    className={`transition-colors p-1 touch-btn ${
+                        pinSel
+                            ? 'text-terminal animate-pulse'
                             : 'text-text-dim hover:text-terminal'
                     }`}
-                    title={deepArmed ? 'Deep Search armed — send to activate' : 'Arm Deep Archive Search'}
-                    aria-label="Toggle Deep Archive Search"
+                    title="Pin selected text as memory"
+                    aria-label="Pin selection"
                 >
-                    <ScanSearch size={16} />
+                    <Pin size={16} />
                 </button>
-            )}
 
-            <button
-                onMouseDown={handlePinSelection}
-                onTouchStart={handlePinSelection}
-                className={`transition-colors p-1 touch-btn md:p-1 md:min-h-0 md:min-w-0 ml-1 ${
-                    pinSel
-                        ? 'text-terminal animate-pulse'
-                        : 'text-text-dim hover:text-terminal'
-                }`}
-                title="Pin selected text as memory"
-                aria-label="Pin selection"
-            >
-                <Pin size={16} />
-            </button>
+                {settings.enableDeepArchiveSearch && (
+                    <button
+                        onClick={toggleDeepArmed}
+                        className={`transition-colors p-1 touch-btn ${
+                            deepArmed
+                                ? 'text-amber-400 animate-pulse'
+                                : 'text-text-dim hover:text-terminal'
+                        }`}
+                        title={deepArmed ? 'Deep Search armed — send to activate' : 'Arm Deep Archive Search'}
+                        aria-label="Toggle Deep Archive Search"
+                    >
+                        <ScanSearch size={16} />
+                    </button>
+                )}
 
-            <button
-                onMouseDown={handleLoreCheck}
-                onTouchStart={handleLoreCheck}
-                className={`transition-colors p-1 touch-btn md:p-1 md:min-h-0 md:min-w-0 ml-1 ${
-                    loreSel
-                        ? 'text-terminal animate-pulse'
-                        : 'text-text-dim hover:text-terminal'
-                }`}
-                title="Lore Check selection (highlight text in a GM message first)"
-                aria-label="Lore Check selection"
-            >
-                <BookCheck size={16} />
-            </button>
+                <button
+                    onMouseDown={handleLoreCheck}
+                    onTouchStart={handleLoreCheck}
+                    className={`transition-colors p-1 touch-btn ${
+                        loreSel
+                            ? 'text-terminal animate-pulse'
+                            : 'text-text-dim hover:text-terminal'
+                    }`}
+                    title="Lore Check selection (highlight text in a GM message first)"
+                    aria-label="Lore Check selection"
+                >
+                    <BookCheck size={16} />
+                </button>
 
-            <button
-                onMouseDown={handleRenameSelection}
-                onTouchStart={handleRenameSelection}
-                className={`transition-colors p-1 touch-btn md:p-1 md:min-h-0 md:min-w-0 ml-1 ${
-                    renameSel
-                        ? 'text-terminal animate-pulse'
-                        : 'text-text-dim hover:text-terminal'
-                }`}
-                title="Rename selected name everywhere (highlight a name first)"
-                aria-label="Rename selection"
-            >
-                <Replace size={16} />
-            </button>
+                <button
+                    onMouseDown={handleRenameSelection}
+                    onTouchStart={handleRenameSelection}
+                    className={`transition-colors p-1 touch-btn ${
+                        renameSel
+                            ? 'text-terminal animate-pulse'
+                            : 'text-text-dim hover:text-terminal'
+                    }`}
+                    title="Rename selected name everywhere (highlight a name first)"
+                    aria-label="Rename selection"
+                >
+                    <Replace size={16} />
+                </button>
+            </div>
 
-            <button
-                onClick={() => {
-                    const current = settings.aiTier ?? 'pro';
-                    updateSettings({ aiTier: TIER_CYCLE[current] });
-                }}
-                className="hidden md:inline-flex text-text-dim hover:text-terminal transition-colors p-1 ml-1 text-[10px] font-bold font-mono uppercase tracking-widest"
-                title={TIER_NEXT_LABEL[settings.aiTier ?? 'pro']}
-                aria-label={`AI tier: ${settings.aiTier ?? 'pro'}. ${TIER_NEXT_LABEL[settings.aiTier ?? 'pro']}`}
-            >
-                {(settings.aiTier ?? 'pro').toUpperCase()}
-            </button>
+            <div className="ml-auto flex items-center gap-1">
+                <button
+                    onClick={handleExit}
+                    className="text-text-dim hover:text-ember transition-colors p-1 touch-btn"
+                    title="Exit campaign"
+                    aria-label="Exit campaign"
+                >
+                    <LogOut size={16} />
+                </button>
 
-            <button
-                onClick={handleExit}
-                className="text-text-dim hover:text-ember transition-colors p-1 touch-btn md:p-1 md:min-h-0 md:min-w-0 ml-1"
-                title="Exit campaign"
-                aria-label="Exit campaign"
-            >
-                <LogOut size={16} />
-            </button>
-            {showClearConfirm && (
-                <div className="fixed inset-0 bg-ember/40 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowClearConfirm(false)}>
-                    <div className="bg-surface border border-danger rounded-lg p-6 max-w-sm" onClick={(e) => e.stopPropagation()}>
-                        <p className="text-text-primary text-sm mb-2 font-bold">Clear all chat history?</p>
-                        <p className="text-text-dim text-xs mb-4">This will permanently delete all messages, pinned excerpts, and stored images. A backup will be created automatically.</p>
-                        <label className="block text-text-dim text-xs mb-1">Type <span className="text-danger font-bold">delete</span> to confirm:</label>
-                        <input
-                            value={clearConfirmText}
-                            onChange={(e) => setClearConfirmText(e.target.value)}
-                            className="w-full bg-void border border-border rounded px-3 py-2 text-sm text-text-primary mb-4 focus:outline-none focus:border-danger"
-                            autoFocus
-                        />
-                        <div className="flex gap-3 justify-end">
-                            <button onClick={() => setShowClearConfirm(false)} className="px-4 py-2 text-xs text-text-dim hover:text-text-primary border border-border rounded transition-colors">
-                                Cancel
+                <div className="relative" ref={overflowRef}>
+                    <button
+                        onClick={() => setOverflowOpen(v => !v)}
+                        className="text-text-dim hover:text-terminal transition-colors p-1 touch-btn"
+                        title="More actions"
+                        aria-label="More actions"
+                    >
+                        <MoreVertical size={16} />
+                    </button>
+                    {overflowOpen && (
+                        <div className="absolute right-0 top-full mt-1 bg-surface border border-border rounded shadow-lg z-50 min-w-[180px] py-1">
+                            <button
+                                onClick={() => {
+                                    if (activeCampaignId) api.backup.create(activeCampaignId, { trigger: 'manual', isAuto: false });
+                                    setOverflowOpen(false);
+                                }}
+                                className="w-full text-left px-3 py-2 text-xs text-text-dim hover:text-terminal hover:bg-terminal/5 flex items-center gap-2 transition-colors"
+                            >
+                                <Save size={14} /> Save backup
                             </button>
                             <button
-                                onClick={handleClearChat}
-                                disabled={clearConfirmText.toLowerCase() !== 'delete'}
-                                className="px-4 py-2 text-xs text-void bg-danger rounded transition-colors font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110"
+                                onClick={() => {
+                                    toggleBackupModal();
+                                    setOverflowOpen(false);
+                                }}
+                                className="w-full text-left px-3 py-2 text-xs text-text-dim hover:text-terminal hover:bg-terminal/5 flex items-center gap-2 transition-colors"
                             >
-                                Clear Chat
+                                <Archive size={14} /> Manage backups
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const current = settings.aiTier ?? 'pro';
+                                    updateSettings({ aiTier: TIER_CYCLE[current] });
+                                    setOverflowOpen(false);
+                                }}
+                                className="w-full text-left px-3 py-2 text-xs text-text-dim hover:text-terminal hover:bg-terminal/5 flex items-center gap-2 transition-colors font-mono uppercase tracking-widest"
+                            >
+                                <span className="text-[10px]">AI tier:</span> {(settings.aiTier ?? 'pro').toUpperCase()}
                             </button>
                         </div>
-                    </div>
+                    )}
                 </div>
-            )}
+            </div>
+
         </header>
     );
 }
-

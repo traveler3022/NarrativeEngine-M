@@ -1,13 +1,28 @@
 /**
  * Shared JSON extraction helper for LLM responses.
- * Handles <think> blocks, markdown fences, and truncated JSON recovery.
+ * Handles think blocks, markdown fences, and truncated JSON recovery.
  *
  * Returns { value, parseOk }:
- *   - parseOk: true  → parsed successfully (possibly via truncation recovery)
- *   - parseOk: false → unrecoverable; value is the caller-supplied fallback
+ *   - parseOk: true  -> parsed successfully (possibly via truncation recovery)
+ *   - parseOk: false -> unrecoverable; value is the caller-supplied fallback
  */
+
+function stripUnclosedThinkTag(text: string): string {
+    const thinkIdx = text.search(/<think\b/i);
+    if (thinkIdx === -1) return text;
+    const jsonStart = text.indexOf('{', thinkIdx);
+    const arrStart = text.indexOf('[', thinkIdx);
+    let nextJson = -1;
+    if (jsonStart !== -1 && arrStart !== -1) nextJson = Math.min(jsonStart, arrStart);
+    else if (jsonStart !== -1) nextJson = jsonStart;
+    else if (arrStart !== -1) nextJson = arrStart;
+    if (nextJson === -1) return '';
+    return text.slice(0, thinkIdx) + text.slice(nextJson);
+}
+
 export function extractJsonRobust<T>(raw: string, fallback: T): { value: T; parseOk: boolean } {
     let clean = raw.replace(/<think[\s\S]*?<\/think>/gi, '');
+    clean = stripUnclosedThinkTag(clean);
     const mdMatch = clean.match(/```(?:json)?\s*([\s\S]*?)```/i);
     if (mdMatch) clean = mdMatch[1];
 
@@ -19,7 +34,6 @@ export function extractJsonRobust<T>(raw: string, fallback: T): { value: T; pars
     try {
         return { value: JSON.parse(text) as T, parseOk: true };
     } catch {
-        // Truncated response — recover by finding last complete item at depth 1
         let depth = 0;
         let inString = false;
         let escape = false;
@@ -51,19 +65,17 @@ export function extractJsonRobust<T>(raw: string, fallback: T): { value: T; pars
 
 /**
  * Robustly extracts the first JSON object or array found in a text string.
- * Handles <think> tags, markdown code blocks, and leading/trailing chatter.
+ * Handles think tags, markdown code blocks, and leading/trailing chatter.
  */
 export function extractJson(text: string): string {
-    // 1. Remove reasoning blocks if present
-    let clean = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
+    let clean = text.replace(/<think[\s\S]*?<\/think>/gi, '');
+    clean = stripUnclosedThinkTag(clean);
 
-    // 2. Try to find content between triple backticks first
     const markdownMatch = clean.match(/```(?:json)?\s*([\s\S]*?)```/i);
     if (markdownMatch) {
         clean = markdownMatch[1];
     }
 
-    // 3. Final fallback: find the first { or [ and the last } or ]
     const firstObj = clean.indexOf('{');
     const firstArr = clean.indexOf('[');
     const start = (firstObj !== -1 && (firstArr === -1 || firstObj < firstArr)) ? firstObj : firstArr;
@@ -80,4 +92,3 @@ export function extractJson(text: string): string {
 
     return clean.trim();
 }
-

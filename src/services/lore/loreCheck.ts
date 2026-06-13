@@ -8,14 +8,19 @@ import type {
     LoreCheckCitation,
     LoreCheckVerdict,
     LoreCheckCategory,
+    NPCEntry,
 } from '../../types';
 import { llmCall } from '../../utils/llmCall';
-import { searchLoreByQuery } from './loreRetriever';
+import { retrieveRelevantLore } from './loreRetriever';
 import { deepArchiveScan } from '../archive';
+import { semanticSearch, isEmbedderReady } from '../embedding';
+import { expandQuery } from '../turn/stages/expandQueryStage';
+import { realUtilityLLM } from '../turn/utilityLLM';
 import {
     extractJsonRobust,
     ANCHOR_BEFORE_INPUT,
     INPUT_DELIMITER,
+    JSON_ONLY_FOOTER,
     joinPromptSections,
 } from '../infrastructure';
 
@@ -29,6 +34,7 @@ export type LoreCheckInput = {
     archiveIndex: ArchiveIndexEntry[];
     sealedChapters: ArchiveChapter[];
     campaignId: string;
+    npcLedger: NPCEntry[];
     onStatus: (msg: string) => void;
     signal?: AbortSignal;
     hint?: string;
@@ -45,20 +51,41 @@ export async function runLoreCheck(input: LoreCheckInput): Promise<LoreCheckResu
         utilityEndpoint, selectedText, surroundingContext,
         messages, targetMessageId, loreChunks,
         archiveIndex, sealedChapters, campaignId,
-        onStatus, signal, hint, categories,
+        npcLedger, onStatus, signal, hint, categories,
     } = input;
 
     const searchQuery = buildSearchQuery(selectedText, hint);
 
-    onStatus('Searching lore...');
-    const loreHits = searchLoreByQuery(loreChunks, searchQuery, 1500, 5);
-
-    onStatus('Scanning archive...');
     const targetIdx = messages.findIndex(m => m.id === targetMessageId);
     const contextSlice = targetIdx >= 0
         ? messages.slice(Math.max(0, targetIdx - 3), targetIdx + 1)
         : messages.slice(-4);
 
+    onStatus('Expanding query...');
+    let queries = [searchQuery];
+    const isShort = searchQuery.trim().split(/\s+/).length < 8;
+    if (isShort) {
+        try {
+            const utilityLLM = realUtilityLLM(() => utilityEndpoint);
+            queries = await expandQuery(searchQuery, npcLedger, utilityLLM);
+        } catch (err) {
+            console.warn('[LoreCheck] Query expansion failed (non-fatal):', err);
+        }
+    }
+
+    onStatus('Searching lore...');
+    let semanticLoreIds: string[] | undefined;
+    if (isEmbedderReady() && campaignId) {
+        try {
+            semanticLoreIds = await semanticSearch(campaignId, queries, 'lore', 25, 0.30) ?? undefined;
+        } catch (err) {
+            console.warn('[LoreCheck] Semantic lore search failed (non-fatal):', err);
+        }
+    }
+
+    const loreHits = retrieveRelevantLore(loreChunks, searchQuery, 1500, contextSlice, semanticLoreIds);
+
+    onStatus('Scanning archive...');
     let archiveBrief = '';
     if (sealedChapters.length > 0 && archiveIndex.length > 0) {
         try {
@@ -96,7 +123,7 @@ export async function runLoreCheck(input: LoreCheckInput): Promise<LoreCheckResu
 
     const raw = await llmCall(utilityEndpoint, prompt, {
         temperature: 0.1,
-        maxTokens: 800,
+        maxTokens: 16384,
         priority: 'high',
         signal,
     });
@@ -158,7 +185,7 @@ Focus your verdict on whether the concern is justified, but you may still flag o
   "suggestedRewrite": "..." | null
 }`,
 
-        'Respond with ONLY a single JSON object, no prose, no code fence.',
+        JSON_ONLY_FOOTER,
         ANCHOR_BEFORE_INPUT,
         INPUT_DELIMITER,
 
@@ -216,4 +243,3 @@ function parseVerdict(raw: string, originalText: string): LoreCheckResult {
         rawResponse: raw,
     };
 }
-

@@ -3,6 +3,7 @@ import { Loader2, Sparkles } from 'lucide-react';
 import { useAppStore, DEFAULT_SURPRISE_TYPES, DEFAULT_SURPRISE_TONES, DEFAULT_ENCOUNTER_TYPES, DEFAULT_ENCOUNTER_TONES, DEFAULT_WORLD_WHO, DEFAULT_WORLD_WHERE, DEFAULT_WORLD_WHY, DEFAULT_WORLD_WHAT } from '../../store/useAppStore';
 import { populateEngineTags } from '../../services/chatEngine';
 import { Toggle } from './Toggle';
+import { NPCPressureInspector } from '../NPCPressureInspector';
 
 export function EnginesTab() {
     const context = useAppStore((s) => s.context);
@@ -482,6 +483,7 @@ export function EnginesTab() {
                     </div>
                 </div>
             </div>
+            <NPCPressureInspector />
         </div>
     );
 }

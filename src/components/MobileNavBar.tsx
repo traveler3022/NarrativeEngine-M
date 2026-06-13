@@ -1,11 +1,10 @@
-import { MessageSquare, Layers, Users, Settings } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 
 const TABS = [
-  { id: 'chat' as const,    icon: MessageSquare, label: 'Chat' },
-  { id: 'context' as const, icon: Layers,        label: 'Context' },
-  { id: 'npcs' as const,    icon: Users,         label: 'NPCs' },
-  { id: 'settings' as const,icon: Settings,      label: 'Settings' },
+  { id: 'chat' as const,    label: 'Chat' },
+  { id: 'context' as const, label: 'Context' },
+  { id: 'npcs' as const,    label: 'NPCs' },
+  { id: 'settings' as const,label: 'Settings' },
 ];
 
 export function MobileNavBar() {
@@ -13,15 +12,19 @@ export function MobileNavBar() {
   const setMobileView = useAppStore((s) => s.setMobileView);
   const toggleDrawer = useAppStore((s) => s.toggleDrawer);
   const drawerOpen = useAppStore((s) => s.drawerOpen);
+  const npcLedger = useAppStore((s) => s.npcLedger);
+  const debugMode = useAppStore((s) => s.settings.debugMode);
+
+  const pressureCount = debugMode
+    ? npcLedger.filter(n => !n.archived && (n.drives || n.pressure)).length
+    : 0;
 
   const handleTap = (tabId: typeof TABS[number]['id']) => {
     if (tabId === 'chat') {
-      // Close any open panels and return to chat
       if (drawerOpen) toggleDrawer();
       useAppStore.setState({ settingsOpen: false, npcLedgerOpen: false });
       setMobileView('chat');
     } else if (tabId === 'context') {
-      // Toggle bottom sheet
       if (mobileView === 'context' && drawerOpen) {
         toggleDrawer();
         setMobileView('chat');
@@ -43,15 +46,19 @@ export function MobileNavBar() {
 
   return (
     <nav className="mobile-nav md:hidden">
-      {TABS.map(({ id, icon: Icon, label }) => (
+      {TABS.map(({ id, label }) => (
         <button
           key={id}
           className={`mobile-nav-item ${mobileView === id ? 'active' : ''}`}
           onClick={() => handleTap(id)}
           aria-label={label}
         >
-          <Icon size={24} strokeWidth={2.5} />
-          <span className="text-[10px] font-black uppercase tracking-widest mt-1">{label}</span>
+          <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
+          {id === 'context' && pressureCount > 0 && (
+            <span className="absolute -top-0.5 -right-1 min-w-[14px] h-3.5 bg-terminal text-void text-[8px] font-bold rounded-full flex items-center justify-center px-0.5">
+              {pressureCount}
+            </span>
+          )}
         </button>
       ))}
     </nav>

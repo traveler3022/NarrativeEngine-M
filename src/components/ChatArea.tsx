@@ -1,28 +1,25 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import {
-    Loader2, Zap, Trash2,
-    ChevronDown, X, Pin, Sword, Package
+    Loader2,
+    ChevronDown, X, Sword, Package
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import type { PipelinePhase, StreamingStats, LLMProvider } from '../types';
 import { runTurn } from '../services/turn';
-import { GenerationProgress } from './GenerationProgress';
+import { TelemetryStrip } from './TelemetryStrip';
 import { useMessageEditor } from './hooks/useMessageEditor';
 import { useCondenser } from './hooks/useCondenser';
 import { toast } from './Toast';
-import { api } from '../services/apiClient';
 import { MessageBubble } from './chat/MessageBubble';
 
 import { PinnedMemoriesPanel } from './chat/PinnedMemoriesPanel';
-import { CreateTroubleButton } from './chat/CreateTroubleButton';
 import { CreateTroubleModal } from './chat/CreateTroubleModal';
 
-import { NPCPressureInspector } from './NPCPressureInspector';
 import { ChatInput } from './chat/ChatInput';
+import { ActionSpeedDial } from './chat/ActionSpeedDial';
 import { RenameNpcModal } from './chat/RenameNpcModal';
 import { CombatHUD } from './combat/CombatHUD';
-import { UtilityCallStrip } from './UtilityCallStrip';
 import { scanCombatIntent, combatKeywordPrefilter, routeCombatIntent } from '../services/turn/combatScanner';
 import { buildCombatEntryArgs, classifyUnknownFoes } from '../services/turn/combatEntry';
 import { createItemDefFromProposal } from '../services/npc/itemFactory';
@@ -40,7 +37,6 @@ export function ChatArea() {
         setArchiveIndex,
         setChapters,
         setSemanticFacts,
-        clearArchive,
         updateLastAssistant,
         updateContext,
         setCondensed,
@@ -83,7 +79,6 @@ export function ChatArea() {
         setArchiveIndex: s.setArchiveIndex,
         setChapters: s.setChapters,
         setSemanticFacts: s.setSemanticFacts,
-        clearArchive: s.clearArchive,
         updateLastAssistant: s.updateLastAssistant,
         updateContext: s.updateContext,
         setCondensed: s.setCondensed,
@@ -405,16 +400,6 @@ export function ChatArea() {
         useAppStore.getState().setStreamingStats(null);
     };
 
-    const handleClearArchive = async () => {
-        if (!activeCampaignId || !window.confirm('Delete archive?')) return;
-        try {
-            await api.archive.clear(activeCampaignId);
-            clearArchive();
-        } catch {
-            toast.error('Failed to clear archive');
-        }
-    };
-
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setInput(e.target.value);
         if (inputRef.current) {
@@ -513,41 +498,11 @@ export function ChatArea() {
                 <div ref={bottomRef} />
             </div>
 
-            <div className="px-2 md:px-4 pb-1 flex gap-2 overflow-x-auto no-scrollbar">
-                <button onClick={() => { if (window.confirm('Trim conversation history? This condenses older messages.')) triggerTrim(); }} disabled={messages.length < 6} className="shrink-0 flex items-center gap-1.5 bg-void border border-terminal/30 text-terminal text-[10px] uppercase tracking-wider px-3 py-1.5 min-h-[40px] rounded transition-all disabled:opacity-40 whitespace-nowrap">
-                    <Zap size={13} /> TRIM
-                </button>
-                <CreateTroubleButton />
-                <button
-                    onClick={() => setPinnedPanelOpen(true)}
-                    className="relative shrink-0 flex items-center gap-1.5 bg-void border border-terminal/20 text-text-dim hover:text-terminal text-[10px] uppercase tracking-wider px-3 py-1.5 min-h-[40px] rounded transition-all hover:bg-terminal/5 hover:border-terminal/40 whitespace-nowrap"
-                    title="View pinned memories"
-                >
-                    <Pin size={13} /> PINS
-                    {pinnedExcerpts.length > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-terminal text-void text-[9px] font-bold rounded-full flex items-center justify-center px-1">
-                            {pinnedExcerpts.length}
-                        </span>
-                    )}
-                </button>
-                <button onClick={handleClearArchive} disabled={!activeCampaignId} className="shrink-0 flex items-center gap-1.5 bg-void border border-red-500/20 text-red-500/60 hover:text-red-500 text-[10px] uppercase tracking-wider px-3 py-1.5 min-h-[40px] rounded transition-all hover:bg-red-500/5 hover:border-red-500/40 disabled:opacity-40 whitespace-nowrap"><Trash2 size={13} /> CLEAR</button>
-            </div>
-
             <PinnedMemoriesPanel open={pinnedPanelOpen} onClose={() => setPinnedPanelOpen(false)} />
 
 
 
-            <NPCPressureInspector />
-
-            <GenerationProgress phase={pipelinePhase} stats={streamingStats} />
-
-            {loadingStatus && (
-                <div className="py-1.5 px-4 bg-terminal/10 border-b border-terminal/20 flex items-center gap-2 animate-pulse">
-                    <Loader2 size={10} className="animate-spin text-terminal" />
-                    <span className="text-[9px] uppercase tracking-widest text-terminal font-bold">{loadingStatus}</span>
-                </div>
-            )}
-            <UtilityCallStrip />
+            <TelemetryStrip phase={pipelinePhase} stats={streamingStats} loadingStatus={loadingStatus} />
 
             {pendingArcSeed && (
                 <div className="px-2 md:px-4 py-1 flex items-center gap-2 bg-amber-500/10 border-t border-amber-500/20">
@@ -666,11 +621,19 @@ export function ChatArea() {
                     onSend={() => handleSend()}
                     onStop={handleStop}
                     inputRef={inputRef}
+                    leading={
+                        <ActionSpeedDial
+                            onTrim={() => { if (window.confirm('Trim conversation history? This condenses older messages.')) triggerTrim(); }}
+                            pinnedCount={pinnedExcerpts.length}
+                            onOpenPins={() => setPinnedPanelOpen(true)}
+                            trimDisabled={messages.length < 6}
+                        />
+                    }
                 />
             )}
 
             {showScrollFab && (
-                <button onClick={() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' })} className="fixed bottom-[calc(160px+env(safe-area-inset-bottom))] right-4 z-50 w-10 h-10 rounded-full bg-terminal text-surface shadow-lg flex items-center justify-center"><ChevronDown size={20} /></button>
+                <button onClick={() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' })} className="fixed bottom-[calc(140px+env(safe-area-inset-bottom))] right-4 z-50 w-10 h-10 rounded-full bg-terminal text-surface shadow-lg flex items-center justify-center"><ChevronDown size={20} /></button>
             )}
 
             <CreateTroubleModal onSelect={(opt) => { setPendingArcSeed(opt); }} />

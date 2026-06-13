@@ -3,7 +3,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { generateTroubleOptions } from '../../services/engine';
 import { toast } from '../Toast';
 
-export function CreateTroubleButton() {
+export function CreateTroubleButton({ onDone }: { onDone?: () => void } = {}) {
     const pipelinePhase = useAppStore(s => s.pipelinePhase);
     const troubleLoading = useAppStore(s => s.troubleLoading);
     const openTroubleModal = useAppStore(s => s.openTroubleModal);
@@ -34,6 +34,7 @@ export function CreateTroubleButton() {
                 sceneNote,
             );
             openTroubleModal(options);
+            onDone?.();
         } catch (err) {
             toast.error(err instanceof Error ? err.message : 'Failed to generate trouble options');
             closeTroubleModal();

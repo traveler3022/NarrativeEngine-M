@@ -8,6 +8,7 @@ type ChatInputProps = {
     onSend: () => void;
     onStop: () => void;
     inputRef: React.RefObject<HTMLTextAreaElement | null>;
+    leading?: React.ReactNode;
 };
 
 export function ChatInput({
@@ -17,6 +18,7 @@ export function ChatInput({
     onSend,
     onStop,
     inputRef,
+    leading,
 }: ChatInputProps) {
     const settings = useAppStore(s => s.settings);
     const reindexing = useAppStore(s => s.embeddingsReindexing);
@@ -39,6 +41,7 @@ export function ChatInput({
             )}
             <div className="px-2 sm:px-4 pb-1 pt-1">
                 <div className="flex gap-1 border border-border bg-void focus-within:border-terminal items-center p-1 rounded-sm">
+                    {leading}
                     <div className="relative shrink-0 ml-1">
                         <select value={settings.activePresetId} onChange={(e) => useAppStore.getState().setActivePreset(e.target.value)}
                             className="h-[32px] bg-surface border border-border text-text-dim pl-2 pr-6 text-[10px] font-bold uppercase transition-colors appearance-none rounded focus:border-terminal overflow-hidden max-w-[100px]">

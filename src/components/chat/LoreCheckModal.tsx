@@ -69,6 +69,7 @@ export function LoreCheckModal() {
                 const loreChunks = state.loreChunks ?? [];
                 const archiveIndex = state.archiveIndex ?? [];
                 const sealedChapters = (state.chapters ?? []).filter((c: { sealedAt?: number; invalidated?: boolean }) => c.sealedAt != null && !c.invalidated);
+                const npcLedger = state.npcLedger ?? [];
 
                 if (loreChunks.length === 0 && sealedChapters.length === 0) {
                     setError('No lore or archived chapters available to check against.');
@@ -86,6 +87,7 @@ export function LoreCheckModal() {
                     archiveIndex,
                     sealedChapters,
                     campaignId,
+                    npcLedger,
                     onStatus: setStatus,
                     signal: ac.signal,
                     hint: checkHint,
