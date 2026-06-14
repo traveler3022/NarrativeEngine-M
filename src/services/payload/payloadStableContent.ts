@@ -1,4 +1,4 @@
-import type { AppSettings, ArchiveChapter, DivergenceRegister, NPCEntry, PayloadTrace } from '../../types';
+import type { AppSettings, ArchiveChapter, DivergenceRegister, PayloadTrace } from '../../types';
 import { countTokens } from '../infrastructure';
 import { renderRegisterForPayload } from '../campaign-state';
 import type { BudgetMap } from './payloadBudgeter';
@@ -107,19 +107,21 @@ export function buildStablePreamble(opts: {
 export function buildDivergenceBlock(opts: {
     divergenceRegister?: DivergenceRegister;
     chapters?: ArchiveChapter[];
-    onStageNpcIds?: string[];
-    npcLedger?: NPCEntry[];
     /** Token cap for the rendered register; oldest non-pinned chapters collapse first (AUDIT F6). */
     cap?: number;
     addTrace: (t: PayloadTrace) => void;
 }): { divergenceContent: string; divergenceTokens: number } {
-    const { divergenceRegister, chapters, onStageNpcIds, npcLedger, cap, addTrace } = opts;
+    // SAFETY RAIL — do NOT add cast params (onStageNpcIds/npcLedger) here. The canon
+    // block sits high in the cached prompt prefix; feeding per-turn cast data re-renders
+    // it whenever NPCs enter/leave a scene, busting the DeepSeek prompt cache for all
+    // history below it. It must stay cast-independent. (Regression fix: 5fc5ddf.)
+    const { divergenceRegister, chapters, cap, addTrace } = opts;
 
     let divergenceContent = '';
     if (divergenceRegister && divergenceRegister.entries.length > 0) {
-        divergenceContent = renderRegisterForPayload(divergenceRegister, chapters, onStageNpcIds, npcLedger);
+        divergenceContent = renderRegisterForPayload(divergenceRegister, chapters);
         if (cap && cap > 0 && countTokens(divergenceContent) > cap) {
-            divergenceContent = capDivergenceRender(divergenceRegister, chapters, onStageNpcIds, npcLedger, cap);
+            divergenceContent = capDivergenceRender(divergenceRegister, chapters, cap);
         }
     }
     const divergenceTokens = countTokens(divergenceContent);
@@ -136,21 +138,19 @@ export function buildDivergenceBlock(opts: {
 function capDivergenceRender(
     register: DivergenceRegister,
     chapters: ArchiveChapter[] | undefined,
-    onStageNpcIds: string[] | undefined,
-    npcLedger: NPCEntry[] | undefined,
     cap: number,
 ): string {
     const chapterIds = [...new Set(register.entries.map(e => e.chapterId))].sort();
     let working = register;
     let collapsed = 0;
-    let content = renderRegisterForPayload(working, chapters, onStageNpcIds, npcLedger);
+    let content = renderRegisterForPayload(working, chapters);
 
     for (const chId of chapterIds) {
         if (countTokens(content) <= cap) break;
         const remaining = working.entries.filter(e => e.chapterId !== chId || e.pinned);
         collapsed += working.entries.length - remaining.length;
         working = { ...working, entries: remaining };
-        content = renderRegisterForPayload(working, chapters, onStageNpcIds, npcLedger);
+        content = renderRegisterForPayload(working, chapters);
     }
 
     if (collapsed > 0) {

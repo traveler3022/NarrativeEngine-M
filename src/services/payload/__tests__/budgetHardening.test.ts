@@ -90,4 +90,18 @@ describe('divergence register cap (AUDIT F6)', () => {
         expect(capped.divergenceContent).not.toContain('collapsed');
         expect(capped.divergenceContent).toContain('CH01');
     });
+
+    // Cache safety rail: the canon block sits in the cached prompt prefix and must
+    // never be partitioned by per-turn cast (that busted ~40% of turns pre-5fc5ddf).
+    // buildDivergenceBlock has no cast params, so it can only ever emit the single block.
+    it('always renders the cast-independent single block (never on-stage partition)', () => {
+        const register: DivergenceRegister = {
+            entries: [entry('CH01', 0), entry('CH02', 1)], chapterToggles: {}, categoryToggles: {},
+            lastUpdatedSceneId: '', lastUpdatedAt: 0, version: 2,
+        };
+        const { divergenceContent } = buildDivergenceBlock({ divergenceRegister: register, addTrace: noTrace });
+        expect(divergenceContent).toContain('[ESTABLISHED FACTS]');
+        expect(divergenceContent).not.toContain('ON-STAGE');
+        expect(divergenceContent).not.toContain('OFF-STAGE');
+    });
 });
