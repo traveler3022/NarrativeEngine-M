@@ -48,8 +48,30 @@ export async function deleteCampaign(id: string): Promise<void> {
 
 // ─── Campaign State ───
 
+// Drop the heavy per-message `debugPayload` blobs before they touch IndexedDB.
+// They are captured for the inline payload viewer (debug mode) and can be
+// hundreds of KB each — with debug mode on, a long campaign accumulates dozens
+// of MB of them, which re-serialize on every save and reload straight back into
+// the WebView renderer's heap, pushing it toward the OOM ceiling. The live copy
+// in the store keeps its payloads, so the viewer still works for the current
+// session; only the persisted/reloaded copy is slimmed.
+function stripDebugPayloads(state: CampaignState): CampaignState {
+    const messages = state.messages;
+    if (!Array.isArray(messages) || !messages.some(m => m.debugPayload !== undefined)) {
+        return state;
+    }
+    return {
+        ...state,
+        messages: messages.map(m => {
+            if (m.debugPayload === undefined) return m;
+            const { debugPayload: _drop, ...rest } = m;
+            return rest;
+        }),
+    };
+}
+
 export async function saveCampaignState(campaignId: string, state: CampaignState): Promise<void> {
-    await set(`state_${campaignId}`, state);
+    await set(`state_${campaignId}`, stripDebugPayloads(state));
 }
 
 const AI_PLAYER_CONTEXT_KEYS = [
@@ -64,7 +86,10 @@ export async function loadCampaignState(campaignId: string): Promise<CampaignSta
     if (state.context) {
         for (const key of AI_PLAYER_CONTEXT_KEYS) delete (state.context as any)[key];
     }
-    return state;
+    // Existing campaigns saved with debug mode on still carry fat per-message
+    // debugPayloads on disk; strip them on load so they never re-enter the
+    // renderer heap. (Fresh saves are already slim via saveCampaignState.)
+    return stripDebugPayloads(state);
 }
 
 // ─── Lore Chunks ───
