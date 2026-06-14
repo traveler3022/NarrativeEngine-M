@@ -4,7 +4,10 @@ import { toast } from '../../components/Toast';
 import { embedText, getCurrentModelId } from '../../services/embedding';
 import { embeddingStorage } from '../../services/storage/embeddingStorage';
 import { imageStorage } from '../../services/storage/imageStorage';
-import { buildNPCEmbeddingText } from '../../services/npc';
+import { buildNPCEmbeddingText, findLedgerMatches } from '../../services/npc';
+
+/** A name the auto-detector noticed but did NOT add — the player decides. */
+export type NpcSuggestion = { name: string; context?: string; firstSeen: number };
 
 const NPC_EMBED_FIELDS: (keyof NPCEntry)[] = ['name', 'aliases', 'faction', 'tier', 'appearance', 'personality', 'voice', 'goals', 'storyRelevance'];
 
@@ -94,6 +97,12 @@ export type NPCSlice = {
     // On-stage NPC tracking (perception bounding)
     onStageNpcIds: string[];
     setOnStageNpcIds: (ids: string[]) => void;
+
+    // NPC suggestions — auto-detected names awaiting player promotion
+    npcSuggestions: NpcSuggestion[];
+    addNpcSuggestions: (names: string[], context?: string) => void;
+    dismissNpcSuggestion: (name: string) => void;
+    clearNpcSuggestions: () => void;
 };
 
 // ── Cross-slice deps (reads activeCampaignId for persistence + embedding) ──
@@ -175,4 +184,27 @@ export const createNPCSlice: StateCreator<NPCDeps, [], [], NPCSlice> = (set, get
 
     onStageNpcIds: [],
     setOnStageNpcIds: (ids) => set({ onStageNpcIds: ids }),
+
+    npcSuggestions: [],
+    addNpcSuggestions: (names, context) => set((s) => {
+        const existing = new Set(s.npcSuggestions.map(x => x.name.toLowerCase()));
+        const now = Date.now();
+        const fresh: NpcSuggestion[] = [];
+        for (const raw of names) {
+            const name = raw.trim();
+            if (!name) continue;
+            const key = name.toLowerCase();
+            if (existing.has(key)) continue;
+            // Skip anything already tracked in the ledger (or a name variant of it)
+            if (findLedgerMatches(name, s.npcLedger).length > 0) continue;
+            existing.add(key);
+            fresh.push({ name, context, firstSeen: now });
+        }
+        if (fresh.length === 0) return {};
+        return { npcSuggestions: [...s.npcSuggestions, ...fresh] };
+    }),
+    dismissNpcSuggestion: (name) => set((s) => ({
+        npcSuggestions: s.npcSuggestions.filter(x => x.name.toLowerCase() !== name.toLowerCase()),
+    })),
+    clearNpcSuggestions: () => set({ npcSuggestions: [] }),
 });

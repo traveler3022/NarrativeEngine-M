@@ -2,10 +2,8 @@ import { useState, useRef } from 'react';
 import { X, Plus, LayoutGrid, List, ArrowLeft, Sparkles } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { updateExistingNPCs } from '../services/chatEngine';
-import { parseNPCsFromLore } from '../services/lore';
-import { dedupeNPCLedger } from '../store/slices/npcSlice';
 import { api } from '../services/apiClient';
-import { runNPCReview, type NPCReviewCandidate, type NPCReviewCancelled } from '../services/npc';
+import { runNPCReview, addNpcFromSelection, type NPCReviewCandidate, type NPCReviewCancelled } from '../services/npc';
 
 import type { NPCEntry } from '../types';
 import { toast } from './Toast';
@@ -13,6 +11,7 @@ import { toast } from './Toast';
 import { NPCListView } from './npc-ledger/NPCListView';
 import { NPCGalleryView } from './npc-ledger/NPCGalleryView';
 import { NPCEditForm } from './npc-ledger/NPCEditForm';
+import { NPCSuggestionsPanel } from './npc-ledger/NPCSuggestionsPanel';
 import { NPCReviewModal, type NPCReviewAction } from './NPCReviewModal';
 import { uid } from '../utils/uid';
 import { getEntriesForNpc } from '../services/campaign-state';
@@ -29,6 +28,9 @@ export function NPCLedgerModal() {
   const setMobileView = useAppStore(s => s.setMobileView);
   const activeCampaignId = useAppStore(s => s.activeCampaignId);
   const divergenceRegister = useAppStore(s => s.divergenceRegister);
+  const npcSuggestions = useAppStore(s => s.npcSuggestions);
+  const dismissNpcSuggestion = useAppStore(s => s.dismissNpcSuggestion);
+  const clearNpcSuggestions = useAppStore(s => s.clearNpcSuggestions);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list');
@@ -45,8 +47,6 @@ export function NPCLedgerModal() {
   const [reviewActions, setReviewActions] = useState<Record<string, NPCReviewAction>>({});
   const [reviewError, setReviewError] = useState<string | null>(null);
   const reviewCancelRef = useRef<NPCReviewCancelled>({ cancelled: false });
-
-  const importRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState<Partial<NPCEntry>>({
     status: 'Alive', voice: '', personality: '', exampleOutput: '',
@@ -101,16 +101,29 @@ export function NPCLedgerModal() {
 
 
 
-  const handleExport = () => {
-    const exportData = npcLedger.map(({ ...rest }) => rest);
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `npc_ledger_export_${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a).click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  // Promote a suggestion: same resolve→create/update pass as the toolbar button.
+  // Returns true if it landed (so the panel can clear it).
+  const acceptSuggestion = async (name: string): Promise<boolean> => {
+    const state = useAppStore.getState();
+    if (!state.activeCampaignId) { toast.warning('No active campaign.'); return false; }
+    const result = await addNpcFromSelection({
+      rawText: name,
+      ledger: state.npcLedger ?? [],
+      messages: state.messages,
+      campaignId: state.activeCampaignId,
+      storyProvider: state.getActiveStoryEndpoint() ?? state.getActiveSummarizerEndpoint() ?? state.getActiveUtilityEndpoint(),
+      updateProvider: state.getActiveSummarizerEndpoint() ?? state.getActiveUtilityEndpoint() ?? state.getActiveStoryEndpoint(),
+      items: state.items ?? [],
+      skills: state.skills ?? [],
+      addNPC: state.addNPC,
+      updateNPC: state.updateNPC,
+      addItemDef: state.addItemDef,
+      addSkillDef: state.addSkillDef,
+    });
+    if (result.ok) { dismissNpcSuggestion(name); return true; }
+    if (result.kind === 'ambiguous') toast.warning(result.message);
+    else toast.error(result.message);
+    return false;
   };
 
   const handleAIUpdate = async () => {
@@ -126,52 +139,6 @@ export function NPCLedgerModal() {
         setForm(prev => ({ ...prev, ...patch }));
       });
     } finally { setIsAIUpdating(false); }
-  };
-
-  const handleSeedFromLore = async () => {
-    const chunks = useAppStore.getState().loreChunks;
-    const loreNPCs = parseNPCsFromLore(chunks);
-    if (loreNPCs.length > 0) {
-      const merged = dedupeNPCLedger([...npcLedger, ...loreNPCs]);
-      setNPCLedger(merged);
-      toast.success(`Seeded ${loreNPCs.length} NPCs from lore`);
-    } else {
-      toast.info('No NPCs found in lore chunks');
-    }
-  };
-
-  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const data = JSON.parse(ev.target?.result as string);
-        if (Array.isArray(data)) {
-          const imported = data.map((d: any) => ({
-            id: d.id || uid(),
-            name: d.name || '',
-            aliases: d.aliases || '',
-            appearance: d.appearance || '',
-            faction: d.faction || '',
-            storyRelevance: d.storyRelevance || '',
-            disposition: d.disposition || '',
-            status: d.status || 'Alive',
-            goals: d.goals || '',
-            voice: d.voice || '',
-            personality: d.personality || '',
-            exampleOutput: d.exampleOutput || '',
-            affinity: d.affinity ?? 50,
-          } as NPCEntry));
-          const merged = dedupeNPCLedger([...npcLedger, ...imported]);
-          setNPCLedger(merged);
-          toast.success(`Imported ${imported.length} NPCs`);
-        }
-      } catch {
-        toast.error('Invalid JSON file');
-      }
-    };
-    reader.readAsText(file);
   };
 
   const handleBulkDelete = async () => {
@@ -288,7 +255,6 @@ export function NPCLedgerModal() {
       <div className="hidden md:absolute md:inset-0 md:bg-void/80 md:backdrop-blur-sm" onClick={handleClose} />
 
       <div className="relative bg-surface w-full h-full md:max-w-6xl md:h-[85vh] md:border md:border-border md:shadow-2xl flex flex-col md:flex-row overflow-hidden">
-        <input ref={importRef} type="file" accept=".json" className="hidden" onChange={handleImportFile} />
 
         {/* Navigation / List Side */}
         <div className={`flex flex-col min-h-0 w-full h-full border-r border-border bg-void-lighter transition-transform duration-300 ${showDetail ? 'hidden md:flex md:w-80' : 'flex'}`}>
@@ -313,27 +279,25 @@ export function NPCLedgerModal() {
               </button>
             </div>
             <div className="flex gap-1.5 h-10">
-              <button onClick={() => importRef.current?.click()} className="flex-1 border border-border rounded text-[10px] uppercase tracking-wider text-text-dim">
-                Import
-              </button>
-              <button onClick={handleExport} className="flex-1 border border-border rounded text-[10px] uppercase tracking-wider text-text-dim">
-                Export
-              </button>
-              <button onClick={handleSeedFromLore} className="flex-1 border border-border rounded text-[10px] uppercase tracking-wider text-text-dim">
-                Seed
-              </button>
               <button onClick={() => { setSelectMode(!selectMode); setCheckedIds(new Set()); }} className={`flex-1 border rounded text-[10px] uppercase tracking-wider ${selectMode ? 'border-terminal text-terminal' : 'border-border text-text-dim'}`}>
                 {selectMode ? 'Cancel' : 'Select'}
               </button>
+              <button
+                onClick={handleStartReview}
+                disabled={reviewRunning || activeNPCList.length === 0}
+                className="flex-1 flex items-center justify-center gap-1.5 border border-amber-500/30 rounded text-[10px] uppercase tracking-wider text-amber-400 hover:bg-amber-500/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Sparkles size={12} />
+                Review ({activeNPCList.length})
+              </button>
             </div>
-            <button
-              onClick={handleStartReview}
-              disabled={reviewRunning || activeNPCList.length === 0}
-              className="flex items-center justify-center gap-1.5 w-full h-9 border border-amber-500/30 rounded text-[10px] uppercase tracking-wider text-amber-400 hover:bg-amber-500/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <Sparkles size={12} />
-              AI Review ({activeNPCList.length})
-            </button>
+
+            <NPCSuggestionsPanel
+              suggestions={npcSuggestions}
+              onAccept={acceptSuggestion}
+              onDismiss={dismissNpcSuggestion}
+              onClearAll={clearNpcSuggestions}
+            />
             {selectMode && (
               <div className="flex gap-1.5 h-10">
                 <button onClick={() => setCheckedIds(new Set(activeNPCList.map(n => n.id)))} className="flex-1 border border-border rounded text-[10px] uppercase tracking-wider text-text-dim">

@@ -295,6 +295,7 @@ export function ChatArea() {
             setArchiveIndex,
             updateNPC,
         addNPC,
+        addNpcSuggestions: (names: string[], context?: string) => useAppStore.getState().addNpcSuggestions(names, context),
         addItemDef,
         addSkillDef,
             setCondensed,

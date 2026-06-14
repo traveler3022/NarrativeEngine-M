@@ -1,7 +1,7 @@
 import type { NPCEntry, ArchiveChapter, ArchiveIndexEntry, LLMProvider, WitnessSource } from '../../types';
 import { tierAllows, NPC_UPDATE_COOLDOWN } from './aiTier';
 import type { TurnCallbacks, TurnState } from './turnTypes';
-import { generateNPCProfile, updateExistingNPCs, backfillNPCDrives } from '../chatEngine';
+import { updateExistingNPCs, backfillNPCDrives } from '../chatEngine';
 import { extractNPCNames, classifyNPCNames, validateNPCCandidates } from '../npc';
 import { api } from '../apiClient';
 import { uid } from '../../utils/uid';
@@ -310,21 +310,12 @@ function queueNPCValidation(
                 const { newNames, existingNpcs: existingNpcsToUpdate } = classifyNPCNames(validatedNames, npcLedger);
                 const allMsgs = state.getMessages();
 
-                for (const potentialName of newNames) {
-                    if (!tierAllows(state.settings.aiTier, 'npcProfileGen')) break;
-                    console.log(`[NPC Auto-Gen] Spawning profile: "${potentialName}"`);
-                    const storyProvider = state.getFreshProvider();
-                    const summarizerProvider = state.getFreshSummarizerProvider?.();
-                    if (storyProvider) {
-                        const genTask = summarizerProvider
-                            ? tryWithFallback(
-                                `NPC-Profile-${potentialName}`,
-                                () => generateNPCProfile(storyProvider, allMsgs, potentialName, callbacks.addNPC, npcLedger, activeCampaignId, state.items, callbacks.addItemDef, state.skills, callbacks.addSkillDef),
-                                () => generateNPCProfile(summarizerProvider, allMsgs, potentialName, callbacks.addNPC, npcLedger, activeCampaignId, state.items, callbacks.addItemDef, state.skills, callbacks.addSkillDef),
-                              )
-                            : generateNPCProfile(storyProvider, allMsgs, potentialName, callbacks.addNPC, npcLedger, activeCampaignId, state.items, callbacks.addItemDef, state.skills, callbacks.addSkillDef);
-                        genTask.catch((e) => console.warn(`[TurnPostProcess] NPC profile gen failed for "${potentialName}":`, e));
-                    }
+                // Auto-ADD removed: newly-detected names are surfaced as suggestions
+                // for the player to promote (or dismiss) in the ledger — the player
+                // is the significance gate. Auto-UPDATE of already-tracked NPCs
+                // (below) is unchanged.
+                if (newNames.length > 0) {
+                    callbacks.addNpcSuggestions?.(newNames, lastAssistantContent);
                 }
 
                 if (existingNpcsToUpdate.length > 0 && tierAllows(state.settings.aiTier, 'npcUpdate')) {

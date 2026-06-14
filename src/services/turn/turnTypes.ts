@@ -57,6 +57,9 @@ export type TurnCallbacks = {
     setArchiveIndex: (entries: ArchiveIndexEntry[]) => void;
     updateNPC: (id: string, patch: Partial<NPCEntry>) => void;
     addNPC: (npc: NPCEntry) => void;
+    // Newly-detected names are no longer auto-added; they're surfaced as
+    // suggestions the player promotes (or dismisses) in the ledger.
+    addNpcSuggestions?: (names: string[], context?: string) => void;
     setCondensed: (upToIndex: number) => void;
     setStreaming: (v: boolean) => void;
     setLastPayloadTrace?: (trace: PayloadTrace[]) => void;

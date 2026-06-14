@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
-import { LogOut, ScanSearch, BookCheck, Pin, Replace, MoreVertical, Save, Archive } from 'lucide-react';
+import { LogOut, ScanSearch, BookCheck, Pin, Replace, MoreVertical, Save, Archive, UserPlus, Loader2 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
+import { addNpcFromSelection } from '../services/npc';
 import type { AiTier } from '../types';
 
 const TIER_CYCLE: Record<AiTier, AiTier> = { lite: 'pro', pro: 'max', max: 'lite' };
@@ -48,6 +49,8 @@ export function Header() {
     const [loreSel, setLoreSel] = useState<SelectionSnapshot | null>(null);
     const [pinSel, setPinSel] = useState<SelectionSnapshot | null>(null);
     const [renameSel, setRenameSel] = useState<SelectionSnapshot | null>(null);
+    const [npcSel, setNpcSel] = useState<SelectionSnapshot | null>(null);
+    const [npcAdding, setNpcAdding] = useState(false);
     const [overflowOpen, setOverflowOpen] = useState(false);
     const overflowRef = useRef<HTMLDivElement>(null);
 
@@ -75,6 +78,8 @@ export function Header() {
             const pin = captureFromBubble('[data-message-id]');
             setPinSel(pin);
             setRenameSel(pin);
+            // NPC add only makes sense on GM narration (where NPCs appear)
+            setNpcSel(captureFromBubble('[data-lore-checkable="true"]'));
         };
         document.addEventListener('selectionchange', handle);
         return () => document.removeEventListener('selectionchange', handle);
@@ -132,6 +137,46 @@ export function Header() {
         setRenameSel(null);
         setPinSel(null);
         setLoreSel(null);
+    };
+
+    const handleAddNpc = async (e: React.MouseEvent | React.TouchEvent) => {
+        e.preventDefault();
+        if (npcAdding) return;
+        const snap = captureFromBubble('[data-lore-checkable="true"]') ?? npcSel;
+        if (!snap) return;
+        const state = useAppStore.getState();
+        const campaignId = state.activeCampaignId;
+        if (!campaignId) { toast.warning('No active campaign.'); return; }
+
+        window.getSelection()?.removeAllRanges();
+        setNpcSel(null);
+        setLoreSel(null);
+        setPinSel(null);
+        setNpcAdding(true);
+        toast.info(`Resolving "${snap.text.trim()}"…`);
+        try {
+            const result = await addNpcFromSelection({
+                rawText: snap.text,
+                ledger: state.npcLedger ?? [],
+                messages: state.messages,
+                campaignId,
+                storyProvider: state.getActiveStoryEndpoint() ?? state.getActiveSummarizerEndpoint() ?? state.getActiveUtilityEndpoint(),
+                updateProvider: state.getActiveSummarizerEndpoint() ?? state.getActiveUtilityEndpoint() ?? state.getActiveStoryEndpoint(),
+                items: state.items ?? [],
+                skills: state.skills ?? [],
+                addNPC: state.addNPC,
+                updateNPC: state.updateNPC,
+                addItemDef: state.addItemDef,
+                addSkillDef: state.addSkillDef,
+            });
+            if (result.ok) toast.success(result.message);
+            else if (result.kind === 'ambiguous') toast.warning(result.message);
+            else toast.error(result.message);
+        } catch (err) {
+            toast.error(`Add NPC failed: ${err instanceof Error ? err.message : String(err)}`);
+        } finally {
+            setNpcAdding(false);
+        }
     };
 
     const handleExit = async () => {
@@ -209,6 +254,23 @@ export function Header() {
                     aria-label="Rename selection"
                 >
                     <Replace size={16} />
+                </button>
+
+                <button
+                    onMouseDown={handleAddNpc}
+                    onTouchStart={handleAddNpc}
+                    disabled={npcAdding}
+                    className={`transition-colors p-1 touch-btn ${
+                        npcAdding
+                            ? 'text-terminal'
+                            : npcSel
+                                ? 'text-terminal animate-pulse'
+                                : 'text-text-dim hover:text-terminal'
+                    }`}
+                    title="Add highlighted name to the NPC ledger (or update if it exists)"
+                    aria-label="Add selection to NPC ledger"
+                >
+                    {npcAdding ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
                 </button>
             </div>
 

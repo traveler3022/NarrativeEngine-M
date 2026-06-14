@@ -8,6 +8,10 @@ export type { Gender } from './nameBank';
 export { scanPressure, buildPressurePatch, applyDecay, DECAY_RATE } from './npcPressureTracker';
 export { runNPCReview } from './npcReview';
 export type { NPCReviewCandidate, NPCReviewCancelled, NPCReviewResult } from './npcReview';
+export { resolveNpcSelection, normalizeSelection, findLedgerMatches } from './npcManualResolve';
+export type { NpcResolution } from './npcManualResolve';
+export { addNpcFromSelection } from './manualAdd';
+export type { AddNpcResult, AddNpcDeps } from './manualAdd';
 export {
     deriveStatsFromBudget,
     TIER_DICE_BUDGETS,
