@@ -357,9 +357,12 @@
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
   border-radius: 16px 16px 0 0;
-  height: 100dvh;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  /* Counter the html { zoom: var(--ui-scale) } so the sheet fills the real
+     viewport instead of being shrunk to ui-scale% and pinned to the bottom
+     (which left a dead gap up top). Mirrors #root's height compensation. */
+  height: calc(100dvh / var(--ui-scale, 1));
+  padding-top: calc(env(safe-area-inset-top, 0px) / var(--ui-scale, 1));
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) / var(--ui-scale, 1));
   transform: translateY(100%);
   transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
   display: flex;

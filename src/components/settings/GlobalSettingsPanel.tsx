@@ -46,7 +46,7 @@ export function GlobalSettingsPanel() {
                     </div>
                     <button
                         onClick={() => updateSettings({ autoCondenseEnabled: !settings.autoCondenseEnabled })}
-                        className={`relative w-12 h-6 rounded-full transition-colors ${settings.autoCondenseEnabled ? 'bg-terminal' : 'bg-border'}`}
+                        className={`relative w-12 h-6 shrink-0 ml-3 rounded-full transition-colors ${settings.autoCondenseEnabled ? 'bg-terminal' : 'bg-border'}`}
                     >
                         <div className={`absolute top-[3px] w-4 h-4 rounded-full bg-surface transition-transform ${settings.autoCondenseEnabled ? 'translate-x-[25px]' : 'translate-x-[3px]'}`} />
                     </button>
@@ -121,7 +121,7 @@ export function GlobalSettingsPanel() {
                     </div>
                     <button
                         onClick={() => updateSettings({ autoExtractDivergences: !settings.autoExtractDivergences })}
-                        className={`relative w-12 h-6 rounded-full transition-colors ${settings.autoExtractDivergences !== false ? 'bg-amber-500' : 'bg-border'}`}
+                        className={`relative w-12 h-6 shrink-0 ml-3 rounded-full transition-colors ${settings.autoExtractDivergences !== false ? 'bg-amber-500' : 'bg-border'}`}
                     >
                         <div className={`absolute top-[3px] w-4 h-4 rounded-full bg-surface transition-transform ${settings.autoExtractDivergences !== false ? 'translate-x-[25px]' : 'translate-x-[3px]'}`} />
                     </button>
@@ -205,7 +205,7 @@ export function GlobalSettingsPanel() {
                         </div>
                         <button
                             onClick={() => updateSettings({ [setting]: !settings[setting] })}
-                            className={`relative w-12 h-6 rounded-full transition-colors ${settings[setting] ? 'bg-terminal' : 'bg-border'}`}
+                            className={`relative w-12 h-6 shrink-0 ml-3 rounded-full transition-colors ${settings[setting] ? 'bg-terminal' : 'bg-border'}`}
                         >
                             <div className={`absolute top-[3px] w-4 h-4 rounded-full bg-surface transition-transform ${settings[setting] ? 'translate-x-[25px]' : 'translate-x-[3px]'}`} />
                         </button>
