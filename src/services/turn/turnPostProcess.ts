@@ -1,8 +1,26 @@
-import type { NPCEntry, ArchiveChapter, ArchiveIndexEntry, LLMProvider, WitnessSource } from '../../types';
+import type { NPCEntry, ArchiveChapter, ArchiveIndexEntry, LLMProvider, WitnessSource, SceneStakes } from '../../types';
 import { tierAllows, NPC_UPDATE_COOLDOWN } from './aiTier';
 import type { TurnCallbacks, TurnState } from './turnTypes';
-import { updateExistingNPCs, backfillNPCDrives } from '../chatEngine';
-import { extractNPCNames, classifyNPCNames, validateNPCCandidates } from '../npc';
+import { updateExistingNPCs, backfillNPCDrives, populateAgencyFields } from '../chatEngine';
+import { extractNPCNames, classifyNPCNames, validateNPCCandidates, filterUpdatableNPCs, isAgencyEligible, completeShortWant, drawShortWants } from '../npc';
+import {
+    rollHeartbeat,
+    buildProximityRoster,
+    upgradeWantsToGoals,
+    chooseTick,
+    rollGoal,
+    applyBandToGoal,
+    nextFailStreak,
+    buildDigest,
+    visibilityFromBand,
+    detectTimeskip,
+    runTimeskip,
+    applyGoalOutcomeNudge,
+    applyTierCross,
+    HEARTBEAT_DC,
+    GOAL_BASE_DC,
+} from '../npc';
+import type { TickDelta, Band } from '../npc';
 import { api } from '../apiClient';
 import { uid } from '../../utils/uid';
 import { toast } from '../../components/Toast';
@@ -138,6 +156,12 @@ export async function handlePostTurn(
     npcLedger: NPCEntry[],
     lastAssistantContent: string
 ): Promise<void> {
+    // Clear the agency digest that was folded into the GM call just completed.
+    // A new digest may be set below if the heartbeat fires this turn.
+    if (state.context.agencyDigest) {
+        callbacks.updateContext({ agencyDigest: '' });
+    }
+
     const appendData = await api.archive.append(activeCampaignId, displayInput, lastAssistantContent);
     const appendedSceneId = appendData?.sceneId;
 
@@ -198,6 +222,8 @@ export async function handlePostTurn(
     runBookkeepingScans(state, callbacks, appendedSceneId);
 
     runNPCPressureScan(state, callbacks, npcLedger, displayInput, lastAssistantContent);
+
+    runAgencyTick(state, callbacks, npcLedger, displayInput);
 }
 
 function queueIndexPatch(
@@ -318,15 +344,35 @@ function queueNPCValidation(
                     callbacks.addNpcSuggestions?.(newNames, lastAssistantContent);
                 }
 
+                // NPC Agency Phase 2 — short-want lifecycle (§9.2 #3, ZERO LLM): an on-stage NPC
+                // "acts on" its current short want this turn, so close it and draw a replacement.
+                // Deterministic rotation, no clock/heat. Runs regardless of the npcUpdate tier gate
+                // since it costs no model calls; only touches already-populated, eligible NPCs.
+                for (const npc of existingNpcsToUpdate) {
+                    if (!isAgencyEligible(npc)) continue;
+                    const short = npc.wants?.short;
+                    if (!short || short.length === 0) continue;
+                    const trimmed = completeShortWant(npc.wants!, short[0]);
+                    const drawn = drawShortWants({ matureMode: state.settings.matureMode ?? false, traits: npc.traits ?? [], count: 4 });
+                    const replenished = [...trimmed.short];
+                    for (const w of drawn) {
+                        if (replenished.length >= 4) break;
+                        if (!replenished.includes(w)) replenished.push(w);
+                    }
+                    callbacks.updateNPC(npc.id, { wants: { ...npc.wants!, short: replenished } });
+                }
+
                 if (existingNpcsToUpdate.length > 0 && tierAllows(state.settings.aiTier, 'npcUpdate')) {
                     const archiveIndex = state.archiveIndex;
                     const sceneNow = archiveIndex.length > 0
                         ? parseInt(archiveIndex[archiveIndex.length - 1].sceneId, 10) || 0
                         : 0;
                     const cooldown = NPC_UPDATE_COOLDOWN[state.settings.aiTier ?? 'pro'];
-                    const npcsEligibleForUpdate = existingNpcsToUpdate.filter(npc =>
-                        sceneNow - (npc.lastUpdateScene ?? -Infinity) >= cooldown
-                    );
+                    // Gate the candidate list through agency eligibility (drops PC/locked/dead) before
+                    // the cooldown filter — stale/ineligible NPCs never get an update LLM call.
+                    const onStageIds = existingNpcsToUpdate.map(n => n.id);
+                    const npcsEligibleForUpdate = filterUpdatableNPCs(existingNpcsToUpdate, { recentlyMentionedIds: onStageIds })
+                        .filter(npc => sceneNow - (npc.lastUpdateScene ?? -Infinity) >= cooldown);
 
                     if (npcsEligibleForUpdate.length > 0) {
                         const updateProvider = state.getFreshSummarizerProvider?.() ?? state.getFreshProvider();
@@ -347,6 +393,17 @@ function queueNPCValidation(
                             const backfillProvider = state.getFreshSummarizerProvider?.() ?? state.getFreshProvider();
                             if (backfillProvider) {
                                 backgroundQueue.push('NPC-Drives-Backfill', () => backfillNPCDrives(backfillProvider, allMsgs, npcsNeedingDrives, callbacks.updateNPC)).catch((e) => console.warn('[TurnPostProcess] NPC drives backfill failed:', e));
+                            }
+                        }
+
+                        // NPC Agency Phase 2: lazily populate agency fields (wants/hex/traits/region)
+                        // for relevant, un-populated NPCs — only when they actually matter (cast set),
+                        // never for fog/stale NPCs or the PC. Idempotent; safe to re-run.
+                        const npcsNeedingAgency = existingNpcsToUpdate.filter(n => !n.populated && isAgencyEligible(n));
+                        if (npcsNeedingAgency.length > 0) {
+                            const agencyProvider = state.getFreshSummarizerProvider?.() ?? state.getFreshProvider();
+                            if (agencyProvider) {
+                                backgroundQueue.push('NPC-Agency-Fill', () => populateAgencyFields(agencyProvider, allMsgs, npcsNeedingAgency, callbacks.updateNPC, state.settings.matureMode ?? false)).catch((e) => console.warn('[TurnPostProcess] NPC agency fill failed:', e));
                             }
                         }
                     }
@@ -428,6 +485,294 @@ function runNPCPressureScan(
                 });
             }
         }
+    }
+}
+
+// ── Phase-3 agency heartbeat + timeskip wiring (§9.3, §9.5–9.8) ───────────
+// Call budget: normal turn +0 LLM, seam +0, timeskip +1 batched.
+// The digest folds into the EXISTING GM call via GameContext.agencyDigest (+0).
+
+function runAgencyTick(
+    state: TurnState,
+    callbacks: TurnCallbacks,
+    npcLedger: NPCEntry[],
+    displayInput: string,
+): void {
+    if (!npcLedger || npcLedger.length === 0) return;
+
+    const sceneStakes: SceneStakes = state.context.lastSceneStakes ?? 'calm';
+    const currentTick = state.context.agencyTick ?? 0;
+    const currentDc = state.context.agencyHeartbeatDC ?? HEARTBEAT_DC.initial;
+
+    // ── Timeskip detection (§9.7 Piece D, +1 LLM) ──
+    // Check player input for a time-skip phrase. Timeskip supersedes heartbeat.
+    const timeskipResult = detectTimeskip(displayInput);
+    if (timeskipResult && !('ambiguous' in timeskipResult) && timeskipResult.weeks > 0) {
+        if (tierAllows(state.settings.aiTier, 'timeskipRun')) {
+            runTimeskipPath(state, callbacks, npcLedger, timeskipResult.weeks, currentTick, sceneStakes);
+            return;
+        }
+    }
+
+    // ── Heartbeat trickle (§5/§9.3#1, +0 LLM) ──
+    // Pure formula — no LLM. Only runs if the tier gate allows it.
+    if (!tierAllows(state.settings.aiTier, 'heartbeatTick')) return;
+
+    const heartbeat = rollHeartbeat({ dc: currentDc });
+    // Persist the updated DC regardless of whether the heartbeat fires
+    callbacks.updateContext({ agencyHeartbeatDC: heartbeat.nextDc });
+
+    if (!heartbeat.fired) return;
+
+    // Build proximity roster, excluding PC and ineligible NPCs
+    const pc = npcLedger.find(n => n.isPC);
+    const roster = buildProximityRoster(npcLedger, pc);
+    if (roster.length === 0) return;
+
+    // Pick one random eligible NPC from the roster
+    const pick = roster[Math.floor(Math.random() * roster.length)];
+    const now = currentTick + 1;
+
+    // ── Goal upgrade: idempotent wants→goalRecords migration (§9.6) ──
+    let updatedNpc = { ...pick };
+    if (!updatedNpc.goalRecords || updatedNpc.goalRecords.length === 0) {
+        const goals = upgradeWantsToGoals(updatedNpc, now);
+        if (goals.length > 0) {
+            updatedNpc.goalRecords = goals;
+            callbacks.updateNPC(updatedNpc.id, { goalRecords: goals });
+        }
+    }
+
+    // ── Choose tick (§9.5) ──
+    const tickChoice = chooseTick(updatedNpc, now, sceneStakes);
+    if (tickChoice.kind === 'idle') return;
+
+    // ── Hard gate: pre-roll check, no karma (§9.6 exception 1) ──
+    // If the chosen goal is blocked by scene stakes, write 'blocked' and stop.
+    if (tickChoice.kind === 'goal') {
+        const goal = tickChoice.goal;
+        // contextAllow is checked inside chooseTick (goals blocked by stakes are excluded)
+        // but double-check: if somehow a blocked goal got through, skip it
+        if (goal.state !== 'active') return;
+
+        // Roll the goal (Piece B, §9.6). Fixed base DC — karma inside rollGoal eases the roll;
+        // difficulty must NOT scale with failStreak or it cancels the anti-deadlock nudge.
+        const result = rollGoal(goal, GOAL_BASE_DC);
+        const band: Band = result.band;
+
+        // Apply progress (Piece C, §9.7)
+        const updatedGoal = applyBandToGoal(goal, band, now);
+
+        // Update failStreak (Piece B karma rule)
+        const newFailStreak = nextFailStreak(goal.failStreak, band);
+
+        // The single resolved goal for this beat — progress (applyBandToGoal) AND failStreak together.
+        // `applyTierCross` MUST receive THIS (not the bare `updatedGoal`), or the cross-turn write below
+        // would clobber `newFailStreak` with the stale value. (The timeskip path already passes the
+        // merged goal into applyTierCross; this keeps both resolution paths consistent.)
+        const resolvedGoal = { ...updatedGoal, failStreak: newFailStreak };
+
+        // Write state deltas via updateNPC
+        const goalRecords = (updatedNpc.goalRecords ?? []).map(g =>
+            g.text === goal.text && g.horizon === goal.horizon
+                ? resolvedGoal
+                : g
+        );
+        callbacks.updateNPC(updatedNpc.id, { goalRecords });
+
+        // WO-05 §D + WO-06 §1 — engine-resolve nudge (hex drift, +0 LLM) AND rung-ladder tier-cross
+        // on the SAME resolved goal. Both are pure; we batch them into ONE `updateNPC` call so the
+        // `previousSnapshot` is captured once (pre-nudge hex, pre-bump rung) and a single SHIFT
+        // surfacing pass on the next payload read sees both drifts. `canCrossTier` (inside
+        // `applyTierCross`) enforces the §9.7 both-conditions rule — grind-only never crosses.
+        const nudge = applyGoalOutcomeNudge(updatedNpc, goal, band);
+        const tierCross = applyTierCross(updatedNpc, resolvedGoal);
+        if (nudge.hexPatch || tierCross) {
+            const patch: Partial<NPCEntry> = {};
+            // If the tier-cross fired, write the consumed goal (flag cleared, progress 0) back.
+            if (tierCross) {
+                patch.goalRecords = goalRecords.map(g =>
+                    g.text === updatedGoal.text && g.horizon === updatedGoal.horizon
+                        ? tierCross.updatedGoal
+                        : g
+                );
+            }
+            if (nudge.hexPatch) patch.personalityHex = nudge.hexPatch;
+            if (tierCross && tierCross.rungPatch !== undefined) patch.skillRung = tierCross.rungPatch;
+            // Single snapshot capturing the PRE-change state for every drifted field. The hex
+            // snapshot is the pre-nudge hex (so the hex SHIFT surfaces); the rung snapshot is the
+            // pre-bump rung. Both are read by `buildDriftAlert` on the next payload read.
+            patch.previousSnapshot = {
+                personality: updatedNpc.personality || updatedNpc.disposition || '',
+                voice: updatedNpc.voice || '',
+                affinity: updatedNpc.affinity,
+                personalityHex: updatedNpc.personalityHex,  // pre-nudge
+                pcRelation: updatedNpc.pcRelation,
+                skillRung: updatedNpc.skillRung,            // pre-bump
+            };
+            patch.shiftTurnCount = 0;
+            callbacks.updateNPC(updatedNpc.id, patch);
+            if (nudge.shiftLine) console.log(`[AgencyTick] hex nudge npc=${updatedNpc.id} ${nudge.shiftLine}`);
+            if (tierCross && tierCross.rungShiftLine) console.log(`[AgencyTick] rung cross npc=${updatedNpc.id} ${tierCross.rungShiftLine}`);
+        }
+
+        // Advance tick counter
+        callbacks.updateContext({ agencyTick: now });
+
+        // Build and emit TickDelta for the digest
+        const visibility = visibilityFromBand(band, goal.horizon);
+        const delta: TickDelta = {
+            npcId: updatedNpc.id,
+            goalText: goal.text,
+            horizon: goal.horizon,
+            band,
+            visibility,
+            note: '',
+        };
+
+        // Build player digest and fold into GameContext for the next GM call
+        const existingDigest = state.context.agencyDigest ?? '';
+        const newDigest = buildDigest([delta], 'player');
+        if (newDigest) {
+            const combined = existingDigest ? existingDigest + '\n' + newDigest : newDigest;
+            callbacks.updateContext({ agencyDigest: combined });
+        }
+
+        // Build debug digest and log it
+        const debugDigest = buildDigest([delta], 'debug');
+        if (debugDigest) {
+            console.log(`[AgencyTick] heartbeat tick=${now} npc=${updatedNpc.id} band=${band} vis=${visibility}\n${debugDigest}`);
+        }
+    } else if (tickChoice.kind === 'color') {
+        // Color tick: no goal resolution, just note it for the digest
+        callbacks.updateContext({ agencyTick: now });
+        console.log(`[AgencyTick] heartbeat tick=${now} npc=${updatedNpc.id} kind=color (novelty whiplash — no goal delta)`);
+    } else if (tickChoice.kind === 'need') {
+        // Need tick: all goals blocked, surfaced a pool need — no goal delta
+        callbacks.updateContext({ agencyTick: now });
+        console.log(`[AgencyTick] heartbeat tick=${now} npc=${updatedNpc.id} kind=need (all goals blocked)`);
+    }
+}
+
+// ── Timeskip path (+1 batched LLM for narration, engine state only otherwise) ──
+function runTimeskipPath(
+    state: TurnState,
+    callbacks: TurnCallbacks,
+    npcLedger: NPCEntry[],
+    weeks: number,
+    currentTick: number,
+    sceneStakes: SceneStakes,
+): void {
+    const pc = npcLedger.find(n => n.isPC);
+    const roster = buildProximityRoster(npcLedger, pc);
+
+    // Upgrade wants→goals for all roster NPCs idempotently before simulation
+    const upgradedRoster = roster.map(npc => {
+        if (!npc.goalRecords || npc.goalRecords.length === 0) {
+            const goals = upgradeWantsToGoals(npc, currentTick);
+            if (goals.length > 0) {
+                const upgraded = { ...npc, goalRecords: goals };
+                callbacks.updateNPC(npc.id, { goalRecords: goals });
+                return upgraded;
+            }
+        }
+        return npc;
+    });
+
+    const provider = state.getFreshSummarizerProvider?.() ?? state.getFreshProvider();
+
+    const result = runTimeskip({
+        provider,
+        roster: upgradedRoster,
+        weeks,
+        now: currentTick,
+        sceneStakes,
+        advanceTick: (by: number) => {
+            const newTick = currentTick + by;
+            callbacks.updateContext({ agencyTick: newTick });
+            return newTick;
+        },
+    });
+
+    // Persist NPC state deltas from the timeskip simulation.
+    // WO-05 §D / WO-06: the nudge + tier-cross mutate `updatedNPCs` copies in place. We detect a
+    // changed NPC by `previousSnapshot` being set (only the nudge/tier-cross branches set it;
+    // a pure spread copy carries no `previousSnapshot`). goalRecords always persist as before.
+    for (const npc of result.updatedNPCs) {
+        const changed = !!npc.previousSnapshot;
+        if (npc.goalRecords && !changed) {
+            callbacks.updateNPC(npc.id, { goalRecords: npc.goalRecords });
+        } else if (changed) {
+            const patch: Partial<NPCEntry> = {};
+            if (npc.goalRecords) patch.goalRecords = npc.goalRecords;
+            if (npc.personalityHex !== undefined) patch.personalityHex = npc.personalityHex;
+            if (npc.skillRung !== undefined) patch.skillRung = npc.skillRung;
+            if (npc.previousSnapshot) patch.previousSnapshot = npc.previousSnapshot;
+            if (npc.shiftTurnCount !== undefined) patch.shiftTurnCount = npc.shiftTurnCount;
+            callbacks.updateNPC(npc.id, patch);
+        }
+    }
+
+    // Advance the tick counter
+    callbacks.updateContext({ agencyTick: currentTick + result.ticksConsumed });
+
+    // Build and store the digest (player-visible deltas, folded into next GM call, +0)
+    if (result.deltas.length > 0) {
+        const digestText = buildDigest(result.deltas, 'player');
+        if (digestText) {
+            const existing = state.context.agencyDigest ?? '';
+            const combined = existing ? existing + '\n' + digestText : digestText;
+            callbacks.updateContext({ agencyDigest: combined });
+        }
+
+        const debugText = buildDigest(result.deltas, 'debug');
+        if (debugText) {
+            console.log(`[AgencyTick] timeskip weeks=${weeks} ticks=${result.ticksConsumed}\n${debugText}`);
+        }
+    }
+
+    // Timeskip narration: +1 LLM call (the ONLY additional LLM cost).
+    // The narration is appended as a system message at the seam.
+    if (result.narration && provider) {
+        backgroundQueue.push('Timeskip-Narration', async () => {
+            try {
+                const narrationPrompt = joinPromptSections(
+                    TTRPG_PERSONA_GM_ASSISTANT,
+                    `Write the "what you return to" beat after a time-skip of about ${weeks.toFixed(1)} weeks.`,
+                    `While the player was away, the world kept moving. Below are the off-screen developments that are now visible to the player — already decided, NOT for you to change. Weave them into a single cohesive in-fiction paragraph that lands when the player steps back into the scene: the sense that time genuinely passed and people pursued their own lives.`,
+                    `RULES:
+- 2-4 sentences, second person ("you return to find…"), present the changes as discovered, not narrated as a report.
+- Dramatize ONLY the developments listed. Do NOT invent new characters, events, deaths, or plot twists beyond them.
+- Use the characters' names exactly as given. Keep each development recognizable.
+- No game mechanics, numbers, dice, percentages, or meta language — pure fiction.
+- If the developments conflict in tone, hold them side by side; do not resolve or editorialize.`,
+                    ANCHOR_BEFORE_INPUT,
+                    INPUT_DELIMITER,
+                    `OFF-SCREEN DEVELOPMENTS:\n${result.narration}`,
+                );
+                const narrationText = await llmCall(provider, narrationPrompt, { priority: 'low', maxTokens: 300, thinkingEffort: 'off' });
+                if (narrationText && narrationText.trim()) {
+                    callbacks.addMessage({
+                        id: uid(),
+                        role: 'system',
+                        name: 'timeskip-seam',
+                        content: `[Time passes] ${narrationText.trim()}`,
+                        timestamp: Date.now(),
+                    });
+                }
+            } catch (err) {
+                console.warn('[AgencyTick] Timeskip narration failed, using deterministic fallback:', err);
+                if (result.narration) {
+                    callbacks.addMessage({
+                        id: uid(),
+                        role: 'system',
+                        name: 'timeskip-seam',
+                        content: `[Time passes] ${result.narration}`,
+                        timestamp: Date.now(),
+                    });
+                }
+            }
+        }).catch((e) => console.warn('[AgencyTick] Timeskip-Narration queue push failed:', e));
     }
 }
 

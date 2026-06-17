@@ -23,6 +23,7 @@ import { sanitizePayloadForApi } from '../llm/payloadSanitizer';
 import { gatherContext } from './turnContext';
 import { handlePostTurn } from './turnPostProcess';
 import { getToolDefinitions, handleLoreTool, handleNotebookTool, handleDiceTool, handleAdjudicateTool, handleInitiateCombatTool, handleProposeInventoryTool } from './toolHandlers';
+import { extractAndStripSceneStakes, classifySceneStakes } from './sceneStakesTag';
 
 import type { OpenAIMessage } from '../llm/llmService';
 import { buildAssistantToolCallMessage, buildToolResultMessage } from '../../types/llmMessages';
@@ -452,7 +453,28 @@ export async function runTurn(
                 // and the rewritten prose then spawned phantom NPCs via detection.
                 // Name de-duplication is now USER-DRIVEN (highlight → rename) instead.
                 // The proactive reserved-names prompt guard (non-mutating) stays.
-                callbacks.updateLastAssistant(finalText);
+
+                // ── Scene stakes tag: parse + strip from display text (§9.3#2) ──
+                const { displayText: stakesStrippedText, stakes: parsedStakes } = extractAndStripSceneStakes(finalText);
+                let sceneStakes = parsedStakes;
+                const tagWasPresent = parsedStakes !== 'calm' || finalText !== stakesStrippedText;
+                if (!tagWasPresent) {
+                    const utilityProvider = state.getUtilityEndpoint?.();
+                    if (utilityProvider && tierAllows(settings.aiTier, 'sceneStakesClassify')) {
+                        try {
+                            const recentScene = state.messages.slice(-3).map(m => {
+                                const role = m.role === 'assistant' ? 'GM' : m.role.toUpperCase();
+                                return `[${role}]: ${(m.content || '').slice(0, 500)}`;
+                            }).join('\n\n');
+                            sceneStakes = await classifySceneStakes(utilityProvider, recentScene + '\n\n' + finalText.slice(0, 1000));
+                        } catch (e) {
+                            console.warn('[TurnOrchestrator] scene-stakes fallback classify failed:', e);
+                        }
+                    }
+                }
+                callbacks.updateContext({ lastSceneStakes: sceneStakes });
+
+                callbacks.updateLastAssistant(stakesStrippedText);
                 if (reasoningContent) {
                     callbacks.updateLastMessage({ reasoning_content: reasoningContent });
                 }

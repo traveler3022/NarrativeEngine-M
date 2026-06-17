@@ -168,6 +168,7 @@ export function Header() {
                 updateNPC: state.updateNPC,
                 addItemDef: state.addItemDef,
                 addSkillDef: state.addSkillDef,
+                matureMode: state.settings?.matureMode ?? false,
             });
             if (result.ok) toast.success(result.message);
             else if (result.kind === 'ambiguous') toast.warning(result.message);

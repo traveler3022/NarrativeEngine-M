@@ -130,24 +130,32 @@ export function minifyLoreChunk(chunk: LoreChunk): string {
  * Drops verbose labels and compresses into a single dense line.
  * 
  * Before: [ASH HUANG (None)] Alive | Affinity: 50/100 (Neutral) | Asian male... | Goals: ...
- * After:  ASH_HUANG Alive aff:50 | Asian male... | panicked | Gim:... Glr:... | 6/5/10/1/7/6
+ * After:  [ASH_HUANG] Alive | Asian male... | panicked | Goals: ...
+ *
+ * Sentiment toward the PC and personality reach the LLM as WORD-BANDS via
+ * buildBehaviorDirective — never as raw numbers here. `aff:NN` was dropped (redundant with the
+ * [Aff: …] band), and the free-text personality is omitted once the personality hexagon exists
+ * so the model sees one personality signal, not two.
  */
 export function minifyNPC(npc: NPCEntry, offStage?: boolean): string {
     const aliases = npc.aliases ? `(${npc.aliases})` : '';
     const name = npc.name.toUpperCase();
     const status = npc.status || 'Alive';
-    const aff = npc.affinity ?? 50;
     const frozenTag = offStage ? ' [KNOWLEDGE FROZEN]' : '';
 
     const appearance = (npc.appearance || '?').length > 80
         ? (npc.appearance || '?').substring(0, 80) + '…'
         : (npc.appearance || '?');
 
-    const personality = (npc.personality || npc.disposition || '?').length > 60
-        ? (npc.personality || npc.disposition || '?').substring(0, 60) + '…'
-        : (npc.personality || npc.disposition || '?');
+    const personalityRaw = npc.personality || npc.disposition || '';
+    const personality = npc.personalityHex
+        ? ''
+        : (personalityRaw.length > 60 ? personalityRaw.substring(0, 60) + '…' : (personalityRaw || '?'));
 
     const goals = npc.goals || '?';
 
-    return `[${name}${aliases}]${frozenTag} ${status} aff:${aff} | ${appearance} | ${personality} | ${goals}`;
+    const parts = [appearance];
+    if (personality) parts.push(personality);
+    parts.push(goals);
+    return `[${name}${aliases}]${frozenTag} ${status} | ${parts.join(' | ')}`;
 }

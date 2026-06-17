@@ -7,6 +7,8 @@ const ALL_FEATURES: TierFeature[] = [
     'deepScan', 'recommender',
     'importanceRating', 'witnessAux', 'npcValidate', 'npcProfileGen',
     'npcUpdate', 'drivesBackfill', 'profileScan', 'inventoryScan', 'sealChapter',
+    'sceneStakesClassify',
+    'heartbeatTick', 'timeskipRun',
 ];
 
 describe('tierAllows — lite', () => {
@@ -29,6 +31,7 @@ describe('tierAllows — pro', () => {
     const PRO_ON: TierFeature[] = [
         'planner', 'archiveFunnel', 'recommender', 'deepScan',
         'npcValidate', 'npcProfileGen', 'npcUpdate', 'sealChapter',
+        'sceneStakesClassify', 'heartbeatTick', 'timeskipRun',
     ];
     const PRO_OFF: TierFeature[] = [
         'introEngine', 'expandQuery', 'reranker',

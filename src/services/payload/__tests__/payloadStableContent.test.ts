@@ -24,3 +24,16 @@ describe('buildStablePreamble — NPC knowledge boundary', () => {
         expect(result.stableContent).toContain('[END NPC KNOWLEDGE BOUNDARY]');
     });
 });
+
+describe('buildStablePreamble — SCENE_STAKES rubric', () => {
+    it('output contains SCENE_STAKES rubric', () => {
+        const result = buildStablePreamble({
+            settings: baseSettings,
+            context: { rulesRaw: 'Some rules text', starterActive: false, continuePromptActive: false, diceFairnessActive: true },
+            budgetMap: { stable: 2000, summary: 800, world: 4000, rules: 2000, volatile: 1000 },
+            addTrace: noTrace,
+        });
+        expect(result.stableContent).toContain('[[SCENE_STAKES:');
+        expect(result.stableContent).toContain('calm|tense|dangerous');
+    });
+});

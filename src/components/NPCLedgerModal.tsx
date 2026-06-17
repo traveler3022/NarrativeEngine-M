@@ -119,6 +119,7 @@ export function NPCLedgerModal() {
       updateNPC: state.updateNPC,
       addItemDef: state.addItemDef,
       addSkillDef: state.addSkillDef,
+      matureMode: state.settings?.matureMode ?? false,
     });
     if (result.ok) { dismissNpcSuggestion(name); return true; }
     if (result.kind === 'ambiguous') toast.warning(result.message);

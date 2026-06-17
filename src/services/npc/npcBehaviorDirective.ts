@@ -1,4 +1,5 @@
-import type { NPCEntry } from '../../types';
+import type { NPCEntry, HexAxis } from '../../types';
+import { relationBand, describeHex, formatHexShift, formatRungShift } from './agencyBands';
 
 function affinityDescriptor(v: number): string {
     if (v <= 15) return 'Nemesis — actively hostile';
@@ -18,10 +19,24 @@ function truncate(s: string, max: number): string {
 export function buildBehaviorDirective(npc: NPCEntry): string {
     const parts: string[] = [];
 
-    const affinityLabel = affinityDescriptor(npc.affinity);
+    // Prefer the re-homed PC edge (word-banded -3..+3); fall back to legacy affinity for
+    // un-migrated NPCs. Numbers never reach the LLM — band words only.
+    const affinityLabel = npc.pcRelation !== undefined
+        ? relationBand(npc.pcRelation)
+        : affinityDescriptor(npc.affinity);
     parts.push(`[Aff: ${affinityLabel}]`);
 
-    if (npc.drives) {
+    if (npc.personalityHex) {
+        parts.push(`Personality: ${describeHex(npc.personalityHex)}`);
+    }
+
+    // Agency wants (Phase 2) supersede the legacy drives display when present — a migrated NPC
+    // carries both, and they hold the same seeded content, so show one to avoid duplication.
+    if (npc.wants && (npc.wants.long || npc.wants.medium?.length || npc.wants.short?.length)) {
+        if (npc.wants.long) parts.push(`GOAL: ${truncate(npc.wants.long, 80)}`);
+        if (npc.wants.medium?.[0]) parts.push(`PURSUING: ${truncate(npc.wants.medium[0], 60)}`);
+        if (npc.wants.short?.[0]) parts.push(`NOW: ${truncate(npc.wants.short[0], 40)}`);
+    } else if (npc.drives) {
         const driveParts: string[] = [];
         if (npc.drives.sceneWant) driveParts.push(truncate(npc.drives.sceneWant, 80));
         if (npc.drives.sessionWant) driveParts.push(truncate(npc.drives.sessionWant, 80));
@@ -72,6 +87,34 @@ export function buildDriftAlert(npc: NPCEntry): string | null {
 
     if (prev.voice !== undefined && prev.voice !== '' && npc.voice !== '' && prev.voice !== npc.voice) {
         shifts.push('voice changed');
+    }
+
+    // WO-05 §C — hex-axis drift surfaces as a word-band SHIFT (never the raw integer).
+    // Only emit when the band word actually changes; a sub-band ±1 move that stays in the same
+    // word isn't worth surfacing (formatHexShift returns '' in that case).
+    if (prev.personalityHex && npc.personalityHex) {
+        const axes: HexAxis[] = ['drive', 'diligence', 'boldness', 'warmth', 'empathy', 'composure'];
+        for (const axis of axes) {
+            const line = formatHexShift(axis, prev.personalityHex[axis], npc.personalityHex[axis]);
+            if (line) shifts.push(line.replace('SHIFT: ', ''));
+        }
+    }
+
+    // WO-05 §A — pcRelation drift surfaces as a word-band SHIFT (never the raw −3..+3 integer).
+    if (prev.pcRelation !== undefined && npc.pcRelation !== undefined
+        && prev.pcRelation !== npc.pcRelation) {
+        const fromWord = relationBand(prev.pcRelation);
+        const toWord = relationBand(npc.pcRelation);
+        if (fromWord !== toWord) {
+            shifts.push(`feeling toward PC ${fromWord} → ${toWord}`);
+        }
+    }
+
+    // WO-06 §2 — rung bump surfaces as a word-band SHIFT (never the integer 0..4).
+    if (prev.skillRung !== undefined && npc.skillRung !== undefined
+        && prev.skillRung !== npc.skillRung) {
+        const rungShift = formatRungShift(prev.skillRung, npc.skillRung);
+        if (rungShift) shifts.push(rungShift.replace('SHIFT: ', ''));
     }
 
     if (shifts.length === 0) return null;

@@ -83,6 +83,7 @@ export type AppSettings = {
     rulesBudgetPct?: number;        // fraction of contextLimit for rules RAG, default 0.10
     autoGenerateRuleKeywords?: boolean; // default true; false = header+bold derivation only
     embeddingModel?: 'standard' | 'high'; // default 'standard'
+    matureMode?: boolean;            // default false; gates mature-tier NPC traits/wants (NPC Agency Phase 2)
 
     utilityTimeoutSeconds?: number;   // soft deadline for utility AI calls (reranker, recommender, expandQuery). Default 45. User can EXTEND +1m mid-flight.
     verboseUtilityLogging?: boolean;  // when true, utility call tracker records extra detail (slot waits, retries, payload sizes)
@@ -160,6 +161,8 @@ export type GameContext = {
     surpriseDC?: number;
     encounterDC?: number;
     worldEventDC?: number;
+    agencyTick?: number;          // Phase-3 monotonic tick counter (heartbeat/timeskip advance it)
+    agencyHeartbeatDC?: number;   // Phase-3 escalating-DC pity timer (mirrors surpriseDC; §5/§9.3#1)
     diceConfig?: DiceConfig;
     worldEventConfig?: WorldEventConfig;
     // Toggles: whether each field is appended to context
@@ -192,6 +195,8 @@ export type GameContext = {
         confirmOnBorderline?: boolean;
         combatKeywords?: string[];
     };
+    lastSceneStakes?: SceneStakes;     // Phase-3 §9.3#2: last parsed/fallback scene stakes
+    agencyDigest?: string;             // Phase-3 §9.3#7: player-visible tick digest, folded into next GM call
     statLabelMap?: Record<string, string>;
 };
 
@@ -380,6 +385,47 @@ export type NPCDrives = {
     sceneWant: string;
 };
 
+// ---- NPC Agency (Phase 1: schema only — no dice/heat/karma/tick logic) ----
+// Numbers below are engine-internal and are NEVER sent raw to the LLM; they reach
+// the model only via word-bands (see src/services/npc/agencyBands.ts).
+
+// Personality hexagon: 6 spectrum axes, each stored -3..+3 (0 = neutral center).
+export type HexAxis = 'drive' | 'diligence' | 'boldness' | 'warmth' | 'empathy' | 'composure';
+export type PersonalityHex = Record<HexAxis, number>;
+
+// Tiered wants. Sits beside the legacy NPCDrives (seeded from it in Phase 2; not deleted).
+export type NPCWants = {
+    short: string[];   // needs/flavor pool draws; repeats allowed; no LLM
+    medium: string[];  // goal templates (pool); LLM-updated in Phase 2
+    long: string;      // single long goal; LLM-generated at creation (Phase 2)
+};
+
+// Scene danger gradient (Phase 3 §9.3#2). Gates which goal tiers may tick: `dangerous` blocks
+// long-goals + relaxing. Emitted by the GM call (with a cheap classifier fallback).
+export type SceneStakes = 'calm' | 'tense' | 'dangerous';
+
+// ---- NPC Agency Phase 3: Goal records (the §9.6 hidden columns) ----
+// Engine-internal. ONLY `text` ever reaches the LLM (+ derived word-bands). Everything else stays
+// in state. Seeded from NPCWants medium/long strings by the lazy migration (upgradeWantsToGoals).
+export type GoalHorizon = 'med' | 'long';
+export type GoalState = 'active' | 'achieved' | 'blocked' | 'retired';
+export type Goal = {
+    text: string;                 // reaches LLM (display); the only payload-visible field
+    horizon: GoalHorizon;
+    tier: 'default' | 'mature';   // content gate
+    base_heat: number;            // Piece A
+    lastAdvancedTick: number;     // Piece A: neglect = now − this
+    failStreak: number;           // Piece B (karma, NEVER in payload)
+    progress: number;             // Piece C
+    quota: number;                // Piece C (scales with magnitude)
+    state: GoalState;
+    justifiedEventFlag?: boolean; // set by Crit Success, consumed by tier-cross (Piece C)
+};
+
+// Sparse, directed NPC->NPC relation graph. Key = target NPC id; absent key = Neutral (0).
+// Only non-neutral edges are stored. Each value -3..+3.
+export type RelationGraph = Record<string, number>;
+
 export type NPCBehavioralTrigger = {
     keyword: string;
     shift: string;
@@ -417,7 +463,7 @@ export type NPCEntry = {
     behavioralTriggers?: NPCBehavioralTrigger[];
     hardBoundaries?: string[];
     softBoundaries?: string[];
-    previousSnapshot?: { personality: string; voice: string; affinity: number };
+    previousSnapshot?: { personality: string; voice: string; affinity: number; personalityHex?: PersonalityHex; pcRelation?: number; skillRung?: number };
     shiftNote?: string;
     shiftTurnCount?: number;
     tier?: 'recurring' | 'oneshot' | 'walkon';
@@ -444,6 +490,20 @@ export type NPCEntry = {
     overrides?: NPCOverride[];
     portrait?: boolean;
     portraitSeed?: number;
+    // ---- NPC Agency fields (Phase 1, all optional → lazy migration) ----
+    wants?: NPCWants;
+    personalityHex?: PersonalityHex;
+    traits?: string[];            // <=5, controlled vocab (see services/npc/agencyPools.ts)
+    region?: string;              // coarse location: 'academy' | 'Ryuten' | ...
+    haunt?: string;               // flavor only, for reports ('the garden')
+    relations?: RelationGraph;    // NPC->NPC sparse directed edges
+    pcRelation?: number;          // -3..+3 — dedicated NPC->PC slot (re-homed from affinity)
+    populated?: boolean;          // false/undefined = not yet generated (Phase-2 lazy fill)
+    agencyLocked?: boolean;       // true = player authors this NPC; skip agency updates
+    goalRecords?: Goal[];         // Phase-3 engine layer (hidden cols); seeded from wants.medium/long
+    // ---- NPC Agency Phase 4: power-rung ladder (Piece C) ----
+    skillRung?: number;           // 0..4 ladder position; undefined = not yet set (default Novice=0 on fill)
+    rungCeiling?: number;         // 0..4 talent cap; LLM-set once, default 3. skillRung may never exceed this.
 };
 
 
@@ -567,7 +627,7 @@ export type TimelineEvent = {
 
 export type LoreCheckCategory = 'wrong-fact' | 'contradicts-lore' | 'wrong-entity' | 'tone-voice' | 'out-of-character';
 
-export type LoreCheckVerdict = 'consistent' | 'unsupported' | 'contradicts';
+export type LoreCheckVerdict = 'consistent' | 'unsupported' | 'contradicts' | 'corrected';
 
 export type LoreCheckSelection = {
     messageId: string;

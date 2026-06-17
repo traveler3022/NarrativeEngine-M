@@ -106,6 +106,8 @@ export const defaultContext: GameContext = {
     combatModeActive: false,
     combatConfig: { ...DEFAULT_COMBAT_CONFIG },
     statLabelMap: { ...DEFAULT_STAT_LABEL_MAP },
+    lastSceneStakes: 'calm',
+    agencyDigest: '',
 };
 
 // ── Slice type ─────────────────────────────────────────────────────────

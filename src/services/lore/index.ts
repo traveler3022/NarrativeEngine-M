@@ -1,6 +1,6 @@
 export { chunkLoreFile } from './loreChunker';
 export { retrieveRelevantLore, searchLoreByQuery } from './loreRetriever';
-export { runLoreCheck, buildVerifierPrompt, buildSearchQuery } from './loreCheck';
+export { runLoreCheck, buildVerifierPrompt, buildSearchQuery, runDirectRewrite, buildRewritePrompt } from './loreCheck';
 export { extractEngineSeeds } from './loreEngineSeeder';
 export { enrichLoreKeywords } from './loreKeywordEnricher';
 export { parseNPCsFromLore } from './loreNPCParser';

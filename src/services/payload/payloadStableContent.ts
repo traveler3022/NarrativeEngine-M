@@ -97,6 +97,14 @@ export function buildStablePreamble(opts: {
         '[END NPC KNOWLEDGE BOUNDARY]'
     );
 
+    stableParts.push(
+        'On the LAST line of your response, output a scene-stakes tag:\n' +
+        '[[SCENE_STAKES: calm|tense|dangerous]]\n' +
+        'Rubric: calm = no immediate threat; tense = physical OR social/political threat looming;\n' +
+        'dangerous = active harm or imminent deadly/ruinous consequences. This tag is metadata —\n' +
+        'never reference it in your prose.'
+    );
+
     const stableContent = stableParts.join('\n\n');
     const stableTokens = countTokens(stableContent);
     addTrace({ source: 'Stable Preamble', classification: 'stable_truth', tokens: stableTokens, reason: 'Rules & Core state', included: true, position: 'system_static' });

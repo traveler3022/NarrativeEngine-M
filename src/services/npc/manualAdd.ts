@@ -28,6 +28,7 @@ export type AddNpcDeps = {
     updateNPC: (id: string, patch: Partial<NPCEntry>) => void;
     addItemDef: (item: ItemDef) => void;
     addSkillDef: (skill: SkillDef) => void;
+    matureMode?: boolean;   // gates mature-tier traits/wants for the generated NPC (default false)
 };
 
 /**
@@ -70,6 +71,7 @@ export async function addNpcFromSelection(deps: AddNpcDeps): Promise<AddNpcResul
                 await generateNPCProfile(
                     deps.storyProvider, deps.messages, resolution.name, deps.addNPC,
                     deps.ledger, deps.campaignId, deps.items, deps.addItemDef, deps.skills, deps.addSkillDef,
+                    deps.matureMode ?? false,
                 );
                 return { ok: true, kind: 'created', name: resolution.name, message: `Added ${resolution.name} to the ledger.` };
             } catch (e) {

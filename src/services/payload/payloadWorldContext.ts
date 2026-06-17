@@ -1,6 +1,7 @@
 import type { GameContext, LoreChunk, NPCEntry, ArchiveScene, ArchiveIndexEntry, ArchiveChapter, ChatMessage, PayloadTrace, SceneEvent } from '../../types';
 import { countTokens } from '../infrastructure';
 import { buildBehaviorDirective, buildDriftAlert } from '../npc';
+import { relationBand } from '../npc/agencyBands';
 import { minifyLoreChunk, minifyNPC } from './contextMinifier';
 
 export function computeOpenThreads(chapters: ArchiveChapter[]): { text: string; chapterId: string }[] {
@@ -391,7 +392,7 @@ export function assembleWorldBlocks(opts: {
 
         if (activeNPCs.length > 0) {
             const onStageSet = new Set(onStageNpcIds ?? []);
-            const npcText = `[ACTIVE NPC CONTEXT]\n${activeNPCs.map(npc => {
+            const npcLines = activeNPCs.map(npc => {
                 let line = minifyNPC(npc, onStageSet.size > 0 && !onStageSet.has(npc.id));
                 const directive = buildBehaviorDirective(npc);
                 if (directive) line += ` | ${directive}`;
@@ -416,9 +417,37 @@ export function assembleWorldBlocks(opts: {
                     }
                 }
                 return line;
-            }).join('\n')}\n[END NPC CONTEXT]`;
+            }).join('\n');
+
+            // On-stage NPC↔NPC relations as words (sparse, directed). Only edges between NPCs
+            // both present this scene reach the LLM — the graph's total size never matters here.
+            const presentNPCs = onStageSet.size > 0
+                ? activeNPCs.filter(n => onStageSet.has(n.id))
+                : activeNPCs;
+            const relationLines: string[] = [];
+            for (const a of presentNPCs) {
+                if (!a.relations) continue;
+                for (const b of presentNPCs) {
+                    if (a.id === b.id) continue;
+                    const v = a.relations[b.id];
+                    if (v === undefined || v === 0) continue;
+                    relationLines.push(`${a.name} → ${b.name}: ${relationBand(v)}`);
+                }
+            }
+            const relationBlock = relationLines.length > 0
+                ? `\n[ON-STAGE RELATIONS]\n${relationLines.join('\n')}`
+                : '';
+
+            const npcText = `[ACTIVE NPC CONTEXT]\n${npcLines}${relationBlock}\n[END NPC CONTEXT]`;
             worldBlocks.push({ source: 'Active NPCs', content: npcText, tokens: countTokens(npcText), reason: `NPCs detected in context (${activeNPCs.length}, minified)`, npcIds: activeNPCs.map(n => n.id) });
         }
+    }
+
+    // Phase-3 agency digest: word-band prose only, folded into existing GM call (+0 LLM).
+    // No Goal fields except `text` reach this path (see guardrail audit).
+    if (context.agencyDigest) {
+        const digestContent = `[NPC AGENCY — recent off-screen actions]\n${context.agencyDigest}\n[END NPC AGENCY]`;
+        worldBlocks.push({ source: 'Agency Digest', content: digestContent, tokens: countTokens(digestContent), reason: 'Player-visible NPC tick deltas' });
     }
 
     return worldBlocks;

@@ -42,6 +42,7 @@ export const defaultSettings: AppSettings = {
     utilityTimeoutSeconds: 45,
     verboseUtilityLogging: false,
     aiTier: 'pro' as const,
+    matureMode: false,
 };
 
 function normalizeProviderConfig(config: any): LLMProvider | null {
@@ -204,6 +205,7 @@ export function migrateSettings(data: Record<string, unknown>): AppSettings {
         utilityTimeoutSeconds: (raw.utilityTimeoutSeconds as number) ?? 45,
         verboseUtilityLogging: (raw.verboseUtilityLogging as boolean) ?? false,
         aiTier: (raw.aiTier as AppSettings['aiTier']) ?? 'pro',
+        matureMode: (raw.matureMode as boolean) ?? false,
     };
 }
 

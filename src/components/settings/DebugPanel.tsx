@@ -4,6 +4,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { useUtilityCalls, clearHistory } from '../../services/llm/utilityCallTracker';
 import type { UtilityCallStatus } from '../../services/llm/utilityCallTracker';
 import { useCacheTelemetry, hitRatio, totalsForDay, clearCacheTelemetry } from '../../services/llm/cacheTelemetry';
+import { useSceneStakesFallbackCount, resetSceneStakesFallbackCount } from '../../services/llm/sceneStakesTelemetry';
 
 function CacheTelemetrySection() {
     const rollup = useCacheTelemetry();
@@ -115,6 +116,24 @@ export function DebugPanel() {
                     </div>
 
                     <CacheTelemetrySection />
+
+                    <div className="flex items-center justify-between bg-surface p-3 border border-border rounded">
+                        <div>
+                            <label className="block text-[10px] text-text-dim uppercase tracking-widest font-bold mb-1">Scene-Stakes Fallback Rate</label>
+                            <p className="text-[9px] text-text-dim">Times the GM omitted the [[SCENE_STAKES]] tag and the cheap classifier fired</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-terminal font-bold font-mono text-xs">{useSceneStakesFallbackCount()}</span>
+                            {useSceneStakesFallbackCount() > 0 && (
+                                <button
+                                    onClick={() => resetSceneStakesFallbackCount()}
+                                    className="text-[9px] text-text-dim hover:text-danger transition-colors uppercase tracking-wider"
+                                >
+                                    Reset
+                                </button>
+                            )}
+                        </div>
+                    </div>
 
                     <div className="flex items-center justify-between">
                         <label className="text-[10px] text-text-dim uppercase tracking-widest">Utility AI Log ({utilityHistory.length})</label>
