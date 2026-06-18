@@ -5,7 +5,8 @@ export type TierFeature =
   | 'importanceRating' | 'witnessAux' | 'npcValidate' | 'npcProfileGen'
   | 'npcUpdate' | 'drivesBackfill' | 'profileScan' | 'inventoryScan' | 'sealChapter'
   | 'sceneStakesClassify'
-  | 'heartbeatTick' | 'timeskipRun';
+  | 'heartbeatTick' | 'timeskipRun'
+  | 'arcTick' | 'arcSpawn';
 
 const MATRIX: Record<AiTier, Record<TierFeature, boolean>> = {
     lite: {
@@ -15,6 +16,7 @@ const MATRIX: Record<AiTier, Record<TierFeature, boolean>> = {
         npcUpdate: false, drivesBackfill: false, profileScan: false, inventoryScan: false, sealChapter: false,
         sceneStakesClassify: false,
         heartbeatTick: false, timeskipRun: false,
+        arcTick: false, arcSpawn: false,
     },
     pro: {
         introEngine: false, planner: true, expandQuery: false, reranker: false, archiveFunnel: true,
@@ -23,6 +25,7 @@ const MATRIX: Record<AiTier, Record<TierFeature, boolean>> = {
         npcUpdate: true, drivesBackfill: false, profileScan: false, inventoryScan: false, sealChapter: true,
         sceneStakesClassify: true,
         heartbeatTick: true, timeskipRun: true,
+        arcTick: true, arcSpawn: true,
     },
     max: {
         introEngine: true, planner: true, expandQuery: true, reranker: true, archiveFunnel: true,
@@ -31,6 +34,7 @@ const MATRIX: Record<AiTier, Record<TierFeature, boolean>> = {
         npcUpdate: true, drivesBackfill: true, profileScan: true, inventoryScan: true, sealChapter: true,
         sceneStakesClassify: true,
         heartbeatTick: true, timeskipRun: true,
+        arcTick: true, arcSpawn: true,
     },
 };
 

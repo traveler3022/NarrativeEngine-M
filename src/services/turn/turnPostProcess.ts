@@ -1,4 +1,4 @@
-import type { NPCEntry, ArchiveChapter, ArchiveIndexEntry, LLMProvider, WitnessSource, SceneStakes } from '../../types';
+import type { NPCEntry, ArchiveChapter, ArchiveIndexEntry, LLMProvider, WitnessSource, SceneStakes, DivergenceEntry, NPCPressure } from '../../types';
 import { tierAllows, NPC_UPDATE_COOLDOWN } from './aiTier';
 import type { TurnCallbacks, TurnState } from './turnTypes';
 import { updateExistingNPCs, backfillNPCDrives, populateAgencyFields } from '../chatEngine';
@@ -35,6 +35,18 @@ import { computeOpenThreads } from '../payload/payloadWorldContext';
 import { fetchFacts, scanCharacterProfile, scanInventory, mergeSealEntries } from '../campaign-state';
 import { loadChapters } from '../../store/campaignStore';
 import { scanPressure, buildPressurePatch, applyDecay } from '../npc';
+import {
+    rollArcTick,
+    rollArcOutcome,
+    advanceRung,
+    arcSurfaceLine,
+    scanArcStance,
+    arcWorldState,
+    spawnArc,
+    MAX_ACTIVE_ARCS,
+    TYPE_COOLDOWN_SEAMS,
+} from '../arc';
+import type { ArcRecord, ArcType } from '../../types';
 import { llmCall } from '../../utils/llmCall';
 import {
     backgroundQueue,
@@ -168,6 +180,11 @@ export async function handlePostTurn(
     if (state.context.agencyDigest) {
         callbacks.updateContext({ agencyDigest: '' });
     }
+    // Arc Engine (System 2): mirror the agencyDigest clear. arcDigest was folded into
+    // the GM call just completed; a new one may be set below if runArcTick fires.
+    if (state.context.arcDigest) {
+        callbacks.updateContext({ arcDigest: '' });
+    }
 
     const appendData = await api.archive.append(activeCampaignId, displayInput, lastAssistantContent);
     const appendedSceneId = appendData?.sceneId;
@@ -231,6 +248,12 @@ export async function handlePostTurn(
     runNPCPressureScan(state, callbacks, npcLedger, displayInput, lastAssistantContent);
 
     runAgencyTick(state, callbacks, npcLedger, displayInput);
+
+    // Arc Engine (System 2 / Oracle Function) — WO-05. Sibling of runAgencyTick.
+    // +0 LLM: pure dice (rollArcTick → rollArcOutcome → advanceRung), stance scan
+    // (scanArcStance), and a digest fold (arcSurfaceLine → context.arcDigest). The
+    // ONLY deliberate LLM cost is the gated spawn at the seal seam (handleSealChapter).
+    runArcTick(state, callbacks, displayInput, lastAssistantContent);
 
     // WO-07 Piece D completion (Opus ratification 2026-06-18): bump activity for every NPC that
     // was on-stage last turn. The engine-only tick (runAgencyTick above) happens too rarely to
@@ -907,6 +930,149 @@ function runTimeskipPath(
     }
 }
 
+// ── Arc Engine (System 2 / Oracle Function) — WO-05 tick + surface (+0 LLM) ──
+// Sibling of runAgencyTick. For each active arc: roll the tempo (rollArcTick), and
+// when it fires roll the outcome (rollArcOutcome) and advance the rung (advanceRung,
+// bent by the stance from scanArcStance). On a 'direct'/boiled_over rung with
+// ignored/fled stance, write the rung label as a FACT into divergenceRegister (the
+// "world moved without you" consequence — never a score/penalty counter). Then fold
+// arcSurfaceLine into context.arcDigest (mirror the agencyDigest fold at ~629).
+// Pure dice + deterministic scan; ZERO LLM. The ONLY deliberate cost is the gated
+// spawn at the seal seam (handleSealChapter).
+function runArcTick(
+    state: TurnState,
+    callbacks: TurnCallbacks,
+    displayInput: string,
+    lastAssistantContent: string,
+): void {
+    if (!tierAllows(state.settings.aiTier, 'arcTick')) return;
+    const arcs = state.context.arcs;
+    if (!arcs || arcs.length === 0) return;
+
+    const archiveIndex = state.archiveIndex;
+    const sceneId = archiveIndex.length > 0
+        ? archiveIndex[archiveIndex.length - 1].sceneId
+        : '000';
+
+    // Stance scan — deterministic, +0. Returns only arcs whose stance is determinable
+    // this turn; we merge those onto the working copies and persist them. Arcs not
+    // returned keep their prior stance (the default at spawn is 'unaware').
+    const activeArcs = arcs.filter(a => a.status === 'active');
+    if (activeArcs.length === 0) return;
+
+    const stanceUpdates = scanArcStance(displayInput, lastAssistantContent, activeArcs);
+    const stanceById = new Map(stanceUpdates.map(u => [u.arcId, u.stance]));
+
+    let arcsChanged = false;
+    const nextArcs: ArcRecord[] = [];
+    const digestLines: string[] = [];
+    const divergenceFacts: DivergenceEntry[] = [];
+
+    for (const arc of arcs) {
+        if (arc.status !== 'active') {
+            nextArcs.push(arc);
+            continue;
+        }
+
+        // Apply stance update if one was determined this turn.
+        const newStance = stanceById.get(arc.id) ?? arc.stance;
+        const stanceChanged = newStance !== arc.stance;
+        let working = stanceChanged ? { ...arc, stance: newStance } : arc;
+
+        // Tempo roll — mirrors rollHeartbeat. DC persists regardless of fire.
+        const tick = rollArcTick(working);
+        if (tick.fired) {
+            // Outcome roll — d20 + stance mod vs base DC, reusing the agency band mapper.
+            const outcome = rollArcOutcome(working);
+            const advanced = advanceRung(working, outcome.band);
+            // lastTickScene marks "this arc moved this scene" — the recency signal
+            // arcWorldState reads to decide 'live' vs 'stalled'.
+            working = { ...advanced, lastTickScene: sceneId };
+            arcsChanged = true;
+
+            // Avoidance/consequence rule (contract §5): on a 'direct' rung (or
+            // boiled_over) with ignored/fled stance, write the rung label as a FACT
+            // into divergenceRegister. The world moved without the player — never a
+            // score/penalty counter. 'opposed' that regresses to rung 0 sets 'defused'.
+            const currentRung = working.ladder[working.currentRung];
+            const isDirectOrBoiled = currentRung?.surface === 'direct' || working.status === 'boiled_over';
+            const isAvoidant = working.stance === 'ignored' || working.stance === 'fled';
+            if (isDirectOrBoiled && isAvoidant) {
+                divergenceFacts.push({
+                    id: uid(),
+                    chapterId: `arc:${working.id}`,
+                    category: 'world_state',
+                    text: currentRung?.label ?? working.seed,
+                    sceneRef: sceneId,
+                    npcIds: [],
+                    pinned: false,
+                    source: 'auto',
+                });
+                console.log(`[ArcTick] arc=${working.id} stance=${working.stance} rung=${working.currentRung} → divergence fact written`);
+            }
+
+            // Defused: opposed stance + outcome regressed the arc to rung 0.
+            if (working.stance === 'opposed' && working.currentRung === 0 && outcome.band === 'critFail') {
+                working = { ...working, status: 'defused' };
+                console.log(`[ArcTick] arc=${working.id} defused (opposed + regress to rung 0)`);
+            }
+
+            console.log(`[ArcTick] tick fired arc=${working.id} band=${outcome.band} rung=${working.currentRung} status=${working.status}`);
+        } else {
+            // Miss — persist the reduced DC (pity timer). If only the DC moved (no
+            // rung change) we still need to write it back so the next seam sees it.
+            if (tick.nextDc !== working.tickDC) {
+                working = { ...working, tickDC: tick.nextDc };
+                arcsChanged = true;
+            }
+            if (stanceChanged) arcsChanged = true;
+        }
+
+        // Surface line — the current rung → one digest line, tagged by surface tier.
+        // No raw rung/tickDC ever reaches the payload, only this text.
+        const line = arcSurfaceLine(working);
+        if (line) digestLines.push(line);
+
+        nextArcs.push(working);
+    }
+
+    if (arcsChanged) {
+        callbacks.updateContext({ arcs: nextArcs });
+    }
+
+    // Fold the surface lines into context.arcDigest for the next GM call (+0, mirrors
+    // the agencyDigest fold at ~629).
+    if (digestLines.length > 0) {
+        const existing = state.context.arcDigest ?? '';
+        const newDigest = digestLines.join('\n');
+        const combined = existing ? existing + '\n' + newDigest : newDigest;
+        callbacks.updateContext({ arcDigest: combined });
+    }
+
+    // Write avoidance facts to divergenceRegister (mergeSealEntries appends, same as
+    // the seal-audit path at ~line 1016). A world fact, never a penalty counter.
+    if (divergenceFacts.length > 0) {
+        const liveRegister = state.divergenceRegister;
+        if (liveRegister && callbacks.setDivergenceRegister) {
+            const merged = mergeSealEntries(liveRegister, divergenceFacts, sceneId);
+            callbacks.setDivergenceRegister(merged);
+            console.log(`[ArcTick] ${divergenceFacts.length} arc divergence fact(s) written`);
+        } else {
+            // No live register / callback this turn — surface the facts as a system
+            // marker so they aren't lost (rare; the seal seam usually has the register).
+            for (const f of divergenceFacts) {
+                callbacks.addMessage({
+                    id: uid(),
+                    role: 'system',
+                    name: 'arc-fact',
+                    content: `[World moved] ${f.text}`,
+                    timestamp: Date.now(),
+                });
+            }
+        }
+    }
+}
+
 async function handleSealChapter(state: TurnState, callbacks: TurnCallbacks, activeCampaignId: string) {
     const currentChapters = await loadChapters(activeCampaignId);
 
@@ -1019,6 +1185,14 @@ async function handleSealChapter(state: TurnState, callbacks: TurnCallbacks, act
                 } else if (sealResult.divergenceParseError) {
                     toast.warning('Chapter sealed but divergence facts failed to parse');
                 }
+
+                // ── Arc Engine spawn gate (WO-05, +1 LLM, seam-only) ──
+                // Fires only when ALL hold: arcWorldState ≠ 'live' (no live arc tick /
+                // NPC pressure / recent thread), active arcs < MAX_ACTIVE_ARCS, and the
+                // candidate type is off cooldown. spawnArc authors ONE arc grounded
+                // against a single anchor (one open thread, or one NPC with pressure).
+                // This is the ONLY deliberate LLM cost in the Arc Engine.
+                await maybeSpawnArc(state, callbacks, openThreadsList, sealed);
             }
 
             const updatedChapters = await loadChapters(activeCampaignId);
@@ -1028,5 +1202,123 @@ async function handleSealChapter(state: TurnState, callbacks: TurnCallbacks, act
             console.error('[SealChapter] Failed to seal chapter:', err);
             toast.error('Failed to seal chapter');
         }
+    }
+}
+
+/**
+ * Arc Engine spawn gate (WO-05). Fires at the seal seam only when:
+ *   - tier allows arcSpawn (pro/max — same gate as sealChapter)
+ *   - arcWorldState ≠ 'live' (no recently-ticked arc, no NPC pressure above threshold)
+ *   - active arc count < MAX_ACTIVE_ARCS
+ *   - candidate type is off cooldown (not fired within TYPE_COOLDOWN_SEAMS seams)
+ *
+ * Picks ONE anchor for spawnArc: an open thread if any exist, else an NPC with
+ * pressure (the agent anchor). Authors ONE arc via the +1 LLM spawn call and
+ * appends it to context.arcs. On failure (generation/validation), silently skips.
+ */
+async function maybeSpawnArc(
+    state: TurnState,
+    callbacks: TurnCallbacks,
+    openThreadsList: string[],
+    sealed: ArchiveChapter,
+): Promise<void> {
+    if (!tierAllows(state.settings.aiTier, 'arcSpawn')) return;
+    const provider = state.getFreshSummarizerProvider?.() ?? state.getFreshProvider();
+    if (!provider) return;
+
+    const arcs = state.context.arcs ?? [];
+
+    // Gate 1: active arc count.
+    const activeCount = arcs.filter(a => a.status === 'active').length;
+    if (activeCount >= MAX_ACTIVE_ARCS) return;
+
+    // Gate 2: arcWorldState. Read-model over open threads + NPC pressure + recent
+    // arc ticks. Pure, no embeddings, no prose parsing. The open threads list was
+    // already computed at the call site (handleSealChapter) from alreadySealedChapters.
+    const openThreadObjs = openThreadsList.map(text => ({ text }));
+    const pressureMap: Record<string, NPCPressure> = state.npcPressure ?? {};
+    const archiveIndex = state.archiveIndex;
+    const nowScene = archiveIndex.length > 0
+        ? parseInt(archiveIndex[archiveIndex.length - 1].sceneId, 10) || 0
+        : 0;
+    const world = arcWorldState(arcs, openThreadObjs, pressureMap, nowScene);
+    if (world === 'live') {
+        console.log(`[ArcSpawn] gate: arcWorldState=live → spawn blocked`);
+        return;
+    }
+
+    // Gate 3: type cooldown. Build the suppressed set from arcs that fired (born)
+    // within TYPE_COOLDOWN_SEAMS seams of the current scene — regardless of status
+    // (a boiled_over arc still cools its type).
+    const suppressedTypes = new Set<ArcType>();
+    for (const a of arcs) {
+        const bornScene = parseInt(a.bornScene, 10);
+        if (Number.isFinite(bornScene) && nowScene - bornScene < TYPE_COOLDOWN_SEAMS) {
+            suppressedTypes.add(a.type);
+        }
+    }
+
+    // Pick the anchor: prefer an open thread (the unresolved thread IS the arc
+    // liveness signal). Fall back to an NPC with pressure (the agent anchor).
+    let anchor: import('../arc').SpawnArcAnchor | null = null;
+    if (openThreadObjs.length > 0) {
+        // Pick the most recent open thread (computeOpenThreads returns last 12, oldest
+        // → newest; the last is the freshest).
+        const freshest = openThreadObjs[openThreadObjs.length - 1];
+        anchor = { kind: 'thread', text: freshest.text };
+    } else {
+        const npcLedger = state.npcLedger ?? [];
+        // Pick the NPC with the highest combined pressure — the one the player has
+        // been engaging/ignoring most. That NPC's want is the grounding anchor.
+        let bestNpc: NPCEntry | null = null;
+        let bestPressure = 0;
+        for (const npc of npcLedger) {
+            const p = pressureMap[npc.id];
+            if (!p) continue;
+            const score = (p.ignored ?? 0) + (p.engaged ?? 0);
+            if (score > bestPressure) {
+                bestPressure = score;
+                bestNpc = npc;
+            }
+        }
+        if (bestNpc) {
+            const want = bestNpc.wants?.long?.[0] ?? bestNpc.wants?.medium?.[0] ?? bestNpc.storyRelevance ?? 'unknown';
+            anchor = { kind: 'agent', name: bestNpc.name, want };
+        }
+    }
+    if (!anchor) {
+        // 'dry' world with no anchor — nothing to ground a new arc against. Skip.
+        console.log(`[ArcSpawn] gate: no anchor (no open threads, no pressured NPC) → spawn skipped`);
+        return;
+    }
+
+    // World context: the sealed chapter's summary + the freshest open threads, so
+    // the spawn LLM can ground the seed in the current world state.
+    const worldContext = sealed.summary
+        ? `Recently sealed chapter "${sealed.title}": ${sealed.summary}`
+        : '';
+
+    const bornScene = archiveIndex.length > 0
+        ? archiveIndex[archiveIndex.length - 1].sceneId
+        : '000';
+
+    console.log(`[ArcSpawn] gate open (world=${world}, active=${activeCount}, suppressed=[${Array.from(suppressedTypes).join(',')}]) → spawning`);
+    try {
+        const newArc = await spawnArc({
+            provider,
+            anchor,
+            worldContext,
+            suppressedTypes: Array.from(suppressedTypes),
+            bornScene,
+        });
+        if (!newArc) {
+            console.log(`[ArcSpawn] spawnArc returned null (generation/validation failed) → skipped`);
+            return;
+        }
+        const currentArcs = state.context.arcs ?? [];
+        callbacks.updateContext({ arcs: [...currentArcs, newArc] });
+        console.log(`[ArcSpawn] arc ${newArc.id} (type=${newArc.type}, rungs=${newArc.ladder.length}) spawned at scene ${bornScene}`);
+    } catch (err) {
+        console.warn('[ArcSpawn] spawnArc threw — skipped:', err);
     }
 }

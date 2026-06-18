@@ -29,3 +29,6 @@ export type { SpawnArcInput, SpawnArcAnchor } from './arcSpawn';
 
 // WO-04 — stance scan (+0, deterministic)
 export { scanArcStance } from './arcStance';
+
+// WO-05 — world-state read-model (+0, pure)
+export { arcWorldState } from './arcWorldState';
