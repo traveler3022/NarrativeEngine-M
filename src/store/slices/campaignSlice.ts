@@ -108,6 +108,8 @@ export const defaultContext: GameContext = {
     statLabelMap: { ...DEFAULT_STAT_LABEL_MAP },
     lastSceneStakes: 'calm',
     agencyDigest: '',
+    arcs: [],
+    arcDigest: '',
 };
 
 // ── Slice type ─────────────────────────────────────────────────────────

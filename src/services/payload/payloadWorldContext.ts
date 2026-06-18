@@ -504,6 +504,15 @@ export function assembleWorldBlocks(opts: {
         worldBlocks.push({ source: 'Agency Digest', content: digestContent, tokens: countTokens(digestContent), reason: 'Player-visible NPC tick deltas' });
     }
 
+    // Arc Engine (System 2 / Oracle): current-rung surface line(s), folded into the
+    // existing GM call (+0 LLM). Word-band prose ONLY — each line is the rung label
+    // tagged by surface tier ([WORLD/ambient|rumor|direct]); no raw rung index / tickDC
+    // ever reaches the payload (see arcSurfaceLine; WO-06 no-raw-number audit).
+    if (context.arcDigest) {
+        const arcContent = `[WORLD PRESSURES — developing situations]\n${context.arcDigest}\n[END WORLD PRESSURES]`;
+        worldBlocks.push({ source: 'Arc Digest', content: arcContent, tokens: countTokens(arcContent), reason: 'Indirect world-arc surfacing (current rung)' });
+    }
+
     return worldBlocks;
 }
 
