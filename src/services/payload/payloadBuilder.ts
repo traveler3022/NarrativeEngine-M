@@ -141,6 +141,7 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
         semanticFactText,
         deepContextSummary,
         chapters,
+        divergenceRegister,
         addTrace,
     });
 

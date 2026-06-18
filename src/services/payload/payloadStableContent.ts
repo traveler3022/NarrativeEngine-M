@@ -91,9 +91,20 @@ export function buildStablePreamble(opts: {
 
     stableParts.push(
         '[NPC KNOWLEDGE BOUNDARY]\n' +
-        'Archive scenes are YOUR memory as narrator. NPCs only know events from scenes they are\n' +
-        'listed as witnessing. An NPC must never reference, react to, or act on events they did\n' +
-        'not witness, unless another character tells them in-story.\n' +
+        'Archive scenes are YOUR memory as narrator. A character knows a fact ONLY if it is\n' +
+        'listed under "[FACTS KNOWN TO ON-STAGE CHARACTERS]" for them, or they witnessed the\n' +
+        'scene it came from. Facts in "[ESTABLISHED FACTS]" are TRUE and public — common\n' +
+        'knowledge any character may know.\n' +
+        '\n' +
+        'SECRETS & PRIVATE KNOWLEDGE:\n' +
+        '- You (the narrator) may know a private fact in order to run the world consistently.\n' +
+        '- A character must NEVER reveal, guess, deduce, or act on a private fact unless they\n' +
+        '  are a listed knower, or learn it through an explicit in-fiction discovery the\n' +
+        "  player's own actions cause.\n" +
+        '- You MAY build tension toward a secret — suspicion, near-misses, pressure, a close\n' +
+        '  call. You MAY NOT resolve it (confirm/expose it) on your own initiative or "for\n' +
+        '  drama". Do not manufacture an inference chain to justify a conclusion you already\n' +
+        '  hold as narrator.\n' +
         '[END NPC KNOWLEDGE BOUNDARY]'
     );
 
@@ -127,7 +138,9 @@ export function buildDivergenceBlock(opts: {
 
     let divergenceContent = '';
     if (divergenceRegister && divergenceRegister.entries.length > 0) {
-        divergenceContent = renderRegisterForPayload(divergenceRegister, chapters);
+        // publicOnly=true: the cached canon block carries ONLY broadcast facts. Scoped
+        // facts (knownBy defined) ride in the per-turn world block instead (the cage).
+        divergenceContent = renderRegisterForPayload(divergenceRegister, chapters, undefined, undefined, true);
         if (cap && cap > 0 && countTokens(divergenceContent) > cap) {
             divergenceContent = capDivergenceRender(divergenceRegister, chapters, cap);
         }
@@ -151,14 +164,14 @@ function capDivergenceRender(
     const chapterIds = [...new Set(register.entries.map(e => e.chapterId))].sort();
     let working = register;
     let collapsed = 0;
-    let content = renderRegisterForPayload(working, chapters);
+    let content = renderRegisterForPayload(working, chapters, undefined, undefined, true);
 
     for (const chId of chapterIds) {
         if (countTokens(content) <= cap) break;
         const remaining = working.entries.filter(e => e.chapterId !== chId || e.pinned);
         collapsed += working.entries.length - remaining.length;
         working = { ...working, entries: remaining };
-        content = renderRegisterForPayload(working, chapters);
+        content = renderRegisterForPayload(working, chapters, undefined, undefined, true);
     }
 
     if (collapsed > 0) {

@@ -77,6 +77,7 @@ export function renderRegisterForPayload(
     chapters?: ArchiveChapter[],
     onStageNpcIds?: string[],
     npcLedger?: NPCEntry[],
+    publicOnly = false,
 ): string {
     if (register.entries.length === 0) return '';
 
@@ -88,6 +89,11 @@ export function renderRegisterForPayload(
     }
 
     const activeEntries = register.entries.filter(e => {
+        // Cached-canon path renders ONLY public facts. Scoped facts (knownBy defined,
+        // incl. pinned ones) are withheld from the cache and surfaced in the per-turn
+        // [FACTS KNOWN TO ON-STAGE CHARACTERS] block instead. "Is knownBy defined" is a
+        // static fact property → cast-independent → cache-safe (SAFETY RAIL holds).
+        if (publicOnly && e.knownBy !== undefined) return false;
         if (e.enabled === false) return false;
         if (e.pinned) return true;
         const chapterOn = register.chapterToggles[e.chapterId] !== false;

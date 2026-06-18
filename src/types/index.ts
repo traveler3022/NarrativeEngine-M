@@ -217,7 +217,12 @@ export type DivergenceEntry = {
     text: string;
     sceneRef: string;
     npcIds: string[];
-    knownBy?: string[]; // NPC IDs that witnessed or know this fact; undefined = broadcast
+    // Who knows this fact. Tokens: "player" | "npc:<id>" | "faction:<name-normalized>".
+    // undefined = public/broadcast (common knowledge). [] = secret, no NPC knows it.
+    knownBy?: string[];
+    // Stable snake_case subject slug shared by ALL facts about the same subject
+    // (e.g. "alex_chen.identity"). The scene number is the version axis. undefined = ungrouped.
+    subjectToken?: string;
     pinned: boolean;
     enabled?: boolean;
     source: 'auto' | 'manual';

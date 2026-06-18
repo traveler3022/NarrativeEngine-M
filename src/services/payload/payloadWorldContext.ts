@@ -1,7 +1,8 @@
-import type { GameContext, LoreChunk, NPCEntry, ArchiveScene, ArchiveIndexEntry, ArchiveChapter, ChatMessage, PayloadTrace, SceneEvent } from '../../types';
+import type { GameContext, LoreChunk, NPCEntry, ArchiveScene, ArchiveIndexEntry, ArchiveChapter, ChatMessage, PayloadTrace, SceneEvent, DivergenceRegister, DivergenceEntry } from '../../types';
 import { countTokens } from '../infrastructure';
 import { buildBehaviorDirective, buildDriftAlert } from '../npc';
 import { relationBand } from '../npc/agencyBands';
+import { isKnownToAnyOnStage, parseKnownByToken } from '../campaign-state/knowledgeScope';
 import { minifyLoreChunk, minifyNPC } from './contextMinifier';
 
 export function computeOpenThreads(chapters: ArchiveChapter[]): { text: string; chapterId: string }[] {
@@ -225,6 +226,7 @@ export function assembleWorldBlocks(opts: {
     deepContextSummary?: string;
     chapters?: ArchiveChapter[];
     sealedChapters?: ArchiveChapter[];
+    divergenceRegister?: DivergenceRegister;
     addTrace: (t: PayloadTrace) => void;
 }): WorldBlock[] {
     const {
@@ -242,6 +244,7 @@ export function assembleWorldBlocks(opts: {
         deepContextSummary,
         chapters,
         sealedChapters: sealedChaptersOverride,
+        divergenceRegister,
         addTrace,
     } = opts;
 
@@ -440,6 +443,57 @@ export function assembleWorldBlocks(opts: {
 
             const npcText = `[ACTIVE NPC CONTEXT]\n${npcLines}${relationBlock}\n[END NPC CONTEXT]`;
             worldBlocks.push({ source: 'Active NPCs', content: npcText, tokens: countTokens(npcText), reason: `NPCs detected in context (${activeNPCs.length}, minified)`, npcIds: activeNPCs.map(n => n.id) });
+        }
+    }
+
+    // Per-turn scoped-knowledge block (the cage): facts whose knownBy is DEFINED render
+    // here, never in the cached canon block. Only facts a present character knows are
+    // shown, resolved against the on-stage cast. Cast-aware → must live below the cache
+    // boundary (here), not in the cached [ESTABLISHED FACTS] block.
+    if (divergenceRegister && divergenceRegister.entries.length > 0) {
+        const onStage = onStageNpcIds ?? [];
+        const ledger = npcLedger ?? [];
+        const isActive = (e: DivergenceEntry): boolean => {
+            if (e.enabled === false) return false;
+            if (e.pinned) return true;
+            const chapterOn = divergenceRegister.chapterToggles[e.chapterId] !== false;
+            if (!chapterOn) return false;
+            const catToggles = divergenceRegister.categoryToggles[e.chapterId];
+            if (catToggles && catToggles[e.category] === false) return false;
+            return true;
+        };
+        const labelKnowers = (knownBy: string[]): string => {
+            const parts: string[] = [];
+            for (const tok of knownBy) {
+                const p = parseKnownByToken(tok);
+                if (!p || p.kind === 'player') continue;
+                if (p.kind === 'npc') {
+                    const npc = ledger.find(n => n.id === p.id);
+                    if (npc) parts.push(npc.name);
+                } else {
+                    parts.push(`${p.name} members`);
+                }
+            }
+            return parts.join(', ');
+        };
+        const scoped = divergenceRegister.entries.filter(e =>
+            e.knownBy !== undefined &&
+            isActive(e) &&
+            isKnownToAnyOnStage(e.knownBy, onStage, ledger)
+        );
+        if (scoped.length > 0) {
+            const lines = scoped.map(e => {
+                const who = labelKnowers(e.knownBy!);
+                const whoStr = who ? ` (known to: ${who})` : '';
+                return `• ${e.text}${whoStr} [#${e.sceneRef}]`;
+            });
+            const content = `[FACTS KNOWN TO ON-STAGE CHARACTERS]\n${lines.join('\n')}\n[END FACTS KNOWN TO ON-STAGE CHARACTERS]`;
+            worldBlocks.push({
+                source: 'Scoped Knowledge',
+                content,
+                tokens: countTokens(content),
+                reason: `Per-fact knowledge bounded to present cast (${scoped.length})`,
+            });
         }
     }
 

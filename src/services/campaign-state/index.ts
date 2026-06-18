@@ -30,3 +30,5 @@ export { resolveTimeline, queryTimeline, formatResolvedForContext, getEventsBySc
 export type { ResolvedTruth } from './timelineResolver';
 export { scanCharacterProfile } from './characterProfileParser';
 export { scanInventory } from './inventoryParser';
+export { normalizeSubjectToken, parseKnownByToken, isKnownToAnyOnStage, normalizeFaction } from './knowledgeScope';
+export type { KnownByToken } from './knowledgeScope';
