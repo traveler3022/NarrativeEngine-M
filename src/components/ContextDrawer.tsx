@@ -16,7 +16,7 @@ const TABS = [
   { id: 'sys',      label: 'System',   icon: ScrollText },
   { id: 'rules-mgr', label: 'RuleMgr', icon: Sliders },
   { id: 'world',    label: 'World',    icon: Globe },
-  { id: 'mem',      label: 'Memory',   icon: Brain },
+  { id: 'mem',      label: 'Knowledge', icon: Brain },
   { id: 'eng',      label: 'Engines',  icon: Zap },
   { id: 'comp',     label: 'Compendium', icon: Library },
   { id: 'gallery',  label: 'Gallery',  icon: Images },

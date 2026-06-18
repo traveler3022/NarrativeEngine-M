@@ -109,7 +109,8 @@ export async function runCombinedSeal(
     provider: LLMProvider,
     npcLedger: NPCEntry[],
     archiveIndex?: ArchiveIndexEntry[],
-    openThreads?: string[]
+    openThreads?: string[],
+    existingSubjectTokens?: string[]
 ): Promise<CombinedSealResult> {
     const allScenes = await api.archive.getIndex(activeCampaignId);
     const startNum = parseInt(chapter.sceneRange[0], 10);
@@ -151,7 +152,7 @@ export async function runCombinedSeal(
         }).map(e => ({ sceneId: e.sceneId, npcsWitnessed: e.npcsWitnessed }))
         : undefined;
 
-    return sealChapterCombined(provider, scenesContent, chapter.chapterId, chapter.title, sceneIds, npcInfo, indexEntries, 2, openThreads);
+    return sealChapterCombined(provider, scenesContent, chapter.chapterId, chapter.title, sceneIds, npcInfo, indexEntries, 2, openThreads, existingSubjectTokens);
 }
 
 export async function handlePostTurn(
@@ -928,10 +929,19 @@ async function handleSealChapter(state: TurnState, callbacks: TurnCallbacks, act
             if (sealProvider && tierAllows(state.settings.aiTier, 'sealChapter')) {
                 const alreadySealedChapters = currentChapters.filter(c => c.sealedAt && c.chapterId !== sealed.chapterId);
                 const openThreadsList = computeOpenThreads(alreadySealedChapters).map(t => t.text);
+                // WO2: feed existing subjectTokens to the seal call so the LLM reuses them for
+                // facts about the same subject (token consistency across chapters). Tens of slugs only.
+                const existingTokens = state.divergenceRegister
+                    ? Array.from(new Set(
+                        state.divergenceRegister.entries
+                            .map(e => e.subjectToken)
+                            .filter((t): t is string => typeof t === 'string' && t.length > 0)
+                        ))
+                    : undefined;
                 const sealResult = await tryWithFallback(
                     'SealChapter',
-                    () => runCombinedSeal(activeCampaignId, sealed, summarizerProvider ?? storyProvider!, state.npcLedger ?? [], state.archiveIndex, openThreadsList),
-                    () => runCombinedSeal(activeCampaignId, sealed, storyProvider!, state.npcLedger ?? [], state.archiveIndex, openThreadsList),
+                    () => runCombinedSeal(activeCampaignId, sealed, summarizerProvider ?? storyProvider!, state.npcLedger ?? [], state.archiveIndex, openThreadsList, existingTokens),
+                    () => runCombinedSeal(activeCampaignId, sealed, storyProvider!, state.npcLedger ?? [], state.archiveIndex, openThreadsList, existingTokens),
                 );
 
                 if (sealResult.summary) {

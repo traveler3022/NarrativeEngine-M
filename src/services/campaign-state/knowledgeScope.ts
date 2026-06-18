@@ -1,3 +1,5 @@
+import type { DivergenceEntry } from '../../types';
+
 /**
  * knowledgeScope.ts
  *
@@ -82,3 +84,41 @@ export function isKnownToAnyOnStage(
     }
     return false;
 }
+
+/** Compare sceneRef as zero-padded numbers (numeric ascending). Falls back to string compare. */
+export function compareSceneRef(a: string, b: string): number {
+    const na = parseInt(a, 10);
+    const nb = parseInt(b, 10);
+    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+    return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/** Group unpinned entries by subjectToken, sorting beats inside group, and sorting groups. */
+export function groupDivergencesBySubject(
+    unpinnedEntries: DivergenceEntry[]
+): Array<{ token: string; entries: DivergenceEntry[] }> {
+    const bySubject = new Map<string, { token: string; entries: DivergenceEntry[] }>();
+    for (const e of unpinnedEntries) {
+        const key = e.subjectToken ?? `__single_${e.id}`;
+        const existing = bySubject.get(key);
+        if (existing) {
+            existing.entries.push(e);
+        } else {
+            bySubject.set(key, { token: e.subjectToken ?? key, entries: [e] });
+        }
+    }
+    // Sort each group's beats by sceneRef ascending.
+    for (const g of bySubject.values()) {
+        g.entries.sort((a, b) => compareSceneRef(a.sceneRef, b.sceneRef));
+    }
+    // Order groups: tokened groups first (alpha by token), then singletons (by sceneRef).
+    const subjectGroups = [...bySubject.values()].sort((a, b) => {
+        const aIsToken = a.entries[0].subjectToken !== undefined;
+        const bIsToken = b.entries[0].subjectToken !== undefined;
+        if (aIsToken !== bIsToken) return aIsToken ? -1 : 1;
+        if (aIsToken) return a.token < b.token ? -1 : a.token > b.token ? 1 : 0;
+        return compareSceneRef(a.entries[0].sceneRef, b.entries[0].sceneRef);
+    });
+    return subjectGroups;
+}
+

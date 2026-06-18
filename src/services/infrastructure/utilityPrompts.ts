@@ -49,13 +49,49 @@ export const TTRPG_PERSONA_RETRIEVAL_PLANNER =
 export const EVENT_TYPES_LIST =
     'combat, discovery, item_acquired, item_lost, relationship_shift, travel, promise, betrayal, death, revelation, quest_milestone, other';
 
-/** Pulled from saveFileEngine.ts (was inlined as `knownByRules`). */
+/**
+ * knownBy rules — INVERTED DEFAULT for sensitive categories (NPC omniscience cage, WO2).
+ * Sensitive categories seed knownBy from the source scene's witnesses; broadcasting
+ * requires either a rules_lore/locations category OR an explicit public-in-fiction signal.
+ * Token grammar: "player" | "npc:<id>" | "faction:<name-normalized>".
+ */
 export const KNOWNBY_RULES = `KNOWNBY RULES:
-- knownBy: list the canonical NPC IDs of characters who WITNESSED or could reasonably know this fact.
-- For rules_lore and locations categories, knownBy should be omitted or null (broadcast knowledge — everyone can know).
-- For npc_events, promises_debts, party_facts, world_state, and misc: list only NPCs who were present or directly informed.
-- If the fact is public knowledge (announced publicly, observed by all present), list all witnesses.
-- If unsure who knows, omit knownBy (treated as broadcast).`;
+- knownBy: a JSON array of who currently KNOWS this fact. Token forms:
+  "npc:<id>" — a specific ledger NPC by canonical id (e.g. "npc_42").
+  "faction:<name>" — any on-stage NPC of that faction (lowercase, spaces collapsed; e.g. "faction:ironspire knights").
+  "player" — the player character (use for the player's own secrets; NOT an NPC id).
+- For rules_lore and locations categories: OMIT knownBy (broadcast / common knowledge — everyone can know).
+- For npc_events, promises_debts, party_facts, world_state, and misc (sensitive/personal facts):
+  DEFAULT = the witnesses of the fact's source scene (use the AUDIT — PER-SCENE NPC WITNESSES list;
+  emit each witness as "npc:<id>"). Seed from witnesses; you MAY widen (add NPCs told later,
+  a faction that learned of it) or narrow (drop an NPC who only overheard unrelated chatter).
+  Broadcasting (omitting knownBy) is allowed ONLY when the fact is explicitly public in-fiction
+  (announced publicly, observed by a crowd, common gossip) — when in doubt, scope to witnesses.
+- Prefer OVER-RESTRICTION for sensitive/personal facts (a quiet NPC who "should know via gossip"
+  not acting on it is a minor missed beat; the player's secret leaking is a major spoiler). Prefer
+  broadcast for world/rules. Asymmetry is intentional.
+- Empty array "knownBy": [] means SECRET — no NPC knows it (only the player / GM as narrator).
+  Use sparingly; usually "player" is the right token for player-only secrets.`;
+
+/**
+ * subjectToken rules — injected into the seal prompt with the campaign's existing
+ * tokens so the LLM reuses them for facts about the same subject. WO2.
+ */
+export function buildSubjectTokenRules(existingTokens: string[] | undefined): string {
+    const list = existingTokens && existingTokens.length > 0
+        ? existingTokens.join(', ')
+        : '(none yet — invent fresh tokens for new subjects)';
+    return `SUBJECT TOKEN RULES:
+- subjectToken: a stable snake_case slug for WHAT this fact is ABOUT, used to group facts about the
+  same subject across time. The scene number is the version axis — do NOT number tokens
+  (use "alex.identity", never "alex.identity2").
+- REUSE an existing token from the list below if this fact is about the same subject as one already
+  tokened. Existing tokens this campaign: ${list}
+- Form: lowercase, dot-or-underscore separated, no spaces. Examples: alex_chen.identity,
+  count.debt, ruby_of_doom.location, world.weather.
+- If unsure, emit your best single slug; the system normalizes it. Missing/empty is acceptable but
+  avoid it when a clear subject exists.`;
+}
 
 /** Pulled from saveFileEngine.ts NPC INNER STATE RULES. */
 export const NPC_INNER_STATE_RULES = `NPC INNER STATE RULES:

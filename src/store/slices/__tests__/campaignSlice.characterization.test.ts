@@ -499,6 +499,87 @@ describe('divergence register', () => {
         divSaved = idbStore.get(`divergence_${id}`) as DivergenceRegister;
         expect(divSaved.entries.find(e => e.id === 'd1')!.text).toBe('rewritten fact text');
     });
+
+    // WO3 — editDivergenceKnownBy: tri-state round-trip public(undefined) ↔ scoped(list) ↔ secret([])
+    it('WO3: editDivergenceKnownBy round-trips public/secret/scoped and persists immutably', async () => {
+        // Start d1 with a scoped knownBy list, and an untouched d2.
+        useAppStore.getState().setDivergenceRegister(makeRegister([
+            makeEntry('d1', { knownBy: ['npc:n1', 'player'] }),
+            makeEntry('d2', { knownBy: ['npc:n3'] }),
+        ]));
+        const fetchReg = () => (idbStore.get(`divergence_${id}`) as DivergenceRegister).entries.find(e => e.id === 'd1')!;
+
+        const oldReg = useAppStore.getState().divergenceRegister;
+        const oldD1 = oldReg.entries.find(e => e.id === 'd1')!;
+        const oldD2 = oldReg.entries.find(e => e.id === 'd2')!;
+
+        // scoped → public (undefined)
+        useAppStore.getState().editDivergenceKnownBy('d1', undefined);
+        await fireDebounce();
+        
+        const newReg = useAppStore.getState().divergenceRegister;
+        const newD1 = newReg.entries.find(e => e.id === 'd1')!;
+        const newD2 = newReg.entries.find(e => e.id === 'd2')!;
+
+        expect(fetchReg().knownBy).toBeUndefined();
+        expect(newD1.knownBy).toBeUndefined();
+        
+        // Immutability checks:
+        expect(newReg).not.toBe(oldReg);
+        expect(newReg.entries).not.toBe(oldReg.entries);
+        expect(newD1).not.toBe(oldD1);
+        expect(newD2).toBe(oldD2); // untouched entry reference is preserved
+
+        // public → secret ([])
+        useAppStore.getState().editDivergenceKnownBy('d1', []);
+        await fireDebounce();
+        expect(fetchReg().knownBy).toEqual([]);
+
+        // secret → scoped (list)
+        useAppStore.getState().editDivergenceKnownBy('d1', ['npc:n2', 'faction:iron watch']);
+        await fireDebounce();
+        expect(fetchReg().knownBy).toEqual(['npc:n2', 'faction:iron watch']);
+    });
+
+    // WO4 — applySubjectTokens: only subjectToken changes; enabled/pinned/text untouched.
+    it('WO4: applySubjectTokens sets subjectToken on matching entries without touching enabled/pinned/text (immutably)', async () => {
+        useAppStore.getState().setDivergenceRegister(makeRegister([
+            makeEntry('d1', { enabled: false, pinned: true, text: 'keep me', subjectToken: undefined }),
+            makeEntry('d2', { enabled: true, pinned: false, text: 'also keep', subjectToken: 'old.token' }),
+            makeEntry('d3', { enabled: true, pinned: false, text: 'untouched' }),
+        ]));
+
+        const oldReg = useAppStore.getState().divergenceRegister;
+        const oldD1 = oldReg.entries.find(e => e.id === 'd1')!;
+        const oldD2 = oldReg.entries.find(e => e.id === 'd2')!;
+        const oldD3 = oldReg.entries.find(e => e.id === 'd3')!;
+
+        useAppStore.getState().applySubjectTokens([
+            { id: 'd1', subjectToken: 'alex.identity' },
+            { id: 'd2', subjectToken: 'alex.identity' },
+        ]);
+        await fireDebounce();
+
+        const newReg = useAppStore.getState().divergenceRegister;
+        const newD1 = newReg.entries.find(e => e.id === 'd1')!;
+        const newD2 = newReg.entries.find(e => e.id === 'd2')!;
+        const newD3 = newReg.entries.find(e => e.id === 'd3')!;
+
+        const saved = (idbStore.get(`divergence_${id}`) as DivergenceRegister).entries;
+        expect(saved.find(e => e.id === 'd1')!.subjectToken).toBe('alex.identity');
+        expect(saved.find(e => e.id === 'd1')!.enabled).toBe(false);
+        expect(saved.find(e => e.id === 'd1')!.pinned).toBe(true);
+        expect(saved.find(e => e.id === 'd1')!.text).toBe('keep me');
+        expect(saved.find(e => e.id === 'd2')!.subjectToken).toBe('alex.identity');
+        expect(saved.find(e => e.id === 'd3')!.subjectToken).toBeUndefined();
+
+        // Immutability checks:
+        expect(newReg).not.toBe(oldReg);
+        expect(newReg.entries).not.toBe(oldReg.entries);
+        expect(newD1).not.toBe(oldD1);
+        expect(newD2).not.toBe(oldD2);
+        expect(newD3).toBe(oldD3); // untouched entry reference is preserved
+    });
 });
 
 // ───────────────────────────────────────────────────────────────────────────

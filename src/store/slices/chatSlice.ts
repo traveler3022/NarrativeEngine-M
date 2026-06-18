@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type { ChatMessage, CondenserState, GameContext, LoreCheckSelection, LoreCheckResult, DivergenceRegister, DivergenceEntry, DivergenceCategory, TopicClusters, PinnedExcerpt } from '../../types';
-import { EMPTY_REGISTER, toggleChapter, toggleCategory, pinFact, editFact, deleteFact, deleteChapter, toggleFact, dismissReviewFlag, migrateV1ToV2 } from '../../services/campaign-state';
+import { EMPTY_REGISTER, toggleChapter, toggleCategory, pinFact, editFact, deleteFact, deleteChapter, toggleFact, dismissReviewFlag, editKnownBy, applySubjectTokens, migrateV1ToV2 } from '../../services/campaign-state';
 import { debouncedSaveCampaignState } from './campaignSlice';
 import { countTokens } from '../../services/infrastructure';
 import { uid } from '../../utils/uid';
@@ -67,6 +67,8 @@ export type ChatSlice = {
     deleteDivergenceChapter: (chapterId: string) => void;
     toggleDivergenceFact: (entryId: string, on: boolean) => void;
     setManyFactsEnabled: (updates: Array<{ id: string; enabled: boolean }>) => void;
+    editDivergenceKnownBy: (entryId: string, knownBy: string[] | undefined) => void;
+    applySubjectTokens: (updates: Array<{ id: string; subjectToken: string }>) => void;
     setTopicClusters: (clusters: TopicClusters) => void;
     migrateDivergenceIfNeeded: () => void;
 
@@ -226,6 +228,20 @@ export const createChatSlice: StateCreator<ChatDeps, [], [], ChatSlice> = (set) 
             for (const [id, on] of updateMap) {
                 reg = toggleFact(reg, id, on);
             }
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
+            saveDivergence(s.activeCampaignId, reg);
+            return { divergenceRegister: reg };
+        }),
+    editDivergenceKnownBy: (entryId, knownBy) =>
+        set((s) => {
+            const reg = editKnownBy(s.divergenceRegister, entryId, knownBy);
+            debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
+            saveDivergence(s.activeCampaignId, reg);
+            return { divergenceRegister: reg };
+        }),
+    applySubjectTokens: (updates) =>
+        set((s) => {
+            const reg = applySubjectTokens(s.divergenceRegister, updates);
             debouncedSaveCampaignState(s.activeCampaignId, { context: s.context, messages: s.messages, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             saveDivergence(s.activeCampaignId, reg);
             return { divergenceRegister: reg };

@@ -276,6 +276,30 @@ export function dismissReviewFlag(register: DivergenceRegister, entryId: string)
     return { ...register, entries, lastUpdatedAt: Date.now() };
 }
 
+/**
+ * WO3 — set the knownBy list on a divergence entry immutably.
+ * knownBy: undefined = public/broadcast, [] = secret, ["npc:x","player",...] = scoped.
+ * Mirrors editFact's shape. Caller is responsible for token grammar.
+ */
+export function editKnownBy(register: DivergenceRegister, entryId: string, knownBy: string[] | undefined): DivergenceRegister {
+    const entries = register.entries.map(e =>
+        e.id === entryId ? { ...e, knownBy } : e
+    );
+    return { ...register, entries, lastUpdatedAt: Date.now() };
+}
+
+/**
+ * WO4 — apply subjectToken updates to a batch of entries immutably.
+ * Only subjectToken changes; enabled/pinned/text/etc are untouched (never disables/deletes).
+ */
+export function applySubjectTokens(register: DivergenceRegister, updates: Array<{ id: string; subjectToken: string }>): DivergenceRegister {
+    const updateMap = new Map(updates.map(u => [u.id, u.subjectToken]));
+    const entries = register.entries.map(e =>
+        updateMap.has(e.id) ? { ...e, subjectToken: updateMap.get(e.id) } : e
+    );
+    return { ...register, entries, lastUpdatedAt: Date.now() };
+}
+
 export function getEntriesForChapter(register: DivergenceRegister, chapterId: string): DivergenceEntry[] {
     return register.entries.filter(e => e.chapterId === chapterId);
 }

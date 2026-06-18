@@ -17,12 +17,14 @@ export {
     deleteChapter,
     toggleFact,
     dismissReviewFlag,
+    editKnownBy,
+    applySubjectTokens,
     getEntriesForChapter,
     getEntriesForNpc,
     migrateV1ToV2
 } from './divergenceRegister';
-export { runFactClustering } from './factClusterer';
-export type { ClusteringCancelled } from './factClusterer';
+export { runFactClustering, assignSubjectTokens, deriveSubjectTokenUpdates } from './factClusterer';
+export type { ClusteringCancelled, AssignSubjectTokensResult, SubjectTokenUpdate } from './factClusterer';
 export { runFactDedup } from './factDeduper';
 export type { DedupGroup, DedupCancelled, DedupResult } from './factDeduper';
 export { fetchFacts, extractContextEntities, queryFacts, formatFactsForContext } from './semanticMemory';
@@ -30,5 +32,5 @@ export { resolveTimeline, queryTimeline, formatResolvedForContext, getEventsBySc
 export type { ResolvedTruth } from './timelineResolver';
 export { scanCharacterProfile } from './characterProfileParser';
 export { scanInventory } from './inventoryParser';
-export { normalizeSubjectToken, parseKnownByToken, isKnownToAnyOnStage, normalizeFaction } from './knowledgeScope';
+export { normalizeSubjectToken, parseKnownByToken, isKnownToAnyOnStage, normalizeFaction, compareSceneRef, groupDivergencesBySubject } from './knowledgeScope';
 export type { KnownByToken } from './knowledgeScope';

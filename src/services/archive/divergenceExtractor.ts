@@ -10,8 +10,9 @@ import {
     SCENE_EVENT_RULES,
     TTRPG_PERSONA_ARCHIVIST,
     joinPromptSections,
+    buildSubjectTokenRules,
 } from '../infrastructure';
-import { DIVERGENCE_CATEGORIES, CATEGORY_DEFINITIONS, coerceCategory, stripReasoning } from '../campaign-state';
+import { DIVERGENCE_CATEGORIES, CATEGORY_DEFINITIONS, coerceCategory, stripReasoning, normalizeSubjectToken, normalizeFaction, parseKnownByToken } from '../campaign-state';
 import { uid } from '../../utils/uid';
 import { truncateScenesToBudget } from './saveFileEngine';
 import { parseChapterSummaryOutput, type ChapterSummaryOutput } from './chapterSummaryWriter';
@@ -25,7 +26,8 @@ function buildCombinedSealPrompt(
     sceneIds: string[],
     npcLedger: { id: string; name: string; aliases: string }[],
     indexEntries?: { sceneId: string; npcsWitnessed?: string[] }[],
-    openThreads?: string[]
+    openThreads?: string[],
+    existingSubjectTokens?: string[]
 ): string {
     const truncated = truncateScenesToBudget(scenes, COMBINED_SEAL_TOKEN_BUDGET);
     const sceneContent = truncated.map(s => `--- SCENE ${s.sceneId} ---\n${s.content}`).join('\n\n');
@@ -56,7 +58,7 @@ ${rows}`;
     }
 
     const knownByExample = `     "locations": [
-         { "text": "Eastern gate destroyed by siege", "sceneRef": "014", "npcIds": [], "unrecognizedNpcNames": [] }
+         { "text": "Eastern gate destroyed by siege", "sceneRef": "014", "npcIds": [], "unrecognizedNpcNames": [], "subjectToken": "eastern_gate.state" }
      ]`;
 
     const summaryShape = `The "summary" value must be this JSON shape:
@@ -76,7 +78,7 @@ ${rows}`;
 {
 ${knownByExample},
      "npc_events": [
-         { "text": "Grak allied with the player", "sceneRef": "018", "npcIds": ["npc_42"], "knownBy": ["npc_42", "npc_5"], "unrecognizedNpcNames": [] }
+         { "text": "Grak allied with the player", "sceneRef": "018", "npcIds": ["npc_42"], "knownBy": ["npc:npc_42", "npc:npc_5"], "unrecognizedNpcNames": [], "subjectToken": "grak.allegiance" }
      ],
      "promises_debts": [],
      "world_state": [],
@@ -174,6 +176,7 @@ TASK 2 — Extract established facts that would BREAK A FUTURE SCENE if the AI c
         SCENE_EVENT_RULES,
         categoryDefinitions,
         KNOWNBY_RULES,
+        buildSubjectTokenRules(existingSubjectTokens),
         divergenceRulesStatic,
         witnessCorrectionsRule,
         summaryRules,
@@ -208,13 +211,16 @@ function buildDivergenceEntries(
     divObj: Record<string, unknown[]>,
     sceneIds: string[],
     npcLedger: { id: string; name: string; aliases: string }[],
-    chapterId: string
+    chapterId: string,
+    indexEntries?: { sceneId: string; npcsWitnessed?: string[] }[]
 ): DivergenceEntry[] {
     const entries: DivergenceEntry[] = [];
     const sceneSet = new Set(sceneIds);
     const fallbackScene = sceneIds[0] ?? '000';
     const npcNameMap = new Map<string, string>();
+    const npcIdSet = new Set<string>();
     for (const npc of npcLedger) {
+        npcIdSet.add(npc.id);
         npcNameMap.set(npc.name.toLowerCase(), npc.id);
         if (npc.aliases) {
             for (const alias of npc.aliases.split(',')) {
@@ -222,6 +228,22 @@ function buildDivergenceEntries(
             }
         }
     }
+
+    // Witnesses per scene, for seeding knownBy on sensitive categories (WO2 default-inversion).
+    const witnessesByScene = new Map<string, Set<string>>();
+    if (indexEntries) {
+        for (const e of indexEntries) {
+            if (e.npcsWitnessed && e.npcsWitnessed.length > 0) {
+                const ids = e.npcsWitnessed.filter(id => npcIdSet.has(id));
+                if (ids.length > 0) {
+                    witnessesByScene.set(e.sceneId, new Set(ids));
+                }
+            }
+        }
+    }
+
+    const broadcastCategories: Set<string> = new Set(['rules_lore', 'locations']);
+    const sensitiveCategories: Set<string> = new Set(['npc_events', 'promises_debts', 'party_facts', 'world_state', 'misc']);
 
     for (const category of DIVERGENCE_CATEGORIES) {
         const slotArr = divObj[category];
@@ -264,34 +286,88 @@ function buildDivergenceEntries(
 
             const hasReviewFlag = stillUnrecognized.length > 0;
 
+            // knownBy resolution — token grammar: "player" | "npc:<id>" | "faction:<name>".
             let knownBy: string[] | undefined;
             const rawKnownBy = rawItem.knownBy;
             if (Array.isArray(rawKnownBy)) {
                 const resolvedKnownBy: string[] = [];
                 for (const kb of rawKnownBy) {
                     if (typeof kb !== 'string') continue;
-                    const matched = npcNameMap.get(kb.toLowerCase()) ?? (npcLedger.some(n => n.id === kb) ? kb : null);
-                    if (matched && !resolvedKnownBy.includes(matched)) {
-                        resolvedKnownBy.push(matched);
+                    const trimmed = kb.trim();
+                    if (!trimmed) continue;
+                    // Token form ("npc:npc_42", "faction:x", "player") — parse and validate.
+                    const parsed = parseKnownByToken(trimmed);
+                    if (parsed) {
+                        if (parsed.kind === 'npc') {
+                            if (npcIdSet.has(parsed.id) && !resolvedKnownBy.includes(`npc:${parsed.id}`)) {
+                                resolvedKnownBy.push(`npc:${parsed.id}`);
+                            }
+                        } else if (parsed.kind === 'faction') {
+                            const tok = `faction:${parsed.name}`;
+                            if (!resolvedKnownBy.includes(tok)) resolvedKnownBy.push(tok);
+                        } else if (parsed.kind === 'player') {
+                            if (!resolvedKnownBy.includes('player')) resolvedKnownBy.push('player');
+                        }
+                        continue;
+                    }
+                    // Legacy bare form: a raw NPC id or NPC name. Resolve to "npc:<id>" token.
+                    if (npcIdSet.has(trimmed)) {
+                        const tok = `npc:${trimmed}`;
+                        if (!resolvedKnownBy.includes(tok)) resolvedKnownBy.push(tok);
+                        continue;
+                    }
+                    const matchedByName = npcNameMap.get(trimmed.toLowerCase());
+                    if (matchedByName) {
+                        const tok = `npc:${matchedByName}`;
+                        if (!resolvedKnownBy.includes(tok)) resolvedKnownBy.push(tok);
+                    }
+                    // Unrecognized strings that look like faction names (no ":" prefix) — keep as faction token if they contain a space or are multi-word; else drop.
+                    else if (/\s/.test(trimmed) || /^[a-z]/i.test(trimmed)) {
+                        const f = normalizeFaction(trimmed);
+                        if (f && !trimmed.includes(':')) {
+                            const tok = `faction:${f}`;
+                            if (!resolvedKnownBy.includes(tok)) resolvedKnownBy.push(tok);
+                        }
                     }
                 }
                 if (resolvedKnownBy.length > 0) {
                     knownBy = resolvedKnownBy;
+                } else if (rawKnownBy.length === 0) {
+                    // Explicit "[]"" from the LLM = secret. Preserve.
+                    knownBy = [];
                 }
             }
-            const broadcastCategories: Set<string> = new Set(['rules_lore', 'locations']);
-            if (broadcastCategories.has(coerceCategory(category))) {
+
+            const cat = coerceCategory(category);
+
+            // Force broadcast for lore/locations (unchanged behavior).
+            if (broadcastCategories.has(cat)) {
                 knownBy = undefined;
+            } else if (sensitiveCategories.has(cat) && knownBy === undefined) {
+                // WO2 default-inversion: sensitive category + no knownBy from LLM → seed from scene witnesses.
+                const witnesses = witnessesByScene.get(sceneRef);
+                if (witnesses && witnesses.size > 0) {
+                    knownBy = Array.from(witnesses).map(id => `npc:${id}`);
+                }
+                // If no witnesses recorded, leave undefined (degrades to public — same as today's behavior for that edge).
+            }
+
+            // subjectToken — normalize; missing/malformed → undefined (ungrouped singleton).
+            let subjectToken: string | undefined;
+            const rawSubjectToken = rawItem.subjectToken;
+            if (typeof rawSubjectToken === 'string' && rawSubjectToken.trim()) {
+                subjectToken = normalizeSubjectToken(rawSubjectToken);
             }
 
             entries.push({
                 id: `div_${uid()}`,
                 chapterId,
-                category: coerceCategory(category),
+                category: cat,
                 text,
                 sceneRef,
                 npcIds: resolvedNpcIds,
                 knownBy,
+                subjectToken,
                 pinned: false,
                 source: 'auto',
                 reviewFlag: hasReviewFlag || undefined,
@@ -325,7 +401,8 @@ export function parseCombinedSealOutput(
     chapterId: string,
     sceneIds: string[],
     npcLedger: { id: string; name: string; aliases: string }[],
-    openThreads?: string[]
+    openThreads?: string[],
+    indexEntries?: { sceneId: string; npcsWitnessed?: string[] }[]
 ): CombinedSealResult {
     const cleaned = stripReasoning(raw);
     const jsonStr = extractJson(cleaned);
@@ -372,7 +449,7 @@ export function parseCombinedSealOutput(
             const normalized = key.trim().toLowerCase().replace(/[\s-]+/g, '_');
             divObj[normalized] = val as unknown[];
         }
-        entries = buildDivergenceEntries(divObj, sceneIds, npcLedger, chapterId);
+        entries = buildDivergenceEntries(divObj, sceneIds, npcLedger, chapterId, indexEntries);
     } else {
         divergenceParseError = true;
     }
@@ -455,7 +532,8 @@ export async function sealChapterCombined(
     npcLedger: { id: string; name: string; aliases: string }[],
     indexEntries?: { sceneId: string; npcsWitnessed?: string[] }[],
     maxRetries = 2,
-    openThreads?: string[]
+    openThreads?: string[],
+    existingSubjectTokens?: string[]
 ): Promise<CombinedSealResult> {
     const sealEffort: ThinkingEffort = 'off';
     const maxTokens = SEAL_MAX_TOKENS;
@@ -463,7 +541,7 @@ export async function sealChapterCombined(
     console.log(`[CombinedSeal] Config: maxTokens=${maxTokens}, thinkingEffort=${sealEffort}, provider.effort=${provider.thinkingEffort ?? 'none'}, apiFormat=${provider.apiFormat ?? 'openai'}`);
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        const prompt = buildCombinedSealPrompt(scenes, chapterTitle, sceneIds, npcLedger, indexEntries, openThreads);
+        const prompt = buildCombinedSealPrompt(scenes, chapterTitle, sceneIds, npcLedger, indexEntries, openThreads, existingSubjectTokens);
         const label = attempt === 0 ? '' : ' (retry)';
 
         console.log(`[CombinedSeal] Generating summary + divergences${label}...`, {
@@ -485,7 +563,7 @@ export async function sealChapterCombined(
         const tail = output.length > 200 ? output.slice(-200) : '';
         console.warn(`[CombinedSeal] Output length=${output.length}, head=${JSON.stringify(head)}, tail=${JSON.stringify(tail)}`);
 
-        const result = parseCombinedSealOutput(output, chapterId, sceneIds, npcLedger, openThreads);
+        const result = parseCombinedSealOutput(output, chapterId, sceneIds, npcLedger, openThreads, indexEntries);
 
         if (result.summary && !result.divergenceParseError) {
             return result;
