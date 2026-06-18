@@ -28,7 +28,9 @@ export function normalizeSelection(raw: string): string {
     if (!raw) return '';
     let s = raw.replace(/\s+/g, ' ').trim();
     // strip surrounding quotes / brackets / parens / trailing sentence punctuation
-    s = s.replace(/^[\s"'“”‘’[(]+/, '').replace(/[\s"'“”‘’\]).,;:!?]+$/, '');
+    s = s.replace(/^[\s”’””’’[(]+/, ‘’).replace(/[\s”’””’’\]).,;:!?]+$/, ‘’);
+    // strip markdown bold/italic markers left over from [**NAME**] chip selections
+    s = s.replace(/\*+/g, ‘’);
     // strip possessive ('s or ’s)
     s = s.replace(/['’]s$/i, '');
     s = s.trim();
