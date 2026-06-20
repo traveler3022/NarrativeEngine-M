@@ -270,7 +270,6 @@ export const MessageBubble = memo(function MessageBubble({
                 } ${
                     msg.role === 'user' ? 'bg-terminal/8 border-l-2 border-terminal text-text-primary' :
                     msg.role === 'system' ? 'bg-ember/8 border-l-2 border-ember text-ember/80' :
-                    msg.name === 'combat-ledger' ? 'bg-void-lighter border-l-2 border-red-500/60 text-text-primary' :
                     'bg-void-lighter border-l-2 border-border text-text-primary'
                 }`}
             >
@@ -398,17 +397,16 @@ export const MessageBubble = memo(function MessageBubble({
                             <span className={`text-[10px] uppercase tracking-widest ${
                                 msg.role === 'user' ? 'text-terminal' :
                                 msg.role === 'system' ? 'text-ember' :
-                                msg.name === 'combat-ledger' ? 'text-red-400' :
                                 'text-ice'
                             }`}>
-                                {msg.role === 'user' ? '► YOU' : msg.role === 'system' ? '◆ SYS' : msg.name === 'combat-ledger' ? '⚔ COMBAT' : '◇ GM'}
+                                {msg.role === 'user' ? '► YOU' : msg.role === 'system' ? '◆ SYS' : '◇ GM'}
                             </span>
                             <span className="text-[9px] text-text-dim">{new Date(msg.timestamp).toLocaleTimeString()}</span>
                         </div>
 
                         <div
-                            className={`gm-prose prose-sm leading-relaxed overflow-hidden ${msg.name === 'combat-ledger' ? 'font-mono text-[11px] tracking-wider' : ''}`}
-                            {...(msg.role === 'assistant' && msg.name !== 'combat-ledger' ? { 'data-lore-checkable': 'true', 'data-message-id': msg.id } : {})}
+                            className={`gm-prose prose-sm leading-relaxed overflow-hidden`}
+                            {...(msg.role === 'assistant' ? { 'data-lore-checkable': 'true', 'data-message-id': msg.id } : {})}
                         >
                             {thinkingBlock && showReasoning && (
                                 <details className="mb-3 bg-void-darker border border-terminal/20 rounded overflow-hidden group/think">

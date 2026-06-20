@@ -1,5 +1,6 @@
-import type { AppSettings, ArchiveChapter, ArchiveIndexEntry, BackupMeta, ChatMessage, CondenserState, EntityEntry, GameContext, NPCEntry, SemanticFact, TimelineEvent } from '../types';
+import type { AppSettings, ArchiveChapter, ArchiveIndexEntry, BackupCreateResult, BackupMeta, ChatMessage, CondenserState, EntityEntry, GameContext, NPCEntry, SemanticFact, TimelineEvent } from '../types';
 import { offlineStorage } from './storage';
+import type { BackupData } from './storage/backupStorage';
 import { get as idbGet, set as idbSet } from 'idb-keyval';
 
 export const api = {
@@ -57,28 +58,28 @@ export const api = {
         update: async (campaignId: string, chapterId: string, patch: Partial<ArchiveChapter>): Promise<void> => {
             await offlineStorage.chapters.update(campaignId, chapterId, patch);
         },
-        seal: async (campaignId: string): Promise<any> => {
+        seal: async (campaignId: string): Promise<{ sealedChapter: ArchiveChapter; newOpenChapter: ArchiveChapter } | null> => {
             return offlineStorage.chapters.seal(campaignId);
         },
-        merge: async (campaignId: string, chapterA: string, chapterB: string): Promise<any> => {
+        merge: async (campaignId: string, chapterA: string, chapterB: string): Promise<ArchiveChapter | null> => {
             return offlineStorage.chapters.merge(campaignId, chapterA, chapterB);
         },
-        split: async (campaignId: string, chapterId: string, atSceneId: string): Promise<any> => {
+        split: async (campaignId: string, chapterId: string, atSceneId: string): Promise<{ chapterA: ArchiveChapter; chapterB: ArchiveChapter } | null> => {
             return offlineStorage.chapters.split(campaignId, chapterId, atSceneId);
         },
     },
     backup: {
-        create: async (campaignId: string, opts: { label?: string; trigger?: string; isAuto?: boolean }): Promise<any> => {
+        create: async (campaignId: string, opts: { label?: string; trigger?: string; isAuto?: boolean }): Promise<BackupCreateResult> => {
             return offlineStorage.backup.create(campaignId, opts);
         },
         list: async (campaignId: string): Promise<BackupMeta[]> => {
             const list = await offlineStorage.backup.list(campaignId);
             return list;
         },
-        read: async (campaignId: string, timestamp: number): Promise<any> => {
+        read: async (campaignId: string, timestamp: number): Promise<{ meta: BackupMeta; data: BackupData } | null> => {
             return offlineStorage.backup.read(campaignId, timestamp);
         },
-        restore: async (campaignId: string, timestamp: number): Promise<any> => {
+        restore: async (campaignId: string, timestamp: number): Promise<{ ok: boolean } | null> => {
             return offlineStorage.backup.restore(campaignId, timestamp);
         },
         delete: async (campaignId: string, timestamp: number): Promise<void> => {
@@ -100,7 +101,7 @@ export const api = {
         get: async (campaignId: string): Promise<EntityEntry[]> => {
             return offlineStorage.entities.get(campaignId);
         },
-        merge: async (campaignId: string, survivorId: string, absorbedId: string): Promise<any> => {
+        merge: async (campaignId: string, survivorId: string, absorbedId: string): Promise<{ ok: boolean } | null> => {
             return offlineStorage.entities.merge(campaignId, survivorId, absorbedId);
         },
     },
@@ -119,7 +120,7 @@ export const api = {
         },
     },
     settings: {
-        async get(): Promise<any> {
+        async get(): Promise<Partial<AppSettings>> {
             const localSettings = await idbGet('nn_settings');
             return localSettings?.settings || {};
         },

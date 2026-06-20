@@ -1,20 +1,29 @@
-import type { ArchiveChapter, SemanticFact, TimelineEvent, BackupMeta } from '../../types';
+import type { ArchiveChapter, ArchiveIndexEntry, SemanticFact, TimelineEvent, BackupMeta, BackupCreateResult } from '../../types';
 import { getList, setList, k, computeHash, type SceneRecord } from './_helpers';
 import { get as idbGet, set as idbSet } from 'idb-keyval';
 
+export type BackupData = {
+    scenes: SceneRecord[];
+    index: ArchiveIndexEntry[];
+    chapters: ArchiveChapter[];
+    facts: SemanticFact[];
+    timeline: TimelineEvent[];
+    chatState: unknown;
+};
+
 export const backupStorage = {
-    async create(cid: string, opts: { label?: string; trigger?: string; isAuto?: boolean }): Promise<any> {
+    async create(cid: string, opts: { label?: string; trigger?: string; isAuto?: boolean }): Promise<BackupCreateResult> {
         const scenes: SceneRecord[] = await getList(k(cid, 'scenes'));
         if (scenes.length === 0) return { skipped: true };
 
-        const index = await getList<import('../../types').ArchiveIndexEntry>(k(cid, 'archive_index'));
+        const index = await getList<ArchiveIndexEntry>(k(cid, 'archive_index'));
         const chapters = await getList<ArchiveChapter>(k(cid, 'chapters'));
         const facts = await getList<SemanticFact>(k(cid, 'facts'));
         const timeline = await getList<TimelineEvent>(k(cid, 'timeline'));
         const chatState = await idbGet(`state_${cid}`);
 
         const hash = computeHash(JSON.stringify({ scenes, index, chapters, facts, timeline, chatState }));
-        const backups = await getList<{ timestamp: number; meta: BackupMeta; data: unknown }>(k(cid, 'backups'));
+        const backups = await getList<{ timestamp: number; meta: BackupMeta; data: BackupData }>(k(cid, 'backups'));
 
         if (opts.isAuto) {
             const autoBackups = backups.filter(b => b.meta.isAuto).sort((a, b) => b.timestamp - a.timestamp);
@@ -45,7 +54,7 @@ export const backupStorage = {
         }
 
         await setList(k(cid, 'backups'), backups);
-        return { timestamp: now, hash, fileCount: scenes.length };
+        return { skipped: false, timestamp: now, hash, fileCount: scenes.length };
     },
 
     async list(cid: string): Promise<BackupMeta[]> {
@@ -53,13 +62,13 @@ export const backupStorage = {
         return backups.map(b => b.meta).sort((a, b) => b.timestamp - a.timestamp);
     },
 
-    async read(cid: string, ts: number): Promise<{ meta: BackupMeta; data: unknown } | null> {
-        const backups = await getList<{ timestamp: number; meta: BackupMeta; data: unknown }>(k(cid, 'backups'));
+    async read(cid: string, ts: number): Promise<{ meta: BackupMeta; data: BackupData } | null> {
+        const backups = await getList<{ timestamp: number; meta: BackupMeta; data: BackupData }>(k(cid, 'backups'));
         return backups.find(b => b.timestamp === ts) || null;
     },
 
     async restore(cid: string, ts: number): Promise<{ ok: boolean } | null> {
-        const backups = await getList<{ timestamp: number; meta: BackupMeta; data: any }>(k(cid, 'backups'));
+        const backups = await getList<{ timestamp: number; meta: BackupMeta; data: BackupData }>(k(cid, 'backups'));
         const target = backups.find(b => b.timestamp === ts);
         if (!target) return null;
 
@@ -81,7 +90,7 @@ export const backupStorage = {
     },
 
     async delete(cid: string, ts: number): Promise<void> {
-        const backups = await getList<{ timestamp: number; meta: BackupMeta; data: unknown }>(k(cid, 'backups'));
+        const backups = await getList<{ timestamp: number; meta: BackupMeta; data: BackupData }>(k(cid, 'backups'));
         await setList(k(cid, 'backups'), backups.filter(b => b.timestamp !== ts));
     },
 };

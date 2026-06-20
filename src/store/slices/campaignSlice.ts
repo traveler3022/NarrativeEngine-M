@@ -3,6 +3,7 @@ import type { GameContext, ChatMessage, CondenserState, DivergenceRegister } fro
 import type { ArchiveSlice } from './archiveSlice';
 import type { LoreSlice } from './loreSlice';
 import type { NPCSlice } from './npcSlice';
+import type { ChatSlice } from './chatSlice';
 import { toast } from '../../components/Toast';
 import { debouncedSaveSettings } from './settingsSlice';
 import { runFullReindex, abortForCampaignSwitch } from '../../services/embedding';
@@ -125,7 +126,7 @@ export type CampaignSlice = {
 
 // ── Combined state needed for cross-slice access ───────────────────────
 
-type CampaignDeps = CampaignSlice & ArchiveSlice & LoreSlice & NPCSlice & {
+type CampaignDeps = CampaignSlice & ArchiveSlice & LoreSlice & NPCSlice & ChatSlice & {
     settings: import('../../types').AppSettings;
     messages: ChatMessage[];
     condenser: CondenserState;
@@ -248,7 +249,7 @@ export const createCampaignSlice: StateCreator<CampaignDeps, [], [], CampaignSli
     updateContext: (patch) =>
         set((s) => {
             const newContext = { ...s.context, ...patch };
-            debouncedSaveCampaignState(s.activeCampaignId, { context: newContext, messages: s.messages, condenser: s.condenser, pinnedExcerpts: (s as any).pinnedExcerpts });
+            debouncedSaveCampaignState(s.activeCampaignId, { context: newContext, messages: s.messages, condenser: s.condenser, pinnedExcerpts: s.pinnedExcerpts });
             return { context: newContext };
         }),
 

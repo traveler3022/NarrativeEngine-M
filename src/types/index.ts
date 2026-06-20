@@ -184,17 +184,6 @@ export type GameContext = {
     npcIntroDC?: number;
     notebook: NotebookNote[];
     notebookActive: boolean;
-    combatModeActive?: boolean;
-    combatConfig?: {
-        mookJitterRange?: number;
-        defaultWeaponDie?: number;
-        recoveryBands?: Record<'healthy' | 'wounded' | 'critical', number>;
-        combatAutoDetect?: boolean;
-        autoEnterThreshold?: number;
-        askThreshold?: number;
-        confirmOnBorderline?: boolean;
-        combatKeywords?: string[];
-    };
     lastSceneStakes?: SceneStakes;     // Phase-3 §9.3#2: last parsed/fallback scene stakes
     agencyDigest?: string;             // Phase-3 §9.3#7: player-visible tick digest, folded into next GM call
     arcs?: ArcRecord[];                // Arc Engine (System 2): active + retired arcs for this campaign
@@ -521,14 +510,11 @@ export type NPCEntry = {
         SPD: number;
         WIL: number;
     };
-    equippedWeapon?: string;
-    knownSkills?: string[];
     inventory?: string[];
     condition?: 'healthy' | 'wounded' | 'critical' | 'dead';
     lastCondition?: 'healthy' | 'wounded' | 'critical' | 'dead';
     lastSeenTimestamp?: number;
     recoveryNote?: string;
-    overrides?: NPCOverride[];
     portrait?: boolean;
     portraitSeed?: number;
     // ---- NPC Agency fields (Phase 1, all optional → lazy migration) ----
@@ -626,6 +612,8 @@ export type BackupMeta = {
     campaignName: string;
 };
 
+export type BackupCreateResult = { skipped: true } | { skipped: false; timestamp: number; hash: string; fileCount: number };
+
 export type EntityEntry = {
     id: string;
     name: string;
@@ -707,20 +695,10 @@ export type PinnedExcerpt = {
     isFullMessage: boolean;    // affects rendering & dedup
 };
 
-// ── Combat Mode Core Types ─────────────────────────────────────────────
+// ── Combat & Character Stat Types ──────────────────────────────────────
 
 export type CombatTier = 'minion' | 'grunt' | 'elite' | 'boss' | 'legendary';
 export type Archetype = 'bulwark' | 'assassin' | 'caster' | 'skirmisher' | 'brute';
-export type RecoveryBand = 'healthy' | 'wounded' | 'critical';
-
-/**
- * Deterministic enemy-AI personal override (spec A7, tier 1).
- * `trigger` uses a bounded vocab parsed by the engine, e.g.
- *   "onSelfBelow(30)" · "onAllyBelow(30)" · "onAllyFatal" · "onRound(2)"
- * `action` is one of the bounded enemy action labels, e.g.
- *   "attack" · "defend" · "guard" · "reposition" · "cast" · "interpose"
- */
-export type NPCOverride = { trigger: string; action: string };
 
 export type StatBlock = {
     VIT: number;
@@ -729,70 +707,5 @@ export type StatBlock = {
     FOC: number;
     SPD: number;
     WIL: number;
-};
-
-export type Combatant = {
-    id: string;
-    name: string;
-    stats: StatBlock;
-    currentHP: number;
-    maxHP: number;
-    currentFOC: number;
-    maxFOC: number;
-    combatTier: CombatTier;
-    archetype: Archetype;
-    ac: number;
-    proficiencyBonus: number;
-    isPC?: boolean;
-    position?: 'cover' | 'elevated' | 'exposed';
-    statusEffects?: string[];
-    /** Personal AI overrides copied from the ledger entry at materialize (named NPCs only). */
-    overrides?: NPCOverride[];
-};
-
-export type ItemDef = {
-    id: string;
-    name: string;
-    description: string;
-    damageDice: number;
-    scalingStat: 'PWR' | 'SPD' | 'WIL';
-    bonus: number;
-    properties: string[];
-    range: 'Close' | 'Reach' | 'Ranged';
-    rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
-};
-
-export type SkillDef = {
-    id: string;
-    name: string;
-    description: string;
-    focCost: number;
-    type: 'attack' | 'heal' | 'utility';
-    damageDice?: number;
-    healDice?: number;
-    scaling: 'PWR' | 'SPD' | 'WIL';
-    properties: string[];
-    range: 'Close' | 'Reach' | 'Ranged';
-};
-
-export type CombatState = {
-    active: boolean;
-    round: number;
-    turnOrder: string[];
-    activeTurnIndex: number;
-    combatants: Record<string, Combatant>;
-    rangeRelations: Record<string, Record<string, 'Engaged' | 'Apart'>>;
-};
-
-export type InventoryProposal = {
-    name: string;
-    op: 'grant' | 'remove' | 'equip';
-    kind: 'weapon' | 'armor' | 'consumable' | 'misc';
-    quality: ItemDef['rarity'];
-    scalingStat: 'PWR' | 'SPD' | 'WIL';
-    range: 'Close' | 'Reach' | 'Ranged';
-    properties: string[];
-    equip: boolean;
-    description: string;
 };
 

@@ -119,9 +119,6 @@ function makeState(over: Partial<TurnState> = {}): TurnState {
         clearPinnedChapters: vi.fn(),
         deepContextSearch: false,
         onStageNpcIds: [],
-        items: [],
-        skills: [],
-        combatState: null,
         pinnedExcerpts: [],
         ...over,
     } as unknown as TurnState;
