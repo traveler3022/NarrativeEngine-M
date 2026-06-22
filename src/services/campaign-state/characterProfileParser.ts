@@ -207,13 +207,22 @@ function normalizeParsedProfile(
         })
         .filter(t => t.text.length > 0);
 
-    // Enforce the 10-trait cap on non-superseded entries.
-    const active = traits.filter(t => !t.superseded);
-    const superseded = traits.filter(t => t.superseded);
+    // ── Merge-by-id backstop (anti-drop) ──
+    // The LLM contract is "supersede, never delete." If a prior trait is missing
+    // from this turn's output, treat it as an accidental omission and preserve it.
+    // Protects against silent data loss the old flat-string profile never had.
+    // Manual/seed traits are protected by the same id check — no special-casing.
+    const parsedIds = new Set(traits.map(t => t.id));
+    const preserved = fallback.activeTraits.filter(t => !parsedIds.has(t.id));
+    const merged = [...traits, ...preserved];
+
+    // Enforce the 10-trait cap on non-superseded entries (after merge, so
+    // preserved traits count toward the cap correctly).
+    const active = merged.filter(t => !t.superseded);
+    const superseded = merged.filter(t => t.superseded);
     if (active.length > 10) {
         active.sort((a, b) => b.importance - a.importance);
-        const overflow = active.slice(10);
-        for (const t of overflow) t.superseded = true;
+        for (const t of active.slice(10)) t.superseded = true;
     }
 
     const finalTraits = [...active, ...superseded];
