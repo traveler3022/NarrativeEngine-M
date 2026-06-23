@@ -610,6 +610,14 @@ export type NPCEntry = {
     // climbs) until a forced break discharges it back toward 0 (catharsis). Never sent to the
     // LLM. Default-absent = 0. See services/npc/reactionRepression.ts.
     repressionPressure?: number;
+    // ---- Relationship meter (engine-owned affinity accumulator) ----
+    // Hidden sub-band progress toward the next pcRelation change. The AI only classifies each
+    // scene's tone per NPC (friendly/tense/neutral/bonding/betrayal); the ENGINE rolls a signed
+    // step into this meter, and when it crosses a threshold the pcRelation band moves and the
+    // meter resets (carry preserved). Asymmetric: slow up (+100 to rise), fast down (−50 to fall);
+    // bonding leaps but caps at Friendly; betrayal drops uncapped. Never sent to the LLM.
+    // Default-absent = 0. See services/npc/relationMeter.ts.
+    relationMeter?: number;
     // ---- NPC Generation Refit (Phase 1) — SOCIAL/disposition groups ----
     // NOTE: these are SOCIAL/disposition archetype keys (e.g. 'scholar', 'brute', 'fool') from
     // dispositionGroups.ts ENVELOPES. They are NOT the combat `archetype` field above

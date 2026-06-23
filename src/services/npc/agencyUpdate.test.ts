@@ -91,42 +91,26 @@ describe('agencyUpdate — updateExistingNPCs & buildDriftAlert', () => {
         expect(patch.wants.long).toBe('rule the empire'); // updated
     });
 
-    it('pcRelation delta: +1 on +1 npc -> +2; clamps at +3; clamps step +5 to +1', async () => {
-        const npc1 = { id: 'n1', name: 'Alden', isPC: false, pcRelation: 1 } as unknown as NPCEntry;
-        const npc2 = { id: 'n2', name: 'Bram', isPC: false, pcRelation: 3 } as unknown as NPCEntry;
-        const npc3 = { id: 'n3', name: 'Mira', isPC: false, pcRelation: 1 } as unknown as NPCEntry;
+    it('relationship is engine-owned: the "tones" channel moves the band; AI-sent pcRelation is ignored', async () => {
+        const alden = { id: 'n1', name: 'Alden', isPC: false, pcRelation: 0, relationMeter: 0 } as unknown as NPCEntry;
+        const bram = { id: 'n2', name: 'Bram', isPC: false, pcRelation: 1 } as unknown as NPCEntry;
 
         const updateNPCStore = vi.fn();
 
         mockLlmCall.mockResolvedValue(JSON.stringify({
-            updates: [
-                {
-                    name: 'Alden',
-                    changes: { pcRelation: 1 }
-                },
-                {
-                    name: 'Bram',
-                    changes: { pcRelation: 1 } // will clamp at +3 ceiling
-                },
-                {
-                    name: 'Mira',
-                    changes: { pcRelation: 5 } // will clamp step to +1
-                }
-            ]
+            // Bram: the model tries to set the band directly — this must be discarded.
+            updates: [{ name: 'Bram', changes: { pcRelation: 3 } }],
+            // Alden: a 'bonding' tone is the deterministic +100 step → band 0 → +1.
+            tones: [{ name: 'Alden', tone: 'bonding' }],
         }));
 
-        await updateExistingNPCs(provider, history, [npc1, npc2, npc3], updateNPCStore);
-
-        expect(updateNPCStore).toHaveBeenCalledTimes(3);
+        await updateExistingNPCs(provider, history, [alden, bram], updateNPCStore);
 
         const aldenPatch = updateNPCStore.mock.calls.find(c => c[0] === 'n1')![1];
-        expect(aldenPatch.pcRelation).toBe(2);
+        expect(aldenPatch.pcRelation).toBe(1); // moved by the engine via the tone meter
 
         const bramPatch = updateNPCStore.mock.calls.find(c => c[0] === 'n2')![1];
-        expect(bramPatch.pcRelation).toBe(3); // clamped at +3
-
-        const miraPatch = updateNPCStore.mock.calls.find(c => c[0] === 'n3')![1];
-        expect(miraPatch.pcRelation).toBe(2); // +5 clamped to +1 step, 1 + 1 = 2
+        expect(bramPatch.pcRelation).toBeUndefined(); // AI-supplied band stripped (engine-owned)
     });
 
     it('hex delta: boldness +1 moves it; absolute-looking overwrite is neutralized to max ±1 step', async () => {
@@ -180,33 +164,32 @@ describe('agencyUpdate — updateExistingNPCs & buildDriftAlert', () => {
         });
     });
 
-    it('SHIFT emitted: when axis or pcRelation changes, previousSnapshot is set and SHIFT is produced', async () => {
+    it('SHIFT emitted: a hex-update entry and a tone-driven band move share one previousSnapshot', async () => {
         const npc = {
             id: 'n1',
             name: 'Alden',
             isPC: false,
-            pcRelation: 1,
+            pcRelation: 0,
+            relationMeter: 0,
             personalityHex: { drive: 0, diligence: 0, boldness: 0, warmth: 0, empathy: 0, composure: 0 }
         } as unknown as NPCEntry;
 
         const updateNPCStore = vi.fn();
 
         mockLlmCall.mockResolvedValue(JSON.stringify({
-            updates: [
-                {
-                    name: 'Alden',
-                    changes: { pcRelation: 1, personalityHex: { boldness: 1 } }
-                }
-            ]
+            // hex drift in the rare "updates" channel + a 'bonding' tone (deterministic +100 → band 0→+1)
+            updates: [{ name: 'Alden', changes: { personalityHex: { boldness: 1 } } }],
+            tones: [{ name: 'Alden', tone: 'bonding' }],
         }));
 
         await updateExistingNPCs(provider, history, [npc], updateNPCStore);
 
-        expect(updateNPCStore).toHaveBeenCalledTimes(1);
+        expect(updateNPCStore).toHaveBeenCalledTimes(1); // tone folds into the update entry
         const patch = updateNPCStore.mock.calls[0][1];
 
+        expect(patch.pcRelation).toBe(1); // engine-owned band move
         expect(patch.previousSnapshot).toBeDefined();
-        expect(patch.previousSnapshot.pcRelation).toBe(1);
+        expect(patch.previousSnapshot.pcRelation).toBe(0);
         expect(patch.previousSnapshot.personalityHex).toEqual({ drive: 0, diligence: 0, boldness: 0, warmth: 0, empathy: 0, composure: 0 });
 
         // Simulate applying the patch to the npc
@@ -220,7 +203,7 @@ describe('agencyUpdate — updateExistingNPCs & buildDriftAlert', () => {
         const alert = buildDriftAlert(updatedNpc);
         expect(alert).toContain('SHIFT:');
         expect(alert).toContain('boldness Measured → Bold');
-        expect(alert).toContain('feeling toward PC Friendly → Close');
+        expect(alert).toContain('feeling toward PC Neutral → Friendly');
     });
 
     it('legacy NPC fallback: un-migrated NPC skips hex parse instead of crashing', async () => {
