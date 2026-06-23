@@ -118,7 +118,7 @@ export function buildStablePreamble(opts: {
 
     const stableContent = stableParts.join('\n\n');
     const stableTokens = countTokens(stableContent);
-    addTrace({ source: 'Stable Preamble', classification: 'stable_truth', tokens: stableTokens, reason: 'Rules & Core state', included: true, position: 'system_static' });
+    addTrace({ source: 'Stable Preamble', classification: 'stable_truth', tokens: stableTokens, reason: 'Rules & Core state', included: true, position: 'system_static', preview: stableContent });
 
     return { stableContent, stableTokens, divergenceContent: '', divergenceTokens: 0, retrievedRulesContent };
 }
@@ -146,7 +146,7 @@ export function buildDivergenceBlock(opts: {
         }
     }
     const divergenceTokens = countTokens(divergenceContent);
-    addTrace({ source: 'Divergence Register', classification: 'stable_truth', tokens: divergenceTokens, reason: `Campaign canon overrides (${divergenceRegister?.entries.length ?? 0} entries)`, included: !!divergenceContent, position: 'system_static' });
+    addTrace({ source: 'Divergence Register', classification: 'stable_truth', tokens: divergenceTokens, reason: `Campaign canon overrides (${divergenceRegister?.entries.length ?? 0} entries)`, included: !!divergenceContent, position: 'system_static', preview: divergenceContent });
 
     return { divergenceContent, divergenceTokens };
 }

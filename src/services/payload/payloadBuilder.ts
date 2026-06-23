@@ -149,12 +149,20 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
     }
 
     const volatileParts: string[] = [];
-    if (retrievedRulesContent) volatileParts.push(retrievedRulesContent);
+
+    // Trace each volatile module on its OWN row (was one lumped 'Profile/Inventory/SceneNote'
+    // row) so the debug panel can read exactly what each module sent. We still fold them all
+    // into the single volatileContent string below — keep volatileContent / volatileTokens
+    // byte-identical so downstream budget math is unchanged.
+    let retrievedRulesText = '';
+    if (retrievedRulesContent) { retrievedRulesText = retrievedRulesContent; volatileParts.push(retrievedRulesContent); }
+
     // PC profile: structured retrieval via queryTraits (scene-aware, budget-capped).
     // Replaces the legacy wholesale `[CHARACTER PROFILE]\n${flat-string}` injection.
     // Core floor (CORE_FLOOR_TRAITS=5) always injects; extended tier is filtered
     // by planner eventTypes + entity match + token budget. legacyNotes is storage-
     // only and never injected.
+    let profileText = '';
     if (context.characterProfileActive && context.characterProfile) {
         const profile = context.characterProfile;
         if (profile.activeTraits && profile.activeTraits.length > 0 || profile.identity.name || profile.stats) {
@@ -167,16 +175,23 @@ export function buildPayload(opts: BuildPayloadOptions): { messages: OpenAIMessa
                 400,
                 CORE_FLOOR_TRAITS,
             );
-            const profileText = formatTraitsForContext(profile, selected);
+            profileText = formatTraitsForContext(profile, selected);
             if (profileText) volatileParts.push(profileText);
         }
     }
-    if (context.inventoryActive && context.inventory) volatileParts.push(`[PLAYER INVENTORY]\n${context.inventory}`);
-    if (context.sceneNoteActive && context.sceneNote) volatileParts.push(`[SCENE NOTE: VOLATILE GUIDANCE]\n${context.sceneNote}`);
+
+    let inventoryText = '';
+    if (context.inventoryActive && context.inventory) { inventoryText = `[PLAYER INVENTORY]\n${context.inventory}`; volatileParts.push(inventoryText); }
+
+    let sceneNoteText = '';
+    if (context.sceneNoteActive && context.sceneNote) { sceneNoteText = `[SCENE NOTE: VOLATILE GUIDANCE]\n${context.sceneNote}`; volatileParts.push(sceneNoteText); }
 
     const volatileContent = volatileParts.join('\n\n');
     const volatileTokens = countTokens(volatileContent);
-    addTrace({ source: 'Profile/Inventory/SceneNote', classification: 'volatile_state', tokens: volatileTokens, reason: 'Player state + scene note', included: true, position: 'system_dynamic', preview: volatileContent });
+    if (retrievedRulesText) addTrace({ source: 'Retrieved Rules', classification: 'volatile_state', tokens: countTokens(retrievedRulesText), reason: 'RAG rules retrieved for this turn', included: true, position: 'system_dynamic', preview: retrievedRulesText });
+    if (profileText) addTrace({ source: 'Player Profile', classification: 'volatile_state', tokens: countTokens(profileText), reason: 'Scene-selected PC traits', included: true, position: 'system_dynamic', preview: profileText });
+    if (inventoryText) addTrace({ source: 'Inventory', classification: 'volatile_state', tokens: countTokens(inventoryText), reason: 'Player inventory', included: true, position: 'system_dynamic', preview: inventoryText });
+    if (sceneNoteText) addTrace({ source: 'GM Scene Note', classification: 'volatile_state', tokens: countTokens(sceneNoteText), reason: 'Volatile GM guidance for this scene', included: true, position: 'system_dynamic', preview: sceneNoteText });
 
     const nonHistoryTokens = stableTokens + divergenceTokens + pinnedMemoriesTokens + combinedWorldTokens + volatileTokens;
 

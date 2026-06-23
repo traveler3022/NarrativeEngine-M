@@ -13,6 +13,7 @@ import { getToolDefinitions, handleLoreTool, handleNotebookTool, handleDiceTool 
 import { extractAndStripSceneStakes, classifySceneStakes } from './sceneStakesTag';
 
 import type { OpenAIMessage } from '../llm/llmService';
+import type { PayloadTrace } from '../../types';
 import { buildAssistantToolCallMessage, buildToolResultMessage } from '../../types/llmMessages';
 
 export async function runTurn(
@@ -92,6 +93,23 @@ export async function runTurn(
         callbacks.setLastPayloadTrace(payloadResult.trace);
     }
 
+    // Tool calls fire after the snapshot above; append a row each time a tool result is
+    // folded back into the payload and re-publish so the debug panel includes them too.
+    const liveTrace: PayloadTrace[] = payloadResult.trace ? [...payloadResult.trace] : [];
+    const pushToolTrace = (name: string, args: string, result: string) => {
+        if (!settings.debugMode || !callbacks.setLastPayloadTrace) return;
+        liveTrace.push({
+            source: `Tool Call — ${name}`,
+            classification: 'world_context',
+            tokens: Math.round((args.length + result.length) / 4),
+            reason: `Model called ${name}; result folded back into the payload`,
+            included: true,
+            position: 'tool',
+            preview: `↳ ARGS:\n${args}\n\n↳ RESULT:\n${result}`,
+        });
+        callbacks.setLastPayloadTrace([...liveTrace]);
+    };
+
     // Only persist the full payload when debugging — otherwise it bloats every
     // saved message (hundreds of KB each) and the campaign export.
     if (settings.debugMode) {
@@ -161,6 +179,7 @@ export async function runTurn(
                     ));
 
                     const { toolResult } = handleLoreTool(toolCall.arguments, { loreChunks, notebook: context.notebook });
+                    pushToolTrace(toolCall.name, toolCall.arguments, toolResult);
 
                     const toolMsgId = uid();
                     callbacks.addMessage({
@@ -208,6 +227,7 @@ export async function runTurn(
                     ));
 
                     const { toolResult, updatedNotebook } = handleNotebookTool(toolCall.arguments, { loreChunks, notebook: context.notebook });
+                    pushToolTrace(toolCall.name, toolCall.arguments, toolResult);
                     callbacks.updateContext({ notebook: updatedNotebook });
 
                     const toolMsgId = uid();
@@ -255,6 +275,7 @@ export async function runTurn(
                     ));
 
                     const { toolResult } = handleDiceTool(toolCall.arguments, { diceConfig: context.diceConfig });
+                    pushToolTrace(toolCall.name, toolCall.arguments, toolResult);
 
                     const toolMsgId = uid();
                     callbacks.addMessage({
