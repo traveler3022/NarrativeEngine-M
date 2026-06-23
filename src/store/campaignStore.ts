@@ -74,6 +74,24 @@ function stripDebugPayloads(state: CampaignState): CampaignState {
 
 export async function saveCampaignState(campaignId: string, state: CampaignState): Promise<void> {
     await set(`state_${campaignId}`, stripDebugPayloads(state));
+
+    // B5 — bump the campaign meta's lastPlayedAt on every turn-commit. Previously
+    // lastPlayedAt was only written when a campaign was opened/edited in CampaignHub,
+    // so the stamp read "last opened" instead of "last played" and the recency sort
+    // (listCampaigns) was wrong after ~10h of play. One small extra write per turn,
+    // not per keystroke. Only the meta record is touched — no re-trigger of state save.
+    try {
+        const campaigns: Campaign[] = await get('campaigns') || [];
+        const idx = campaigns.findIndex(c => c.id === campaignId);
+        if (idx >= 0) {
+            campaigns[idx] = { ...campaigns[idx], lastPlayedAt: Date.now() };
+            await set('campaigns', campaigns);
+        }
+    } catch (e) {
+        // Non-fatal — the state save above already succeeded; don't let a meta-write
+        // failure break the turn.
+        console.warn('[saveCampaignState] failed to bump lastPlayedAt:', e);
+    }
 }
 
 const AI_PLAYER_CONTEXT_KEYS = [
