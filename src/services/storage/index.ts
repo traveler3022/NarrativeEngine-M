@@ -69,7 +69,14 @@ export const offlineStorage = {
                 openChapter.sceneRange[1] = sceneId;
                 openChapter.sceneCount = (openChapter.sceneCount || 0) + 1;
                 if (!openChapter.sceneIds) openChapter.sceneIds = [];
-                openChapter.sceneIds.push(sceneId);
+                // B4 — guard against recording the boundary scene twice. The new open
+                // chapter's sceneRange is seeded to the next scene id; if sceneIds was
+                // pre-seeded with that same id (e.g. by a legacy backfill), don't push it
+                // again. Only append if this sceneId isn't already the last entry.
+                const last = openChapter.sceneIds[openChapter.sceneIds.length - 1];
+                if (last !== sceneId) {
+                    openChapter.sceneIds.push(sceneId);
+                }
             }
             await setList(k(cid, 'chapters'), chapters);
 

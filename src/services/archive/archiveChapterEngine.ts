@@ -47,6 +47,11 @@ export function sealChapter(
     const sealed: ArchiveChapter = {
         ...openChapter,
         sealedAt: Date.now(),
+        // B4 — dedupe sceneIds on seal. The boundary scene was recording twice in some
+        // saves (25 ids / sceneCount 24). Array.from(new Set(...)) collapses any dups so
+        // sceneIds.length agrees with sceneCount.
+        sceneIds: Array.from(new Set(openChapter.sceneIds ?? [])),
+        sceneCount: Array.from(new Set(openChapter.sceneIds ?? [])).length,
     };
 
     const nextChapterNum = chapters.length + 1;

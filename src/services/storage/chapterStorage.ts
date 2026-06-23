@@ -59,7 +59,14 @@ export const chapterStorage = {
         const openChapter = chapters.find(c => !c.sealedAt);
         if (!openChapter) return null;
 
-        const sealed: ArchiveChapter = { ...openChapter, sealedAt: Date.now() };
+        // B4 — dedupe sceneIds on seal (boundary scene was recording twice in some saves).
+        const dedupedIds = Array.from(new Set(openChapter.sceneIds ?? []));
+        const sealed: ArchiveChapter = {
+            ...openChapter,
+            sceneIds: dedupedIds,
+            sceneCount: dedupedIds.length,
+            sealedAt: Date.now(),
+        };
         const lastScene = parseInt(sealed.sceneRange[1], 10);
         const nextScene = String(lastScene + 1).padStart(3, '0');
         const nextNum = chapters.length + 1;
