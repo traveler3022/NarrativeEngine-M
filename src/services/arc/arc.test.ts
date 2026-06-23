@@ -3,7 +3,6 @@ import type {
     ArcRecord,
     ArcType,
     ArcStance,
-    NPCPressure,
     LLMProvider,
 } from '../../types';
 import { bandFromMargin } from '../npc/agencyDice';
@@ -15,12 +14,10 @@ import {
     LADDER_MAX,
     MAX_ACTIVE_ARCS,
     TYPE_COOLDOWN_SEAMS,
-    ARC_LIVE_RECENCY,
 } from './arcConstants';
 import { rollArcTick, rollArcOutcome, advanceRung } from './arcDice';
 import { arcSurfaceLine } from './arcSurface';
 import { scanArcStance } from './arcStance';
-import { arcWorldState } from './arcWorldState';
 
 vi.mock('../../utils/llmCall', () => ({
     llmCall: vi.fn(),
@@ -80,7 +77,6 @@ describe('Arc Engine Constants', () => {
         expect(LADDER_MAX).toBe(12);
         expect(MAX_ACTIVE_ARCS).toBe(3);
         expect(TYPE_COOLDOWN_SEAMS).toBe(6);
-        expect(ARC_LIVE_RECENCY).toBe(3);
     });
 });
 
@@ -341,46 +337,6 @@ describe('scanArcStance', () => {
         const inactiveArc = { ...activeArc, status: 'resolved' as const };
         const result = scanArcStance('I will stop the grain shortage', '', [inactiveArc]);
         expect(result).toEqual([]);
-    });
-});
-
-describe('arcWorldState', () => {
-    const inactiveArc = mockArc({ status: 'resolved' });
-
-    it('returns live if active arc ticked recently (within recency of nowScene)', () => {
-        const activeArc = mockArc({ status: 'active', lastTickScene: '10' });
-        const result = arcWorldState([activeArc], [], {}, 12);
-        expect(result).toBe('live');
-
-        const resultBoundary = arcWorldState([activeArc], [], {}, 13);
-        expect(resultBoundary).toBe('live');
-    });
-
-    it('returns live if NPC pressure is above threshold (> 1)', () => {
-        const pressureIgnored = { npc1: { ignored: 2 } as NPCPressure };
-        const resultIgnored = arcWorldState([], [], pressureIgnored, 10);
-        expect(resultIgnored).toBe('live');
-
-        const pressureEngaged = { npc2: { engaged: 2 } as NPCPressure };
-        const resultEngaged = arcWorldState([], [], pressureEngaged, 10);
-        expect(resultEngaged).toBe('live');
-    });
-
-    it('returns stalled if active arc exists but ticked long ago and no pressure', () => {
-        const activeArc = mockArc({ status: 'active', lastTickScene: '10' });
-        const result = arcWorldState([activeArc], [], {}, 14);
-        expect(result).toBe('stalled');
-    });
-
-    it('returns stalled if open threads exist and no live pressure or recent arc tick', () => {
-        const result = arcWorldState([], [{ text: 'open thread' }], {}, 10);
-        expect(result).toBe('stalled');
-    });
-
-    it('returns dry if no active arcs, no open threads, and no live pressure', () => {
-        const lowPressure = { npc1: { ignored: 1, engaged: 1 } as NPCPressure };
-        const result = arcWorldState([inactiveArc], [], lowPressure, 10);
-        expect(result).toBe('dry');
     });
 });
 

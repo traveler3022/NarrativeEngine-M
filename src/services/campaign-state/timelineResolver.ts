@@ -61,14 +61,6 @@ export function getEventsByScene(events: TimelineEvent[], sceneId: string): Time
     return events.filter(e => e.sceneId === sceneId);
 }
 
-export function getEventsByChapter(events: TimelineEvent[], chapterId: string): TimelineEvent[] {
-    return events.filter(e => e.chapterId === chapterId);
-}
-
-export function getScenesWithEvents(events: TimelineEvent[]): Set<string> {
-    return new Set(events.map(e => e.sceneId));
-}
-
 export function maxImportanceForScene(events: TimelineEvent[], sceneId: string): number {
     const sceneEvents = getEventsByScene(events, sceneId);
     if (sceneEvents.length === 0) return 0;

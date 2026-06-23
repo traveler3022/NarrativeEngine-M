@@ -21,9 +21,6 @@ export const MAX_ACTIVE_ARCS = 3;
 // Seams a fired ArcType is suppressed from re-spawning.
 export const TYPE_COOLDOWN_SEAMS = 6;
 
-// Recency window (in seams/ticks) for arcWorldState 'live' classification.
-export const ARC_LIVE_RECENCY = 3;
-
 // Stance → extraMods on the OUTCOME roll (rollArcOutcome). The outcome roll measures
 // "did the arc make progress toward crisis this tick." So:
 //   opposed → strong drag (can push to fail/critFail = stall/regress)
@@ -60,8 +57,3 @@ export const ARC_SURFACE_TIER: Record<import('../../types').ArcSurface, number> 
     rumor: 1,
     direct: 2,
 } as const;
-
-// NPC-pressure threshold above which arcWorldState classifies 'live' (an NPC with
-// unresolved pressure is itself an active thread — spawning an arc on top would
-// stomp it). Mirrors the troublemaker.ts active-NPC gate (>1).
-export const ARC_LIVE_PRESSURE_THRESHOLD = 1;

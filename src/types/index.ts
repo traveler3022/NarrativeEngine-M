@@ -234,8 +234,6 @@ export type ArcRecord = {
     lastTickScene: string;  // sceneId of the last rung change (recency signal)
 };
 
-export type ArcWorldState = 'live' | 'stalled' | 'dry';
-
 
 export type DivergenceCategory =
     | 'locations'

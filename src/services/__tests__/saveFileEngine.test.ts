@@ -186,6 +186,8 @@ describe('truncateScenesToBudget', () => {
         expect(result.length).toBeLessThanOrEqual(scenes.length);
     });
 
+    // Real-tokenizer work over 11 scenes; give headroom so full-suite CPU contention
+    // doesn't trip the default 5s timeout (passes in ~1.4s in isolation).
     it('preserves first and last scenes when truncating a larger array', () => {
         const scenes = Array.from({ length: 11 }, (_, i) => makeScene(String(i).padStart(3, '0'), 500));
         const result = truncateScenesToBudget(scenes, 1);
@@ -193,7 +195,7 @@ describe('truncateScenesToBudget', () => {
         expect(ids).toContain('000');
         expect(ids).toContain('010');
         expect(result.length).toBeLessThanOrEqual(scenes.length);
-    });
+    }, 20000);
 
     it('handles small arrays gracefully even if over budget', () => {
         const scenes = [makeScene('001', 10), makeScene('002', 10)];
