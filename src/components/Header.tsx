@@ -213,7 +213,7 @@ export function Header() {
     const handleExit = async () => {
         if (activeCampaignId) {
             const state = useAppStore.getState();
-            await saveCampaignState(activeCampaignId, { context: state.context, messages: state.messages, condenser: state.condenser });
+            await saveCampaignState(activeCampaignId, { context: state.context, messages: state.messages, condenser: state.condenser, pinnedExcerpts: state.pinnedExcerpts });
             await saveDivergenceRegister(activeCampaignId, state.divergenceRegister);
         }
         setActiveCampaign(null);

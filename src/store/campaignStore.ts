@@ -73,7 +73,20 @@ function stripDebugPayloads(state: CampaignState): CampaignState {
 }
 
 export async function saveCampaignState(campaignId: string, state: CampaignState): Promise<void> {
-    await set(`state_${campaignId}`, stripDebugPayloads(state));
+    // pinnedExcerpts is optional on CampaignState, but this is a full-record
+    // overwrite — a caller that *omits* the field would silently wipe the user's
+    // pinned memories (Header.handleExit / CampaignHub edits did exactly this).
+    // Guard: when the field is undefined (omitted, not an explicit `[]` clear),
+    // preserve whatever is already persisted. The hot turn path always passes
+    // pinnedExcerpts explicitly, so this extra read never fires there.
+    let toSave = state;
+    if (state.pinnedExcerpts === undefined) {
+        const prev = await get(`state_${campaignId}`).catch(() => null);
+        if (prev?.pinnedExcerpts) {
+            toSave = { ...state, pinnedExcerpts: prev.pinnedExcerpts };
+        }
+    }
+    await set(`state_${campaignId}`, stripDebugPayloads(toSave));
 
     // B5 — bump the campaign meta's lastPlayedAt on every turn-commit. Previously
     // lastPlayedAt was only written when a campaign was opened/edited in CampaignHub,
