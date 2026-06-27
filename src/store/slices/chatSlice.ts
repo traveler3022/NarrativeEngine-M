@@ -164,6 +164,10 @@ export type ChatSlice = {
     renameModalText: string;
     openRenameModal: (text: string) => void;
     closeRenameModal: () => void;
+    // Loot Engine WO-05: pre-roll modal trigger (mirrors renameModalOpen).
+    lootRollModalOpen: boolean;
+    openLootRollModal: () => void;
+    closeLootRollModal: () => void;
     setMessageImage: (messageId: string, image: ChatMessage['image']) => void;
 };
 
@@ -573,6 +577,9 @@ export const createChatSlice: StateCreator<ChatDeps, [], [], ChatSlice> = (set) 
     renameModalText: '',
     openRenameModal: (text) => set({ renameModalOpen: true, renameModalText: text }),
     closeRenameModal: () => set({ renameModalOpen: false, renameModalText: '' }),
+    lootRollModalOpen: false,
+    openLootRollModal: () => set({ lootRollModalOpen: true }),
+    closeLootRollModal: () => set({ lootRollModalOpen: false }),
     setMessageImage: (messageId, image) =>
         set((s) => {
             const msgs = s.messages.map(m =>

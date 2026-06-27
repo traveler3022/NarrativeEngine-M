@@ -7,6 +7,7 @@ import { ContextDrawer } from './components/ContextDrawer';
 import { ChatArea } from './components/ChatArea';
 import { SettingsModal } from './components/SettingsModal';
 import { LoreCheckModal } from './components/chat/LoreCheckModal';
+import { LootRollModal } from './components/chat/LootRollModal';
 import { NPCLedgerModal } from './components/NPCLedgerModal';
 import { BackupModal } from './components/BackupModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -138,6 +139,7 @@ export default function App() {
       <RulesIndexerWrapper />
       <SettingsModal />
       <LoreCheckModal />
+      <LootRollModal />
       <NPCLedgerModal />
       <BackupModal />
       <ToastContainer />

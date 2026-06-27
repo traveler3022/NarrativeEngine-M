@@ -51,6 +51,8 @@ export function ChatArea() {
         setDeepArmed,
         armedRoll,
         setArmedRoll,
+        armedLoot,
+        clearArmedLoot,
         setDivergenceRegister,
         updateMessageDivergence,
         pinnedExcerpts,
@@ -84,6 +86,8 @@ export function ChatArea() {
         setDeepArmed: s.setDeepArmed,
         armedRoll: s.armedRoll,
         setArmedRoll: s.setArmedRoll,
+        armedLoot: s.armedLoot,
+        clearArmedLoot: s.clearArmedLoot,
         setDivergenceRegister: s.setDivergenceRegister,
         updateMessageDivergence: s.updateMessageDivergence,
         pinnedExcerpts: s.pinnedExcerpts,
@@ -127,6 +131,11 @@ export function ChatArea() {
         // Consume the armed dice mode (cleared whether or not a roll was set this turn).
         const useArmedRoll = armedRoll;
         setArmedRoll(null);
+
+        // Loot Engine WO-05: consume the armed loot drop (cleared whether or not
+        // one was set this turn). Mirrors the dice capture-and-clear above.
+        const useArmedLoot = armedLoot;
+        clearArmedLoot();
 
         if (!overrideText) {
             setInput('');
@@ -178,6 +187,7 @@ export function ChatArea() {
             clearPinnedChapters: () => useAppStore.getState().clearPinnedChapters(),
             deepContextSearch: useDeepScan,
             armedRoll: useArmedRoll,
+            armedLoot: useArmedLoot,
             divergenceRegister: useAppStore.getState().divergenceRegister,
             onStageNpcIds: useAppStore.getState().onStageNpcIds,
             pinnedExcerpts: useAppStore.getState().pinnedExcerpts,

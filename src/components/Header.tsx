@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { LogOut, ScanSearch, BookCheck, Pin, Replace, MoreVertical, Save, Archive, UserPlus, Loader2, Dices } from 'lucide-react';
+import { LogOut, ScanSearch, BookCheck, Pin, Replace, MoreVertical, Save, Archive, UserPlus, Loader2, Dices, Package } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { addNpcFromSelection } from '../services/npc';
@@ -39,6 +39,9 @@ export function Header() {
         toggleDeepArmed,
         armedRoll,
         setArmedRoll,
+        armedLoot,
+        openLootRollModal,
+        context,
         settings,
         updateSettings,
         openLoreCheck,
@@ -52,6 +55,9 @@ export function Header() {
         toggleDeepArmed: s.toggleDeepArmed,
         armedRoll: s.armedRoll,
         setArmedRoll: s.setArmedRoll,
+        armedLoot: s.armedLoot,
+        openLootRollModal: s.openLootRollModal,
+        context: s.context,
         settings: s.settings,
         updateSettings: s.updateSettings,
         openLoreCheck: s.openLoreCheck,
@@ -278,6 +284,32 @@ export function Header() {
                         </div>
                     )}
                 </div>
+
+                {/* Loot Engine WO-05: manual loot drop trigger. Mirrors the dice button. */}
+                <button
+                    onClick={() => {
+                        if (!context?.lootTree) {
+                            toast.warning('No loot table for this world');
+                            return;
+                        }
+                        openLootRollModal();
+                    }}
+                    className={`transition-colors p-1 touch-btn ${
+                        armedLoot
+                            ? 'text-amber-400 animate-pulse'
+                            : context?.lootTree
+                                ? 'text-text-dim hover:text-terminal'
+                                : 'text-text-dim/40'
+                    }`}
+                    title={armedLoot
+                        ? `Loot armed (${armedLoot.rolls}) — send to drop`
+                        : context?.lootTree
+                            ? 'Roll loot — arm a drop, send to resolve'
+                            : 'No loot table for this world'}
+                    aria-label="Roll loot"
+                >
+                    <Package size={16} />
+                </button>
 
                 <button
                     onMouseDown={handlePinSelection}

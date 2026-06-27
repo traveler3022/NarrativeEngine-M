@@ -20,6 +20,7 @@ import type {
     ManualRollMode,
 } from '../../types';
 import type { LLMCallPriority } from '../../utils/llmCall';
+import type { ArmedLoot } from '../../store/slices/uiSlice';
 
 // ── UtilityLLM port (Plan 4 — the single injection point for utility LLM access) ──
 // Wraps llmCall + utility-endpoint lookup so retrieval stages can be tested with
@@ -106,4 +107,7 @@ export type TurnState = {
     // Player-called dice ("dice me"): armed mode resolved at send time. Replaces the auto
     // pool menu for this turn and is asserted as fact. null/undefined = normal turn.
     armedRoll?: ManualRollMode | null;
+    // Loot Engine WO-05: armed loot drop config resolved at send time. The walker
+    // runs and the result is appended to the GM turn as a fact. null/undefined = normal turn.
+    armedLoot?: ArmedLoot | null;
 };

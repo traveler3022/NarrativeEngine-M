@@ -4,7 +4,7 @@ import { tierAllows } from './aiTier';
 import { uid } from '../../utils/uid';
 import { sendMessage } from '../chatEngine';
 import { shouldCondense, computeTrimIndex, getCondenseBudgetRatio } from '../payload';
-import { rollEngines, rollDiceFairness, rollCharacterIntroEngine, resolveManualRoll } from '../engine';
+import { rollEngines, rollDiceFairness, rollCharacterIntroEngine, resolveManualRoll, resolveLootDrop } from '../engine';
 import { toast } from '../../components/Toast';
 import { sanitizePayloadForApi } from '../llm/payloadSanitizer';
 import { gatherContext } from './turnContext';
@@ -46,6 +46,27 @@ export async function runTurn(
         displayInputFinal += `\n\n🎲 ${r.detail} → ${r.tier} (${r.faceValue})`;
     } else {
         finalInput += rollDiceFairness(context);
+    }
+
+    // Loot Engine WO-05: player-armed loot drop. Mirrors the dice block above —
+    // the engine returns a BARE `[LOOT DROP: ...]` tag and the orchestrator adds
+    // the fact-assertion wrapper. The caller (ChatArea) clears `armedLoot`
+    // before runTurn, exactly as it clears `armedRoll` — so this only reads the
+    // captured value. The engine is pure: dice + JSON, zero LLM at runtime.
+    const armedLoot = state.armedLoot;
+    if (armedLoot && context.lootTree) {
+        const loot = resolveLootDrop(context.lootTree, {
+            rolls: armedLoot.rolls,
+            profile: armedLoot.reweight ? { reweight: armedLoot.reweight } : undefined,
+        });
+        if (loot.appendToInput) {
+            finalInput +=
+                loot.appendToInput +
+                ` This loot DROPPED — narrate the player finding it as fact; do NOT change its identity, ` +
+                `inflate it, or add items beyond this list.`;
+            // Player-facing reveal — shows the drop on their own turn bubble.
+            displayInputFinal += `\n\n💰 Loot drop armed (${armedLoot.rolls})`;
+        }
     }
 
     const userMsgId = uid();

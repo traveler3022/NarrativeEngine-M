@@ -1,6 +1,13 @@
 import type { StateCreator } from 'zustand';
 import type { ManualRollMode, PayloadTrace, PipelinePhase, StreamingStats } from '../../types';
 
+/** Loot Engine WO-05: armed loot drop config, resolved at send time. Mirrors armedRoll. */
+export type ArmedLoot = {
+    rolls: number;
+    /** Soft override: replace weights at named pick nodes (root pick's options from the modal). */
+    reweight?: Record<string, Record<string, number>>;
+};
+
 export type ReindexState = {
     active: boolean;
     total: number;
@@ -31,6 +38,10 @@ export type UISlice = {
     // Player-called dice ("dice me"): the armed MODE, resolved at send time. null = not armed.
     armedRoll: ManualRollMode | null;
     setArmedRoll: (mode: ManualRollMode | null) => void;
+    // Loot Engine WO-05: armed loot drop config, resolved at send time. Mirrors armedRoll.
+    armedLoot: ArmedLoot | null;
+    armLoot: (payload: ArmedLoot) => void;
+    clearArmedLoot: () => void;
     embeddingsReindexing: ReindexState;
     setEmbeddingsReindexing: (state: ReindexState) => void;
 };
@@ -56,6 +67,9 @@ export const createUISlice: StateCreator<UISlice, [], [], UISlice> = (set) => ({
     toggleDeepArmed: () => set((s) => ({ deepArmed: !s.deepArmed })),
     armedRoll: null,
     setArmedRoll: (mode) => set({ armedRoll: mode }),
+    armedLoot: null,
+    armLoot: (payload) => set({ armedLoot: payload }),
+    clearArmedLoot: () => set({ armedLoot: null }),
     embeddingsReindexing: { active: false, total: 0, done: 0, reason: null },
     setEmbeddingsReindexing: (state) => set({ embeddingsReindexing: state }),
 });

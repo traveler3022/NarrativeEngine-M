@@ -2,7 +2,8 @@ import { get, set } from 'idb-keyval';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { SaveFile } from './infrastructure';
-import type { Campaign, LoreChunk, ArchiveIndexEntry, ArchiveChapter, SemanticFact, TimelineEvent, EntityEntry, NPCEntry } from '../types';
+import { loadLootTree } from './lore/lootTreeLoader';
+import type { Campaign, LoreChunk, ArchiveIndexEntry, ArchiveChapter, SemanticFact, TimelineEvent, EntityEntry, NPCEntry, LootTree } from '../types';
 import type { CampaignState } from '../store/campaignStore';
 import { getList, setList, k, type SceneRecord } from './storage/_helpers';
 import { uid } from '../utils/uid';
@@ -21,6 +22,9 @@ export type CampaignBundle = {
     facts: SemanticFact[];
     timeline: TimelineEvent[];
     entities: EntityEntry[];
+    /** Optional world loot table (Loot Engine WO-03). Plain optional field — the
+     *  world-bundle/DLC seam. Loaded into ctx.lootTree on import. */
+    loot?: LootTree;
 };
 
 const READ_CHUNK = 10 * 1024 * 1024;
@@ -101,6 +105,8 @@ export async function exportBundle(campaignId: string, includeDebug = false): Pr
         facts,
         timeline,
         entities,
+        // Loot Engine WO-03: round-trip the world loot table back out of ctx.lootTree.
+        loot: state?.context?.lootTree ?? undefined,
     };
 }
 
@@ -160,9 +166,26 @@ export async function importBundle(bundle: CampaignBundle): Promise<string> {
     const newId = existingIds.has(bundle.campaign.id) ? uid() : bundle.campaign.id;
     const campaign: Campaign = { ...bundle.campaign, id: newId };
 
+    // Loot Engine WO-03: validate the bundle's loot table (if present) into a
+    // LootTree. On bad input loadLootTree returns null + warns — the campaign
+    // simply has no loot table. We then merge lootTree into the saved context.
+    const lootTree: LootTree | null = bundle.loot ? loadLootTree(bundle.loot) : null;
+
+    // Merge the loot tree into the saved context (if any). The load path merges
+    // saved context over defaultContext, so a partial context shell is safe.
+    let stateToSave: CampaignState | null = bundle.state ?? null;
+    if (lootTree) {
+        const baseCtx = stateToSave?.context ?? ({} as CampaignState['context']);
+        stateToSave = {
+            ...stateToSave,
+            context: { ...baseCtx, lootTree },
+            ...(stateToSave ? {} : { messages: [] as CampaignState['messages'], condenser: { condensedUpToIndex: -1 } }),
+        } as CampaignState;
+    }
+
     await Promise.all([
         set('campaigns', [...existing, campaign]),
-        bundle.state ? set(`state_${newId}`, bundle.state) : Promise.resolve(),
+        stateToSave ? set(`state_${newId}`, stateToSave) : Promise.resolve(),
         bundle.lore?.length ? set(`lore_${newId}`, bundle.lore) : Promise.resolve(),
         bundle.npcs?.length ? set(`npcs_${newId}`, bundle.npcs) : Promise.resolve(),
         // Legacy key — kept so loadArchiveIndex() in campaignStore.ts can read it

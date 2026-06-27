@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, Trash2, Play, Clock, BookOpen, Pencil, Settings, Download, Upload, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Play, Clock, BookOpen, Pencil, Settings, Download, Upload, Loader2, Package } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import {
     listCampaigns, deleteCampaign, loadCampaignState,
     saveCampaign, saveCampaignState, saveLoreChunks,
     getNPCLedger, saveNPCLedger, getLoreChunks,
 } from '../store/campaignStore';
-import { chunkLoreFile, extractEngineSeeds, parseNPCsFromLore } from '../services/lore';
+import { chunkLoreFile, extractEngineSeeds, parseNPCsFromLore, loadLootTree } from '../services/lore';
 import { defaultContext } from '../store/slices/campaignSlice';
 import { dedupeNPCLedger } from '../store/slices/npcSlice';
 import { api } from '../services/apiClient';
@@ -35,6 +35,8 @@ export function CampaignHub() {
     const [loreName, setLoreName] = useState('');
     const [rulesFile, setRulesFile] = useState<File | null>(null);
     const [rulesName, setRulesName] = useState('');
+    const [lootFile, setLootFile] = useState<File | null>(null);
+    const [lootName, setLootName] = useState('');
 
     const refresh = useCallback(async () => {
         const list = await listCampaigns();
@@ -55,6 +57,8 @@ export function CampaignHub() {
         setLoreName('');
         setRulesFile(null);
         setRulesName('');
+        setLootFile(null);
+        setLootName('');
         setEditingCampaign(null);
     };
 
@@ -71,6 +75,8 @@ export function CampaignHub() {
         setRulesName('');
         setLoreFile(null);
         setRulesFile(null);
+        setLootFile(null);
+        setLootName('');
         setCoverFile(null);
         setModalOpen(true);
     };
@@ -186,6 +192,28 @@ export function CampaignHub() {
                 messages: existingState?.messages ?? [],
                 condenser: existingState?.condenser ?? DEFAULT_CONDENSER,
             });
+        }
+
+        // Loot Engine WO-03: load + validate the optional loot.json into ctx.lootTree.
+        // loadLootTree returns null (never throws) on bad input — the campaign
+        // simply has no loot table, so the manual trigger no-ops (WO-05).
+        if (lootFile) {
+            try {
+                const lootRaw = JSON.parse(await lootFile.text());
+                const lootTree = loadLootTree(lootRaw);
+                const existingState = await loadCampaignState(campaign.id);
+                const ctx = { ...defaultContext, ...(existingState?.context ?? {}) };
+                await saveCampaignState(campaign.id, {
+                    context: { ...ctx, ...(lootTree ? { lootTree } : {}) },
+                    messages: existingState?.messages ?? [],
+                    condenser: existingState?.condenser ?? DEFAULT_CONDENSER,
+                });
+                if (lootTree) toast.success('Loot table loaded — the Loot button is armed.');
+                else toast.warning('loot.json was invalid — no loot table loaded (see console).');
+            } catch (err) {
+                console.warn('[CampaignHub] loot.json parse failed:', err);
+                toast.warning('loot.json could not be parsed — no loot table loaded.');
+            }
         }
 
         setModalOpen(false);
@@ -436,7 +464,7 @@ export function CampaignHub() {
                         <label className="block text-text-dim text-xs uppercase tracking-wider mb-1">
                             Rules (.md) {editingCampaign && <span className="text-text-dim/50 normal-case">— re-upload to replace</span>}
                         </label>
-                        <label className="flex items-center gap-2 px-3 py-3 md:py-2 bg-void border border-border rounded cursor-pointer hover:border-terminal transition-colors mb-8">
+                        <label className="flex items-center gap-2 px-3 py-3 md:py-2 bg-void border border-border rounded cursor-pointer hover:border-terminal transition-colors mb-1">
                             <BookOpen size={16} className="text-text-dim" />
                             <span className="text-sm text-text-dim">{rulesName || 'Choose file...'}</span>
                             <input type="file" accept=".md,.txt" className="hidden" onChange={(e) => {
@@ -444,6 +472,21 @@ export function CampaignHub() {
                                 if (f) { setRulesFile(f); setRulesName(f.name); }
                             }} />
                         </label>
+                        <p className="text-text-dim text-xs mb-4 opacity-60">System rules — always-active context</p>
+
+                        {/* Loot Table (optional — Loot Engine WO-03) */}
+                        <label className="block text-text-dim text-xs uppercase tracking-wider mb-1">
+                            Loot Table (.json) <span className="text-text-dim/50 normal-case">— optional</span> {editingCampaign && <span className="text-text-dim/50 normal-case">— re-upload to replace</span>}
+                        </label>
+                        <label className="flex items-center gap-2 px-3 py-3 md:py-2 bg-void border border-border rounded cursor-pointer hover:border-terminal transition-colors mb-1">
+                            <Package size={16} className="text-text-dim" />
+                            <span className="text-sm text-text-dim">{lootName || 'Choose file...'}</span>
+                            <input type="file" accept=".json,application/json" className="hidden" onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) { setLootFile(f); setLootName(f.name); }
+                            }} />
+                        </label>
+                        <p className="text-text-dim text-xs mb-8 opacity-60">World loot tree — powers the Loot button (manual drops)</p>
 
                         {/* Actions */}
                         <div className="flex gap-3 justify-end">
