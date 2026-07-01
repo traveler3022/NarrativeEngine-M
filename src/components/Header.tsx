@@ -70,6 +70,11 @@ export function Header() {
     const [renameSel, setRenameSel] = useState<SelectionSnapshot | null>(null);
     const [npcSel, setNpcSel] = useState<SelectionSnapshot | null>(null);
     const [npcAdding, setNpcAdding] = useState(false);
+    // Outstanding NPC adds (active + waiting). The queue lets the player fire off
+    // several highlighted names without waiting for each LLM resolve to finish.
+    const [npcQueueCount, setNpcQueueCount] = useState(0);
+    const npcQueueRef = useRef<string[]>([]);
+    const npcProcessingRef = useRef(false);
     const [overflowOpen, setOverflowOpen] = useState(false);
     const overflowRef = useRef<HTMLDivElement>(null);
     const [diceOpen, setDiceOpen] = useState(false);
@@ -178,42 +183,64 @@ export function Header() {
         setLoreSel(null);
     };
 
-    const handleAddNpc = async (e: React.MouseEvent | React.TouchEvent) => {
+    // Drain the queue one name at a time. Sequential (not parallel) on purpose:
+    // each add re-reads fresh store state so it sees NPCs created by prior items,
+    // avoiding duplicate creates when two highlighted names resolve to the same NPC.
+    const processNpcQueue = async () => {
+        if (npcProcessingRef.current) return;
+        npcProcessingRef.current = true;
+        setNpcAdding(true);
+        while (npcQueueRef.current.length > 0) {
+            const cleanName = npcQueueRef.current.shift()!;
+            const state = useAppStore.getState();
+            const campaignId = state.activeCampaignId;
+            if (!campaignId) {
+                toast.warning('No active campaign.');
+                setNpcQueueCount(c => Math.max(0, c - 1));
+                continue;
+            }
+            toast.info(`Resolving "${cleanName}"…`);
+            try {
+                const result = await addNpcFromSelection({
+                    rawText: cleanName,
+                    ledger: state.npcLedger ?? [],
+                    messages: state.messages,
+                    campaignId,
+                    storyProvider: state.getActiveStoryEndpoint() ?? state.getActiveSummarizerEndpoint() ?? state.getActiveUtilityEndpoint(),
+                    updateProvider: state.getActiveSummarizerEndpoint() ?? state.getActiveUtilityEndpoint() ?? state.getActiveStoryEndpoint(),
+                    addNPC: state.addNPC,
+                    updateNPC: state.updateNPC,
+                    matureMode: state.settings?.matureMode ?? false,
+                });
+                if (result.ok) toast.success(result.message);
+                else if (result.kind === 'ambiguous') toast.warning(result.message);
+                else toast.error(result.message);
+            } catch (err) {
+                toast.error(`Add NPC failed: ${err instanceof Error ? err.message : String(err)}`);
+            } finally {
+                setNpcQueueCount(c => Math.max(0, c - 1));
+            }
+        }
+        npcProcessingRef.current = false;
+        setNpcAdding(false);
+    };
+
+    const handleAddNpc = (e: React.MouseEvent | React.TouchEvent) => {
         e.preventDefault();
-        if (npcAdding) return;
         const snap = captureFromBubble('[data-lore-checkable="true"]') ?? npcSel;
         if (!snap) return;
-        const state = useAppStore.getState();
-        const campaignId = state.activeCampaignId;
-        if (!campaignId) { toast.warning('No active campaign.'); return; }
+        const cleanName = stripMarkdown(snap.text);
+        if (!cleanName) return;
+
+        npcQueueRef.current.push(cleanName);
+        setNpcQueueCount(c => c + 1);
 
         window.getSelection()?.removeAllRanges();
         setNpcSel(null);
         setLoreSel(null);
         setPinSel(null);
-        setNpcAdding(true);
-        const cleanName = stripMarkdown(snap.text);
-        toast.info(`Resolving "${cleanName}"…`);
-        try {
-            const result = await addNpcFromSelection({
-                rawText: cleanName,
-                ledger: state.npcLedger ?? [],
-                messages: state.messages,
-                campaignId,
-                storyProvider: state.getActiveStoryEndpoint() ?? state.getActiveSummarizerEndpoint() ?? state.getActiveUtilityEndpoint(),
-                updateProvider: state.getActiveSummarizerEndpoint() ?? state.getActiveUtilityEndpoint() ?? state.getActiveStoryEndpoint(),
-                addNPC: state.addNPC,
-                updateNPC: state.updateNPC,
-                matureMode: state.settings?.matureMode ?? false,
-            });
-            if (result.ok) toast.success(result.message);
-            else if (result.kind === 'ambiguous') toast.warning(result.message);
-            else toast.error(result.message);
-        } catch (err) {
-            toast.error(`Add NPC failed: ${err instanceof Error ? err.message : String(err)}`);
-        } finally {
-            setNpcAdding(false);
-        }
+        toast.info(`Queued "${cleanName}"`);
+        void processNpcQueue();
     };
 
     const handleExit = async () => {
@@ -371,18 +398,24 @@ export function Header() {
                 <button
                     onMouseDown={handleAddNpc}
                     onTouchStart={handleAddNpc}
-                    disabled={npcAdding}
-                    className={`transition-colors p-1 touch-btn ${
+                    className={`relative transition-colors p-1 touch-btn ${
                         npcAdding
                             ? 'text-terminal'
                             : npcSel
                                 ? 'text-terminal animate-pulse'
                                 : 'text-text-dim hover:text-terminal'
                     }`}
-                    title="Add highlighted name to the NPC ledger (or update if it exists)"
+                    title={npcQueueCount > 0
+                        ? `Adding NPCs… ${npcQueueCount} in queue (highlight more to queue)`
+                        : 'Add highlighted name to the NPC ledger (or update if it exists)'}
                     aria-label="Add selection to NPC ledger"
                 >
                     {npcAdding ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
+                    {npcQueueCount > 1 && (
+                        <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] px-0.5 rounded-full bg-amber-500 text-[9px] leading-[14px] text-black font-bold text-center pointer-events-none">
+                            {npcQueueCount}
+                        </span>
+                    )}
                 </button>
             </div>
 

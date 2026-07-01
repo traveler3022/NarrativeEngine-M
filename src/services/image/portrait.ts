@@ -1,10 +1,8 @@
 import { useAppStore } from '../../store/useAppStore';
 import { generateImage } from './imageClient';
+import { composeImagePrompt } from './composePrompt';
 import { imageStorage } from '../storage/imageStorage';
 import { toast } from '../../components/Toast';
-
-const PORTRAIT_NEGATIVE = 'multiple people, group, crowd, split screen, twins, double, text, watermark, signature';
-const DEFAULT_STYLE = 'fantasy illustration, cinematic lighting, detailed, no text, no watermark, no UI, no speech bubbles';
 
 export async function generateNPCPortrait(npcId: string): Promise<void> {
     const state = useAppStore.getState();
@@ -27,26 +25,22 @@ export async function generateNPCPortrait(npcId: string): Promise<void> {
         return;
     }
 
-    if (!npc.appearance?.trim()) {
+    if (!npc.appearance?.trim() && !npc.appearanceTags?.trim()) {
         toast.warning('Add an appearance description before generating a portrait');
         return;
     }
 
-    const style = state.settings.imageStylePrompt?.trim() || DEFAULT_STYLE;
-    const parts = [style, `portrait of ${npc.name}`, npc.appearance.trim()].filter(Boolean);
-    const prompt = parts.join('. ');
+    const composed = composeImagePrompt({
+        portraitNpcId: npcId,
+        npcLedger,
+        stylePrompt: state.settings.imageStylePrompt,
+        negativePrompt: state.settings.imageNegativePrompt,
+    });
 
-    const userNeg = state.settings.imageNegativePrompt?.trim();
-    const negativePrompt = userNeg
-        ? `${PORTRAIT_NEGATIVE}, ${userNeg}`
-        : PORTRAIT_NEGATIVE;
-
-    const seed = npc.portraitSeed;
-
-    const dataUrl = await generateImage(provider, prompt, {
+    const dataUrl = await generateImage(provider, composed.prompt, {
         size: '1024x1536',
-        negativePrompt,
-        ...(seed !== undefined ? { seed } : {}),
+        negativePrompt: composed.negativePrompt,
+        ...(composed.seed !== undefined ? { seed: composed.seed } : {}),
     });
 
     await imageStorage.storePortrait(campaignId, npcId, dataUrl);

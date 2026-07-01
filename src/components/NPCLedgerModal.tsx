@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { X, Plus, LayoutGrid, List, ArrowLeft, Sparkles } from 'lucide-react';
+import { X, Plus, LayoutGrid, List, ArrowLeft, Sparkles, Images } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { updateExistingNPCs } from '../services/chatEngine';
 import { api } from '../services/apiClient';
@@ -16,6 +16,7 @@ import { NPCReviewModal, type NPCReviewAction } from './NPCReviewModal';
 import { uid } from '../utils/uid';
 import { getEntriesForNpc } from '../services/campaign-state';
 import { imageStorage } from '../services/storage/imageStorage';
+import { generateNPCPortrait } from '../services/image/portrait';
 
 export function NPCLedgerModal() {
   const npcLedger = useAppStore(s => s.npcLedger);
@@ -37,6 +38,7 @@ export function NPCLedgerModal() {
   const [isAIUpdating, setIsAIUpdating] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const [populating, setPopulating] = useState<{ done: number; total: number } | null>(null);
 
   // ── AI NPC review (flags likely non-characters; user decides per entry) ──
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -136,6 +138,43 @@ export function NPCLedgerModal() {
         setForm(prev => ({ ...prev, ...patch }));
       });
     } finally { setIsAIUpdating(false); }
+  };
+
+  // Generate portraits for every NPC that has no image yet. Skips NPCs without
+  // an appearance description (generation requires one) and runs sequentially so
+  // we don't slam the image endpoint with parallel requests.
+  const handlePopulateImages = async () => {
+    const state = useAppStore.getState();
+    if (!state.getActiveImageEndpoint()) {
+      toast.warning('No Image Generation AI configured. Add one in Settings → Presets.');
+      return;
+    }
+    const targets = npcLedger.filter(n => !n.portrait && n.appearance?.trim());
+    const skipped = npcLedger.filter(n => !n.portrait && !n.appearance?.trim()).length;
+    if (targets.length === 0) {
+      toast.warning(skipped > 0 ? `No portraits generated — ${skipped} NPC(s) need an appearance description first.` : 'All NPCs already have a portrait.');
+      return;
+    }
+
+    setPopulating({ done: 0, total: targets.length });
+    let ok = 0;
+    let failed = 0;
+    for (let i = 0; i < targets.length; i++) {
+      try {
+        await generateNPCPortrait(targets[i].id);
+        ok++;
+      } catch {
+        failed++;
+      }
+      setPopulating({ done: i + 1, total: targets.length });
+    }
+    setPopulating(null);
+
+    const parts = [`generated ${ok}`];
+    if (failed) parts.push(`${failed} failed`);
+    if (skipped) parts.push(`${skipped} skipped (no appearance)`);
+    if (failed) toast.warning(`Portraits: ${parts.join(', ')}`);
+    else toast.success(`Portraits: ${parts.join(', ')}`);
   };
 
   const handleBulkDelete = async () => {
@@ -243,6 +282,7 @@ export function NPCLedgerModal() {
   const byName = (a: NPCEntry, b: NPCEntry) =>
     (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base', numeric: true });
   const activeNPCList = npcLedger.slice().sort(byName);
+  const missingPortraitCount = npcLedger.filter(n => !n.portrait).length;
 
   const showDetail = !!selectedId || (isEditing && !selectedId);
 
@@ -288,6 +328,19 @@ export function NPCLedgerModal() {
                 Review ({activeNPCList.length})
               </button>
             </div>
+
+            {missingPortraitCount > 0 && (
+              <button
+                onClick={handlePopulateImages}
+                disabled={!!populating}
+                className="w-full h-10 flex items-center justify-center gap-1.5 border border-terminal/30 rounded text-[10px] uppercase tracking-wider text-terminal hover:bg-terminal/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Images size={12} />
+                {populating
+                  ? `Generating ${populating.done}/${populating.total}…`
+                  : `Populate Images (${missingPortraitCount})`}
+              </button>
+            )}
 
             <NPCSuggestionsPanel
               suggestions={npcSuggestions}

@@ -118,25 +118,12 @@ export const createSettingsSlice: StateCreator<SettingsSlice & { activeCampaignI
                     },
                 });
 
+                // migrateSettings already returns a complete AppSettings — spread it
+                // wholesale so newly-added fields (e.g. imageStylePrompt) are never
+                // silently dropped on reload.
                 set({
                     settings: {
-                        presets: migrated.presets,
-                        activePresetId: migrated.activePresetId,
-                        providers: migrated.providers,
-                        contextLimit: migrated.contextLimit,
-                        autoCondenseEnabled: migrated.autoCondenseEnabled,
-                        condenseAggressiveness: migrated.condenseAggressiveness,
-                        enableDeepArchiveSearch: migrated.enableDeepArchiveSearch,
-                        autoExtractDivergences: migrated.autoExtractDivergences,
-                        divergenceTokenBudget: migrated.divergenceTokenBudget,
-                        divergenceScanBudget: migrated.divergenceScanBudget,
-                        autoArchiveStaleNPCsTurns: migrated.autoArchiveStaleNPCsTurns,
-                        rulesBudgetPct: migrated.rulesBudgetPct,
-                        autoGenerateRuleKeywords: migrated.autoGenerateRuleKeywords,
-                        embeddingModel: migrated.embeddingModel,
-                        utilityTimeoutSeconds: migrated.utilityTimeoutSeconds,
-                        verboseUtilityLogging: migrated.verboseUtilityLogging,
-                        aiTier: migrated.aiTier,
+                        ...migrated,
                         theme: migrated.theme ?? 'system',
                         uiScale: migrated.uiScale ?? 1.0,
                         debugMode: migrated.debugMode ?? false,

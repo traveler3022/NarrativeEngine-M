@@ -206,6 +206,9 @@ export function migrateSettings(data: Record<string, unknown>): AppSettings {
         verboseUtilityLogging: (raw.verboseUtilityLogging as boolean) ?? false,
         aiTier: (raw.aiTier as AppSettings['aiTier']) ?? 'pro',
         matureMode: (raw.matureMode as boolean) ?? false,
+        imageStylePrompt: (raw.imageStylePrompt as string) ?? '',
+        imageNegativePrompt: (raw.imageNegativePrompt as string) ?? '',
+        imageTagRewriteEnabled: (raw.imageTagRewriteEnabled as boolean) ?? false,
     };
 }
 

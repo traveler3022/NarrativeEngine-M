@@ -90,6 +90,7 @@ export type AppSettings = {
     aiTier?: AiTier;
     imageStylePrompt?: string;       // prepended to every image generation prompt (e.g. "oil painting, fantasy art, dark atmosphere")
     imageNegativePrompt?: string;    // negative prompt for models that support it
+    imageTagRewriteEnabled?: boolean; // default false; when true, scene prose is rewritten to comma tags via the aux model before image gen (WO-05)
     providers: LLMProvider[];
     activeProviderId?: string;
     endpoint?: string;
@@ -389,6 +390,8 @@ export type CharacterIdentity = {
     class?: string;
     archetype?: Archetype;
     level?: number;
+    appearance?: string;     // stable PC look for scene images — prose OR tags; the composer adapts
+    portraitSeed?: number;   // optional single-subject seed lock (parity with NPCEntry.portraitSeed)
 };
 
 /**
@@ -470,7 +473,22 @@ export type ChatMessage = {
     reasoning_content?: string;
     ephemeral?: boolean;
     divergenceIds?: string[];
-    image?: { status: 'pending' | 'ready' | 'error'; prompt?: string; createdAt: number; error?: string };
+    image?: { status: 'pending' | 'ready' | 'error'; prompt?: string; createdAt: number; error?: string; steer?: SceneSteer };
+};
+
+/**
+ * User steering inputs for a single scene image, captured by the Scene Image modal.
+ * Persisted onto `message.image.steer` so the modal can reopen prefilled (which is
+ * also the "regenerate with a note" flow). See Upgrade/OpusPlans/Image_Consistency/.
+ */
+export type SceneSteer = {
+    focusNpcIds?: string[];                              // which on-stage NPCs are the focal subjects
+    focusPc?: boolean;                                    // PC is an explicit focal subject
+    framing?: 'wide' | 'medium' | 'close' | 'portrait';  // shot framing
+    pov?: 'pc_pov' | 'pc_visible';                        // camera is the PC's eyes vs the PC is in frame
+    note?: string;                                        // short free text appended verbatim
+    promptOverride?: string;                              // user hand-edited the whole positive prompt
+    rewrite?: boolean;                                    // per-image override of the scene→tag rewrite toggle
 };
 
 /** Search index entry — one per scene, auto-built by server on every turn. */
@@ -656,6 +674,7 @@ export type NPCEntry = {
     name: string;
     aliases: string;
     appearance: string;
+    appearanceTags?: string; // image-only stable "who" tags; does NOT replace `appearance` (which feeds embeddings + narrative payload)
     faction: string;
     storyRelevance: string;
     disposition: string;

@@ -67,9 +67,53 @@ export function LoreTab() {
         const modes = current.includes(mode)
             ? current.filter(m => m !== mode)
             : [...current, mode];
-        if (modes.length === 0) return;
+        // Empty modes = disabled (chunk never retrieved). Allowed.
         updateLoreChunk(chunkId, { activationModes: modes, modesUserEdited: true });
     };
+
+    const toggleDisabled = (chunkId: string) => {
+        const chunk = loreChunks.find(c => c.id === chunkId);
+        if (!chunk) return;
+        const isDisabled = getModes(chunk).length === 0;
+        // Re-enable restores the standard vector+keyword default; disable clears all modes.
+        updateLoreChunk(chunkId, {
+            activationModes: isDisabled ? ['vector', 'keyword'] : [],
+            modesUserEdited: true,
+        });
+    };
+
+    const persistBulk = (updated: LoreChunk[]) => {
+        setLoreChunks(updated);
+        if (activeCampaignId) {
+            import('../../store/campaignStore').then(m => m.saveLoreChunks(activeCampaignId, updated));
+        }
+    };
+
+    // Toggle one mode across every chunk. Direction follows the majority:
+    // if most chunks already have the mode, turn it OFF for all; else turn it ON.
+    const bulkToggleMode = (mode: ActivationMode) => {
+        if (loreChunks.length === 0) return;
+        const withMode = loreChunks.filter(c => getModes(c).includes(mode)).length;
+        const turnOn = withMode < loreChunks.length / 2;
+        const updated = loreChunks.map(c => {
+            const modes = getModes(c);
+            const has = modes.includes(mode);
+            const next = turnOn
+                ? (has ? modes : [...modes, mode])
+                : modes.filter(m => m !== mode);
+            return { ...c, activationModes: next, modesUserEdited: true };
+        });
+        persistBulk(updated);
+    };
+
+    const bulkDisableAll = () => {
+        if (loreChunks.length === 0) return;
+        persistBulk(loreChunks.map(c => ({ ...c, activationModes: [], modesUserEdited: true })));
+    };
+
+    // Reflects whether the next press of a mode button will turn it on or off.
+    const bulkModeIsOn = (mode: ActivationMode) =>
+        loreChunks.length > 0 && loreChunks.filter(c => getModes(c).includes(mode)).length >= loreChunks.length / 2;
 
     const addSecondaryKeyword = (chunkId: string) => {
         const kw = (newSecondary[chunkId] || '').trim().toLowerCase();
@@ -108,9 +152,10 @@ export function LoreTab() {
         const isVector = modes.includes('vector');
         const isKeyword = modes.includes('keyword');
         const isAlways = modes.includes('always');
+        const isDisabled = modes.length === 0;
 
         return (
-            <div key={chunk.id} className={`bg-void rounded border p-2 transition-colors ${isAlways ? 'border-terminal/40' : 'border-border'}`}>
+            <div key={chunk.id} className={`bg-void rounded border p-2 transition-colors ${isDisabled ? 'border-border opacity-50' : isAlways ? 'border-terminal/40' : 'border-border'}`}>
                 <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[10px] text-text-primary font-bold truncate flex-1 mr-2" title={chunk.header}>
                         {chunk.header}
@@ -147,6 +192,15 @@ export function LoreTab() {
                             className="w-3 h-3 accent-terminal"
                         />
                         Always
+                    </label>
+                    <label className="flex items-center gap-1 text-[9px] text-text-dim cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={isDisabled}
+                            onChange={() => toggleDisabled(chunk.id)}
+                            className="w-3 h-3 accent-danger"
+                        />
+                        Disabled
                     </label>
                     <label className="flex items-center gap-1 text-[9px] text-text-dim">
                         Depth:
@@ -289,6 +343,36 @@ export function LoreTab() {
                         className="h-full bg-terminal transition-all duration-200"
                         style={{ width: `${progress.total > 0 ? (progress.current / progress.total) * 100 : 0}%` }}
                     />
+                </div>
+            )}
+
+            {loreChunks.length > 0 && (
+                <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] text-text-dim/60 uppercase tracking-wider shrink-0">Bulk:</span>
+                    {(['vector', 'keyword', 'always'] as ActivationMode[]).map(mode => {
+                        const on = bulkModeIsOn(mode);
+                        return (
+                            <button
+                                key={mode}
+                                onClick={() => bulkToggleMode(mode)}
+                                title={`${on ? 'Turn off' : 'Turn on'} ${mode} for all chunks`}
+                                className={`flex-1 py-1.5 md:py-1 text-[9px] uppercase tracking-wider rounded border transition-colors ${
+                                    on
+                                        ? 'bg-terminal/15 text-terminal border-terminal/40'
+                                        : 'bg-surface text-text-dim border-transparent hover:text-terminal hover:bg-terminal/10'
+                                }`}
+                            >
+                                {mode}
+                            </button>
+                        );
+                    })}
+                    <button
+                        onClick={bulkDisableAll}
+                        title="Disable all chunks (clears every mode)"
+                        className="flex-1 py-1.5 md:py-1 text-[9px] uppercase tracking-wider rounded bg-surface text-text-dim hover:text-danger hover:bg-danger/10 transition-colors"
+                    >
+                        Disable All
+                    </button>
                 </div>
             )}
 
