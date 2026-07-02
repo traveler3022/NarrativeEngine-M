@@ -50,9 +50,14 @@ public class MainActivity extends BridgeActivity {
         ViewCompat.setOnApplyWindowInsetsListener(webView, (view, insets) -> {
             Insets top = insets.getInsets(
                     WindowInsetsCompat.Type.statusBars() | WindowInsetsCompat.Type.displayCutout());
+            // Fold the IME (keyboard) into the bottom inset. When the keyboard opens,
+            // ime.bottom > nav.bottom, so --android-safe-bottom grows and .nav-clearance
+            // lifts the chat input above the keyboard. (Edge-to-edge means the window
+            // never auto-resizes, so this manual inset is the only signal CSS gets.)
             Insets nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
             float topPx = top.top / density;
-            float bottomPx = nav.bottom / density;
+            float bottomPx = Math.max(nav.bottom, ime.bottom) / density;
             float leftPx = top.left / density;
             float rightPx = top.right / density;
             pendingSafeAreaJs =
