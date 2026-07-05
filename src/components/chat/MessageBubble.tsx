@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, memo } from 'react';
-import { Edit2, RotateCcw, Trash2, Loader2, Terminal, Zap, Check, X, Pin, PinOff, ImagePlus, AlertCircle, XCircle, Volume2, Square, RotateCw, Play, Pause } from 'lucide-react';
+import { Edit2, Trash2, Loader2, Terminal, Zap, Check, X, Pin, PinOff, ImagePlus, AlertCircle, XCircle, Volume2, Square, RotateCw, Play, Pause, RefreshCw, Rewind, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ChatMessage } from '../../types';
 import { EngineTraceView } from '../engine-trace/EngineTraceView';
 import { ContentWithChips } from './ContentWithChips';
@@ -11,6 +11,7 @@ import { illustrateMessage } from '../../services/image';
 import { imageStorage } from '../../services/storage/imageStorage';
 import { proseForTTS, chunkSentencesForTTS } from '../../services/tts/proseStripper';
 import { speakChunks, speechSupported, type SpeakHandle } from '../../services/tts/speech';
+import { hasSwipeSet, MAX_SWIPES } from '../../services/turn';
 
 type MessageBubbleProps = {
     msg: ChatMessage;
@@ -27,6 +28,10 @@ type MessageBubbleProps = {
     onTagDivergence?: (msg: ChatMessage) => void;
     /** Result of this message's tool_call, resolved from the matching `tool` role message. */
     toolResult?: string;
+    /** Swipe Generation v1: called when the user taps 🔄 on the latest GM bubble. */
+    onOpenSwipeSheet?: (messageId: string) => void;
+    /** Swipe Generation v1: called when the user swipes left/right on the bubble. */
+    onSwipeNavigate?: (messageId: string, direction: 'prev' | 'next') => void;
 };
 
 type ImageAttachmentProps = {
@@ -155,6 +160,53 @@ function SentenceList({
     );
 }
 
+/**
+ * SwipeIndicator — shows "2/5" position and prev/next chevrons for the
+ * latest GM message's swipe set. Touch-swipe left/right on the bubble
+ * navigates; the chevrons are tap targets for desktop / accessibility.
+ */
+function SwipeIndicator({
+    msg,
+    onPrev,
+    onNext,
+}: {
+    msg: ChatMessage;
+    onPrev: () => void;
+    onNext: () => void;
+}) {
+    const swipeSet = msg.swipeSet;
+    if (!swipeSet) return null;
+    const current = (msg.swipeActiveIndex ?? 0) + 1;
+    const total = Math.max(swipeSet.length, MAX_SWIPES);
+    const atFirst = (msg.swipeActiveIndex ?? 0) === 0;
+    const atLast = (msg.swipeActiveIndex ?? 0) >= swipeSet.length - 1 && swipeSet.length >= MAX_SWIPES;
+    const isStreaming = swipeSet[msg.swipeActiveIndex ?? 0]?.streaming === true;
+
+    return (
+        <div className="mt-2 flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest text-text-dim select-none">
+            <button
+                onClick={onPrev}
+                disabled={atFirst}
+                className="p-0.5 rounded text-text-dim hover:text-ice disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                title="Previous variant"
+            >
+                <ChevronLeft size={12} />
+            </button>
+            <span className="font-mono text-text-dim/80">
+                {isStreaming ? '…' : current}/{total}
+            </span>
+            <button
+                onClick={onNext}
+                disabled={atLast}
+                className="p-0.5 rounded text-text-dim hover:text-ice disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                title="Next variant"
+            >
+                <ChevronRight size={12} />
+            </button>
+        </div>
+    );
+}
+
 export const MessageBubble = memo(function MessageBubble({
     msg,
     isStreaming,
@@ -168,7 +220,9 @@ export const MessageBubble = memo(function MessageBubble({
     showReasoning,
     debugMode,
     onTagDivergence,
-    toolResult
+    toolResult,
+    onOpenSwipeSheet,
+    onSwipeNavigate
 }: MessageBubbleProps) {
     const markdownContent = typeof msg.displayContent === 'string' ? msg.displayContent : (typeof msg.content === 'string' ? msg.content : '');
     let thinkingBlock = '';
@@ -186,6 +240,37 @@ export const MessageBubble = memo(function MessageBubble({
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const bubbleRef = useRef<HTMLDivElement>(null);
     const actionsDismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // ── Swipe Generation v1: touch-swipe gesture handling ──
+    // Only the latest GM message (with a swipe set) responds to horizontal
+    // swipes. A swipe left → next variant, right → previous. The threshold
+    // is generous so a normal vertical scroll never triggers a swipe.
+    const touchStartX = useRef<number | null>(null);
+    const touchStartY = useRef<number | null>(null);
+    const SWIPE_THRESHOLD = 50;  // px horizontal travel before it counts as a swipe
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        if (!hasSwipeSet(msg)) return;
+        const t = e.touches[0];
+        touchStartX.current = t.clientX;
+        touchStartY.current = t.clientY;
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        if (!hasSwipeSet(msg) || touchStartX.current === null || touchStartY.current === null) return;
+        const t = e.changedTouches[0];
+        const dx = t.clientX - touchStartX.current;
+        const dy = t.clientY - touchStartY.current;
+        touchStartX.current = null;
+        touchStartY.current = null;
+        // Only trigger on predominantly horizontal swipes
+        if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dy) > Math.abs(dx)) return;
+        if (dx < 0) {
+            onSwipeNavigate?.(msg.id, 'next');
+        } else {
+            onSwipeNavigate?.(msg.id, 'prev');
+        }
+    };
 
     // ── TTS playback (Web Speech API) — chunked + click-to-jump + controllable ──
     const ttsEnabled = useAppStore(s => s.settings.ttsEnabled);
@@ -412,6 +497,8 @@ export const MessageBubble = memo(function MessageBubble({
             <div
                 ref={bubbleRef}
                 onClick={handleBubbleTap}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
                 className={`px-3 md:px-4 py-2 md:py-3 text-sm font-mono leading-relaxed relative transition-all duration-200 ${
                     isEditing ? 'w-full max-w-[95%] md:max-w-[85%]' : 'max-w-[95%] md:max-w-[75%]'
                 } ${
@@ -442,9 +529,26 @@ export const MessageBubble = memo(function MessageBubble({
                                 <Edit2 size={10} />
                             </button>
                         )}
-                        {msg.role === 'assistant' && (
-                            <button title="Regenerate" onClick={() => onRegenerate(msg.id)} className="text-text-dim hover:text-terminal p-1 bg-void-lighter rounded">
-                                <RotateCcw size={10} />
+                        {msg.role === 'assistant' && hasSwipeSet(msg) && onOpenSwipeSheet && (
+                            <button
+                                title="Browse variants (swipe)"
+                                onClick={() => onOpenSwipeSheet(msg.id)}
+                                className="text-text-dim hover:text-terminal p-1 bg-void-lighter rounded"
+                            >
+                                <RefreshCw size={10} />
+                            </button>
+                        )}
+                        {msg.role === 'assistant' && !hasSwipeSet(msg) && (
+                            <button
+                                title="Rewind to here (destructive — regenerates from this point)"
+                                onClick={() => {
+                                    if (window.confirm('Rewind to this message? This regenerates the turn from here — the current GM reply and everything after it is discarded.')) {
+                                        onRegenerate(msg.id);
+                                    }
+                                }}
+                                className="text-text-dim hover:text-amber-400 p-1 bg-void-lighter rounded"
+                            >
+                                <Rewind size={10} />
                             </button>
                         )}
                         {msg.role === 'assistant' && !isStreaming && !(msg.image?.status === 'pending') && (
@@ -588,6 +692,14 @@ export const MessageBubble = memo(function MessageBubble({
                             )}
                             <ContentWithChips content={cleanContent} streaming={isStreaming && isLastMessage} />
                         </div>
+
+                        {hasSwipeSet(msg) && (
+                            <SwipeIndicator
+                                msg={msg}
+                                onPrev={() => onSwipeNavigate?.(msg.id, 'prev')}
+                                onNext={() => onSwipeNavigate?.(msg.id, 'next')}
+                            />
+                        )}
 
                         {canSpeak && (ttsPlaying || ttsFinished) && (
                             <div className="mt-2 mb-1 rounded border border-ice/30 bg-ice/5 max-h-[140px] overflow-y-auto relative">

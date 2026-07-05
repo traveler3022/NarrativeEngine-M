@@ -53,6 +53,7 @@ export const defaultContext: GameContext = {
     continuePromptActive: false,
     inventoryActive: false,
     characterProfileActive: false,
+    characterProfileUserDisabled: false,
     surpriseEngineActive: true,
     encounterEngineActive: true,
     worldEngineActive: true,
@@ -139,6 +140,16 @@ export const createCampaignSlice: StateCreator<CampaignDeps, [], [], CampaignSli
     activeCampaignId: null,
     setActiveCampaign: async (id) => {
         abortForCampaignSwitch();
+
+        // Swipe Generation v1: commit any pending swipe turn before switching
+        // campaigns. The pending turn belongs to the OUTGOING campaign; once
+        // we hydrate the new campaign's messages, the pending GM bubble is
+        // gone from the store and the commit would be lost. Commit first.
+        if (id !== get().activeCampaignId) {
+            import('../../services/turn').then(({ commitPendingTurn }) => {
+                commitPendingTurn().catch(e => console.warn('[CampaignSwitch] commitPendingTurn failed:', e));
+            }).catch(() => {});
+        }
 
         // Release the outgoing campaign's in-memory vector cache so only the
         // active campaign's vectors stay resident (covers switch and close).

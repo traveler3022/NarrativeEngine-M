@@ -184,6 +184,7 @@ export type GameContext = {
     continuePromptActive: boolean;
     inventoryActive: boolean;
     characterProfileActive: boolean;
+    characterProfileUserDisabled: boolean;
     surpriseEngineActive: boolean;
     encounterEngineActive: boolean;
     worldEngineActive: boolean;
@@ -476,6 +477,24 @@ export type ChatMessage = {
     ephemeral?: boolean;
     divergenceIds?: string[];
     image?: { status: 'pending' | 'ready' | 'error'; prompt?: string; createdAt: number; error?: string; steer?: SceneSteer };
+    // ── Swipe Generation (v1) ──
+    // Present ONLY on the LATEST assistant message while it's still browsable
+    // (before commit). Holds 1–5 variants. `pendingCommit` is the crash-safety
+    // marker: set true the moment swipe 1/1 completes, cleared on commit/discard.
+    // On launch, if a message carries pendingCommit, the reconciliation path
+    // fires handlePostTurn with the visible variant's text, then clears it.
+    swipeSet?: SwipeVariant[];
+    pendingCommit?: boolean;
+    swipeActiveIndex?: number;
+};
+
+export type SwipeVariant = {
+    id: string;
+    text: string;                  // display text (scene-stakes tag already stripped)
+    reasoningContent?: string;
+    sceneStakes: SceneStakes;      // parsed from this variant's tag at generation
+    tagPresent: boolean;            // whether the [[SCENE_STAKES:]] tag was in this variant
+    streaming?: boolean;            // true while this slot is still being filled
 };
 
 /**

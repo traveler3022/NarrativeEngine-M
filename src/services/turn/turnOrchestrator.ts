@@ -3,18 +3,17 @@ export type { TurnCallbacks, TurnState } from './turnTypes';
 import { tierAllows } from './aiTier';
 import { uid } from '../../utils/uid';
 import { sendMessage } from '../chatEngine';
-import { shouldCondense, computeTrimIndex, getCondenseBudgetRatio } from '../payload';
 import { rollEngines, rollDiceFairness, rollCharacterIntroEngine, resolveManualRoll, resolveLootDrop } from '../engine';
 import { recordLootDrop } from '../engine/lootDropTelemetry';
 import { toast } from '../../components/Toast';
 import { sanitizePayloadForApi } from '../llm/payloadSanitizer';
 import { gatherContext } from './turnContext';
-import { handlePostTurn } from './turnPostProcess';
 import { getToolDefinitions, handleLoreTool, handleNotebookTool, handleDiceTool } from './toolHandlers';
-import { extractAndStripSceneStakes, classifySceneStakes } from './sceneStakesTag';
+import { extractAndStripSceneStakes } from './sceneStakesTag';
+import { capturePendingTurnSnapshot } from './pendingCommit';
 
 import type { OpenAIMessage } from '../llm/llmService';
-import type { PayloadTrace, ResolveLootOpts } from '../../types';
+import type { PayloadTrace, ResolveLootOpts, SwipeVariant } from '../../types';
 import { buildAssistantToolCallMessage, buildToolResultMessage } from '../../types/llmMessages';
 
 export async function runTurn(
@@ -22,7 +21,7 @@ export async function runTurn(
     callbacks: TurnCallbacks,
     abortController: AbortController
 ): Promise<void> {
-    const { input, displayInput, settings, context, condenser, npcLedger, loreChunks, activeCampaignId, provider } = state;
+    const { input, displayInput, settings, context, npcLedger, loreChunks, activeCampaignId, provider } = state;
 
     if (!provider) return;
 
@@ -147,15 +146,6 @@ export async function runTurn(
     if (settings.debugMode) {
         callbacks.updateLastMessage({ debugPayload: payload });
     }
-
-    const triggerAutoTrim = () => {
-        if (!activeCampaignId) return;
-        const currentMsgs = state.getMessages();
-        const newIndex = computeTrimIndex(currentMsgs, condenser.condensedUpToIndex);
-        if (newIndex !== condenser.condensedUpToIndex) {
-            callbacks.setCondensed(newIndex);
-        }
-    };
 
     const executeTurn = async (currentPayload: OpenAIMessage[], toolCallCount = 0, apiRetryCount = 0) => {
         if (abortController.signal.aborted) {
@@ -345,25 +335,12 @@ export async function runTurn(
                 // Name de-duplication is now USER-DRIVEN (highlight → rename) instead.
                 // The proactive reserved-names prompt guard (non-mutating) stays.
 
-                // ── Scene stakes tag: parse + strip from display text (§9.3#2) ──
+                // ── Scene stakes tag: parse + strip from display text (per variant) ──
+                // The tag is stripped from EVERY swipe's display text and the parsed
+                // stakes are stored ON the variant. lastSceneStakes / classifySceneStakes
+                // fallback run only at commit (commitPendingTurn), never per swipe.
                 const { displayText: stakesStrippedText, stakes: parsedStakes } = extractAndStripSceneStakes(finalText);
-                let sceneStakes = parsedStakes;
-                const tagWasPresent = parsedStakes !== 'calm' || finalText !== stakesStrippedText;
-                if (!tagWasPresent) {
-                    const utilityProvider = state.getUtilityEndpoint?.();
-                    if (utilityProvider && tierAllows(settings.aiTier, 'sceneStakesClassify')) {
-                        try {
-                            const recentScene = state.messages.slice(-3).map(m => {
-                                const role = m.role === 'assistant' ? 'GM' : m.role.toUpperCase();
-                                return `[${role}]: ${(m.content || '').slice(0, 500)}`;
-                            }).join('\n\n');
-                            sceneStakes = await classifySceneStakes(utilityProvider, recentScene + '\n\n' + finalText.slice(0, 1000));
-                        } catch (e) {
-                            console.warn('[TurnOrchestrator] scene-stakes fallback classify failed:', e);
-                        }
-                    }
-                }
-                callbacks.updateContext({ lastSceneStakes: sceneStakes });
+                const tagPresent = parsedStakes !== 'calm' || finalText !== stakesStrippedText;
 
                 callbacks.updateLastAssistant(stakesStrippedText);
                 if (reasoningContent) {
@@ -373,29 +350,39 @@ export async function runTurn(
                 const allMsgs = state.getMessages();
                 const lastAssistant = allMsgs[allMsgs.length - 1];
 
-                try {
-                    if (lastAssistant?.role === 'assistant' && lastAssistant.content && activeCampaignId) {
-                        await handlePostTurn(
-                            state,
-                            callbacks,
-                            displayInput,
-                            activeCampaignId,
-                            npcLedger,
-                            lastAssistant.content
-                        );
-                    }
+                // ── Swipe Generation v1: true lazy commit path ──
+                // Swipe 1/1 does NOT fire handlePostTurn. Instead, snapshot the
+                // TurnState (the ORIGINAL reference — bumpOnStageActivity reads
+                // state.onStageNpcIds as the PREVIOUS turn's on-stage set), capture
+                // the cached payload (for swipes 2–5), and stamp the assistant
+                // message with pendingCommit=true + a 1-variant swipeSet. The
+                // visible variant becomes canonical on commit (commitPendingTurn),
+                // fired by: user sends next message, timeskip, Arc Injector,
+                // campaign switch. Backgrounding the app does NOT commit.
+                if (lastAssistant?.role === 'assistant' && activeCampaignId) {
+                    const variant: SwipeVariant = {
+                        id: uid(),
+                        text: stakesStrippedText,
+                        reasoningContent: reasoningContent || undefined,
+                        sceneStakes: parsedStakes,
+                        tagPresent,
+                    };
+                    callbacks.updateLastMessage({
+                        swipeSet: [variant],
+                        pendingCommit: true,
+                        swipeActiveIndex: 0,
+                    });
 
-                    if (settings.autoCondenseEnabled && shouldCondense(allMsgs, settings.contextLimit, condenser.condensedUpToIndex, getCondenseBudgetRatio(settings.condenseAggressiveness))) {
-                        triggerAutoTrim();
-                    }
-                } catch (postTurnErr) {
-                    console.error('[TurnOrchestrator] handlePostTurn failed:', postTurnErr);
-                    toast.error('Post-turn processing failed — your turn was saved but archive/scene updates may be missing.');
-                } finally {
-                    callbacks.setPipelinePhase?.('idle');
-                    callbacks.setStreamingStats?.(null);
-                    callbacks.setStreaming(false);
+                    // Persist pendingCommit marker + minimal snapshot to IndexedDB
+                    // (rides the existing debouncedSaveCampaignState on the message).
+                    // Crash safety: on app launch, reconcilePendingCommitOnLaunch
+                    // fires handlePostTurn with the then-visible variant, then clears.
+                    capturePendingTurnSnapshot(state, currentPayload, displayInput);
                 }
+
+                callbacks.setPipelinePhase?.('idle');
+                callbacks.setStreamingStats?.(null);
+                callbacks.setStreaming(false);
             },
             (err) => {
                 if (err === '__ABORT__' || err === 'AbortError' || err === 'The user aborted a request.') {

@@ -34,3 +34,23 @@ export {
     type NotebookHandlerResult,
     type DiceHandlerResult,
 } from './toolHandlers';
+
+export {
+    commitPendingTurn,
+    reconcilePendingCommitOnLaunch,
+    findPendingCommitMessage,
+    isLatestGmMessage,
+    hasSwipeSet,
+    clearPendingTurnSnapshot,
+    getCachedSwipePayload,
+} from './pendingCommit';
+
+export {
+    generateSwipeVariant,
+    MAX_SWIPES,
+    SWIPE_BASE_TEMP_OFFSET,
+    computeSwipeTemperature,
+    SWIPE_SYSTEM_LINE,
+    type SwipeGenerationOptions,
+    type SwipeGenerationResult,
+} from './swipeGeneration';

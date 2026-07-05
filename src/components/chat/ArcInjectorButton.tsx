@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Syringe, Loader2, Check, AlertCircle } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { spawnArc, pickArcSpawnInput } from '../../services/arc';
+import { commitPendingTurn } from '../../services/turn';
 import { computeOpenThreads } from '../../services/payload/payloadWorldContext';
 import { toast } from '../Toast';
 
@@ -50,6 +51,10 @@ export function ArcInjectorButton({ onDone }: { onDone?: () => void } = {}) {
         inFlight.current = true;
         setPhase('loading');
         try {
+            // Swipe Generation v1: commit any pending swipe turn before injecting
+            // an arc (the arc tick reads engine state that the commit derives).
+            await commitPendingTurn();
+
             const sealedChapters = (state.chapters ?? []).filter(c => c.sealedAt != null && !c.invalidated);
             const openThreads = computeOpenThreads(sealedChapters);
             const archiveIndex = state.archiveIndex ?? [];
