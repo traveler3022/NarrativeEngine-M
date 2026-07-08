@@ -10,13 +10,11 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
-data
-# Keep the placeholder JSON files that the NPC services import — without
-# them the build breaks. They're shipped empty by default; the full name
-# bank is generated via `node scripts/buildNameBank.mjs` from the
-# Upgrade/FablePlans/assets/clean/ tree which is not in this repo.
-!src/data/nameBank.json
-!src/data/nameBlocklist.json
+# Only ignore a top-level data/ directory (local scratch space). The
+# 'data' rule without a leading slash was also matching src/data/,
+# which broke the build because nameBank.json and nameBlocklist.json
+# live there and are imported by the NPC services.
+/data/
 *.local
 
 # Editor directories and files
