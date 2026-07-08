@@ -10,7 +10,11 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
-data
+# Only ignore a top-level data/ directory (local scratch space). The
+# 'data' rule without a leading slash was also matching src/data/,
+# which broke the build because nameBank.json and nameBlocklist.json
+# live there and are imported by the NPC services.
+/data/
 *.local
 
 # Editor directories and files
