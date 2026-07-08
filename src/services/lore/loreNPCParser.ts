@@ -1,9 +1,10 @@
-import type { NPCEntry, LoreChunk, HexAxis, PersonalityHex } from '../../types';
+import type { NPCEntry, LoreChunk, HexAxis, PersonalityHex, NPCDrives, NPCWants, NPCBehavioralTrigger } from '../../types';
 import { uid } from '../../utils/uid';
 import { TRAIT_NAMES } from '../npc/agencyPools';
 
 const HEX_AXES: readonly HexAxis[] = ['drive', 'diligence', 'boldness', 'warmth', 'empathy', 'composure'];
 const KNOWN_TRAITS = new Set<string>(TRAIT_NAMES);
+const VALID_TIERS = new Set<string>(['recurring', 'oneshot', 'walkon']);
 
 const CATEGORY_PREFIXES = [
     'CHARACTER', 'FACTION', 'NPC', 'HERO', 'VILLAIN',
@@ -46,6 +47,20 @@ function extractNameFromHeader(raw: string): string {
  *           - **PersonalityHex:** drive:+3, diligence:-1, boldness:+2, warmth:+1,
  *                                  empathy:+2, composure:-1   (CSV or inline JSON)
  *           - **Traits:** [loyal, stubborn, impulsive]   (filtered to TRAIT_VOCAB, ≤5)
+ *           - **Tier:** recurring | oneshot | walkon   (default 'recurring' for preseeded)
+ *           - **Region:** konoha   (coarse lowercase keyword; matched by === in proximity)
+ *           - **Haunt:** the training grounds   (flavor-only display string)
+ *           - **HardBoundaries:** [will not betray his team, will not abandon a comrade]
+ *           - **SoftBoundaries:** [dislikes being lectured, dislikes waiting]
+ *           - **BehavioralTriggers:** [keyword:shift, keyword:shift]
+ *                 e.g. [itachi:goes silent and sharpens killing intent,
+ *                        sasuke:raises voice and clenches fists]
+ *           - **WantsShort:** [train, eat ramen, prank]   (bracketed CSV)
+ *           - **WantsMedium:** [learn a new jutsu, win a sparring match]
+ *           - **WantsLong:** become Hokage so the village recognizes him
+ *           - **CoreWant:** a deep character truth (drives.coreWant)
+ *           - **SessionWant:** arc-level goal (drives.sessionWant)
+ *           - **SceneWant:** immediate-scene want (drives.sceneWant)
  */
 export function parseNPCsFromLore(chunks: LoreChunk[]): NPCEntry[] {
     const npcs: NPCEntry[] = [];
@@ -155,7 +170,71 @@ export function parseNPCsFromLore(chunks: LoreChunk[]): NPCEntry[] {
             return out.length > 0 ? out : undefined;
         };
 
+        /**
+         * Parse a bracketed CSV string list (no vocab filter). Used for hardBoundaries,
+         * softBoundaries, wants.short, wants.medium. Returns `undefined` when absent.
+         */
+        const getStringList = (field: string): string[] | undefined => {
+            const raw = get(field);
+            if (!raw) return undefined;
+            const stripped = raw.replace(/[\[\]]/g, '').trim();
+            if (!stripped) return undefined;
+            const out = stripped.split(/[,;]|\s{2,}|\|/)
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
+            return out.length > 0 ? out : undefined;
+        };
+
+        /**
+         * Parse `**BehavioralTriggers:**` as a bracketed list of `keyword:shift` pairs.
+         * Splitter is the FIRST colon in each item (so shifts may contain colons).
+         * Returns `undefined` when absent or no valid pairs found.
+         */
+        const getBehavioralTriggers = (field: string): NPCBehavioralTrigger[] | undefined => {
+            const raw = get(field);
+            if (!raw) return undefined;
+            const stripped = raw.replace(/[\[\]]/g, '').trim();
+            if (!stripped) return undefined;
+            const out: NPCBehavioralTrigger[] = [];
+            for (const item of stripped.split(/[,;]|\s{2,}|\|/)) {
+                const trimmed = item.trim();
+                if (!trimmed) continue;
+                const idx = trimmed.indexOf(':');
+                if (idx <= 0) continue;
+                const keyword = trimmed.slice(0, idx).trim();
+                const shift = trimmed.slice(idx + 1).trim();
+                if (keyword && shift) out.push({ keyword, shift });
+            }
+            return out.length > 0 ? out : undefined;
+        };
+
+        /** Parse `**Tier:**` — validated to recurring|oneshot|walkon. Default 'recurring'. */
+        const getTier = (): NPCEntry['tier'] => {
+            const raw = get('Tier');
+            if (!raw) return 'recurring';
+            const t = raw.toLowerCase().trim();
+            return VALID_TIERS.has(t) ? t as NPCEntry['tier'] : 'recurring';
+        };
+
         const disposition = get('Disposition') || '';
+
+        // ---- Drives + Wants (legacy NPCDrives + tiered NPCWants). ----
+        // populateAgencyFields already respects existing wants.short/medium/long (lines
+        // 1134-1145) and existing drives (line 1132) — when the parser surfaces them, the
+        // engine keeps them instead of pulling from the pools or defaultLongWant(faction).
+        const coreWant = getAny(['CoreWant', 'Core Want']);
+        const sessionWant = getAny(['SessionWant', 'Session Want']);
+        const sceneWant = getAny(['SceneWant', 'Scene Want']);
+        const drives: NPCDrives | undefined = (coreWant || sessionWant || sceneWant)
+            ? { coreWant: coreWant || '', sessionWant: sessionWant || '', sceneWant: sceneWant || '' }
+            : undefined;
+
+        const wantsShort = getStringList('WantsShort');
+        const wantsMedium = getStringList('WantsMedium');
+        const wantsLong = getAny(['WantsLong', 'Wants Long', 'LongWant', 'Long Want']);
+        const wants: NPCWants | undefined = (wantsShort || wantsMedium || wantsLong)
+            ? { short: wantsShort ?? [], medium: wantsMedium ?? [], long: wantsLong ?? '' }
+            : undefined;
 
         npcs.push({
             id: uid(),
@@ -172,10 +251,18 @@ export function parseNPCsFromLore(chunks: LoreChunk[]): NPCEntry[] {
             personality: getAny(['Personality', 'Personality Traits']) || disposition,
             exampleOutput: getAny(['Example Output', 'Example Dialogue', 'Example Line']),
             // Lore-authored agency fields. When present, populateAgencyFields' existing
-            // `if (!npc.personalityHex)` / `if (!npc.traits)` guards skip the LLM inference
-            // call — canon NPCs keep their authored personality instead of being re-inferred.
+            // guards skip the LLM inference / pool-draw calls — canon NPCs keep their
+            // authored personality instead of being re-inferred from the disposition string.
             personalityHex: getHex('PersonalityHex'),
             traits: getTraits('Traits'),
+            tier: getTier(),
+            region: get('Region') || undefined,
+            haunt: get('Haunt') || undefined,
+            hardBoundaries: getStringList('HardBoundaries'),
+            softBoundaries: getStringList('SoftBoundaries'),
+            behavioralTriggers: getBehavioralTriggers('BehavioralTriggers'),
+            drives,
+            wants,
         });
     }
 

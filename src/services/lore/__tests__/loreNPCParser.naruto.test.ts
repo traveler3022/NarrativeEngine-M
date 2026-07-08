@@ -45,4 +45,63 @@ describe('Naruto lore — end-to-end parse of canon NPC blocks', () => {
         });
         expect(sakura.traits).toEqual(['competitive', 'protective', 'stubborn', 'loyal', 'curious']);
     });
+
+    it('preseeds tier=recurring for all three canon NPCs (not oneshot/walkon)', () => {
+        const lore = readFileSync(LORE_PATH, 'utf8');
+        const npcs = parseNPCsFromLore(chunkLoreFile(lore));
+        const byName = new Map(npcs.map(n => [n.name.toLowerCase(), n]));
+        expect(byName.get('naruto uzumaki')?.tier).toBe('recurring');
+        expect(byName.get('sasuke uchiha')?.tier).toBe('recurring');
+        expect(byName.get('sakura haruno')?.tier).toBe('recurring');
+    });
+
+    it('extracts region, haunt, boundaries, triggers, wants, and drives', () => {
+        const lore = readFileSync(LORE_PATH, 'utf8');
+        const npcs = parseNPCsFromLore(chunkLoreFile(lore));
+        const byName = new Map(npcs.map(n => [n.name.toLowerCase(), n]));
+        const naruto = byName.get('naruto uzumaki');
+        const sasuke = byName.get('sasuke uchiha');
+        const sakura = byName.get('sakura haruno');
+        if (!naruto || !sasuke || !sakura) return;
+
+        // Region — coarse keyword, used by proximity matching (===).
+        expect(naruto.region).toBe('konoha');
+        expect(sasuke.region).toBe('konoha');
+        expect(sakura.region).toBe('konoha');
+
+        // Haunt — flavor-only display string.
+        expect(naruto.haunt).toContain('Ichiraku');
+        expect(sasuke.haunt).toContain('Uchiha District');
+        expect(sakura.haunt).toContain('Konoha Hospital');
+
+        // HardBoundaries — non-empty string list.
+        expect(naruto.hardBoundaries?.length).toBeGreaterThan(0);
+        expect(naruto.hardBoundaries?.some(b => b.includes('teammate'))).toBe(true);
+        expect(sasuke.hardBoundaries?.some(b => b.includes('Itachi'))).toBe(true);
+
+        // SoftBoundaries.
+        expect(naruto.softBoundaries?.length).toBeGreaterThan(0);
+        expect(sakura.softBoundaries?.some(b => b.includes('protected'))).toBe(true);
+
+        // BehavioralTriggers — {keyword, shift} pairs.
+        const narutoItachiTrigger = naruto.behavioralTriggers?.find(t => t.keyword === 'itachi');
+        expect(narutoItachiTrigger).toBeDefined();
+        expect(narutoItachiTrigger?.shift.length).toBeGreaterThan(0);
+        const sasukeMassacreTrigger = sasuke.behavioralTriggers?.find(t => t.keyword === 'massacre mentioned');
+        expect(sasukeMassacreTrigger).toBeDefined();
+
+        // Wants — short (list), medium (list), long (string).
+        expect(naruto.wants?.short).toContain('train');
+        expect(naruto.wants?.short).toContain('eat ramen');
+        expect(naruto.wants?.medium?.length).toBeGreaterThan(0);
+        expect(naruto.wants?.long).toContain('Hokage');
+        expect(sakura.wants?.long).toContain('medic');
+
+        // Drives — coreWant / sessionWant / sceneWant.
+        expect(naruto.drives?.coreWant).toContain('acknowledged');
+        expect(naruto.drives?.sessionWant).toContain('Sasuke');
+        expect(naruto.drives?.sceneWant).toContain('fox');
+        expect(sasuke.drives?.coreWant).toContain('massacre');
+        expect(sakura.drives?.sessionWant).toContain('equal');
+    });
 });
