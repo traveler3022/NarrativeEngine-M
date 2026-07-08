@@ -1,0 +1,78 @@
+name: Build Debug APK
+
+# Builds a debug APK on every push to main/feat branches and on tag pushes.
+# The debug keystore is cached so each new APK installs cleanly over the
+# previous one without uninstalling first.
+#
+# To cut a release: add the four signing secrets to repo settings
+# (KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD), then push
+# a tag like v0.1.0.
+
+on:
+  push:
+    branches: [ main, 'feat/**' ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Debug APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-34 build-tools;34.0.0'
+
+      - name: Cache debug keystore
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/debug.keystore
+          key: debug-keystore-v1
+          restore-keys: |
+            debug-keystore-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web + sync Capacitor
+        run: npm run build:apk
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: narrative-engine-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          retention-days: 30
+
+      - name: Attach APK to release (on tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: android/app/build/outputs/apk/debug/*.apk
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

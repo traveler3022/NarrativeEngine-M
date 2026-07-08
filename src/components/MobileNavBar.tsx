@@ -1,11 +1,12 @@
 import { useAppStore } from '../store/useAppStore';
 import { hapticLight } from '../utils/haptics';
+import { t } from '../i18n';
 
 const TABS = [
-  { id: 'chat' as const,    label: 'Chat' },
-  { id: 'context' as const, label: 'Context' },
-  { id: 'npcs' as const,    label: 'NPCs' },
-  { id: 'settings' as const,label: 'Settings' },
+  { id: 'chat' as const,    labelKey: 'nav.chat' },
+  { id: 'context' as const, labelKey: 'nav.context' },
+  { id: 'npcs' as const,    labelKey: 'nav.npcs' },
+  { id: 'settings' as const,labelKey: 'nav.settings' },
 ];
 
 export function MobileNavBar() {
@@ -54,7 +55,9 @@ export function MobileNavBar() {
 
   return (
     <nav className="mobile-nav md:hidden">
-      {TABS.map(({ id, label }) => (
+      {TABS.map(({ id, labelKey }) => {
+        const label = t(labelKey);
+        return (
         <button
           key={id}
           className={`mobile-nav-item ${mobileView === id ? 'active' : ''}`}
@@ -68,7 +71,8 @@ export function MobileNavBar() {
             </span>
           )}
         </button>
-      ))}
+        );
+      })}
     </nav>
   );
 }

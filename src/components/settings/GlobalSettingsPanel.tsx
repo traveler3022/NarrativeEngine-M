@@ -1,13 +1,34 @@
 import { useAppStore } from '../../store/useAppStore';
 import type { CondenseAggressiveness, AiTier } from '../../types';
+import { t, useLanguage, LANGUAGES } from '../../i18n';
 
 export function GlobalSettingsPanel() {
     const settings = useAppStore(s => s.settings);
     const updateSettings = useAppStore(s => s.updateSettings);
+    const { lang, setLang } = useLanguage();
 
     return (
         <div className="space-y-8">
-            <label className="text-text-dim text-xs uppercase tracking-widest font-bold block">Global Preferences</label>
+            <label className="text-text-dim text-xs uppercase tracking-widest font-bold block">{t('settings.global.title')}</label>
+
+            {/* Language selector — placed at the top so users find it first. */}
+            <div className="bg-void p-4 border border-border rounded">
+                <label className="block text-[11px] text-ice uppercase tracking-wider font-bold mb-1">
+                    {t('settings.language')}
+                </label>
+                <p className="text-[10px] text-text-dim mb-3">{t('settings.language.desc')}</p>
+                <div className="flex flex-wrap gap-2">
+                    {LANGUAGES.map((l) => (
+                        <button
+                            key={l.code}
+                            onClick={() => setLang(l.code)}
+                            className={`px-3 py-2 text-[10px] font-mono border rounded transition-colors ${lang === l.code ? 'bg-ice text-void border-ice' : 'bg-surface border-border text-text-dim'}`}
+                        >
+                            {l.labelNative}
+                        </button>
+                    ))}
+                </div>
+            </div>
 
             <div>
                 <div className="flex items-center justify-between mb-3">

@@ -7,15 +7,16 @@ import { PresetsPanel } from './settings/PresetsPanel';
 import { GlobalSettingsPanel } from './settings/GlobalSettingsPanel';
 import { AdvancedEmbeddingPanel } from './settings/AdvancedEmbeddingPanel';
 import { DebugPanel } from './settings/DebugPanel';
+import { t } from '../i18n';
 
 type PanelKey = 'providers' | 'presets' | 'global' | 'advanced' | 'debug';
 
-const PANELS: { key: PanelKey; label: string }[] = [
-    { key: 'providers', label: 'Providers' },
-    { key: 'presets', label: 'Presets' },
-    { key: 'global', label: 'Global' },
-    { key: 'advanced', label: 'Advanced' },
-    { key: 'debug', label: 'Debug' },
+const PANELS: { key: PanelKey; labelKey: string }[] = [
+    { key: 'providers', labelKey: 'settings.providers' },
+    { key: 'presets', labelKey: 'settings.presets' },
+    { key: 'global', labelKey: 'settings.global' },
+    { key: 'advanced', labelKey: 'settings.advanced' },
+    { key: 'debug', labelKey: 'settings.debug' },
 ];
 
 export function SettingsModal() {
@@ -33,7 +34,7 @@ export function SettingsModal() {
     if (!settingsOpen) return null;
 
     return (
-        <div className={`mobile-page md:fixed md:inset-0 md:z-[100] md:flex md:items-center md:justify-center ${settingsOpen ? 'open' : ''}`} role="dialog" aria-modal="true" aria-label="Settings">
+        <div className={`mobile-page md:fixed md:inset-0 md:z-[100] md:flex md:items-center md:justify-center ${settingsOpen ? 'open' : ''}`} role="dialog" aria-modal="true" aria-label={t('settings.title')}>
             <div className="hidden md:absolute md:inset-0 md:bg-ember/40 md:backdrop-blur-sm" onClick={handleClose} />
 
             <div className="relative bg-surface border-border w-full h-full md:h-[calc(85*var(--app-vh))] md:max-w-xl md:mx-4 md:border md:shadow-2xl flex flex-col overflow-hidden">
@@ -41,12 +42,12 @@ export function SettingsModal() {
                     <button onClick={handleClose} className="back-btn -ml-2">
                         <ArrowLeft size={24} />
                     </button>
-                    <span className="page-title">Settings</span>
+                    <span className="page-title">{t('settings.title')}</span>
                 </div>
 
                 <div className="hidden md:flex items-center justify-between p-6 border-b border-border shrink-0 bg-void z-10">
                     <h2 className="text-terminal text-sm font-bold tracking-[0.2em] uppercase glow-green">
-                        ⚙ SETTINGS
+                        ⚙ {t('settings.title').toUpperCase()}
                     </h2>
                     <button onClick={handleClose} className="text-text-dim hover:text-danger">
                         <X size={18} />
@@ -54,7 +55,7 @@ export function SettingsModal() {
                 </div>
 
                 <div className="flex border-b border-border shrink-0 bg-void">
-                    {PANELS.map(({ key, label }) => (
+                    {PANELS.map(({ key, labelKey }) => (
                         <button
                             key={key}
                             onClick={() => setActivePanel(key)}
@@ -64,7 +65,7 @@ export function SettingsModal() {
                                     : 'text-text-dim border-transparent hover:text-text-primary'
                             }`}
                         >
-                            {label}
+                            {t(labelKey)}
                         </button>
                     ))}
                 </div>

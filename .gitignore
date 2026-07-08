@@ -11,6 +11,12 @@ node_modules
 dist
 dist-ssr
 data
+# Keep the placeholder JSON files that the NPC services import — without
+# them the build breaks. They're shipped empty by default; the full name
+# bank is generated via `node scripts/buildNameBank.mjs` from the
+# Upgrade/FablePlans/assets/clean/ tree which is not in this repo.
+!src/data/nameBank.json
+!src/data/nameBlocklist.json
 *.local
 
 # Editor directories and files
