@@ -29,7 +29,7 @@ import {
 import type { TickDelta, Band } from '../npc';
 import { api } from '../apiClient';
 import { uid } from '../../utils/uid';
-import { toast } from '../../components/Toast';
+import { notify } from '../../ports/notification';
 import { shouldAutoSeal, sealChapter, sealChapterCombined, type CombinedSealResult, rateImportance } from '../archive';
 import { computeOpenThreads } from '../payload/payloadWorldContext';
 import { fetchFacts, scanCharacterProfile, scanInventory, mergeSealEntries } from '../campaign-state';
@@ -1216,7 +1216,7 @@ async function handleSealChapter(state: TurnState, callbacks: TurnCallbacks, act
                     callbacks.setDivergenceRegister(merged);
                     console.log(`[CombinedSeal] Chapter ${sealed.chapterId}: ${sealResult.divergences.length} entries extracted`);
                 } else if (sealResult.divergenceParseError) {
-                    toast.warning('Chapter sealed but divergence facts failed to parse');
+                    notify.warning('Chapter sealed but divergence facts failed to parse');
                 }
 
                 // Arc Engine spawn is MANUAL — fired by the Arc Injector button, never
@@ -1227,10 +1227,10 @@ async function handleSealChapter(state: TurnState, callbacks: TurnCallbacks, act
 
             const updatedChapters = await loadChapters(activeCampaignId);
             if (callbacks.setChapters) callbacks.setChapters(updatedChapters);
-            toast.success('Chapter sealed');
+            notify.success('Chapter sealed');
         } catch (err) {
             console.error('[SealChapter] Failed to seal chapter:', err);
-            toast.error('Failed to seal chapter');
+            notify.error('Failed to seal chapter');
         }
     }
 }

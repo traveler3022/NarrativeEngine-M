@@ -5,7 +5,7 @@ import { handlePostTurn } from './turnPostProcess';
 import { classifySceneStakes } from './sceneStakesTag';
 import { tierAllows } from './aiTier';
 import { shouldCondense, computeTrimIndex, getCondenseBudgetRatio } from '../payload';
-import { toast } from '../../components/Toast';
+import { notify } from '../../ports/notification';
 import { useAppStore } from '../../store/useAppStore';
 import { uid } from '../../utils/uid';
 
@@ -231,7 +231,7 @@ export async function commitPendingTurn(): Promise<void> {
         }
     } catch (err) {
         console.error('[Commit] handlePostTurn failed:', err);
-        toast.error('Turn committed but some archive updates may be missing. Your story is saved.');
+        notify.error('Turn committed but some archive updates may be missing. Your story is saved.');
     }
 
     // Clear the swipe set + pendingCommit marker — the bubble is now a
