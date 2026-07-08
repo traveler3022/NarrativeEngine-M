@@ -23,12 +23,26 @@ export function ChatInput({
 }: ChatInputProps) {
     const settings = useAppStore(s => s.settings);
     const reindexing = useAppStore(s => s.embeddingsReindexing);
+    const keyboardVisible = useAppStore(s => s.keyboardVisible);
+    const keyboardHeight = useAppStore(s => s.keyboardHeight);
 
     const blocking = reindexing.active && reindexing.reason !== 'progressive';
     const showProgress = reindexing.active;
 
+    // Lift only the input bar above the soft keyboard when it's open. The OS
+    // reports the keyboard height in CSS px; html.zoom scales CSS px, so divide
+    // by ui-scale to land in the same coordinate space as the rest of the UI.
+    // When the keyboard is closed, no offset — full reading area is preserved.
+    const uiScale = settings.uiScale ?? 1;
+    const lift = keyboardVisible && keyboardHeight > 0
+        ? `calc(${keyboardHeight}px / ${uiScale})`
+        : '0px';
+
     return (
-        <div className="flex-shrink-0 bg-void border-t border-border">
+        <div
+            className="flex-shrink-0 bg-void border-t border-border"
+            style={{ paddingBottom: lift, transition: 'padding-bottom 0.18s ease' }}
+        >
             {showProgress && (
                 <div className={`px-2 py-1 text-[10px] text-center ${
                     reindexing.reason === 'progressive'

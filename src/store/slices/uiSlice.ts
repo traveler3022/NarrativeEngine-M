@@ -25,7 +25,12 @@ export type UISlice = {
     streamingStats: StreamingStats | null;
     mobileView: 'chat' | 'context' | 'npcs' | 'settings';
     keyboardVisible: boolean;
+    /** Soft-keyboard height in CSS px as reported by Capacitor Keyboard events,
+     *  0 when hidden. Used to lift only the chat input above the keyboard, not
+     *  shrink the whole reading area. */
+    keyboardHeight: number;
     setKeyboardVisible: (visible: boolean) => void;
+    setKeyboardHeight: (height: number) => void;
     toggleSettings: () => void;
     toggleDrawer: () => void;
     toggleNPCLedger: () => void;
@@ -62,7 +67,9 @@ export const createUISlice: StateCreator<UISlice, [], [], UISlice> = (set) => ({
     streamingStats: null,
     mobileView: 'chat' as const,
     keyboardVisible: false,
+    keyboardHeight: 0,
     setKeyboardVisible: (visible) => set({ keyboardVisible: visible }),
+    setKeyboardHeight: (height) => set({ keyboardHeight: height }),
     toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
     toggleDrawer: () => set((s) => ({ drawerOpen: !s.drawerOpen })),
     toggleNPCLedger: () => set((s) => ({ npcLedgerOpen: !s.npcLedgerOpen })),

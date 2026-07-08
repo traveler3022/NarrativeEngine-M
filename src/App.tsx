@@ -64,46 +64,25 @@ export default function App() {
 
   // Track the soft keyboard so the chat can hide the bottom nav bar and let the
   // input sit directly on the keyboard instead of floating above a dead nav row.
+  // Capture the keyboard height from the OS event (device-agnostic, no hardcode)
+  // so ChatInput can be lifted above it only while the keyboard is visible.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     const setKeyboardVisible = useAppStore.getState().setKeyboardVisible;
-    const showP = Keyboard.addListener('keyboardWillShow', () => setKeyboardVisible(true));
-    const hideP = Keyboard.addListener('keyboardWillHide', () => setKeyboardVisible(false));
+    const setKeyboardHeight = useAppStore.getState().setKeyboardHeight;
+    const showP = Keyboard.addListener('keyboardWillShow', (info) => {
+      setKeyboardHeight(info.keyboardHeight);
+      setKeyboardVisible(true);
+    });
+    const hideP = Keyboard.addListener('keyboardWillHide', () => {
+      setKeyboardVisible(false);
+      setKeyboardHeight(0);
+    });
     return () => {
       void showP.then((h) => h.remove());
       void hideP.then((h) => h.remove());
     };
   }, []);
-
-  // ── Keyboard-aware viewport sizing (cross-device, web-standard) ─────────────
-  // The Capacitor Keyboard `resize` option is iOS-only, so on Android `100vh`/
-  // `100dvh` never shrink when the soft keyboard opens — the chat input ends up
-  // pinned behind it. window.visualViewport reports the *actual* visible (keyboard-
-  // excluded) viewport height on every modern Android/iOS WebView, so we drive
-  // #root's height from it live. This is device-agnostic: no hardcoded offsets,
-  // no Capacitor config dependency, no per-OS branching. Falls back gracefully
-  // (no-op) where visualViewport is unavailable.
-  useEffect(() => {
-    if (typeof window === 'undefined' || !('visualViewport' in window)) return;
-    const vv = window.visualViewport!;
-    const apply = () => {
-      const root = document.getElementById('root');
-      if (!root) return;
-      // px height, NOT divided by ui-scale: html.zoom already scales the root's
-      // CSS pixels, so feeding raw visualViewport.height (also CSS px) keeps them
-      // in the same coordinate space. Avoids double-dividing the keyboard gap.
-      root.style.height = `${vv.height}px`;
-    };
-    apply();
-    vv.addEventListener('resize', apply);
-    vv.addEventListener('scroll', apply);
-    return () => {
-      vv.removeEventListener('resize', apply);
-      vv.removeEventListener('scroll', apply);
-      const root = document.getElementById('root');
-      if (root) root.style.height = '';
-    };
-  }, [settingsLoaded]);
 
   useEffect(() => {
     if (settingsLoaded) {
@@ -113,10 +92,9 @@ export default function App() {
       
       const root = document.getElementById('root');
       if (root) {
-        // Clear old transform hacks permanently. NOTE: do NOT clear
-        // root.style.height here — the visualViewport effect above owns it
-        // and drives it live so the app shrinks when the keyboard opens.
+        // Clear old transform hacks permanently
         root.style.width = '';
+        root.style.height = '';
         root.style.transform = '';
         root.style.transformOrigin = '';
         root.style.zoom = '';
