@@ -3,19 +3,19 @@ import { useAppStore } from '../../store/useAppStore';
 import { generateImage } from './imageClient';
 import { composeImagePrompt } from './composePrompt';
 import { imageStorage } from '../storage/imageStorage';
-import { toast } from '../../components/Toast';
+import { notify } from '../../ports/notification';
 
 export async function illustrateMessage(messageId: string, steer?: SceneSteer): Promise<void> {
     const state = useAppStore.getState();
     const preset = state.settings.presets.find(p => p.id === state.settings.activePresetId);
     if (!preset) {
-        toast.warning('No active preset found');
+        notify.warning('No active preset found');
         return;
     }
 
     const imageProvider = state.getActiveImageEndpoint();
     if (!imageProvider) {
-        toast.warning('No Image Generation AI configured in this preset. Add one in Settings → Presets.');
+        notify.warning('No Image Generation AI configured in this preset. Add one in Settings → Presets.');
         return;
     }
 
@@ -42,7 +42,7 @@ export async function illustrateMessage(messageId: string, steer?: SceneSteer): 
     });
 
     if (!composed.prompt) {
-        toast.warning('No text to illustrate');
+        notify.warning('No text to illustrate');
         return;
     }
 
@@ -76,6 +76,6 @@ export async function illustrateMessage(messageId: string, steer?: SceneSteer): 
             error: errorMessage,
             steer,
         });
-        toast.error(`Illustration failed: ${errorMessage}`);
+        notify.error(`Illustration failed: ${errorMessage}`);
     }
 }

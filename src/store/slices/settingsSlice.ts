@@ -2,7 +2,7 @@ import type { StateCreator } from 'zustand';
 import type { AppSettings, LLMProvider, AIPreset } from '../../types';
 import { get as idbGet, set as idbSet } from 'idb-keyval';
 import { encryptSettingsProviders, decryptSettingsProviders, decryptSettingsPresets } from '../../services/infrastructure';
-import { toast } from '../../components/Toast';
+import { notify } from '../../ports/notification';
 import {
     applyTheme,
     watchSystemTheme,
@@ -71,7 +71,7 @@ export function debouncedSaveSettings(settings: AppSettings, activeCampaignId: s
         const encryptedSettings = { ...settings, providers: encryptedProviders };
 
         idbSet('nn_settings', { settings: encryptedSettings, activeCampaignId })
-            .catch((e) => { console.error(e); toast.error('Failed to save settings to browser storage'); });
+            .catch((e) => { console.error(e); notify.error('Failed to save settings to browser storage'); });
     }, 500);
 }
 
@@ -141,7 +141,7 @@ export const createSettingsSlice: StateCreator<SettingsSlice & { activeCampaignI
             }
         } catch (e) {
             console.warn('Failed to load settings, using defaults', e);
-            toast.warning('Could not load saved settings — using defaults');
+            notify.warning('Could not load saved settings — using defaults');
         }
         set({ settingsLoaded: true });
     },
