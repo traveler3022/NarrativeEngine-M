@@ -24,7 +24,7 @@ export {
     DEFAULT_WORLD_WHY,
     DEFAULT_WORLD_WHAT,
 } from '../services/engine/constants';
-export type { ReindexState } from './slices/uiSlice';
+export type { ReindexState } from '../types/store';
 
 // ── Combined store type ────────────────────────────────────────────────
 

@@ -1,19 +1,9 @@
 import type { StateCreator } from 'zustand';
 import type { ManualRollMode, PayloadTrace, PipelinePhase, StreamingStats } from '../../types';
-
-/** Loot Engine WO-05: armed loot drop config, resolved at send time. Mirrors armedRoll. */
-export type ArmedLoot = {
-    rolls: number;
-    /** Soft override: replace weights at named pick nodes (root pick's options from the modal). */
-    reweight?: Record<string, Record<string, number>>;
-};
-
-export type ReindexState = {
-    active: boolean;
-    total: number;
-    done: number;
-    reason: 'switch' | 'lazy' | 'progressive' | null;
-};
+// ArmedLoot and ReindexState canonical home is types/store.ts. Re-exported
+// here so existing callers within the store layer keep working.
+export type { ArmedLoot, ReindexState } from '../../types/store';
+import type { ArmedLoot, ReindexState } from '../../types/store';
 
 export type UISlice = {
     settingsOpen: boolean;

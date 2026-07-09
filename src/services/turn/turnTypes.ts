@@ -20,7 +20,7 @@ import type {
     ManualRollMode,
 } from '../../types';
 import type { LLMCallPriority } from '../../utils/llmCall';
-import type { ArmedLoot } from '../../store/slices/uiSlice';
+import type { ArmedLoot } from '../../types/store';
 
 // ── UtilityLLM port (Plan 4 — the single injection point for utility LLM access) ──
 // Wraps llmCall + utility-endpoint lookup so retrieval stages can be tested with

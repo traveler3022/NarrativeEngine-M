@@ -1,15 +1,12 @@
 import { get, set, del } from 'idb-keyval';
-import type { Campaign, LoreChunk, GameContext, ChatMessage, CondenserState, NPCEntry, ArchiveIndexEntry, ArchiveChapter, SemanticFact, TimelineEvent, EntityEntry, DivergenceRegister, PinnedExcerpt, NPCPressure, RuleChunkMeta } from '../types';
+import type { Campaign, LoreChunk, ChatMessage, NPCEntry, ArchiveIndexEntry, ArchiveChapter, SemanticFact, TimelineEvent, EntityEntry, DivergenceRegister, NPCPressure, RuleChunkMeta } from '../types';
+// CampaignState canonical home is types/store.ts. Re-exported here so
+// existing callers (campaignBundle, saveController) keep working.
+export type { CampaignState } from '../types/store';
+import type { CampaignState } from '../types/store';
 import { imageStorage } from '../services/storage/imageStorage';
 import { upgradeVectorOnlyDefault } from '../services/lore/loreIndexer';
 import { affinityToPcRelation } from '../services/npc/agencyBands';
-
-export type CampaignState = {
-    context: GameContext;
-    messages: ChatMessage[];
-    condenser: CondenserState;
-    pinnedExcerpts?: PinnedExcerpt[];
-};
 
 // ─── Campaign CRUD ───
 

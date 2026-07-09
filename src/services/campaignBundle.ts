@@ -4,7 +4,7 @@ import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { SaveFile } from './infrastructure';
 import { loadLootTree } from './lore/lootTreeLoader';
 import type { Campaign, LoreChunk, ArchiveIndexEntry, ArchiveChapter, SemanticFact, TimelineEvent, EntityEntry, NPCEntry, LootTree } from '../types';
-import type { CampaignState } from '../store/campaignStore';
+import type { CampaignState } from '../types/store';
 import { getList, setList, k, type SceneRecord } from './storage/_helpers';
 import { uid } from '../utils/uid';
 
