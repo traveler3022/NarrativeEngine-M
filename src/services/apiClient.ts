@@ -38,12 +38,12 @@ export const api = {
     },
     campaigns: {
         async saveState(campaignId: string, state: { context: GameContext; messages: ChatMessage[]; condenser: CondenserState }): Promise<void> {
-            const { saveCampaignState } = await import('../store/campaignStore');
-            await saveCampaignState(campaignId, state);
+            const { campaignRepository } = await import('../ports/campaignRepository');
+            await campaignRepository.saveCampaignState(campaignId, state);
         },
         async saveNPCs(campaignId: string, npcs: NPCEntry[]): Promise<void> {
-            const { saveNPCLedger } = await import('../store/campaignStore');
-            await saveNPCLedger(campaignId, npcs);
+            const { campaignRepository } = await import('../ports/campaignRepository');
+            await campaignRepository.saveNPCLedger(campaignId, npcs);
         },
     },
     facts: {
