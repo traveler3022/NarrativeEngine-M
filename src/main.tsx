@@ -8,6 +8,8 @@ import { wireChapterRepository } from './adapters/chapterRepositoryAdapter'
 import { wireSettings } from './adapters/settingsAdapter'
 import { wireMessaging } from './adapters/messagingAdapter'
 import { wireNPC } from './adapters/npcAdapter'
+import { wireCampaignContext } from './adapters/campaignContextAdapter'
+import { wireCampaignRepository } from './adapters/campaignRepositoryAdapter'
 
 // Wire ports to their real implementations. Services depend on the
 // ports (contracts), not the store/components — these calls are what
@@ -19,6 +21,8 @@ wireChapterRepository();
 wireSettings();
 wireMessaging();
 wireNPC();
+wireCampaignContext();
+wireCampaignRepository();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

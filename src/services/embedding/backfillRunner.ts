@@ -117,9 +117,8 @@ export async function runBackfill(
 async function getLoreChunksForBackfill(_campaignId: string): Promise<Array<{ id: string; content: string }>> {
     try {
         const { chunkLoreFile } = await import('../lore');
-        const { useAppStore } = await import('../../store/useAppStore');
-        const state = useAppStore.getState();
-        const loreRaw = state.context?.loreRaw;
+        const { campaignContext } = await import('../../ports/campaignContext');
+        const loreRaw = campaignContext.getContext().loreRaw;
         if (loreRaw) {
             return chunkLoreFile(loreRaw).map(c => ({ id: c.id, content: c.content }));
         }
@@ -132,9 +131,8 @@ async function getLoreChunksForBackfill(_campaignId: string): Promise<Array<{ id
 async function getRuleChunksForReindex(_campaignId: string): Promise<Array<{ id: string; content: string }>> {
     try {
         const { chunkLoreFile } = await import('../lore');
-        const { useAppStore } = await import('../../store/useAppStore');
-        const state = useAppStore.getState();
-        const rulesRaw = state.context?.rulesRaw;
+        const { campaignContext } = await import('../../ports/campaignContext');
+        const rulesRaw = campaignContext.getContext().rulesRaw;
         if (rulesRaw) {
             return chunkLoreFile(rulesRaw, 'rule').map(c => ({ id: c.id, content: c.content }));
         }
