@@ -10,7 +10,7 @@ name: Build Debug APK
 
 on:
   push:
-    branches: [ main, 'feat/**' ]
+    branches: [ main, 'feat/**', 'refactor/**', 'fix/**' ]
     tags: [ 'v*' ]
   workflow_dispatch:
 
