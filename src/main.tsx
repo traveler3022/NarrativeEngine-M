@@ -6,6 +6,8 @@ import { wireNotifications } from './adapters/uiToastAdapter'
 import { wireLoreRepository } from './adapters/loreRepositoryAdapter'
 import { wireChapterRepository } from './adapters/chapterRepositoryAdapter'
 import { wireSettings } from './adapters/settingsAdapter'
+import { wireMessaging } from './adapters/messagingAdapter'
+import { wireNPC } from './adapters/npcAdapter'
 
 // Wire ports to their real implementations. Services depend on the
 // ports (contracts), not the store/components — these calls are what
@@ -15,6 +17,8 @@ wireNotifications();
 wireLoreRepository();
 wireChapterRepository();
 wireSettings();
+wireMessaging();
+wireNPC();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
