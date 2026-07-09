@@ -4,6 +4,7 @@ import App from './App'
 import { wireNotifications } from './adapters/uiToastAdapter'
 import { wireLoreRepository } from './adapters/loreRepositoryAdapter'
 import { wireChapterRepository } from './adapters/chapterRepositoryAdapter'
+import { wireSettings } from './adapters/settingsAdapter'
 
 // Wire ports to their real implementations. Services depend on the
 // ports (contracts), not the store/components — these calls are what
@@ -12,6 +13,7 @@ import { wireChapterRepository } from './adapters/chapterRepositoryAdapter'
 wireNotifications();
 wireLoreRepository();
 wireChapterRepository();
+wireSettings();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
