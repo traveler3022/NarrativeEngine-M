@@ -1,7 +1,7 @@
 import { poolEmbed, terminatePool, getForegroundPoolSize } from './embedderPool';
 import { getCurrentModelId } from './embedder';
 import { embeddingStorage } from '../storage/embeddingStorage';
-import type { ReindexState } from '../../store/slices/uiSlice';
+import type { ReindexState } from '../../types/store';
 
 type ChunkType = 'lore' | 'rule';
 
