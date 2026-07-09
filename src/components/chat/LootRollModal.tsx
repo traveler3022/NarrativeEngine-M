@@ -135,7 +135,7 @@ export function LootRollModal() {
                     </p>
                 </div>
 
-                <div className="px-4 py-3 border-t border-border flex justify-end gap-2">
+                <div className="px-4 py-3 border-t border-border flex justify-end gap-2 safe-bottom">
                     <button onClick={onClose} className="px-3 py-1.5 text-xs text-text-dim hover:text-text-primary rounded">Cancel</button>
                     <button
                         onClick={confirm}

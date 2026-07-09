@@ -6,7 +6,7 @@ import { Toggle } from './Toggle';
 import { NPCPressureInspector } from '../NPCPressureInspector';
 import { buildDefaultDiceSystem } from '../../types';
 import { validateBands } from '../../services/engine/diceTier';
-import type { DieType, OutcomeBand, DiceCategory } from '../../types';
+import type { DieType, OutcomeBand, DiceCategory, CharacterIntroEntry, NpcIntroConfig } from '../../types';
 
 function uid(prefix: string) { return `${prefix}_${Math.random().toString(36).slice(2, 9)}`; }
 
@@ -303,6 +303,9 @@ export function EnginesTab() {
                     </div>
                 </div>
 
+                {/* NPC Appearance Engine */}
+                <NpcAppearanceSection context={context} updateContext={updateContext} />
+
                 {/* Dice Fairness Engine (generalized) */}
                 <DiceFairnessSection context={context} updateContext={updateContext} />
 
@@ -565,6 +568,196 @@ function DiceFairnessSection({ context, updateContext }: DiceFairnessSectionProp
                             </button>
                         </div>
                     ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── NPC Appearance Engine Section ─────────────────────────────────────
+
+type NpcAppearanceSectionProps = {
+    context: ReturnType<typeof useAppStore.getState>['context'];
+    updateContext: ReturnType<typeof useAppStore.getState>['updateContext'];
+};
+
+const NPC_INTRO_DEFAULTS: NpcIntroConfig = { initialDC: 196, dcReduction: 2, characters: [] };
+
+const ENTRY_TYPE_OPTIONS: { value: CharacterIntroEntry['type']; label: string }[] = [
+    { value: 'wandering', label: 'Wandering' },
+    { value: 'location', label: 'Location' },
+    { value: 'wandering+boosted', label: 'Wandering+Boosted' },
+    { value: 'location+boosted', label: 'Location+Boosted' },
+];
+
+function NpcAppearanceSection({ context, updateContext }: NpcAppearanceSectionProps) {
+    const aiTier = useAppStore((s) => s.settings.aiTier);
+    const active = context.npcIntroEngineActive ?? true;
+    const config: NpcIntroConfig = context.npcIntroConfig ?? NPC_INTRO_DEFAULTS;
+    const characters = config.characters;
+    const candidateCount = characters.length;
+    const isMaxTier = (aiTier ?? 'pro') === 'max';
+
+    const updateConfig = (patch: Partial<NpcIntroConfig>) => {
+        updateContext({ npcIntroConfig: { ...config, ...patch } });
+    };
+
+    const removeCharacter = (name: string) => {
+        updateConfig({ characters: characters.filter(c => c.name !== name) });
+    };
+
+    const addCharacter = (entry: CharacterIntroEntry) => {
+        if (characters.some(c => c.name.toLowerCase() === entry.name.toLowerCase())) return;
+        updateConfig({ characters: [...characters, entry] });
+    };
+
+    const [newName, setNewName] = useState('');
+    const [newType, setNewType] = useState<CharacterIntroEntry['type']>('wandering');
+    const [newLocation, setNewLocation] = useState('');
+    const [newBoost, setNewBoost] = useState('');
+
+    const handleAdd = () => {
+        const name = newName.trim();
+        if (!name) return;
+        const entry: CharacterIntroEntry = { name, type: newType };
+        if (newType === 'location' || newType === 'location+boosted') {
+            const loc = newLocation.trim();
+            if (loc) entry.location = loc;
+        }
+        if (newType === 'wandering+boosted' || newType === 'location+boosted') {
+            const kws = newBoost.split(',').map(s => s.trim()).filter(Boolean);
+            if (kws.length > 0) entry.boostKeywords = kws;
+        }
+        addCharacter(entry);
+        setNewName('');
+        setNewLocation('');
+        setNewBoost('');
+    };
+
+    return (
+        <div className="space-y-2">
+            <div className="text-[10px] text-terminal uppercase tracking-wider font-bold border-b border-terminal/20 pb-1 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-terminal" />
+                    NPC Appearance Engine
+                    <span className="text-text-dim normal-case font-normal tracking-normal text-[9px]">
+                        {candidateCount} candidate{candidateCount === 1 ? '' : 's'}
+                    </span>
+                </div>
+                <Toggle active={active} onChange={() => updateContext({ npcIntroEngineActive: !active })} />
+            </div>
+            <div className="bg-void border border-border p-3 space-y-3">
+                <p className="text-[9px] text-text-dim leading-relaxed">
+                    Pulls pre-seeded characters into scenes on a decaying DC roll. Useful for worlds with many named NPCs.
+                    {isMaxTier ? null : (
+                        <span className="text-amber-400 block mt-1">
+                            Only fires on the <span className="font-bold">Max</span> AI tier — currently {aiTier ?? 'pro'}.
+                        </span>
+                    )}
+                </p>
+
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col">
+                        <label className="text-[10px] text-text-dim uppercase tracking-wider mb-1">Initial DC (Default 196)</label>
+                        <input
+                            type="number"
+                            value={config.initialDC}
+                            onChange={(e) => {
+                                const val = parseInt(e.target.value);
+                                updateConfig({ initialDC: isNaN(val) ? 196 : val });
+                            }}
+                            className="w-full bg-surface border border-border px-2 py-1.5 text-[16px] md:text-[11px] font-mono text-text-primary focus:border-terminal outline-none transition-colors min-h-[44px] md:min-h-0"
+                        />
+                    </div>
+                    <div className="flex flex-col">
+                        <label className="text-[10px] text-text-dim uppercase tracking-wider mb-1">DC Drop per turn (Def 2)</label>
+                        <input
+                            type="number"
+                            value={config.dcReduction}
+                            onChange={(e) => {
+                                const val = parseInt(e.target.value);
+                                updateConfig({ dcReduction: isNaN(val) ? 2 : val });
+                            }}
+                            className="w-full bg-surface border border-border px-2 py-1.5 text-[16px] md:text-[11px] font-mono text-text-primary focus:border-terminal outline-none transition-colors min-h-[44px] md:min-h-0"
+                        />
+                    </div>
+                </div>
+
+                <div className="pt-2 border-t border-border/40 space-y-1.5">
+                    <label className="text-[10px] text-text-dim uppercase tracking-wider">Candidate Pool</label>
+                    {characters.length === 0 ? (
+                        <p className="text-[10px] text-text-dim/60 italic">No candidates. Add one below or re-seed from lore.</p>
+                    ) : (
+                        <div className="space-y-1">
+                            {characters.map((c) => (
+                                <div key={c.name} className="flex items-center justify-between bg-surface border border-border px-2 py-1.5 rounded text-[11px] md:text-[10px]">
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-text-primary font-mono truncate">{c.name}</span>
+                                        <span className="text-text-dim text-[9px]">
+                                            {ENTRY_TYPE_OPTIONS.find(o => o.value === c.type)?.label ?? c.type}
+                                            {c.location ? ` · ${c.location}` : ''}
+                                            {c.boostKeywords && c.boostKeywords.length > 0 ? ` · boost: ${c.boostKeywords.join(', ')}` : ''}
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={() => removeCharacter(c.name)}
+                                        className="text-text-dim hover:text-danger transition-colors shrink-0 ml-2"
+                                        title="Remove from appearance pool"
+                                    >
+                                        <Trash2 size={12} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div className="pt-2 border-t border-border/40 space-y-2">
+                    <label className="text-[10px] text-text-dim uppercase tracking-wider">Add Candidate</label>
+                    <div className="grid grid-cols-2 gap-2">
+                        <input
+                            type="text"
+                            value={newName}
+                            onChange={(e) => setNewName(e.target.value)}
+                            placeholder="Name"
+                            className="bg-surface border border-border px-2 py-1.5 text-[16px] md:text-[11px] font-mono text-text-primary focus:border-terminal outline-none transition-colors min-h-[44px] md:min-h-0"
+                        />
+                        <select
+                            value={newType}
+                            onChange={(e) => setNewType(e.target.value as CharacterIntroEntry['type'])}
+                            className="bg-surface border border-border px-2 py-1.5 text-[16px] md:text-[11px] font-mono text-text-primary focus:border-terminal outline-none transition-colors min-h-[44px] md:min-h-0"
+                        >
+                            {ENTRY_TYPE_OPTIONS.map(o => (
+                                <option key={o.value} value={o.value}>{o.label}</option>
+                            ))}
+                        </select>
+                    </div>
+                    {(newType === 'location' || newType === 'location+boosted') && (
+                        <input
+                            type="text"
+                            value={newLocation}
+                            onChange={(e) => setNewLocation(e.target.value)}
+                            placeholder="Location (e.g. Konoha)"
+                            className="w-full bg-surface border border-border px-2 py-1.5 text-[16px] md:text-[11px] font-mono text-text-primary focus:border-terminal outline-none transition-colors min-h-[44px] md:min-h-0"
+                        />
+                    )}
+                    {(newType === 'wandering+boosted' || newType === 'location+boosted') && (
+                        <input
+                            type="text"
+                            value={newBoost}
+                            onChange={(e) => setNewBoost(e.target.value)}
+                            placeholder="Boost keywords (comma-separated)"
+                            className="w-full bg-surface border border-border px-2 py-1.5 text-[16px] md:text-[11px] font-mono text-text-primary focus:border-terminal outline-none transition-colors min-h-[44px] md:min-h-0"
+                        />
+                    )}
+                    <button
+                        onClick={handleAdd}
+                        disabled={!newName.trim()}
+                        className="flex items-center gap-1 text-[10px] text-terminal hover:text-text-primary transition-colors disabled:opacity-30 min-h-[36px] md:min-h-0"
+                    >
+                        <Plus size={12} />
+                        Add to pool
+                    </button>
                 </div>
             </div>
         </div>
