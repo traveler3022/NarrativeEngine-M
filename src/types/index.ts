@@ -18,6 +18,15 @@ export type {
 // Internal: many types in this file reference NPCEntry/NPCWants/etc.
 import type { SceneStakes, Archetype, StatBlock } from './npc';
 
+// Archive + Divergence types hoisted to types/archive.ts
+export type {
+    DivergenceCategory, DivergenceEntry, TopicCluster, TopicClusters,
+    DivergenceRegister, ArchiveIndexEntry, ArchiveScene,
+    ContextSourceClassification, SemanticFact, ArchiveChapter,
+} from './archive';
+// Internal: some types reference ArchiveChapter, DivergenceRegister, etc.
+import type { DivergenceCategory, ContextSourceClassification } from './archive';
+
 export type ApiFormat = 'openai' | 'ollama' | 'claude' | 'gemini';
 
 export type AiTier = 'lite' | 'pro' | 'max';
@@ -262,15 +271,6 @@ export type ArcRecord = {
     lastTickScene: string;  // sceneId of the last rung change (recency signal)
 };
 
-export type DivergenceCategory =
-    | 'locations'
-    | 'npc_events'
-    | 'promises_debts'
-    | 'world_state'
-    | 'party_facts'
-    | 'rules_lore'
-    | 'misc';
-
 /**
  * A single structured narrative fact about the player character.
  * Replaces the legacy flat-string `characterProfile` blob.
@@ -332,48 +332,6 @@ export type CharacterProfileState = {
 
 /** Number of PC traits always injected regardless of scene tags. */
 export const CORE_FLOOR_TRAITS = 5;
-
-export type DivergenceEntry = {
-    id: string;
-    chapterId: string;
-    category: DivergenceCategory;
-    text: string;
-    sceneRef: string;
-    npcIds: string[];
-    // Who knows this fact. Tokens: "player" | "npc:<id>" | "faction:<name-normalized>".
-    // undefined = public/broadcast (common knowledge). [] = secret, no NPC knows it.
-    knownBy?: string[];
-    // Stable snake_case subject slug shared by ALL facts about the same subject
-    // (e.g. "alex_chen.identity"). The scene number is the version axis. undefined = ungrouped.
-    subjectToken?: string;
-    pinned: boolean;
-    enabled?: boolean;
-    source: 'auto' | 'manual';
-    reviewFlag?: boolean;
-    unrecognizedNpcNames?: string[];
-};
-
-export type TopicCluster = {
-    id: string;
-    name: string;
-    factIds: string[];
-};
-
-export type TopicClusters = {
-    groups: TopicCluster[];
-    generatedAt: string;
-    generatedFromFactCount: number;
-};
-
-export type DivergenceRegister = {
-    entries: DivergenceEntry[];
-    chapterToggles: Record<string, boolean>;
-    categoryToggles: Record<string, Record<DivergenceCategory, boolean>>;
-    lastUpdatedSceneId: string;
-    lastUpdatedAt: number;
-    version: 2;
-    topicClusters?: TopicClusters;
-};
 
 export type ChatMessage = {
     id: string;
@@ -475,26 +433,7 @@ export type SceneEvent = {
     result?: string;          // short plain-text result beat
 };
 
-export type ArchiveIndexEntry = {
-    sceneId: string;         // zero-padded, e.g. "014" — matches ## SCENE header in .archive.md
-    timestamp: number;
-    keywords: string[];      // proper nouns, quoted strings, [MEMORABLE:] tags
-    npcsMentioned: string[]; // NPC names detected in the scene
-    npcsWitnessed?: string[]; // NPC IDs physically present/witnessing the scene
-    witnessSource?: WitnessSource; // how npcsWitnessed was determined
-    userSnippet: string;     // first ~100 chars of user message (human-readable preview)
-    keywordStrengths?: Record<string, number>;
-    npcStrengths?: Record<string, number>;
-    importance?: number;
-    events?: SceneEvent[];    // optional: structured events extracted at seal time (back-compat: undefined for pre-existing entries)
-};
-
 /** Full verbatim scene content fetched from .archive.md for recall injection. */
-export type ArchiveScene = {
-    sceneId: string;
-    content: string;
-    tokens: number;
-};
 
 export type Campaign = {
     id: string;
@@ -586,8 +525,6 @@ export type OpenAITool = {
     };
 };
 
-export type ContextSourceClassification = 'stable_truth' | 'summary' | 'world_context' | 'volatile_state' | 'scene_local' | 'player_input';
-
 export type PayloadTrace = {
     source: string;
     classification: ContextSourceClassification;
@@ -597,38 +534,6 @@ export type PayloadTrace = {
     included: boolean;
     position?: string;
     childMessages?: Array<{ role: string; tokens: number; preview: string }>;
-};
-
-export type SemanticFact = {
-    id: string;
-    subject: string;
-    predicate: string;
-    object: string;
-    importance: number;
-    sceneId: string;
-    timestamp: number;
-    source?: 'regex' | 'llm';
-    confidence?: number;
-};
-
-export type ArchiveChapter = {
-    chapterId: string;
-    title: string;
-    sceneRange: [string, string];
-    sceneIds: string[];
-    summary: string;
-    keywords: string[];
-    npcs: string[];
-    majorEvents: string[];
-    unresolvedThreads: string[];
-    tone: string;
-    themes: string[];
-    sceneCount: number;
-    sealedAt?: number;
-    invalidated?: boolean;
-    _lastSeenSessionId?: string;
-    npcInnerState?: Record<string, string>; // NPC name -> 1-2 sentence belief/posture note
-    resolvedThreads?: string[]; // exact strings from earlier chapters' unresolvedThreads that this chapter settled
 };
 
 export type NotebookNote = {
