@@ -8,6 +8,16 @@ export type {
 // GameContext.lootTree references LootTree — import it for internal use.
 import type { LootTree } from './loot';
 
+// NPC domain types hoisted to types/npc.ts — re-exported for backward compat.
+export type {
+    NPCDrives, HexAxis, PersonalityHex, NPCWants, SceneStakes,
+    GoalHorizon, GoalState, Goal, RelationGraph,
+    NPCBehavioralTrigger, NPCPressureHistory, NPCPressure,
+    CombatTier, Archetype, StatBlock, NPCEntry,
+} from './npc';
+// Internal: many types in this file reference NPCEntry/NPCWants/etc.
+import type { SceneStakes, Archetype, StatBlock } from './npc';
+
 export type ApiFormat = 'openai' | 'ollama' | 'claude' | 'gemini';
 
 export type AiTier = 'lite' | 'pro' | 'max';
@@ -251,7 +261,6 @@ export type ArcRecord = {
     bornScene: string;      // sceneId at spawn
     lastTickScene: string;  // sceneId of the last rung change (recency signal)
 };
-
 
 export type DivergenceCategory =
     | 'locations'
@@ -549,165 +558,20 @@ export type EngineSeed = {
     characterIntros: CharacterIntroEntry[];
 };
 
-export type NPCDrives = {
-    coreWant: string;
-    sessionWant: string;
-    sceneWant: string;
-};
-
 // ---- NPC Agency (Phase 1: schema only — no dice/heat/karma/tick logic) ----
 // Numbers below are engine-internal and are NEVER sent raw to the LLM; they reach
 // the model only via word-bands (see src/services/npc/agencyBands.ts).
 
 // Personality hexagon: 6 spectrum axes, each stored -3..+3 (0 = neutral center).
-export type HexAxis = 'drive' | 'diligence' | 'boldness' | 'warmth' | 'empathy' | 'composure';
-export type PersonalityHex = Record<HexAxis, number>;
-
-// Tiered wants. Sits beside the legacy NPCDrives (seeded from it in Phase 2; not deleted).
-export type NPCWants = {
-    short: string[];   // needs/flavor pool draws; repeats allowed; no LLM
-    medium: string[];  // goal templates (pool); LLM-updated in Phase 2
-    long: string;      // single long goal; LLM-generated at creation (Phase 2)
-};
 
 // Scene danger gradient (Phase 3 §9.3#2). Gates which goal tiers may tick: `dangerous` blocks
 // long-goals + relaxing. Emitted by the GM call (with a cheap classifier fallback).
-export type SceneStakes = 'calm' | 'tense' | 'dangerous';
 
 // ---- NPC Agency Phase 3: Goal records (the §9.6 hidden columns) ----
 // Engine-internal. ONLY `text` ever reaches the LLM (+ derived word-bands). Everything else stays
-// in state. Seeded from NPCWants medium/long strings by the lazy migration (upgradeWantsToGoals).
-export type GoalHorizon = 'med' | 'long';
-export type GoalState = 'active' | 'achieved' | 'blocked' | 'retired';
-export type Goal = {
-    text: string;                 // reaches LLM (display); the only payload-visible field
-    horizon: GoalHorizon;
-    tier: 'default' | 'mature';   // content gate
-    base_heat: number;            // Piece A
-    lastAdvancedTick: number;     // Piece A: neglect = now − this
-    failStreak: number;           // Piece B (karma, NEVER in payload)
-    progress: number;             // Piece C
-    quota: number;                // Piece C (scales with magnitude)
-    state: GoalState;
-    justifiedEventFlag?: boolean; // set by Crit Success, consumed by tier-cross (Piece C)
-};
 
 // Sparse, directed NPC->NPC relation graph. Key = target NPC id; absent key = Neutral (0).
 // Only non-neutral edges are stored. Each value -3..+3.
-export type RelationGraph = Record<string, number>;
-
-export type NPCBehavioralTrigger = {
-    keyword: string;
-    shift: string;
-};
-
-export type NPCPressureHistory = {
-    turn: number;
-    type: 'ignored' | 'engaged';
-    delta: number;
-    reason: string;
-};
-
-export type NPCPressure = {
-    ignored: number;
-    engaged: number;
-    lastDecayTurn: number;
-    history: NPCPressureHistory[];
-};
-
-export type NPCEntry = {
-    id: string;
-    name: string;
-    aliases: string;
-    appearance: string;
-    appearanceTags?: string; // image-only stable "who" tags; does NOT replace `appearance` (which feeds embeddings + narrative payload)
-    faction: string;
-    storyRelevance: string;
-    disposition: string;
-    status: string;
-    goals: string;
-    voice: string;
-    personality: string;
-    exampleOutput: string;
-    affinity: number;
-    drives?: NPCDrives;
-    behavioralTriggers?: NPCBehavioralTrigger[];
-    hardBoundaries?: string[];
-    softBoundaries?: string[];
-    previousSnapshot?: { personality: string; voice: string; affinity: number; personalityHex?: PersonalityHex; pcRelation?: number; skillRung?: number };
-    shiftNote?: string;
-    shiftTurnCount?: number;
-    tier?: 'recurring' | 'oneshot' | 'walkon';
-    recalledByEmbedding?: boolean;
-    lastUpdateScene?: number;
-    isPC?: boolean;
-    combatTier?: 'minion' | 'grunt' | 'elite' | 'boss' | 'legendary';
-    archetype?: 'bulwark' | 'assassin' | 'caster' | 'skirmisher' | 'brute';
-    stats?: {
-        VIT: number;
-        PWR: number;
-        RES: number;
-        FOC: number;
-        SPD: number;
-        WIL: number;
-    };
-    inventory?: string[];
-    condition?: 'healthy' | 'wounded' | 'critical' | 'dead';
-    lastCondition?: 'healthy' | 'wounded' | 'critical' | 'dead';
-    lastSeenTimestamp?: number;
-    recoveryNote?: string;
-    portrait?: boolean;
-    portraitSeed?: number;
-    // ---- NPC Agency fields (Phase 1, all optional → lazy migration) ----
-    wants?: NPCWants;
-    personalityHex?: PersonalityHex;
-    traits?: string[];            // <=5, controlled vocab (see services/npc/agencyPools.ts)
-    region?: string;              // coarse location: 'academy' | 'Ryuten' | ...
-    haunt?: string;               // flavor only, for reports ('the garden')
-    relations?: RelationGraph;    // NPC->NPC sparse directed edges
-    pcRelation?: number;          // -3..+3 — dedicated NPC->PC slot (re-homed from affinity)
-    populated?: boolean;          // false/undefined = not yet generated (Phase-2 lazy fill)
-    agencyLocked?: boolean;       // true = player authors this NPC; skip agency updates
-    goalRecords?: Goal[];         // Phase-3 engine layer (hidden cols); seeded from wants.medium/long
-    // ---- NPC Agency Phase 4: power-rung ladder (Piece C) ----
-    skillRung?: number;           // 0..4 ladder position; undefined = not yet set (default Novice=0 on fill)
-    rungCeiling?: number;         // 0..4 talent cap; LLM-set once, default 3. skillRung may never exceed this.
-    // ---- NPC Agency Phase 4: promotion / audition (Piece D) ----
-    // Lazy-decay activity accumulator (Opus §2, WO-07). Default-absent = treated as { value: 0, tick: now }
-    // on read via currentActivity(). Never persisted as a separate deepTier — membership is derived.
-    agencyActivity?: { value: number; tick: number };
-    // ---- NPC Inner Repression (peaceful social masking) ----
-    // Count of times this NPC has swallowed a hostile/self-interested reaction instead of
-    // expressing it. Pure engine-managed gauge: raises the hide-DC (masking gets harder as it
-    // climbs) until a forced break discharges it back toward 0 (catharsis). Never sent to the
-    // LLM. Default-absent = 0. See services/npc/reactionRepression.ts.
-    repressionPressure?: number;
-    // ---- Relationship meter (engine-owned affinity accumulator) ----
-    // Hidden sub-band progress toward the next pcRelation change. The AI only classifies each
-    // scene's tone per NPC (friendly/tense/neutral/bonding/betrayal); the ENGINE rolls a signed
-    // step into this meter, and when it crosses a threshold the pcRelation band moves and the
-    // meter resets (carry preserved). Asymmetric: slow up (+100 to rise), fast down (−50 to fall);
-    // bonding leaps but caps at Friendly; betrayal drops uncapped. Never sent to the LLM.
-    // Default-absent = 0. See services/npc/relationMeter.ts.
-    relationMeter?: number;
-    // ---- NPC Generation Refit (Phase 1) — SOCIAL/disposition groups ----
-    // NOTE: these are SOCIAL/disposition archetype keys (e.g. 'scholar', 'brute', 'fool') from
-    // dispositionGroups.ts ENVELOPES. They are NOT the combat `archetype` field above
-    // (bulwark/assassin/caster/skirmisher/brute). Do not conflate the two.
-    // primaryGroup = what they are now (immutable after birth); secondaryGroup = trajectory
-    // (update()-able so player action can bend it). Optional → existing saves load unchanged.
-    primaryGroup?: string;
-    secondaryGroup?: string;
-    /**
-     * Scene-type tags per profile field, used for smart context injection.
-     * Key = field name (e.g. 'voice', 'combatTier'), value = SceneEventType[]
-     * indicating which scene types this field is relevant to. Fields not in
-     * the map (or NPCs without fieldTags) always inject — preserving today's
-     * behavior as the backward-compatible default.
-     */
-    fieldTags?: Record<string, SceneEventType[]>;
-};
-
 
 export type OpenAITool = {
     type: 'function';
@@ -867,16 +731,4 @@ export type PinnedExcerpt = {
 };
 
 // ── Combat & Character Stat Types ──────────────────────────────────────
-
-export type CombatTier = 'minion' | 'grunt' | 'elite' | 'boss' | 'legendary';
-export type Archetype = 'bulwark' | 'assassin' | 'caster' | 'skirmisher' | 'brute';
-
-export type StatBlock = {
-    VIT: number;
-    PWR: number;
-    RES: number;
-    FOC: number;
-    SPD: number;
-    WIL: number;
-};
 
