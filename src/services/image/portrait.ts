@@ -5,6 +5,7 @@ import { imageStorage } from '../storage/imageStorage';
 import { notify } from '../../ports/notification';
 import { settings } from '../../ports/settings';
 import { npc as npcPort } from '../../ports/npc';
+import { campaignContext } from '../../ports/campaignContext';
 
 export async function generateNPCPortrait(npcId: string): Promise<void> {
     const provider = settings.getActiveImageEndpoint();
@@ -13,8 +14,7 @@ export async function generateNPCPortrait(npcId: string): Promise<void> {
         return;
     }
 
-    const s = settings.getSettings();
-    const campaignId = (s as unknown as { activeCampaignId: string | null }).activeCampaignId;
+    const campaignId = campaignContext.getActiveCampaignId();
     if (!campaignId) {
         notify.warning('No active campaign');
         return;
@@ -32,6 +32,7 @@ export async function generateNPCPortrait(npcId: string): Promise<void> {
         return;
     }
 
+    const s = settings.getSettings();
     const composed = composeImagePrompt({
         portraitNpcId: npcId,
         npcLedger,

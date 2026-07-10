@@ -6,6 +6,7 @@ import { notify } from '../../ports/notification';
 import { settings } from '../../ports/settings';
 import { messaging } from '../../ports/messaging';
 import { npc } from '../../ports/npc';
+import { campaignContext } from '../../ports/campaignContext';
 
 export async function illustrateMessage(messageId: string, steer?: SceneSteer): Promise<void> {
     const preset = settings.getActivePreset();
@@ -20,8 +21,7 @@ export async function illustrateMessage(messageId: string, steer?: SceneSteer): 
         return;
     }
 
-    const s = settings.getSettings();
-    const campaignId = (s as unknown as { activeCampaignId: string | null }).activeCampaignId;
+    const campaignId = campaignContext.getActiveCampaignId();
     if (!campaignId) return;
 
     const message = messaging.getMessageById(messageId);
@@ -31,8 +31,10 @@ export async function illustrateMessage(messageId: string, steer?: SceneSteer): 
 
     const npcLedger = npc.getNPCLedger() as NPCEntry[];
     const onStageNpcIds = [...npc.getOnStageNPCIds()];
-    const pc = (s as unknown as { context?: { characterProfile?: CharacterProfileState } }).context?.characterProfile?.identity;
+    const ctx = campaignContext.getContext();
+    const pc = (ctx.characterProfile as CharacterProfileState | undefined)?.identity;
 
+    const s = settings.getSettings();
     const composed = composeImagePrompt({
         sceneText: message.displayContent || message.content,
         npcLedger,

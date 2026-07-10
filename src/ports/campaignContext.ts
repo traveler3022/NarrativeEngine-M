@@ -17,6 +17,7 @@ export interface CampaignContextPort {
     // Queries
     getContext(): GameContext;
     getAutoBookkeepingInterval(): number;
+    getActiveCampaignId(): string | null;
 }
 
 let _impl: CampaignContextPort | null = null;
@@ -34,4 +35,5 @@ export const campaignContext: CampaignContextPort = {
     resetBookkeepingCounter:    () => impl().resetBookkeepingCounter(),
     getContext:                 () => impl().getContext(),
     getAutoBookkeepingInterval: () => impl().getAutoBookkeepingInterval(),
+    getActiveCampaignId:        () => impl().getActiveCampaignId(),
 };

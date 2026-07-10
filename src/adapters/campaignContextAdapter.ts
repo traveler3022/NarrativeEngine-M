@@ -7,6 +7,7 @@ export const campaignContextAdapter: CampaignContextPort = {
     resetBookkeepingCounter:     () => useAppStore.getState().resetBookkeepingTurnCounter(),
     getContext:                  () => useAppStore.getState().context,
     getAutoBookkeepingInterval:  () => useAppStore.getState().autoBookkeepingInterval,
+    getActiveCampaignId:         () => useAppStore.getState().activeCampaignId,
 };
 
 export function wireCampaignContext(): void { registerCampaignContext(campaignContextAdapter); }
