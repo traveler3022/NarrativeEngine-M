@@ -12,6 +12,7 @@ export const messagingAdapter: MessagingPort = {
     deleteMessage:      (id) => useAppStore.getState().deleteMessage(id),
     deleteMessagesFrom: (id) => useAppStore.getState().deleteMessagesFrom(id),
     setStreaming:       (v) => useAppStore.getState().setStreaming(v),
+    replaceMessages:    (msgs) => useAppStore.setState({ messages: msgs }),
     getMessages:        () => useAppStore.getState().messages,
     getCondenserState:  () => useAppStore.getState().condenser,
     isStreaming:        () => useAppStore.getState().isStreaming,

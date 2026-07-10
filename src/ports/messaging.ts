@@ -20,6 +20,9 @@ export interface MessagingPort {
     deleteMessage(id: string): void;
     deleteMessagesFrom(id: string): void;
     setStreaming(v: boolean): void;
+    /** Replace the entire messages array. Used by pendingCommit for
+     *  swipe-variant commits where the last message is replaced in-place. */
+    replaceMessages(messages: ChatMessage[]): void;
 
     // Queries
     getMessages(): readonly ChatMessage[];
@@ -48,6 +51,7 @@ export const messaging: MessagingPort = {
     deleteMessage:      (id) => impl().deleteMessage(id),
     deleteMessagesFrom: (id) => impl().deleteMessagesFrom(id),
     setStreaming:       (v) => impl().setStreaming(v),
+    replaceMessages:    (msgs) => impl().replaceMessages(msgs),
     getMessages:        () => impl().getMessages(),
     getCondenserState:  () => impl().getCondenserState(),
     isStreaming:        () => impl().isStreaming(),
