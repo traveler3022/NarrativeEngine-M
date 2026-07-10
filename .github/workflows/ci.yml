@@ -1,0 +1,39 @@
+name: CI
+
+# Typecheck, layer-boundary gate, and test suite on every push/PR.
+# The gate step (scripts/gate.mjs) is what actually enforces the
+# services/store/components layering rules documented in
+# architecture/BOUNDARIES.md — without this workflow it was a
+# manual-only check.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  verify:
+    name: Typecheck, gate, test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc -b
+
+      - name: Layer boundary gate
+        run: npm run gate
+
+      - name: Test
+        run: npm test
