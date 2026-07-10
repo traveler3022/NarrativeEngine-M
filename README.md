@@ -6,7 +6,7 @@ Run extended, multi-session TTRPG campaigns with persistent memory, living NPCs,
 
 No cloud. No subscription. Your campaigns stay on your device.
 
-Join our community on [Discord](https://discord.gg/gf3Ntw6pUY)!
+Join our community on [Discord](https://discord.gg/Qp2y7s3X6T)!
 
 ---
 
