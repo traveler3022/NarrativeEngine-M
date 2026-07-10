@@ -16,6 +16,10 @@ export interface SettingsPort {
     getActivePreset(): AIPreset | null;
     getActiveImageEndpoint(): LLMProvider | null;
     getActiveTier(): AiTier;
+    getActiveStoryEndpoint(): LLMProvider | undefined;
+    getActiveSummarizerEndpoint(): LLMProvider | undefined;
+    getActiveUtilityEndpoint(): LLMProvider | undefined;
+    getActiveAuxiliaryEndpoint(): LLMProvider | undefined;
 }
 
 let _impl: SettingsPort | null = null;
@@ -39,4 +43,8 @@ export const settings: SettingsPort = {
     getActivePreset:      () => impl().getActivePreset(),
     getActiveImageEndpoint: () => impl().getActiveImageEndpoint(),
     getActiveTier:        () => impl().getActiveTier(),
+    getActiveStoryEndpoint:      () => impl().getActiveStoryEndpoint(),
+    getActiveSummarizerEndpoint: () => impl().getActiveSummarizerEndpoint(),
+    getActiveUtilityEndpoint:    () => impl().getActiveUtilityEndpoint(),
+    getActiveAuxiliaryEndpoint:  () => impl().getActiveAuxiliaryEndpoint(),
 };

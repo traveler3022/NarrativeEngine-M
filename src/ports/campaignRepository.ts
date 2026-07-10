@@ -6,11 +6,12 @@
  */
 
 import type { CampaignState } from '../types/store';
-import type { NPCEntry } from '../types';
+import type { NPCEntry, DivergenceRegister } from '../types';
 
 export interface CampaignRepositoryPort {
     saveCampaignState(campaignId: string, state: CampaignState): Promise<void>;
     saveNPCLedger(campaignId: string, npcs: NPCEntry[]): Promise<void>;
+    saveDivergenceRegister(campaignId: string, register: DivergenceRegister): Promise<void>;
 }
 
 let _impl: CampaignRepositoryPort | null = null;
@@ -25,4 +26,5 @@ function impl(): CampaignRepositoryPort {
 export const campaignRepository: CampaignRepositoryPort = {
     saveCampaignState: (id, state) => impl().saveCampaignState(id, state),
     saveNPCLedger:     (id, npcs) => impl().saveNPCLedger(id, npcs),
+    saveDivergenceRegister: (id, register) => impl().saveDivergenceRegister(id, register),
 };

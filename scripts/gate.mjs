@@ -155,9 +155,10 @@ for (const f of files) {
 }
 console.log(`Current services → store leak count: ${svcToStore.length}`);
 svcToStore.forEach(l => console.log(`  ${l}`));
-// Baseline is 7 (6 files, 7 import paths — pendingCommit has 2).
+// Baseline is 0 — pendingCommit.ts (the last leak) was migrated to
+// ArchivePort/DivergencePort/CampaignContextPort/MessagingPort/NPCCapability.
 // Gate 6 fails if the count INCREASES from this baseline.
-const BASELINE = 7;
+const BASELINE = 0;
 if (svcToStore.length > BASELINE) {
   console.log(`❌ FAIL: leak count grew from ${BASELINE} to ${svcToStore.length}`);
   process.exit(1);

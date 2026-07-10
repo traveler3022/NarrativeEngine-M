@@ -40,11 +40,18 @@ The arrow direction matters:
 | Messaging         | MessagingPort           | —                       | adapters/messagingAdapter.ts           |
 | NPC               | NPCCapability           | —                       | adapters/npcAdapter.ts                 |
 | Archive           | ArchivePort             | —                       | adapters/archiveAdapter.ts             |
+| Divergence        | DivergencePort          | —                       | adapters/divergenceAdapter.ts          |
 | Campaign Context  | CampaignContextPort     | —                       | adapters/campaignContextAdapter.ts     |
 | Lore State        | LoreState               | —                       | adapters/loreStateAdapter.ts           |
 | Lore Persistence  | —                       | LoreRepository          | adapters/loreRepositoryAdapter.ts      |
 | Settings          | SettingsPort            | —                       | adapters/settingsAdapter.ts            |
 | Campaigns CRUD    | —                       | CampaignRepository      | adapters/campaignRepositoryAdapter.ts  |
+
+Lore State (a separate in-memory-only port distinct from LoreRepository's
+persistence) is not yet implemented — `loreChunks` currently reads through
+`ArchivePort.getLoreChunks()` for the one caller that needs it
+(`pendingCommit.ts`'s crash-recovery rebuild). Split it out if a second
+caller needs lore state independent of archive.
 
 ## What each column means
 
@@ -60,8 +67,18 @@ The arrow direction matters:
 ## Stability flags
 
 - ArchivePort currently has 11 commands — watch it in Phase 4. If
-  split becomes necessary, split along the chapter / divergence /
-  timeline / entity axes, not by accident.
+  split becomes necessary, split along the chapter / timeline / entity
+  axes, not by accident. (Divergence was already split out as its own
+  port — see the table above.)
+
+## Status
+
+- `services → store` leak count: **0** (was 9 at the start of Phase 2,
+  7 after Waves 2.1–2.4, 0 after `pendingCommit.ts` — the last "God
+  Orchestrator" leak — was migrated onto ArchivePort, DivergencePort,
+  CampaignContextPort, MessagingPort, NPCCapability, and
+  CampaignRepositoryPort in Phase 3). Enforced by `npm run gate` /
+  `scripts/gate.mjs`, wired into CI.
 
 ## Non-goals (explicitly out of scope)
 

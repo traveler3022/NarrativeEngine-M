@@ -12,6 +12,8 @@ export interface MessagingPort {
     // Commands
     appendUserMessage(msg: ChatMessage): void;
     recordAssistantReply(final: ChatMessage): void;
+    /** Generic append for messages that are neither a user turn nor the story reply (system/scene markers, archive notes). */
+    appendMessage(msg: ChatMessage): void;
     attachImage(messageId: string, image: ChatMessage['image']): void;
     condenseHistory(upToIndex: number): void;
     flagDivergence(messageId: string, divergenceIds: string[]): void;
@@ -40,6 +42,7 @@ function impl(): MessagingPort {
 export const messaging: MessagingPort = {
     appendUserMessage:  (msg) => impl().appendUserMessage(msg),
     recordAssistantReply: (final) => impl().recordAssistantReply(final),
+    appendMessage:      (msg) => impl().appendMessage(msg),
     attachImage:        (id, img) => impl().attachImage(id, img),
     condenseHistory:    (idx) => impl().condenseHistory(idx),
     flagDivergence:     (id, divs) => impl().flagDivergence(id, divs),

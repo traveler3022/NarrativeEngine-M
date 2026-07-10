@@ -4,6 +4,7 @@ import { registerMessaging, type MessagingPort } from '../ports/messaging';
 export const messagingAdapter: MessagingPort = {
     appendUserMessage:  (msg) => useAppStore.getState().addMessage(msg),
     recordAssistantReply: (final) => useAppStore.getState().addMessage(final),
+    appendMessage:      (msg) => useAppStore.getState().addMessage(msg),
     attachImage:        (id, img) => useAppStore.getState().setMessageImage(id, img),
     condenseHistory:    (idx) => useAppStore.getState().setCondensed(idx),
     flagDivergence:     (id, divs) => useAppStore.getState().updateMessageDivergence(id, divs),

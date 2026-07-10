@@ -13,6 +13,10 @@ export const settingsAdapter: SettingsPort = {
     },
     getActiveImageEndpoint: () => useAppStore.getState().getActiveImageEndpoint() ?? null,
     getActiveTier: () => useAppStore.getState().settings.aiTier ?? 'pro',
+    getActiveStoryEndpoint: () => useAppStore.getState().getActiveStoryEndpoint(),
+    getActiveSummarizerEndpoint: () => useAppStore.getState().getActiveSummarizerEndpoint(),
+    getActiveUtilityEndpoint: () => useAppStore.getState().getActiveUtilityEndpoint(),
+    getActiveAuxiliaryEndpoint: () => useAppStore.getState().getActiveAuxiliaryEndpoint(),
 };
 
 export function wireSettings(): void {
