@@ -74,11 +74,16 @@ export const sanitizePayloadForApi = (rawPayload: LLMChatMessage[], allowTools: 
             continue;
         }
 
-        if (msg.role === 'user' && (msg as unknown as Record<string, unknown>).reasoning_content !== undefined) {
-            const userMsg = Object.assign({}, msg) as unknown as Record<string, unknown>;
-            delete userMsg.reasoning_content;
-            cleaned.push(userMsg as unknown as LLMChatMessage);
-            continue;
+        if (msg.role === 'user') {
+            // Some providers attach reasoning_content to user messages.
+            // Strip it before sending to the API.
+            const extras = msg as unknown as Record<string, unknown>;
+            if (extras.reasoning_content !== undefined) {
+                const stripped = { ...msg } as unknown as Record<string, unknown>;
+                delete stripped.reasoning_content;
+                cleaned.push(stripped as unknown as typeof msg);
+                continue;
+            }
         }
 
         cleaned.push(msg);
