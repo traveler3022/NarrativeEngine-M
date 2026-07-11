@@ -2,9 +2,10 @@ import { useState, useRef } from 'react';
 import { Edit2, Check, Pin, PinOff, ChevronDown, ChevronUp, AlertTriangle, Trash2, Sparkles, Users, X, Link2 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import type { DivergenceCategory, DivergenceEntry, NPCEntry } from '../../types';
-import { countRegisterTokens, EMPTY_REGISTER, CATEGORY_LABELS, DIVERGENCE_CATEGORIES, runFactDedup, assignSubjectTokens, type DedupResult, type DedupCancelled, type ClusteringCancelled, normalizeFaction, parseKnownByToken, groupDivergencesBySubject } from '../../services/campaign-state';
+import { countRegisterTokens, EMPTY_REGISTER, CATEGORY_LABELS, DIVERGENCE_CATEGORIES, runFactDedup, assignSubjectTokens, type DedupResult, type DedupCancelled, type ClusteringCancelled, normalizeFaction, groupDivergencesBySubject } from '../../services/campaign-state';
 import { DedupReviewModal } from '../DedupReviewModal';
 import { appConfirm } from '../ConfirmSheet';
+import { knownByTokenLabel, knownBySummary, knownByChipClass, subjectLabel } from './memoryTabHelpers';
 
 const CATEGORY_COLORS: Record<DivergenceCategory, string> = {
     locations: 'text-blue-400',
@@ -28,53 +29,6 @@ const CATEGORY_DOTS: Record<DivergenceCategory, string> = {
 
 type Tab = 'facts' | 'review';
 type FactsView = 'chapter' | 'topic' | 'subject';
-
-/** Human-readable label for a single knownBy token. */
-function knownByTokenLabel(tok: string, npcLedger: NPCEntry[]): string {
-    const parsed = parseKnownByToken(tok);
-    // Bare token (no "npc:"/"faction:"/"player" prefix) — try it as a raw NPC id,
-    // then fall back to a readable word rather than printing the raw uid.
-    if (!parsed) {
-        const npc = npcLedger.find(n => n.id === tok.trim());
-        return npc ? npc.name : 'unknown';
-    }
-    if (parsed.kind === 'player') return 'the player';
-    if (parsed.kind === 'faction') return `${parsed.name} members`;
-    // npc:<id> — resolve to the ledger name; if the NPC has left the ledger
-    // (auto-archived, cleared, or deleted) we no longer have a name to show.
-    const npc = npcLedger.find(n => n.id === parsed.id);
-    return npc ? npc.name : 'someone (removed)';
-}
-
-/** Render the knownBy list as a short "known to: ..." suffix string. */
-function knownBySummary(knownBy: string[] | undefined, npcLedger: NPCEntry[]): string {
-    if (knownBy === undefined) return 'public';
-    if (knownBy.length === 0) return 'secret (player only)';
-    return knownBy.map(t => knownByTokenLabel(t, npcLedger)).join(', ');
-}
-
-/** Tri-state chip color for the knownBy summary in a row. */
-function knownByChipClass(knownBy: string[] | undefined): string {
-    if (knownBy === undefined) return 'text-emerald-400';
-    if (knownBy.length === 0) return 'text-red-400';
-    return 'text-amber-400';
-}
-
-/** Derive a readable group label from a subjectToken slug. e.g. "alex_chen.identity" -> "Alex Chen · identity". */
-function subjectLabel(token: string): string {
-    const parts = token.split(/[._]/).filter(Boolean);
-    if (parts.length === 0) return token;
-    const pretty = parts.map(p =>
-        p.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-    );
-    if (pretty.length >= 2) {
-        const attr = pretty.pop();
-        return `${pretty.join(' ')} · ${attr}`;
-    }
-    return pretty.join(' ');
-}
-
-
 
 /** KnownBy editor popover — inline, matches existing inline-edit pattern. */
 function KnownByEditor({ entry, npcLedger, onApply, onClose }: {
