@@ -1,0 +1,642 @@
+[
+  {
+    "file": "store/useAppStore.ts",
+    "package": "zustand"
+  },
+  {
+    "file": "store/campaignStore.ts",
+    "package": "idb-keyval"
+  },
+  {
+    "file": "utils/haptics.ts",
+    "package": "@capacitor/core"
+  },
+  {
+    "file": "utils/haptics.ts",
+    "package": "@capacitor/haptics"
+  },
+  {
+    "file": "utils/llmCall.ts",
+    "package": "@capacitor/core"
+  },
+  {
+    "file": "services/campaignBundle.ts",
+    "package": "idb-keyval"
+  },
+  {
+    "file": "services/campaignBundle.ts",
+    "package": "@capacitor/core"
+  },
+  {
+    "file": "services/campaignBundle.ts",
+    "package": "@capacitor/filesystem"
+  },
+  {
+    "file": "services/apiClient.ts",
+    "package": "idb-keyval"
+  },
+  {
+    "file": "hooks/useBackHandler.ts",
+    "package": "react"
+  },
+  {
+    "file": "hooks/useLoreIndexer.ts",
+    "package": "react"
+  },
+  {
+    "file": "hooks/useRulesIndexer.ts",
+    "package": "react"
+  },
+  {
+    "file": "components/hooks/useSwipeVariants.ts",
+    "package": "react"
+  },
+  {
+    "file": "components/hooks/useMessageEditor.ts",
+    "package": "react"
+  },
+  {
+    "file": "components/hooks/useCondenser.ts",
+    "package": "react"
+  },
+  {
+    "file": "components/hooks/useRetryStoryAI.ts",
+    "package": "react"
+  },
+  {
+    "file": "store/slices/settingsSlice.ts",
+    "package": "zustand"
+  },
+  {
+    "file": "store/slices/settingsSlice.ts",
+    "package": "idb-keyval"
+  },
+  {
+    "file": "store/slices/npcSlice.ts",
+    "package": "zustand"
+  },
+  {
+    "file": "store/slices/uiSlice.ts",
+    "package": "zustand"
+  },
+  {
+    "file": "store/slices/archiveSlice.ts",
+    "package": "zustand"
+  },
+  {
+    "file": "store/slices/pressureSlice.ts",
+    "package": "zustand"
+  },
+  {
+    "file": "store/slices/chatSlice.ts",
+    "package": "zustand"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "package": "zustand"
+  },
+  {
+    "file": "store/slices/loreSlice.ts",
+    "package": "zustand"
+  },
+  {
+    "file": "services/llm/utilityCallTracker.ts",
+    "package": "react"
+  },
+  {
+    "file": "services/llm/sceneStakesTelemetry.ts",
+    "package": "react"
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "package": "@capacitor/core"
+  },
+  {
+    "file": "services/llm/cacheTelemetry.ts",
+    "package": "react"
+  },
+  {
+    "file": "services/engine/lootDropTelemetry.ts",
+    "package": "react"
+  },
+  {
+    "file": "services/storage/imageStorage.ts",
+    "package": "idb-keyval"
+  },
+  {
+    "file": "services/storage/backupStorage.ts",
+    "package": "idb-keyval"
+  },
+  {
+    "file": "services/storage/embeddingStorage.ts",
+    "package": "idb-keyval"
+  },
+  {
+    "file": "services/storage/_helpers.ts",
+    "package": "idb-keyval"
+  },
+  {
+    "file": "services/storage/archiveStorage.ts",
+    "package": "idb-keyval"
+  },
+  {
+    "file": "services/embedding/backfillRunner.ts",
+    "package": "idb-keyval"
+  },
+  {
+    "file": "services/embedding/embedder.worker.ts",
+    "package": "@huggingface/transformers"
+  },
+  {
+    "file": "services/tts/speech.ts",
+    "package": "@capacitor/core"
+  },
+  {
+    "file": "services/tts/speech.ts",
+    "package": "@capacitor-community/text-to-speech"
+  },
+  {
+    "file": "services/image/imageClient.ts",
+    "package": "@capacitor/core"
+  },
+  {
+    "file": "services/infrastructure/saveFilePicker.ts",
+    "package": "@capacitor/core"
+  },
+  {
+    "file": "services/infrastructure/settingsCrypto.ts",
+    "package": "idb-keyval"
+  },
+  {
+    "file": "main.tsx",
+    "package": "react"
+  },
+  {
+    "file": "main.tsx",
+    "package": "react-dom/client"
+  },
+  {
+    "file": "App.tsx",
+    "package": "react"
+  },
+  {
+    "file": "App.tsx",
+    "package": "@capacitor/core"
+  },
+  {
+    "file": "App.tsx",
+    "package": "@capacitor/app"
+  },
+  {
+    "file": "App.tsx",
+    "package": "@capacitor/keyboard"
+  },
+  {
+    "file": "components/DedupReviewModal.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/DedupReviewModal.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/LootDropTraceView.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/LootDropTraceView.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/ErrorBoundary.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/ContextDrawer.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/ContextDrawer.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/SamplingPanel.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/SamplingPanel.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/UtilityCallStrip.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/SettingsModal.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/SettingsModal.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/SceneNoteEditor.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/SceneNoteEditor.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/TokenGauge.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/TokenGauge.tsx",
+    "package": "zustand/react/shallow"
+  },
+  {
+    "file": "components/NPCReviewModal.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/NPCReviewModal.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/Toast.tsx",
+    "package": "zustand"
+  },
+  {
+    "file": "components/Toast.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/Toast.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/CampaignHub.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/CampaignHub.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "package": "zustand/react/shallow"
+  },
+  {
+    "file": "components/ConfirmSheet.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/BackupModal.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/BackupModal.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/NPCLedgerModal.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/NPCLedgerModal.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/PayloadTraceView.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/PayloadTraceView.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/Header.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/Header.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/Header.tsx",
+    "package": "zustand/react/shallow"
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/settings/DebugPanel.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/settings/DebugPanel.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/settings/ProvidersPanel.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/settings/ProvidersPanel.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/settings/PresetsPanel.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/settings/PresetsPanel.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/context-drawer/CharacterProfileEditor.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/context-drawer/CharacterProfileEditor.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/context-drawer/GalleryTab.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/context-drawer/GalleryTab.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/context-drawer/TemplateField.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/context-drawer/ChapterCard.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/context-drawer/ChapterCard.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/context-drawer/BookkeepingTab.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/context-drawer/BookkeepingTab.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/context-drawer/TimelineDotRow.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/context-drawer/TimelineDotRow.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/context-drawer/ResolvedStatePanel.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/context-drawer/ResolvedStatePanel.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/context-drawer/LoreTab.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/context-drawer/LoreTab.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/context-drawer/RulesManagerTab.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/context-drawer/RulesManagerTab.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/context-drawer/ChapterTab.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/context-drawer/ChapterTab.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/context-drawer/ChapterTab.tsx",
+    "package": "zustand/react/shallow"
+  },
+  {
+    "file": "components/context-drawer/RulesTab.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/chat/DiceRollModal.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/chat/DiceRollModal.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/chat/DivergenceEntryModal.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/chat/DivergenceEntryModal.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/chat/LoreCheckModal.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/chat/LoreCheckModal.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/chat/ArcInjectorButton.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/chat/ArcInjectorButton.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/chat/ContentWithChips.tsx",
+    "package": "react-markdown"
+  },
+  {
+    "file": "components/chat/ContentWithChips.tsx",
+    "package": "remark-gfm"
+  },
+  {
+    "file": "components/chat/ContentWithChips.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/chat/ChatInput.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/chat/RenameNpcModal.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/chat/RenameNpcModal.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/chat/PinnedMemoriesPanel.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/chat/PinnedMemoriesPanel.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/chat/ToolCallChips.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/chat/LootRollModal.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/chat/LootRollModal.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/chat/RegenerateSheet.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/chat/RegenerateSheet.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/chat/PrecontextBox.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/chat/PrecontextBox.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/chat/MessageBubble.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/chat/MessageBubble.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/chat/MessageBubble.tsx",
+    "package": "zustand/react/shallow"
+  },
+  {
+    "file": "components/chat/ActionSpeedDial.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/chat/ActionSpeedDial.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/npc-ledger/NPCListView.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/npc-ledger/NPCGalleryView.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/npc-ledger/NPCGalleryView.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/npc-ledger/NPCEditForm.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/npc-ledger/NPCEditForm.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/npc-ledger/NPCSuggestionsPanel.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/npc-ledger/NPCSuggestionsPanel.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/npc-ledger/NPCPortraitSection.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/npc-ledger/NPCPortraitSection.tsx",
+    "package": "lucide-react"
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "package": "zustand/react/shallow"
+  },
+  {
+    "file": "components/pc/WorldPrimerPanel.tsx",
+    "package": "zustand/react/shallow"
+  },
+  {
+    "file": "components/pc/WorldPrimerPanel.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/engine-trace/EngineTraceView.tsx",
+    "package": "react"
+  },
+  {
+    "file": "components/engine-trace/EngineTraceView.tsx",
+    "package": "lucide-react"
+  }
+]

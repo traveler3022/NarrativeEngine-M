@@ -1,0 +1,12 @@
+{
+  "op_type_counts": {
+    "persist": 18,
+    "utility": 542,
+    "read": 136,
+    "delete": 25,
+    "create": 54,
+    "orchestrate": 38,
+    "search": 29,
+    "update": 34
+  }
+}

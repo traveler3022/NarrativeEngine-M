@@ -1,0 +1,67 @@
+[
+  {
+    "file": "types/index.ts",
+    "lines": 1138,
+    "exports": 106
+  },
+  {
+    "file": "store/slices/chatSlice.ts",
+    "lines": 614,
+    "exports": 4
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "lines": 1238,
+    "exports": 6
+  },
+  {
+    "file": "services/archive/divergenceExtractor.ts",
+    "lines": 579,
+    "exports": 3
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "lines": 1307,
+    "exports": 14
+  },
+  {
+    "file": "services/payload/payloadWorldContext.ts",
+    "lines": 734,
+    "exports": 6
+  },
+  {
+    "file": "components/CampaignHub.tsx",
+    "lines": 517,
+    "exports": 1
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "lines": 565,
+    "exports": 1
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "lines": 766,
+    "exports": 1
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "lines": 916,
+    "exports": 1
+  },
+  {
+    "file": "components/chat/MessageBubble.tsx",
+    "lines": 781,
+    "exports": 1
+  },
+  {
+    "file": "components/npc-ledger/NPCEditForm.tsx",
+    "lines": 827,
+    "exports": 1
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "lines": 542,
+    "exports": 2
+  }
+]

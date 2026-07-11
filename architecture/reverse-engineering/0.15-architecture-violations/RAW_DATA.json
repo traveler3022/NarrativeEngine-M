@@ -1,0 +1,320 @@
+[
+  {
+    "file": "store/useAppStore.ts",
+    "target": "../services/embedding/embeddingScheduler",
+    "type": "static",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/campaignStore.ts",
+    "target": "../services/storage/imageStorage",
+    "type": "static",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/campaignStore.ts",
+    "target": "../services/lore/loreIndexer",
+    "type": "static",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/campaignStore.ts",
+    "target": "../services/npc/agencyBands",
+    "type": "static",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/campaignStore.ts",
+    "target": "../services/apiClient",
+    "type": "dynamic",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/campaignStore.ts",
+    "target": "../services/apiClient",
+    "type": "dynamic",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/campaignStore.ts",
+    "target": "../services/apiClient",
+    "type": "dynamic",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/campaignStore.ts",
+    "target": "../services/apiClient",
+    "type": "dynamic",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/campaignStore.ts",
+    "target": "../services/campaign-state",
+    "type": "dynamic",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/slices/settingsSlice.ts",
+    "target": "../../services/infrastructure",
+    "type": "static",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/slices/settingsSlice.ts",
+    "target": "../../services/infrastructure/themeService",
+    "type": "static",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/slices/settingsSlice.ts",
+    "target": "../../services/infrastructure/themeService",
+    "type": "static",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/slices/npcSlice.ts",
+    "target": "../../services/embedding",
+    "type": "static",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/slices/npcSlice.ts",
+    "target": "../../services/storage/embeddingStorage",
+    "type": "static",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/slices/npcSlice.ts",
+    "target": "../../services/storage/imageStorage",
+    "type": "static",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/slices/npcSlice.ts",
+    "target": "../../services/npc",
+    "type": "static",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/slices/chatSlice.ts",
+    "target": "../../services/campaign-state",
+    "type": "static",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/slices/chatSlice.ts",
+    "target": "../../services/infrastructure",
+    "type": "static",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/slices/chatSlice.ts",
+    "target": "../../services/storage/imageStorage",
+    "type": "static",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../services/embedding",
+    "type": "static",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../services/storage/embeddingStorage",
+    "type": "static",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../services/campaign-state",
+    "type": "static",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../services/turn",
+    "type": "dynamic",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../services/storage",
+    "type": "dynamic",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../services/infrastructure",
+    "type": "dynamic",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../services/embedding",
+    "type": "dynamic",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../services/storage",
+    "type": "dynamic",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../services/apiClient",
+    "type": "dynamic",
+    "violation": "state\u2192domain"
+  },
+  {
+    "file": "services/campaignBundle.ts",
+    "target": "../store/campaignStore",
+    "type": "static",
+    "violation": "domain\u2192state"
+  },
+  {
+    "file": "services/apiClient.ts",
+    "target": "../store/campaignStore",
+    "type": "dynamic",
+    "violation": "domain\u2192state"
+  },
+  {
+    "file": "services/apiClient.ts",
+    "target": "../store/campaignStore",
+    "type": "dynamic",
+    "violation": "domain\u2192state"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "target": "../../store/useAppStore",
+    "type": "static",
+    "violation": "domain\u2192state"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "target": "../../store/campaignStore",
+    "type": "dynamic",
+    "violation": "domain\u2192state"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "target": "../../store/campaignStore",
+    "type": "dynamic",
+    "violation": "domain\u2192state"
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "target": "../../store/campaignStore",
+    "type": "static",
+    "violation": "domain\u2192state"
+  },
+  {
+    "file": "services/turn/turnTypes.ts",
+    "target": "../../store/slices/uiSlice",
+    "type": "static",
+    "violation": "domain\u2192state"
+  },
+  {
+    "file": "services/engine/engineRolls.ts",
+    "target": "../../store/slices/settingsSlice",
+    "type": "static",
+    "violation": "domain\u2192state"
+  },
+  {
+    "file": "services/embedding/backfillRunner.ts",
+    "target": "../../store/useAppStore",
+    "type": "dynamic",
+    "violation": "domain\u2192state"
+  },
+  {
+    "file": "services/embedding/backfillRunner.ts",
+    "target": "../../store/useAppStore",
+    "type": "dynamic",
+    "violation": "domain\u2192state"
+  },
+  {
+    "file": "services/embedding/embeddingScheduler.ts",
+    "target": "../../store/slices/uiSlice",
+    "type": "static",
+    "violation": "domain\u2192state"
+  },
+  {
+    "file": "services/embedding/embedder.ts",
+    "target": "../../store/useAppStore",
+    "type": "dynamic",
+    "violation": "domain\u2192state"
+  },
+  {
+    "file": "services/image/index.ts",
+    "target": "../../store/useAppStore",
+    "type": "static",
+    "violation": "domain\u2192state"
+  },
+  {
+    "file": "services/image/portrait.ts",
+    "target": "../../store/useAppStore",
+    "type": "static",
+    "violation": "domain\u2192state"
+  },
+  {
+    "file": "services/lore/loreKeywordEnricher.ts",
+    "target": "../../store/campaignStore",
+    "type": "static",
+    "violation": "domain\u2192state"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "target": "../../components/Toast",
+    "type": "static",
+    "violation": "domain\u2192ui"
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "target": "../../components/Toast",
+    "type": "static",
+    "violation": "domain\u2192ui"
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "target": "../../components/Toast",
+    "type": "static",
+    "violation": "domain\u2192ui"
+  },
+  {
+    "file": "services/campaign-state/divergenceRegister.ts",
+    "target": "../../components/Toast",
+    "type": "static",
+    "violation": "domain\u2192ui"
+  },
+  {
+    "file": "services/image/index.ts",
+    "target": "../../components/Toast",
+    "type": "static",
+    "violation": "domain\u2192ui"
+  },
+  {
+    "file": "services/image/portrait.ts",
+    "target": "../../components/Toast",
+    "type": "static",
+    "violation": "domain\u2192ui"
+  },
+  {
+    "file": "store/slices/settingsSlice.ts",
+    "target": "../../components/Toast",
+    "type": "static",
+    "violation": "state\u2192ui"
+  },
+  {
+    "file": "store/slices/npcSlice.ts",
+    "target": "../../components/Toast",
+    "type": "static",
+    "violation": "state\u2192ui"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../components/Toast",
+    "type": "static",
+    "violation": "state\u2192ui"
+  }
+]

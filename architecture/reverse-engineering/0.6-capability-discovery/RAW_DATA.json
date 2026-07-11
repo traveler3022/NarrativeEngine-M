@@ -1,0 +1,3614 @@
+{
+  "store/useAppStore.ts": [
+    {
+      "name": "useAppStore",
+      "file": "store/useAppStore.ts"
+    }
+  ],
+  "store/campaignStore.ts": [
+    {
+      "name": "CampaignState",
+      "file": "store/campaignStore.ts"
+    },
+    {
+      "name": "listCampaigns",
+      "file": "store/campaignStore.ts"
+    },
+    {
+      "name": "getCampaign",
+      "file": "store/campaignStore.ts"
+    },
+    {
+      "name": "saveCampaign",
+      "file": "store/campaignStore.ts"
+    },
+    {
+      "name": "deleteCampaign",
+      "file": "store/campaignStore.ts"
+    },
+    {
+      "name": "saveCampaignState",
+      "file": "store/campaignStore.ts"
+    },
+    {
+      "name": "loadCampaignState",
+      "file": "store/campaignStore.ts"
+    },
+    {
+      "name": "saveLoreChunks",
+      "file": "store/campaignStore.ts"
+    },
+    {
+      "name": "getLoreChunks",
+      "file": "store/campaignStore.ts"
+    },
+    {
+      "name": "saveNPCLedger",
+      "file": "store/campaignStore.ts"
+    },
+    {
+      "name": "getNPCLedger",
+      "file": "store/campaignStore.ts"
+    },
+    {
+      "name": "savePressure",
+      "file": "store/campaignStore.ts"
+    },
+    {
+      "name": "getPressure",
+      "file": "store/campaignStore.ts"
+    },
+    {
+      "name": "loadArchiveIndex",
+      "file": "store/campaignStore.ts"
+    },
+    {
+      "name": "loadSemanticFacts",
+      "file": "store/campaignStore.ts"
+    },
+    {
+      "name": "loadChapters",
+      "file": "store/campaignStore.ts"
+    },
+    {
+      "name": "loadTimeline",
+      "file": "store/campaignStore.ts"
+    },
+    {
+      "name": "loadEntities",
+      "file": "store/campaignStore.ts"
+    },
+    {
+      "name": "saveDivergenceRegister",
+      "file": "store/campaignStore.ts"
+    },
+    {
+      "name": "loadDivergenceRegister",
+      "file": "store/campaignStore.ts"
+    }
+  ],
+  "store/settingsMigration.ts": [
+    {
+      "name": "defaultProvider",
+      "file": "store/settingsMigration.ts"
+    },
+    {
+      "name": "defaultPreset",
+      "file": "store/settingsMigration.ts"
+    },
+    {
+      "name": "defaultSettings",
+      "file": "store/settingsMigration.ts"
+    },
+    {
+      "name": "migrateSettings",
+      "file": "store/settingsMigration.ts"
+    }
+  ],
+  "utils": [
+    {
+      "name": "hapticLight",
+      "file": "utils/haptics.ts"
+    },
+    {
+      "name": "hapticMedium",
+      "file": "utils/haptics.ts"
+    },
+    {
+      "name": "hapticSuccess",
+      "file": "utils/haptics.ts"
+    },
+    {
+      "name": "hapticWarning",
+      "file": "utils/haptics.ts"
+    },
+    {
+      "name": "uid",
+      "file": "utils/uid.ts"
+    },
+    {
+      "name": "UtilityTimeoutError",
+      "file": "utils/llmCall.ts"
+    },
+    {
+      "name": "llmCall",
+      "file": "utils/llmCall.ts"
+    },
+    {
+      "name": "CLAUDE_BUDGET_MAP",
+      "file": "utils/llmApiHelper.ts"
+    },
+    {
+      "name": "getApiFormat",
+      "file": "utils/llmApiHelper.ts"
+    },
+    {
+      "name": "detectFormatFromEndpoint",
+      "file": "utils/llmApiHelper.ts"
+    },
+    {
+      "name": "getBaseUrl",
+      "file": "utils/llmApiHelper.ts"
+    },
+    {
+      "name": "getChatUrl",
+      "file": "utils/llmApiHelper.ts"
+    },
+    {
+      "name": "getModelsUrl",
+      "file": "utils/llmApiHelper.ts"
+    },
+    {
+      "name": "buildChatHeaders",
+      "file": "utils/llmApiHelper.ts"
+    },
+    {
+      "name": "buildChatBody",
+      "file": "utils/llmApiHelper.ts"
+    },
+    {
+      "name": "extractContent",
+      "file": "utils/llmApiHelper.ts"
+    },
+    {
+      "name": "extractStreamDelta",
+      "file": "utils/llmApiHelper.ts"
+    },
+    {
+      "name": "extractStreamToolCall",
+      "file": "utils/llmApiHelper.ts"
+    },
+    {
+      "name": "PROPER_NOUN_STOP_WORDS",
+      "file": "utils/stopWords.ts"
+    },
+    {
+      "name": "levenshtein",
+      "file": "utils/entityResolution.ts"
+    },
+    {
+      "name": "normalizeEntityName",
+      "file": "utils/entityResolution.ts"
+    },
+    {
+      "name": "stripThink",
+      "file": "utils/stripThink.ts"
+    },
+    {
+      "name": "SamplingProfile",
+      "file": "utils/samplingProfiles.ts"
+    },
+    {
+      "name": "SAMPLING_PROFILES",
+      "file": "utils/samplingProfiles.ts"
+    },
+    {
+      "name": "SAMPLING_FIELDS",
+      "file": "utils/samplingProfiles.ts"
+    }
+  ],
+  "services/campaignBundle.ts": [
+    {
+      "name": "CampaignBundle",
+      "file": "services/campaignBundle.ts"
+    },
+    {
+      "name": "readFileChunked",
+      "file": "services/campaignBundle.ts"
+    },
+    {
+      "name": "exportBundle",
+      "file": "services/campaignBundle.ts"
+    },
+    {
+      "name": "downloadBundle",
+      "file": "services/campaignBundle.ts"
+    },
+    {
+      "name": "importBundle",
+      "file": "services/campaignBundle.ts"
+    }
+  ],
+  "services/backHandler.ts": [
+    {
+      "name": "registerBackHandler",
+      "file": "services/backHandler.ts"
+    },
+    {
+      "name": "popBackHandler",
+      "file": "services/backHandler.ts"
+    },
+    {
+      "name": "_resetBackHandlers",
+      "file": "services/backHandler.ts"
+    }
+  ],
+  "services/apiClient.ts": [
+    {
+      "name": "api",
+      "file": "services/apiClient.ts"
+    }
+  ],
+  "hooks": [
+    {
+      "name": "useBackHandler",
+      "file": "hooks/useBackHandler.ts"
+    },
+    {
+      "name": "useLoreIndexer",
+      "file": "hooks/useLoreIndexer.ts"
+    },
+    {
+      "name": "useRulesIndexer",
+      "file": "hooks/useRulesIndexer.ts"
+    }
+  ],
+  "types": [
+    {
+      "name": "Role",
+      "file": "types/llmMessages.ts"
+    },
+    {
+      "name": "ToolCall",
+      "file": "types/llmMessages.ts"
+    },
+    {
+      "name": "ToolResultMessage",
+      "file": "types/llmMessages.ts"
+    },
+    {
+      "name": "AssistantMessage",
+      "file": "types/llmMessages.ts"
+    },
+    {
+      "name": "UserMessage",
+      "file": "types/llmMessages.ts"
+    },
+    {
+      "name": "SystemMessage",
+      "file": "types/llmMessages.ts"
+    },
+    {
+      "name": "LLMChatMessage",
+      "file": "types/llmMessages.ts"
+    },
+    {
+      "name": "LLMUsage",
+      "file": "types/llmMessages.ts"
+    },
+    {
+      "name": "OpenAICompletionResponse",
+      "file": "types/llmMessages.ts"
+    },
+    {
+      "name": "isAssistantMessage",
+      "file": "types/llmMessages.ts"
+    },
+    {
+      "name": "hasToolCalls",
+      "file": "types/llmMessages.ts"
+    },
+    {
+      "name": "isToolResultMessage",
+      "file": "types/llmMessages.ts"
+    },
+    {
+      "name": "isAbortError",
+      "file": "types/llmMessages.ts"
+    },
+    {
+      "name": "buildAssistantToolCallMessage",
+      "file": "types/llmMessages.ts"
+    },
+    {
+      "name": "buildToolResultMessage",
+      "file": "types/llmMessages.ts"
+    },
+    {
+      "name": "ApiFormat",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "AiTier",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "ThinkingEffort",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LLMProvider",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "SamplingConfig",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "PipelinePhase",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "StreamingStats",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "AIPreset",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "CondenseAggressiveness",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "AppSettings",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "CondenserState",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "DiceConfig",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "OutcomeBand",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "DieType",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "RollAggregation",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "RollModifier",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "RollDefinition",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "DiceCategory",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "DiceSystemConfig",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "ManualRollRequest",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "ManualRollMode",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "SurpriseConfig",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "EncounterConfig",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "WorldEventConfig",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "NpcIntroConfig",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "RuleChunkMeta",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "GameContext",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LootNodeId",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LootPoolEntry",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LootPool",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LootPickNode",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LootDrawSpec",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LootDrawNode",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LootAmountNode",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LootComposeNode",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LootNode",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LootTree",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LootProfile",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LootItem",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LootDropResult",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "ResolveLootOpts",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "ArcType",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "ArcStance",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "ArcSurface",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "ArcStage",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "ArcRecord",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "DivergenceCategory",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "CharacterTrait",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "CharacterIdentity",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "CharacterProfileState",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "CORE_FLOOR_TRAITS",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "DivergenceEntry",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "TopicCluster",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "TopicClusters",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "DivergenceRegister",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "ChatMessage",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "SwipeVariant",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "SceneSteer",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "WitnessSource",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "SceneEventType",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "SceneEvent",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "ArchiveIndexEntry",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "ArchiveScene",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "Campaign",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LoreCategory",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LoreChunk",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "CharacterIntroEntry",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "EngineSeed",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "NPCDrives",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "HexAxis",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "PersonalityHex",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "NPCWants",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "SceneStakes",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "GoalHorizon",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "GoalState",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "Goal",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "RelationGraph",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "NPCBehavioralTrigger",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "NPCPressureHistory",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "NPCPressure",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "NPCEntry",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "OpenAITool",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "ContextSourceClassification",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "PayloadTrace",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "SemanticFact",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "ArchiveChapter",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "NotebookNote",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "BackupMeta",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "BackupCreateResult",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "EntityEntry",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "TIMELINE_PREDICATES",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "TimelinePredicate",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "SUPERSEDE_RULES",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "TimelineEvent",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LoreCheckCategory",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LoreCheckVerdict",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LoreCheckSelection",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LoreCheckCitation",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "LoreCheckResult",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "PinnedExcerpt",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "CombatTier",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "Archetype",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "StatBlock",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "buildDefaultDieTypes",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "buildDefaultDiceSystem",
+      "file": "types/index.ts"
+    },
+    {
+      "name": "migrateDiceSystem",
+      "file": "types/index.ts"
+    }
+  ],
+  "components/hooks": [
+    {
+      "name": "useSwipeVariants",
+      "file": "components/hooks/useSwipeVariants.ts"
+    },
+    {
+      "name": "findSceneIdForMessage",
+      "file": "components/hooks/useMessageEditor.ts"
+    },
+    {
+      "name": "useMessageEditor",
+      "file": "components/hooks/useMessageEditor.ts"
+    },
+    {
+      "name": "useCondenser",
+      "file": "components/hooks/useCondenser.ts"
+    },
+    {
+      "name": "useRetryStoryAI",
+      "file": "components/hooks/useRetryStoryAI.ts"
+    }
+  ],
+  "store/slices": [
+    {
+      "name": "DEFAULT_SURPRISE_TYPES",
+      "file": "store/slices/settingsSlice.ts"
+    },
+    {
+      "name": "DEFAULT_SURPRISE_TONES",
+      "file": "store/slices/settingsSlice.ts"
+    },
+    {
+      "name": "DEFAULT_ENCOUNTER_TYPES",
+      "file": "store/slices/settingsSlice.ts"
+    },
+    {
+      "name": "DEFAULT_ENCOUNTER_TONES",
+      "file": "store/slices/settingsSlice.ts"
+    },
+    {
+      "name": "DEFAULT_WORLD_WHO",
+      "file": "store/slices/settingsSlice.ts"
+    },
+    {
+      "name": "DEFAULT_WORLD_WHERE",
+      "file": "store/slices/settingsSlice.ts"
+    },
+    {
+      "name": "DEFAULT_WORLD_WHY",
+      "file": "store/slices/settingsSlice.ts"
+    },
+    {
+      "name": "DEFAULT_WORLD_WHAT",
+      "file": "store/slices/settingsSlice.ts"
+    },
+    {
+      "name": "debouncedSaveSettings",
+      "file": "store/slices/settingsSlice.ts"
+    },
+    {
+      "name": "SettingsSlice",
+      "file": "store/slices/settingsSlice.ts"
+    },
+    {
+      "name": "createSettingsSlice",
+      "file": "store/slices/settingsSlice.ts"
+    },
+    {
+      "name": "NpcSuggestion",
+      "file": "store/slices/npcSlice.ts"
+    },
+    {
+      "name": "debouncedSaveNPCLedger",
+      "file": "store/slices/npcSlice.ts"
+    },
+    {
+      "name": "dedupeNPCLedger",
+      "file": "store/slices/npcSlice.ts"
+    },
+    {
+      "name": "NPCSlice",
+      "file": "store/slices/npcSlice.ts"
+    },
+    {
+      "name": "createNPCSlice",
+      "file": "store/slices/npcSlice.ts"
+    },
+    {
+      "name": "ArmedLoot",
+      "file": "store/slices/uiSlice.ts"
+    },
+    {
+      "name": "ReindexState",
+      "file": "store/slices/uiSlice.ts"
+    },
+    {
+      "name": "UISlice",
+      "file": "store/slices/uiSlice.ts"
+    },
+    {
+      "name": "createUISlice",
+      "file": "store/slices/uiSlice.ts"
+    },
+    {
+      "name": "ArchiveSlice",
+      "file": "store/slices/archiveSlice.ts"
+    },
+    {
+      "name": "createArchiveSlice",
+      "file": "store/slices/archiveSlice.ts"
+    },
+    {
+      "name": "debouncedSavePressure",
+      "file": "store/slices/pressureSlice.ts"
+    },
+    {
+      "name": "PressureSlice",
+      "file": "store/slices/pressureSlice.ts"
+    },
+    {
+      "name": "createPressureSlice",
+      "file": "store/slices/pressureSlice.ts"
+    },
+    {
+      "name": "locateRawSpan",
+      "file": "store/slices/chatSlice.ts"
+    },
+    {
+      "name": "ChatSlice",
+      "file": "store/slices/chatSlice.ts"
+    },
+    {
+      "name": "createChatSlice",
+      "file": "store/slices/chatSlice.ts"
+    },
+    {
+      "name": "debouncedSaveCampaignState",
+      "file": "store/slices/campaignSlice.ts"
+    },
+    {
+      "name": "defaultContext",
+      "file": "store/slices/campaignSlice.ts"
+    },
+    {
+      "name": "CampaignSlice",
+      "file": "store/slices/campaignSlice.ts"
+    },
+    {
+      "name": "createCampaignSlice",
+      "file": "store/slices/campaignSlice.ts"
+    },
+    {
+      "name": "LoreSlice",
+      "file": "store/slices/loreSlice.ts"
+    },
+    {
+      "name": "createLoreSlice",
+      "file": "store/slices/loreSlice.ts"
+    }
+  ],
+  "services/turn": [
+    {
+      "name": "capturePendingTurnSnapshot",
+      "file": "services/turn/pendingCommit.ts"
+    },
+    {
+      "name": "getActiveSnapshotId",
+      "file": "services/turn/pendingCommit.ts"
+    },
+    {
+      "name": "clearPendingTurnSnapshot",
+      "file": "services/turn/pendingCommit.ts"
+    },
+    {
+      "name": "getPendingTurnSnapshot",
+      "file": "services/turn/pendingCommit.ts"
+    },
+    {
+      "name": "getCachedSwipePayload",
+      "file": "services/turn/pendingCommit.ts"
+    },
+    {
+      "name": "patchCachedUserPrompt",
+      "file": "services/turn/pendingCommit.ts"
+    },
+    {
+      "name": "findPendingCommitMessage",
+      "file": "services/turn/pendingCommit.ts"
+    },
+    {
+      "name": "findRetryableMessage",
+      "file": "services/turn/pendingCommit.ts"
+    },
+    {
+      "name": "commitPendingTurn",
+      "file": "services/turn/pendingCommit.ts"
+    },
+    {
+      "name": "reconcilePendingCommitOnLaunch",
+      "file": "services/turn/pendingCommit.ts"
+    },
+    {
+      "name": "isLatestGmMessage",
+      "file": "services/turn/pendingCommit.ts"
+    },
+    {
+      "name": "hasSwipeSet",
+      "file": "services/turn/pendingCommit.ts"
+    },
+    {
+      "name": "runTurn",
+      "file": "services/turn/turnOrchestrator.ts"
+    },
+    {
+      "name": "parsePresentHeader",
+      "file": "services/turn/turnPostProcess.ts"
+    },
+    {
+      "name": "resolveNPCIds",
+      "file": "services/turn/turnPostProcess.ts"
+    },
+    {
+      "name": "runCombinedSeal",
+      "file": "services/turn/turnPostProcess.ts"
+    },
+    {
+      "name": "handlePostTurn",
+      "file": "services/turn/turnPostProcess.ts"
+    },
+    {
+      "name": "autoEnableCharacterProfile",
+      "file": "services/turn/turnPostProcess.ts"
+    },
+    {
+      "name": "runArcTick",
+      "file": "services/turn/turnPostProcess.ts"
+    },
+    {
+      "name": "UtilityCallOpts",
+      "file": "services/turn/turnTypes.ts"
+    },
+    {
+      "name": "UtilityLLM",
+      "file": "services/turn/turnTypes.ts"
+    },
+    {
+      "name": "TurnCallbacks",
+      "file": "services/turn/turnTypes.ts"
+    },
+    {
+      "name": "TurnState",
+      "file": "services/turn/turnTypes.ts"
+    },
+    {
+      "name": "AiTier",
+      "file": "services/turn/aiTier.ts"
+    },
+    {
+      "name": "TierFeature",
+      "file": "services/turn/aiTier.ts"
+    },
+    {
+      "name": "tierAllows",
+      "file": "services/turn/aiTier.ts"
+    },
+    {
+      "name": "NPC_UPDATE_COOLDOWN",
+      "file": "services/turn/aiTier.ts"
+    },
+    {
+      "name": "GatheredContext",
+      "file": "services/turn/turnContext.ts"
+    },
+    {
+      "name": "gatherContext",
+      "file": "services/turn/turnContext.ts"
+    },
+    {
+      "name": "realUtilityLLM",
+      "file": "services/turn/utilityLLM.ts"
+    },
+    {
+      "name": "ToolContext",
+      "file": "services/turn/toolHandlers.ts"
+    },
+    {
+      "name": "LoreHandlerResult",
+      "file": "services/turn/toolHandlers.ts"
+    },
+    {
+      "name": "NotebookHandlerResult",
+      "file": "services/turn/toolHandlers.ts"
+    },
+    {
+      "name": "DiceHandlerResult",
+      "file": "services/turn/toolHandlers.ts"
+    },
+    {
+      "name": "getToolDefinitions",
+      "file": "services/turn/toolHandlers.ts"
+    },
+    {
+      "name": "TOOL_DEFINITIONS",
+      "file": "services/turn/toolHandlers.ts"
+    },
+    {
+      "name": "handleLoreTool",
+      "file": "services/turn/toolHandlers.ts"
+    },
+    {
+      "name": "handleNotebookTool",
+      "file": "services/turn/toolHandlers.ts"
+    },
+    {
+      "name": "handleDiceTool",
+      "file": "services/turn/toolHandlers.ts"
+    },
+    {
+      "name": "MAX_SWIPES",
+      "file": "services/turn/swipeGeneration.ts"
+    },
+    {
+      "name": "SWIPE_BASE_TEMP_OFFSET",
+      "file": "services/turn/swipeGeneration.ts"
+    },
+    {
+      "name": "SWIPE_SYSTEM_LINE",
+      "file": "services/turn/swipeGeneration.ts"
+    },
+    {
+      "name": "SwipeGenerationOptions",
+      "file": "services/turn/swipeGeneration.ts"
+    },
+    {
+      "name": "SwipeGenerationResult",
+      "file": "services/turn/swipeGeneration.ts"
+    },
+    {
+      "name": "generateSwipeVariant",
+      "file": "services/turn/swipeGeneration.ts"
+    },
+    {
+      "name": "computeSwipeTemperature",
+      "file": "services/turn/swipeGeneration.ts"
+    },
+    {
+      "name": "extractAndStripSceneStakes",
+      "file": "services/turn/sceneStakesTag.ts"
+    },
+    {
+      "name": "classifySceneStakes",
+      "file": "services/turn/sceneStakesTag.ts"
+    },
+    {
+      "name": "rerankStage",
+      "file": "services/turn/stages/rerankStage.ts"
+    },
+    {
+      "name": "deepScanStage",
+      "file": "services/turn/stages/deepScanStage.ts"
+    },
+    {
+      "name": "SemanticCandidates",
+      "file": "services/turn/stages/retrievalTypes.ts"
+    },
+    {
+      "name": "expandQuery",
+      "file": "services/turn/stages/expandQueryStage.ts"
+    },
+    {
+      "name": "semanticCandidatesStage",
+      "file": "services/turn/stages/semanticCandidatesStage.ts"
+    },
+    {
+      "name": "sceneNumberStage",
+      "file": "services/turn/stages/sceneNumberStage.ts"
+    },
+    {
+      "name": "PlannerResult",
+      "file": "services/turn/stages/plannerStage.ts"
+    },
+    {
+      "name": "runPlannerCall",
+      "file": "services/turn/stages/plannerStage.ts"
+    },
+    {
+      "name": "loreStage",
+      "file": "services/turn/stages/loreStage.ts"
+    },
+    {
+      "name": "recommenderStage",
+      "file": "services/turn/stages/recommenderStage.ts"
+    },
+    {
+      "name": "rulesStage",
+      "file": "services/turn/stages/rulesStage.ts"
+    },
+    {
+      "name": "gatherFactsAndTimeline",
+      "file": "services/turn/stages/factsTimelineStage.ts"
+    },
+    {
+      "name": "recallNpcsSemantically",
+      "file": "services/turn/stages/npcSemanticRecallStage.ts"
+    },
+    {
+      "name": "archiveRecallStage",
+      "file": "services/turn/stages/archiveRecallStage.ts"
+    }
+  ],
+  "services/archive": [
+    {
+      "name": "rateImportance",
+      "file": "services/archive/importanceRater.ts"
+    },
+    {
+      "name": "heuristicImportance",
+      "file": "services/archive/importanceRater.ts"
+    },
+    {
+      "name": "ChapterSummaryOutput",
+      "file": "services/archive/chapterSummaryWriter.ts"
+    },
+    {
+      "name": "parseChapterSummaryOutput",
+      "file": "services/archive/chapterSummaryWriter.ts"
+    },
+    {
+      "name": "generateChapterSummary",
+      "file": "services/archive/chapterSummaryWriter.ts"
+    },
+    {
+      "name": "truncateScenesToBudget",
+      "file": "services/archive/saveFileEngine.ts"
+    },
+    {
+      "name": "computeArchiveIdf",
+      "file": "services/archive/archiveMemory.ts"
+    },
+    {
+      "name": "clearIdfCache",
+      "file": "services/archive/archiveMemory.ts"
+    },
+    {
+      "name": "extractContextActivations",
+      "file": "services/archive/archiveMemory.ts"
+    },
+    {
+      "name": "expandActivationsWithFacts",
+      "file": "services/archive/archiveMemory.ts"
+    },
+    {
+      "name": "fuseRecall",
+      "file": "services/archive/archiveMemory.ts"
+    },
+    {
+      "name": "retrieveArchiveMemory",
+      "file": "services/archive/archiveMemory.ts"
+    },
+    {
+      "name": "fetchArchiveScenes",
+      "file": "services/archive/archiveMemory.ts"
+    },
+    {
+      "name": "recallArchiveScenes",
+      "file": "services/archive/archiveMemory.ts"
+    },
+    {
+      "name": "deepArchiveScan",
+      "file": "services/archive/deepArchiveSearch.ts"
+    },
+    {
+      "name": "AutoSealResult",
+      "file": "services/archive/archiveChapterEngine.ts"
+    },
+    {
+      "name": "shouldAutoSeal",
+      "file": "services/archive/archiveChapterEngine.ts"
+    },
+    {
+      "name": "sealChapter",
+      "file": "services/archive/archiveChapterEngine.ts"
+    },
+    {
+      "name": "scoreChapter",
+      "file": "services/archive/archiveChapterEngine.ts"
+    },
+    {
+      "name": "rankChapters",
+      "file": "services/archive/archiveChapterEngine.ts"
+    },
+    {
+      "name": "iterativeChapterFilter",
+      "file": "services/archive/archiveChapterEngine.ts"
+    },
+    {
+      "name": "recallWithChapterFunnel",
+      "file": "services/archive/archiveChapterEngine.ts"
+    },
+    {
+      "name": "extractIndexKeywords",
+      "file": "services/archive/archiveIndexer.ts"
+    },
+    {
+      "name": "extractNPCNames",
+      "file": "services/archive/archiveIndexer.ts"
+    },
+    {
+      "name": "extractKeywordStrengths",
+      "file": "services/archive/archiveIndexer.ts"
+    },
+    {
+      "name": "extractNPCStrengths",
+      "file": "services/archive/archiveIndexer.ts"
+    },
+    {
+      "name": "extractNPCFacts",
+      "file": "services/archive/archiveIndexer.ts"
+    },
+    {
+      "name": "buildArchiveIndexEntry",
+      "file": "services/archive/archiveIndexer.ts"
+    },
+    {
+      "name": "CombinedSealResult",
+      "file": "services/archive/divergenceExtractor.ts"
+    },
+    {
+      "name": "parseCombinedSealOutput",
+      "file": "services/archive/divergenceExtractor.ts"
+    },
+    {
+      "name": "sealChapterCombined",
+      "file": "services/archive/divergenceExtractor.ts"
+    }
+  ],
+  "services/llm": [
+    {
+      "name": "UtilityCallStatus",
+      "file": "services/llm/utilityCallTracker.ts"
+    },
+    {
+      "name": "UtilityCallRecord",
+      "file": "services/llm/utilityCallTracker.ts"
+    },
+    {
+      "name": "UtilityCallHandle",
+      "file": "services/llm/utilityCallTracker.ts"
+    },
+    {
+      "name": "startUtilityCall",
+      "file": "services/llm/utilityCallTracker.ts"
+    },
+    {
+      "name": "getActiveCalls",
+      "file": "services/llm/utilityCallTracker.ts"
+    },
+    {
+      "name": "getCallHistory",
+      "file": "services/llm/utilityCallTracker.ts"
+    },
+    {
+      "name": "extendCall",
+      "file": "services/llm/utilityCallTracker.ts"
+    },
+    {
+      "name": "clearHistory",
+      "file": "services/llm/utilityCallTracker.ts"
+    },
+    {
+      "name": "useUtilityCalls",
+      "file": "services/llm/utilityCallTracker.ts"
+    },
+    {
+      "name": "sanitizePayloadForApi",
+      "file": "services/llm/payloadSanitizer.ts"
+    },
+    {
+      "name": "recordSceneStakesFallback",
+      "file": "services/llm/sceneStakesTelemetry.ts"
+    },
+    {
+      "name": "getSceneStakesFallbackCount",
+      "file": "services/llm/sceneStakesTelemetry.ts"
+    },
+    {
+      "name": "resetSceneStakesFallbackCount",
+      "file": "services/llm/sceneStakesTelemetry.ts"
+    },
+    {
+      "name": "useSceneStakesFallbackCount",
+      "file": "services/llm/sceneStakesTelemetry.ts"
+    },
+    {
+      "name": "LLMCallPriority",
+      "file": "services/llm/llmRequestQueue.ts"
+    },
+    {
+      "name": "LLMRequestQueue",
+      "file": "services/llm/llmRequestQueue.ts"
+    },
+    {
+      "name": "normalizeEndpointKey",
+      "file": "services/llm/llmRequestQueue.ts"
+    },
+    {
+      "name": "isLocalEndpoint",
+      "file": "services/llm/llmRequestQueue.ts"
+    },
+    {
+      "name": "getQueueForEndpoint",
+      "file": "services/llm/llmRequestQueue.ts"
+    },
+    {
+      "name": "llmQueue",
+      "file": "services/llm/llmRequestQueue.ts"
+    },
+    {
+      "name": "OpenAIMessage",
+      "file": "services/llm/llmService.ts"
+    },
+    {
+      "name": "sendMessage",
+      "file": "services/llm/llmService.ts"
+    },
+    {
+      "name": "testConnection",
+      "file": "services/llm/llmService.ts"
+    },
+    {
+      "name": "CallStat",
+      "file": "services/llm/cacheTelemetry.ts"
+    },
+    {
+      "name": "CacheRollup",
+      "file": "services/llm/cacheTelemetry.ts"
+    },
+    {
+      "name": "recordCacheUsage",
+      "file": "services/llm/cacheTelemetry.ts"
+    },
+    {
+      "name": "getCacheRollup",
+      "file": "services/llm/cacheTelemetry.ts"
+    },
+    {
+      "name": "hitRatio",
+      "file": "services/llm/cacheTelemetry.ts"
+    },
+    {
+      "name": "totalsForDay",
+      "file": "services/llm/cacheTelemetry.ts"
+    },
+    {
+      "name": "clearCacheTelemetry",
+      "file": "services/llm/cacheTelemetry.ts"
+    },
+    {
+      "name": "useCacheTelemetry",
+      "file": "services/llm/cacheTelemetry.ts"
+    }
+  ],
+  "services/engine": [
+    {
+      "name": "populateEngineTags",
+      "file": "services/engine/tagGeneration.ts"
+    },
+    {
+      "name": "LootDropRecord",
+      "file": "services/engine/lootDropTelemetry.ts"
+    },
+    {
+      "name": "recordLootDrop",
+      "file": "services/engine/lootDropTelemetry.ts"
+    },
+    {
+      "name": "clearLootDropHistory",
+      "file": "services/engine/lootDropTelemetry.ts"
+    },
+    {
+      "name": "getLootDropHistory",
+      "file": "services/engine/lootDropTelemetry.ts"
+    },
+    {
+      "name": "useLootDropHistory",
+      "file": "services/engine/lootDropTelemetry.ts"
+    },
+    {
+      "name": "CharIntroResult",
+      "file": "services/engine/charIntroEngine.ts"
+    },
+    {
+      "name": "rollCharacterIntroEngine",
+      "file": "services/engine/charIntroEngine.ts"
+    },
+    {
+      "name": "generateTroubleOptions",
+      "file": "services/engine/troublemaker.ts"
+    },
+    {
+      "name": "resolveLootDrop",
+      "file": "services/engine/lootEngine.ts"
+    },
+    {
+      "name": "EngineRollResult",
+      "file": "services/engine/engineRolls.ts"
+    },
+    {
+      "name": "GateRollResult",
+      "file": "services/engine/engineRolls.ts"
+    },
+    {
+      "name": "executeGateRoll",
+      "file": "services/engine/engineRolls.ts"
+    },
+    {
+      "name": "parseDiceExpr",
+      "file": "services/engine/engineRolls.ts"
+    },
+    {
+      "name": "rollEngines",
+      "file": "services/engine/engineRolls.ts"
+    },
+    {
+      "name": "rollDiceFairness",
+      "file": "services/engine/engineRolls.ts"
+    },
+    {
+      "name": "ManualRollResult",
+      "file": "services/engine/engineRolls.ts"
+    },
+    {
+      "name": "resolveManualRoll",
+      "file": "services/engine/engineRolls.ts"
+    },
+    {
+      "name": "mapTier",
+      "file": "services/engine/diceTier.ts"
+    },
+    {
+      "name": "validateBands",
+      "file": "services/engine/diceTier.ts"
+    },
+    {
+      "name": "LegacyDiceConfig",
+      "file": "services/engine/diceTier.ts"
+    },
+    {
+      "name": "mapTierLegacy",
+      "file": "services/engine/diceTier.ts"
+    },
+    {
+      "name": "PC_POINT_BUY",
+      "file": "services/engine/pcCreationScript.ts"
+    },
+    {
+      "name": "STAT_KEYS",
+      "file": "services/engine/pcCreationScript.ts"
+    },
+    {
+      "name": "StatKey",
+      "file": "services/engine/pcCreationScript.ts"
+    },
+    {
+      "name": "getPointCost",
+      "file": "services/engine/pcCreationScript.ts"
+    },
+    {
+      "name": "PointBuyAllocation",
+      "file": "services/engine/pcCreationScript.ts"
+    },
+    {
+      "name": "DEFAULT_STATS",
+      "file": "services/engine/pcCreationScript.ts"
+    },
+    {
+      "name": "validateAllocation",
+      "file": "services/engine/pcCreationScript.ts"
+    },
+    {
+      "name": "allocateStat",
+      "file": "services/engine/pcCreationScript.ts"
+    },
+    {
+      "name": "ARCHETYPE_PRESETS",
+      "file": "services/engine/pcCreationScript.ts"
+    },
+    {
+      "name": "CreationQuestion",
+      "file": "services/engine/pcCreationScript.ts"
+    },
+    {
+      "name": "CREATION_QUESTIONS",
+      "file": "services/engine/pcCreationScript.ts"
+    },
+    {
+      "name": "getPCTier",
+      "file": "services/engine/pcCreationScript.ts"
+    },
+    {
+      "name": "getPCBudget",
+      "file": "services/engine/pcCreationScript.ts"
+    },
+    {
+      "name": "buildCharacterProfileState",
+      "file": "services/engine/pcCreationScript.ts"
+    },
+    {
+      "name": "buildCharacterProfileText",
+      "file": "services/engine/pcCreationScript.ts"
+    }
+  ],
+  "services/npc": [
+    {
+      "name": "drawShortWants",
+      "file": "services/npc/agencyWantDraw.ts"
+    },
+    {
+      "name": "drawMediumWants",
+      "file": "services/npc/agencyWantDraw.ts"
+    },
+    {
+      "name": "BehaviorDirectiveOpts",
+      "file": "services/npc/npcBehaviorDirective.ts"
+    },
+    {
+      "name": "buildBehaviorDirective",
+      "file": "services/npc/npcBehaviorDirective.ts"
+    },
+    {
+      "name": "buildDriftAlert",
+      "file": "services/npc/npcBehaviorDirective.ts"
+    },
+    {
+      "name": "buildNPCEmbeddingText",
+      "file": "services/npc/npcGeneration.ts"
+    },
+    {
+      "name": "embedAndStoreNPC",
+      "file": "services/npc/npcGeneration.ts"
+    },
+    {
+      "name": "validatePersonalityHex",
+      "file": "services/npc/npcGeneration.ts"
+    },
+    {
+      "name": "validateTraits",
+      "file": "services/npc/npcGeneration.ts"
+    },
+    {
+      "name": "translatePersonalityToHex",
+      "file": "services/npc/npcGeneration.ts"
+    },
+    {
+      "name": "generateLongWant",
+      "file": "services/npc/npcGeneration.ts"
+    },
+    {
+      "name": "generateNPCProfile",
+      "file": "services/npc/npcGeneration.ts"
+    },
+    {
+      "name": "updateExistingNPCs",
+      "file": "services/npc/npcGeneration.ts"
+    },
+    {
+      "name": "PCCreationOverrides",
+      "file": "services/npc/npcGeneration.ts"
+    },
+    {
+      "name": "mergePCWithLLMProfile",
+      "file": "services/npc/npcGeneration.ts"
+    },
+    {
+      "name": "generatePCProfile",
+      "file": "services/npc/npcGeneration.ts"
+    },
+    {
+      "name": "populateAgencyFields",
+      "file": "services/npc/npcGeneration.ts"
+    },
+    {
+      "name": "bulkNpcUpdate",
+      "file": "services/npc/npcGeneration.ts"
+    },
+    {
+      "name": "backfillNPCDrives",
+      "file": "services/npc/npcGeneration.ts"
+    },
+    {
+      "name": "goalsCoincide",
+      "file": "services/npc/agencyCollision.ts"
+    },
+    {
+      "name": "topActiveGoal",
+      "file": "services/npc/agencyCollision.ts"
+    },
+    {
+      "name": "RelationTone",
+      "file": "services/npc/agencyCollision.ts"
+    },
+    {
+      "name": "relationTone",
+      "file": "services/npc/agencyCollision.ts"
+    },
+    {
+      "name": "DetectedCollision",
+      "file": "services/npc/agencyCollision.ts"
+    },
+    {
+      "name": "detectCollision",
+      "file": "services/npc/agencyCollision.ts"
+    },
+    {
+      "name": "TangleOutcome",
+      "file": "services/npc/agencyCollision.ts"
+    },
+    {
+      "name": "resolveTangle",
+      "file": "services/npc/agencyCollision.ts"
+    },
+    {
+      "name": "buildTangleDeltas",
+      "file": "services/npc/agencyCollision.ts"
+    },
+    {
+      "name": "TickDelta",
+      "file": "services/npc/agencyDigest.ts"
+    },
+    {
+      "name": "buildDigest",
+      "file": "services/npc/agencyDigest.ts"
+    },
+    {
+      "name": "buildVoiceDirective",
+      "file": "services/npc/hexVoiceGuide.ts"
+    },
+    {
+      "name": "TimeskipDetected",
+      "file": "services/npc/agencyTimeskipRun.ts"
+    },
+    {
+      "name": "TimeskipAmbiguous",
+      "file": "services/npc/agencyTimeskipRun.ts"
+    },
+    {
+      "name": "TimeskipResult",
+      "file": "services/npc/agencyTimeskipRun.ts"
+    },
+    {
+      "name": "detectTimeskip",
+      "file": "services/npc/agencyTimeskipRun.ts"
+    },
+    {
+      "name": "TimeskipConfig",
+      "file": "services/npc/agencyTimeskipRun.ts"
+    },
+    {
+      "name": "TimeskipNarrationResult",
+      "file": "services/npc/agencyTimeskipRun.ts"
+    },
+    {
+      "name": "runTimeskip",
+      "file": "services/npc/agencyTimeskipRun.ts"
+    },
+    {
+      "name": "NpcResolution",
+      "file": "services/npc/npcManualResolve.ts"
+    },
+    {
+      "name": "normalizeSelection",
+      "file": "services/npc/npcManualResolve.ts"
+    },
+    {
+      "name": "findLedgerMatches",
+      "file": "services/npc/npcManualResolve.ts"
+    },
+    {
+      "name": "resolveNpcSelection",
+      "file": "services/npc/npcManualResolve.ts"
+    },
+    {
+      "name": "NPCReviewCandidate",
+      "file": "services/npc/npcReview.ts"
+    },
+    {
+      "name": "NPCReviewCancelled",
+      "file": "services/npc/npcReview.ts"
+    },
+    {
+      "name": "NPCReviewResult",
+      "file": "services/npc/npcReview.ts"
+    },
+    {
+      "name": "runNPCReview",
+      "file": "services/npc/npcReview.ts"
+    },
+    {
+      "name": "hexDelta",
+      "file": "services/npc/agencyDrift.ts"
+    },
+    {
+      "name": "applyGoalOutcomeNudge",
+      "file": "services/npc/agencyDrift.ts"
+    },
+    {
+      "name": "applyTierCross",
+      "file": "services/npc/agencyDrift.ts"
+    },
+    {
+      "name": "rollHeartbeat",
+      "file": "services/npc/agencyHeartbeat.ts"
+    },
+    {
+      "name": "buildProximityRoster",
+      "file": "services/npc/agencyHeartbeat.ts"
+    },
+    {
+      "name": "BURST_THRESHOLD",
+      "file": "services/npc/reactionRepression.ts"
+    },
+    {
+      "name": "RepressKind",
+      "file": "services/npc/reactionRepression.ts"
+    },
+    {
+      "name": "RepressionOutcome",
+      "file": "services/npc/reactionRepression.ts"
+    },
+    {
+      "name": "RepressionEvent",
+      "file": "services/npc/reactionRepression.ts"
+    },
+    {
+      "name": "repressKind",
+      "file": "services/npc/reactionRepression.ts"
+    },
+    {
+      "name": "repressKindOf",
+      "file": "services/npc/reactionRepression.ts"
+    },
+    {
+      "name": "hideScoreOf",
+      "file": "services/npc/reactionRepression.ts"
+    },
+    {
+      "name": "rollRepression",
+      "file": "services/npc/reactionRepression.ts"
+    },
+    {
+      "name": "repressionToken",
+      "file": "services/npc/reactionRepression.ts"
+    },
+    {
+      "name": "applyRepressionToMenu",
+      "file": "services/npc/reactionRepression.ts"
+    },
+    {
+      "name": "bookRepression",
+      "file": "services/npc/reactionRepression.ts"
+    },
+    {
+      "name": "AddNpcResult",
+      "file": "services/npc/manualAdd.ts"
+    },
+    {
+      "name": "AddNpcDeps",
+      "file": "services/npc/manualAdd.ts"
+    },
+    {
+      "name": "addNpcFromSelection",
+      "file": "services/npc/manualAdd.ts"
+    },
+    {
+      "name": "ticksForDuration",
+      "file": "services/npc/agencyTimeskip.ts"
+    },
+    {
+      "name": "allocateTicks",
+      "file": "services/npc/agencyTimeskip.ts"
+    },
+    {
+      "name": "karmaBonus",
+      "file": "services/npc/agencyDice.ts"
+    },
+    {
+      "name": "bandFromMargin",
+      "file": "services/npc/agencyDice.ts"
+    },
+    {
+      "name": "rollGoal",
+      "file": "services/npc/agencyDice.ts"
+    },
+    {
+      "name": "nextFailStreak",
+      "file": "services/npc/agencyDice.ts"
+    },
+    {
+      "name": "ReactionContext",
+      "file": "services/npc/reactionMenu.ts"
+    },
+    {
+      "name": "pcRelationOf",
+      "file": "services/npc/reactionMenu.ts"
+    },
+    {
+      "name": "scoreReaction",
+      "file": "services/npc/reactionMenu.ts"
+    },
+    {
+      "name": "passesGate",
+      "file": "services/npc/reactionMenu.ts"
+    },
+    {
+      "name": "buildReactionMenu",
+      "file": "services/npc/reactionMenu.ts"
+    },
+    {
+      "name": "relationBand",
+      "file": "services/npc/agencyBands.ts"
+    },
+    {
+      "name": "hexBand",
+      "file": "services/npc/agencyBands.ts"
+    },
+    {
+      "name": "affinityToPcRelation",
+      "file": "services/npc/agencyBands.ts"
+    },
+    {
+      "name": "describeHex",
+      "file": "services/npc/agencyBands.ts"
+    },
+    {
+      "name": "formatRungBand",
+      "file": "services/npc/agencyBands.ts"
+    },
+    {
+      "name": "formatHexShift",
+      "file": "services/npc/agencyBands.ts"
+    },
+    {
+      "name": "formatRungShift",
+      "file": "services/npc/agencyBands.ts"
+    },
+    {
+      "name": "Band",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "DRIVE_MULT",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "KARMA_PER_FAIL",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "KARMA_CAP",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "GOAL_BASE_DC",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "BAND_PROGRESS",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "QUOTA_HINTS",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "QUOTA_BY_HORIZON",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "BASE_HEAT",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "AMBITIOUS_HEAT_BONUS",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "TIMESKIP_K",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "TIMESKIP_CAP",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "HEARTBEAT_DC",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "COLOR_ROLL_BASE",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "COLOR_ROLL_TRAIT_BONUS",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "COLOR_ROLL_TRAITS",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "DigestVisibility",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "VISIBILITY_RUBRIC",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "DIGEST_PLAYER_CAP",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "HEX_AXIS_MIN",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "HEX_AXIS_MAX",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "HEX_DRIFT_MAX_STEP",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "PC_RELATION_MIN",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "PC_RELATION_MAX",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "PC_RELATION_MAX_STEP",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "RUNG_MIN",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "RUNG_MAX",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "RUNG_DEFAULT",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "RUNG_CEILING_DEFAULT",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "RUNG_LABELS",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "DEEP_TIER_CAP",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "AUDITION_PROB",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "ACTIVITY_DECAY",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "ACTIVITY_PROMOTE",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "ACTIVITY_RELEGATE",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "COLLISION_TANGLE_PROB",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "COLLISION_OPPORTUNITY_BONUS",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "OUTCOME_AXIS_MAP",
+      "file": "services/npc/agencyConstants.ts"
+    },
+    {
+      "name": "PoolTier",
+      "file": "services/npc/agencyPools.ts"
+    },
+    {
+      "name": "TraitEntry",
+      "file": "services/npc/agencyPools.ts"
+    },
+    {
+      "name": "WantEntry",
+      "file": "services/npc/agencyPools.ts"
+    },
+    {
+      "name": "ActionEntry",
+      "file": "services/npc/agencyPools.ts"
+    },
+    {
+      "name": "ReactionGate",
+      "file": "services/npc/agencyPools.ts"
+    },
+    {
+      "name": "ReactionEntry",
+      "file": "services/npc/agencyPools.ts"
+    },
+    {
+      "name": "TRAIT_VOCAB",
+      "file": "services/npc/agencyPools.ts"
+    },
+    {
+      "name": "WANT_POOL",
+      "file": "services/npc/agencyPools.ts"
+    },
+    {
+      "name": "ACTION_POOL",
+      "file": "services/npc/agencyPools.ts"
+    },
+    {
+      "name": "TRAIT_NAMES",
+      "file": "services/npc/agencyPools.ts"
+    },
+    {
+      "name": "SHORT_WANTS",
+      "file": "services/npc/agencyPools.ts"
+    },
+    {
+      "name": "MEDIUM_WANTS",
+      "file": "services/npc/agencyPools.ts"
+    },
+    {
+      "name": "REACTION_VOCAB",
+      "file": "services/npc/agencyPools.ts"
+    },
+    {
+      "name": "rollWeightedAxis",
+      "file": "services/npc/hexRoll.ts"
+    },
+    {
+      "name": "applySecondaryEnvelope",
+      "file": "services/npc/hexRoll.ts"
+    },
+    {
+      "name": "rollHex",
+      "file": "services/npc/hexRoll.ts"
+    },
+    {
+      "name": "pickGroups",
+      "file": "services/npc/hexRoll.ts"
+    },
+    {
+      "name": "drawConsistentTraits",
+      "file": "services/npc/hexRoll.ts"
+    },
+    {
+      "name": "rollLooksTier",
+      "file": "services/npc/hexRoll.ts"
+    },
+    {
+      "name": "isAgencyEligible",
+      "file": "services/npc/agencyLifecycle.ts"
+    },
+    {
+      "name": "filterUpdatableNPCs",
+      "file": "services/npc/agencyLifecycle.ts"
+    },
+    {
+      "name": "completeShortWant",
+      "file": "services/npc/agencyLifecycle.ts"
+    },
+    {
+      "name": "TickChoice",
+      "file": "services/npc/agencySelection.ts"
+    },
+    {
+      "name": "driveMult",
+      "file": "services/npc/agencySelection.ts"
+    },
+    {
+      "name": "contextAllow",
+      "file": "services/npc/agencySelection.ts"
+    },
+    {
+      "name": "goalScore",
+      "file": "services/npc/agencySelection.ts"
+    },
+    {
+      "name": "chooseTick",
+      "file": "services/npc/agencySelection.ts"
+    },
+    {
+      "name": "AxisSpread",
+      "file": "services/npc/dispositionGroups.ts"
+    },
+    {
+      "name": "AxisEnvelope",
+      "file": "services/npc/dispositionGroups.ts"
+    },
+    {
+      "name": "GroupEnvelope",
+      "file": "services/npc/dispositionGroups.ts"
+    },
+    {
+      "name": "ENVELOPES",
+      "file": "services/npc/dispositionGroups.ts"
+    },
+    {
+      "name": "AxisModifier",
+      "file": "services/npc/dispositionGroups.ts"
+    },
+    {
+      "name": "GroupModifiers",
+      "file": "services/npc/dispositionGroups.ts"
+    },
+    {
+      "name": "MODIFIERS",
+      "file": "services/npc/dispositionGroups.ts"
+    },
+    {
+      "name": "GROUP_KEYS",
+      "file": "services/npc/dispositionGroups.ts"
+    },
+    {
+      "name": "currentActivity",
+      "file": "services/npc/agencyAudition.ts"
+    },
+    {
+      "name": "activityBumpPatch",
+      "file": "services/npc/agencyAudition.ts"
+    },
+    {
+      "name": "SelectTickTargetResult",
+      "file": "services/npc/agencyAudition.ts"
+    },
+    {
+      "name": "selectTickTarget",
+      "file": "services/npc/agencyAudition.ts"
+    },
+    {
+      "name": "DECAY_RATE",
+      "file": "services/npc/npcPressureTracker.ts"
+    },
+    {
+      "name": "PressureUpdate",
+      "file": "services/npc/npcPressureTracker.ts"
+    },
+    {
+      "name": "scanPressure",
+      "file": "services/npc/npcPressureTracker.ts"
+    },
+    {
+      "name": "applyDecay",
+      "file": "services/npc/npcPressureTracker.ts"
+    },
+    {
+      "name": "buildPressurePatch",
+      "file": "services/npc/npcPressureTracker.ts"
+    },
+    {
+      "name": "RelationTone",
+      "file": "services/npc/relationMeter.ts"
+    },
+    {
+      "name": "RELATION_TONES",
+      "file": "services/npc/relationMeter.ts"
+    },
+    {
+      "name": "isRelationTone",
+      "file": "services/npc/relationMeter.ts"
+    },
+    {
+      "name": "applyRelationTone",
+      "file": "services/npc/relationMeter.ts"
+    },
+    {
+      "name": "buildGoalsFromWants",
+      "file": "services/npc/agencyGoals.ts"
+    },
+    {
+      "name": "upgradeWantsToGoals",
+      "file": "services/npc/agencyGoals.ts"
+    },
+    {
+      "name": "SwapVerdict",
+      "file": "services/npc/nameSwap.ts"
+    },
+    {
+      "name": "SwapResult",
+      "file": "services/npc/nameSwap.ts"
+    },
+    {
+      "name": "SwapContext",
+      "file": "services/npc/nameSwap.ts"
+    },
+    {
+      "name": "Collision",
+      "file": "services/npc/nameSwap.ts"
+    },
+    {
+      "name": "detectCollisions",
+      "file": "services/npc/nameSwap.ts"
+    },
+    {
+      "name": "decideSwap",
+      "file": "services/npc/nameSwap.ts"
+    },
+    {
+      "name": "applySwap",
+      "file": "services/npc/nameSwap.ts"
+    },
+    {
+      "name": "swapDuplicateNames",
+      "file": "services/npc/nameSwap.ts"
+    },
+    {
+      "name": "Gender",
+      "file": "services/npc/nameBank.ts"
+    },
+    {
+      "name": "NAME_CULTURES",
+      "file": "services/npc/nameBank.ts"
+    },
+    {
+      "name": "isKnownName",
+      "file": "services/npc/nameBank.ts"
+    },
+    {
+      "name": "lookupCultures",
+      "file": "services/npc/nameBank.ts"
+    },
+    {
+      "name": "genderOf",
+      "file": "services/npc/nameBank.ts"
+    },
+    {
+      "name": "drawUnusedName",
+      "file": "services/npc/nameBank.ts"
+    },
+    {
+      "name": "extractNPCNames",
+      "file": "services/npc/npcDetector.ts"
+    },
+    {
+      "name": "classifyNPCNames",
+      "file": "services/npc/npcDetector.ts"
+    },
+    {
+      "name": "validateNPCCandidates",
+      "file": "services/npc/npcDetector.ts"
+    },
+    {
+      "name": "COMBAT_TIER_ARCHETYPE_RUBRIC",
+      "file": "services/npc/npcDetector.ts"
+    },
+    {
+      "name": "progressDelta",
+      "file": "services/npc/agencyProgress.ts"
+    },
+    {
+      "name": "applyBandToGoal",
+      "file": "services/npc/agencyProgress.ts"
+    },
+    {
+      "name": "canCrossTier",
+      "file": "services/npc/agencyProgress.ts"
+    },
+    {
+      "name": "consumeTierCross",
+      "file": "services/npc/agencyProgress.ts"
+    }
+  ],
+  "services/storage": [
+    {
+      "name": "imageStorage",
+      "file": "services/storage/imageStorage.ts"
+    },
+    {
+      "name": "entityStorage",
+      "file": "services/storage/entityStorage.ts"
+    },
+    {
+      "name": "BackupData",
+      "file": "services/storage/backupStorage.ts"
+    },
+    {
+      "name": "backupStorage",
+      "file": "services/storage/backupStorage.ts"
+    },
+    {
+      "name": "EMBEDDING_VERSION",
+      "file": "services/storage/embeddingStorage.ts"
+    },
+    {
+      "name": "VectorLike",
+      "file": "services/storage/embeddingStorage.ts"
+    },
+    {
+      "name": "EmbeddingRecord",
+      "file": "services/storage/embeddingStorage.ts"
+    },
+    {
+      "name": "embeddingStorage",
+      "file": "services/storage/embeddingStorage.ts"
+    },
+    {
+      "name": "SceneRecord",
+      "file": "services/storage/_helpers.ts"
+    },
+    {
+      "name": "getList",
+      "file": "services/storage/_helpers.ts"
+    },
+    {
+      "name": "setList",
+      "file": "services/storage/_helpers.ts"
+    },
+    {
+      "name": "k",
+      "file": "services/storage/_helpers.ts"
+    },
+    {
+      "name": "computeHash",
+      "file": "services/storage/_helpers.ts"
+    },
+    {
+      "name": "factStorage",
+      "file": "services/storage/factStorage.ts"
+    },
+    {
+      "name": "offlineStorage",
+      "file": "services/storage/index.ts"
+    },
+    {
+      "name": "timelineStorage",
+      "file": "services/storage/timelineStorage.ts"
+    },
+    {
+      "name": "archiveStorage",
+      "file": "services/storage/archiveStorage.ts"
+    },
+    {
+      "name": "backfillSceneIds",
+      "file": "services/storage/chapterStorage.ts"
+    },
+    {
+      "name": "chapterStorage",
+      "file": "services/storage/chapterStorage.ts"
+    }
+  ],
+  "services/embedding": [
+    {
+      "name": "SearchHit",
+      "file": "services/embedding/vectorSearch.ts"
+    },
+    {
+      "name": "cosineSimilarity",
+      "file": "services/embedding/vectorSearch.ts"
+    },
+    {
+      "name": "mmrSelect",
+      "file": "services/embedding/vectorSearch.ts"
+    },
+    {
+      "name": "searchVectors",
+      "file": "services/embedding/vectorSearch.ts"
+    },
+    {
+      "name": "semanticSearch",
+      "file": "services/embedding/vectorSearch.ts"
+    },
+    {
+      "name": "semanticSearchScored",
+      "file": "services/embedding/vectorSearch.ts"
+    },
+    {
+      "name": "BackfillProgress",
+      "file": "services/embedding/backfillRunner.ts"
+    },
+    {
+      "name": "getBackfillCursor",
+      "file": "services/embedding/backfillRunner.ts"
+    },
+    {
+      "name": "runBackfill",
+      "file": "services/embedding/backfillRunner.ts"
+    },
+    {
+      "name": "backfillScenes",
+      "file": "services/embedding/backfillRunner.ts"
+    },
+    {
+      "name": "backfillNPCs",
+      "file": "services/embedding/backfillRunner.ts"
+    },
+    {
+      "name": "rebuildAllEmbeddings",
+      "file": "services/embedding/backfillRunner.ts"
+    },
+    {
+      "name": "runFullReindex",
+      "file": "services/embedding/backfillRunner.ts"
+    },
+    {
+      "name": "ProgressiveChunk",
+      "file": "services/embedding/embeddingScheduler.ts"
+    },
+    {
+      "name": "registerStore",
+      "file": "services/embedding/embeddingScheduler.ts"
+    },
+    {
+      "name": "enqueueProgressive",
+      "file": "services/embedding/embeddingScheduler.ts"
+    },
+    {
+      "name": "enqueueProgressiveWithExistingCheck",
+      "file": "services/embedding/embeddingScheduler.ts"
+    },
+    {
+      "name": "abortForCampaignSwitch",
+      "file": "services/embedding/embeddingScheduler.ts"
+    },
+    {
+      "name": "abortForModelSwitch",
+      "file": "services/embedding/embeddingScheduler.ts"
+    },
+    {
+      "name": "getQueueStats",
+      "file": "services/embedding/embeddingScheduler.ts"
+    },
+    {
+      "name": "_resetForTesting",
+      "file": "services/embedding/embeddingScheduler.ts"
+    },
+    {
+      "name": "_setStoreRefForTesting",
+      "file": "services/embedding/embeddingScheduler.ts"
+    },
+    {
+      "name": "DownloadProgress",
+      "file": "services/embedding/embedder.ts"
+    },
+    {
+      "name": "warmupEmbedder",
+      "file": "services/embedding/embedder.ts"
+    },
+    {
+      "name": "getLastInitError",
+      "file": "services/embedding/embedder.ts"
+    },
+    {
+      "name": "switchEmbeddingModel",
+      "file": "services/embedding/embedder.ts"
+    },
+    {
+      "name": "embedText",
+      "file": "services/embedding/embedder.ts"
+    },
+    {
+      "name": "embedBatch",
+      "file": "services/embedding/embedder.ts"
+    },
+    {
+      "name": "isEmbedderReady",
+      "file": "services/embedding/embedder.ts"
+    },
+    {
+      "name": "getEmbedDims",
+      "file": "services/embedding/embedder.ts"
+    },
+    {
+      "name": "getCurrentModelId",
+      "file": "services/embedding/embedder.ts"
+    }
+  ],
+  "services/tts": [
+    {
+      "name": "SpeakHandle",
+      "file": "services/tts/speech.ts"
+    },
+    {
+      "name": "SpeakCallbacks",
+      "file": "services/tts/speech.ts"
+    },
+    {
+      "name": "speechSupported",
+      "file": "services/tts/speech.ts"
+    },
+    {
+      "name": "initVoices",
+      "file": "services/tts/speech.ts"
+    },
+    {
+      "name": "getSelectedVoice",
+      "file": "services/tts/speech.ts"
+    },
+    {
+      "name": "speakChunks",
+      "file": "services/tts/speech.ts"
+    },
+    {
+      "name": "stopAllSpeech",
+      "file": "services/tts/speech.ts"
+    },
+    {
+      "name": "proseForTTS",
+      "file": "services/tts/proseStripper.ts"
+    },
+    {
+      "name": "chunkSentencesForTTS",
+      "file": "services/tts/proseStripper.ts"
+    },
+    {
+      "name": "splitWords",
+      "file": "services/tts/proseStripper.ts"
+    }
+  ],
+  "services/payload": [
+    {
+      "name": "RecommenderResult",
+      "file": "services/payload/contextRecommender.ts"
+    },
+    {
+      "name": "recommendContext",
+      "file": "services/payload/contextRecommender.ts"
+    },
+    {
+      "name": "BudgetMap",
+      "file": "services/payload/payloadBudgeter.ts"
+    },
+    {
+      "name": "computeBudgets",
+      "file": "services/payload/payloadBudgeter.ts"
+    },
+    {
+      "name": "buildPinnedMemoriesBlock",
+      "file": "services/payload/payloadHistoryFitting.ts"
+    },
+    {
+      "name": "fitHistory",
+      "file": "services/payload/payloadHistoryFitting.ts"
+    },
+    {
+      "name": "pinnedExcerptsTokenCost",
+      "file": "services/payload/payloadHistoryFitting.ts"
+    },
+    {
+      "name": "computeOpenThreads",
+      "file": "services/payload/payloadWorldContext.ts"
+    },
+    {
+      "name": "WorldBlock",
+      "file": "services/payload/payloadWorldContext.ts"
+    },
+    {
+      "name": "NpcStrategy",
+      "file": "services/payload/payloadWorldContext.ts"
+    },
+    {
+      "name": "buildReservedNamesBlock",
+      "file": "services/payload/payloadWorldContext.ts"
+    },
+    {
+      "name": "assembleWorldBlocks",
+      "file": "services/payload/payloadWorldContext.ts"
+    },
+    {
+      "name": "trimWorldBlocks",
+      "file": "services/payload/payloadWorldContext.ts"
+    },
+    {
+      "name": "BuildPayloadOptions",
+      "file": "services/payload/payloadBuilder.ts"
+    },
+    {
+      "name": "buildPayload",
+      "file": "services/payload/payloadBuilder.ts"
+    },
+    {
+      "name": "StableContentResult",
+      "file": "services/payload/payloadStableContent.ts"
+    },
+    {
+      "name": "buildStablePreamble",
+      "file": "services/payload/payloadStableContent.ts"
+    },
+    {
+      "name": "buildDivergenceBlock",
+      "file": "services/payload/payloadStableContent.ts"
+    },
+    {
+      "name": "AGGRESSIVENESS_RATIOS",
+      "file": "services/payload/condenser.ts"
+    },
+    {
+      "name": "getCondenseBudgetRatio",
+      "file": "services/payload/condenser.ts"
+    },
+    {
+      "name": "shouldCondense",
+      "file": "services/payload/condenser.ts"
+    },
+    {
+      "name": "getVerbatimWindow",
+      "file": "services/payload/condenser.ts"
+    },
+    {
+      "name": "computeTrimIndex",
+      "file": "services/payload/condenser.ts"
+    },
+    {
+      "name": "RerankCandidate",
+      "file": "services/payload/semanticReranker.ts"
+    },
+    {
+      "name": "rerankCandidates",
+      "file": "services/payload/semanticReranker.ts"
+    },
+    {
+      "name": "minifyLoreChunk",
+      "file": "services/payload/contextMinifier.ts"
+    },
+    {
+      "name": "minifyNPC",
+      "file": "services/payload/contextMinifier.ts"
+    }
+  ],
+  "services/campaign-state": [
+    {
+      "name": "EMPTY_REGISTER",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "DIVERGENCE_CATEGORIES",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "CATEGORY_LABELS",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "CATEGORY_DEFINITIONS",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "coerceCategory",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "stripReasoning",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "mergeSealEntries",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "renderRegisterForPayload",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "countRegisterTokens",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "getDivergenceSceneIds",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "toggleChapter",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "toggleCategory",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "pinFact",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "editFact",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "deleteFact",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "deleteChapter",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "toggleFact",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "dismissReviewFlag",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "editKnownBy",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "applySubjectTokens",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "getEntriesForChapter",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "getEntriesForNpc",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "migrateV1ToV2",
+      "file": "services/campaign-state/divergenceRegister.ts"
+    },
+    {
+      "name": "scanInventory",
+      "file": "services/campaign-state/inventoryParser.ts"
+    },
+    {
+      "name": "normalizeFaction",
+      "file": "services/campaign-state/knowledgeScope.ts"
+    },
+    {
+      "name": "normalizeSubjectToken",
+      "file": "services/campaign-state/knowledgeScope.ts"
+    },
+    {
+      "name": "KnownByToken",
+      "file": "services/campaign-state/knowledgeScope.ts"
+    },
+    {
+      "name": "parseKnownByToken",
+      "file": "services/campaign-state/knowledgeScope.ts"
+    },
+    {
+      "name": "isKnownToAnyOnStage",
+      "file": "services/campaign-state/knowledgeScope.ts"
+    },
+    {
+      "name": "compareSceneRef",
+      "file": "services/campaign-state/knowledgeScope.ts"
+    },
+    {
+      "name": "groupDivergencesBySubject",
+      "file": "services/campaign-state/knowledgeScope.ts"
+    },
+    {
+      "name": "DedupGroup",
+      "file": "services/campaign-state/factDeduper.ts"
+    },
+    {
+      "name": "DedupCancelled",
+      "file": "services/campaign-state/factDeduper.ts"
+    },
+    {
+      "name": "DedupResult",
+      "file": "services/campaign-state/factDeduper.ts"
+    },
+    {
+      "name": "runFactDedup",
+      "file": "services/campaign-state/factDeduper.ts"
+    },
+    {
+      "name": "scanCharacterProfile",
+      "file": "services/campaign-state/characterProfileParser.ts"
+    },
+    {
+      "name": "fetchFacts",
+      "file": "services/campaign-state/semanticMemory.ts"
+    },
+    {
+      "name": "extractContextEntities",
+      "file": "services/campaign-state/semanticMemory.ts"
+    },
+    {
+      "name": "queryFacts",
+      "file": "services/campaign-state/semanticMemory.ts"
+    },
+    {
+      "name": "formatFactsForContext",
+      "file": "services/campaign-state/semanticMemory.ts"
+    },
+    {
+      "name": "SelectedTraits",
+      "file": "services/campaign-state/semanticMemory.ts"
+    },
+    {
+      "name": "queryTraits",
+      "file": "services/campaign-state/semanticMemory.ts"
+    },
+    {
+      "name": "formatTraitsForContext",
+      "file": "services/campaign-state/semanticMemory.ts"
+    },
+    {
+      "name": "ResolvedTruth",
+      "file": "services/campaign-state/timelineResolver.ts"
+    },
+    {
+      "name": "resolveTimeline",
+      "file": "services/campaign-state/timelineResolver.ts"
+    },
+    {
+      "name": "queryTimeline",
+      "file": "services/campaign-state/timelineResolver.ts"
+    },
+    {
+      "name": "formatResolvedForContext",
+      "file": "services/campaign-state/timelineResolver.ts"
+    },
+    {
+      "name": "getEventsByScene",
+      "file": "services/campaign-state/timelineResolver.ts"
+    },
+    {
+      "name": "maxImportanceForScene",
+      "file": "services/campaign-state/timelineResolver.ts"
+    },
+    {
+      "name": "ClusteringCancelled",
+      "file": "services/campaign-state/factClusterer.ts"
+    },
+    {
+      "name": "runFactClustering",
+      "file": "services/campaign-state/factClusterer.ts"
+    },
+    {
+      "name": "SubjectTokenUpdate",
+      "file": "services/campaign-state/factClusterer.ts"
+    },
+    {
+      "name": "AssignSubjectTokensResult",
+      "file": "services/campaign-state/factClusterer.ts"
+    },
+    {
+      "name": "deriveSubjectTokenUpdates",
+      "file": "services/campaign-state/factClusterer.ts"
+    },
+    {
+      "name": "assignSubjectTokens",
+      "file": "services/campaign-state/factClusterer.ts"
+    }
+  ],
+  "services/retrieval": [
+    {
+      "name": "computeIdf",
+      "file": "services/retrieval/lexicalFusion.ts"
+    },
+    {
+      "name": "fuseRRF",
+      "file": "services/retrieval/lexicalFusion.ts"
+    }
+  ],
+  "services/arc": [
+    {
+      "name": "rollArcTick",
+      "file": "services/arc/arcDice.ts"
+    },
+    {
+      "name": "rollArcOutcome",
+      "file": "services/arc/arcDice.ts"
+    },
+    {
+      "name": "advanceRung",
+      "file": "services/arc/arcDice.ts"
+    },
+    {
+      "name": "ARC_TICK_DC",
+      "file": "services/arc/arcConstants.ts"
+    },
+    {
+      "name": "LADDER_MIN",
+      "file": "services/arc/arcConstants.ts"
+    },
+    {
+      "name": "LADDER_MAX",
+      "file": "services/arc/arcConstants.ts"
+    },
+    {
+      "name": "MAX_ACTIVE_ARCS",
+      "file": "services/arc/arcConstants.ts"
+    },
+    {
+      "name": "TYPE_COOLDOWN_SEAMS",
+      "file": "services/arc/arcConstants.ts"
+    },
+    {
+      "name": "ARC_STANCE_MOD",
+      "file": "services/arc/arcConstants.ts"
+    },
+    {
+      "name": "ARC_BAND_RUNG_DELTA",
+      "file": "services/arc/arcConstants.ts"
+    },
+    {
+      "name": "ARC_SURFACE_EMIT_MIN",
+      "file": "services/arc/arcConstants.ts"
+    },
+    {
+      "name": "ARC_SURFACE_TIER",
+      "file": "services/arc/arcConstants.ts"
+    },
+    {
+      "name": "arcSurfaceLine",
+      "file": "services/arc/arcSurface.ts"
+    },
+    {
+      "name": "SpawnArcAnchor",
+      "file": "services/arc/arcSpawn.ts"
+    },
+    {
+      "name": "SpawnArcInput",
+      "file": "services/arc/arcSpawn.ts"
+    },
+    {
+      "name": "spawnArc",
+      "file": "services/arc/arcSpawn.ts"
+    },
+    {
+      "name": "pickArcSpawnInput",
+      "file": "services/arc/arcSpawn.ts"
+    },
+    {
+      "name": "scanArcStance",
+      "file": "services/arc/arcStance.ts"
+    }
+  ],
+  "services/image": [
+    {
+      "name": "illustrateMessage",
+      "file": "services/image/index.ts"
+    },
+    {
+      "name": "generateNPCPortrait",
+      "file": "services/image/portrait.ts"
+    },
+    {
+      "name": "GenerateImageOpts",
+      "file": "services/image/imageClient.ts"
+    },
+    {
+      "name": "generateImage",
+      "file": "services/image/imageClient.ts"
+    },
+    {
+      "name": "DEFAULT_STYLE",
+      "file": "services/image/composePrompt.ts"
+    },
+    {
+      "name": "PORTRAIT_NEGATIVE",
+      "file": "services/image/composePrompt.ts"
+    },
+    {
+      "name": "ComposeInput",
+      "file": "services/image/composePrompt.ts"
+    },
+    {
+      "name": "ComposedPrompt",
+      "file": "services/image/composePrompt.ts"
+    },
+    {
+      "name": "composeImagePrompt",
+      "file": "services/image/composePrompt.ts"
+    }
+  ],
+  "services/lore": [
+    {
+      "name": "retrieveRelevantRules",
+      "file": "services/lore/rulesRetriever.ts"
+    },
+    {
+      "name": "extractEngineSeeds",
+      "file": "services/lore/loreEngineSeeder.ts"
+    },
+    {
+      "name": "IndexingProgress",
+      "file": "services/lore/loreIndexer.ts"
+    },
+    {
+      "name": "deriveDefaultLoreMeta",
+      "file": "services/lore/loreIndexer.ts"
+    },
+    {
+      "name": "upgradeVectorOnlyDefault",
+      "file": "services/lore/loreIndexer.ts"
+    },
+    {
+      "name": "indexLore",
+      "file": "services/lore/loreIndexer.ts"
+    },
+    {
+      "name": "classifyCategory",
+      "file": "services/lore/loreChunker.ts"
+    },
+    {
+      "name": "chunkLoreFile",
+      "file": "services/lore/loreChunker.ts"
+    },
+    {
+      "name": "LoreCheckInput",
+      "file": "services/lore/loreCheck.ts"
+    },
+    {
+      "name": "buildSearchQuery",
+      "file": "services/lore/loreCheck.ts"
+    },
+    {
+      "name": "runLoreCheck",
+      "file": "services/lore/loreCheck.ts"
+    },
+    {
+      "name": "DirectRewriteInput",
+      "file": "services/lore/loreCheck.ts"
+    },
+    {
+      "name": "runDirectRewrite",
+      "file": "services/lore/loreCheck.ts"
+    },
+    {
+      "name": "buildRewritePrompt",
+      "file": "services/lore/loreCheck.ts"
+    },
+    {
+      "name": "buildVerifierPrompt",
+      "file": "services/lore/loreCheck.ts"
+    },
+    {
+      "name": "IndexingProgress",
+      "file": "services/lore/rulesIndexer.ts"
+    },
+    {
+      "name": "indexRules",
+      "file": "services/lore/rulesIndexer.ts"
+    },
+    {
+      "name": "computeRulesThreshold",
+      "file": "services/lore/rulesIndexer.ts"
+    },
+    {
+      "name": "parseNPCsFromLore",
+      "file": "services/lore/loreNPCParser.ts"
+    },
+    {
+      "name": "loadLootTree",
+      "file": "services/lore/lootTreeLoader.ts"
+    },
+    {
+      "name": "enrichLoreKeywords",
+      "file": "services/lore/loreKeywordEnricher.ts"
+    },
+    {
+      "name": "retrieveRelevantLore",
+      "file": "services/lore/loreRetriever.ts"
+    },
+    {
+      "name": "searchLoreByQuery",
+      "file": "services/lore/loreRetriever.ts"
+    }
+  ],
+  "services/infrastructure": [
+    {
+      "name": "countTokens",
+      "file": "services/infrastructure/tokenizer.ts"
+    },
+    {
+      "name": "INPUT_DELIMITER",
+      "file": "services/infrastructure/utilityPrompts.ts"
+    },
+    {
+      "name": "JSON_ONLY_FOOTER",
+      "file": "services/infrastructure/utilityPrompts.ts"
+    },
+    {
+      "name": "JSON_ARRAY_ONLY_FOOTER",
+      "file": "services/infrastructure/utilityPrompts.ts"
+    },
+    {
+      "name": "ANCHOR_BEFORE_INPUT",
+      "file": "services/infrastructure/utilityPrompts.ts"
+    },
+    {
+      "name": "TTRPG_PERSONA_ARCHIVIST",
+      "file": "services/infrastructure/utilityPrompts.ts"
+    },
+    {
+      "name": "TTRPG_PERSONA_GM_ASSISTANT",
+      "file": "services/infrastructure/utilityPrompts.ts"
+    },
+    {
+      "name": "TTRPG_PERSONA_STATE_ANALYZER",
+      "file": "services/infrastructure/utilityPrompts.ts"
+    },
+    {
+      "name": "TTRPG_PERSONA_RETRIEVAL_PLANNER",
+      "file": "services/infrastructure/utilityPrompts.ts"
+    },
+    {
+      "name": "EVENT_TYPES_LIST",
+      "file": "services/infrastructure/utilityPrompts.ts"
+    },
+    {
+      "name": "KNOWNBY_RULES",
+      "file": "services/infrastructure/utilityPrompts.ts"
+    },
+    {
+      "name": "buildSubjectTokenRules",
+      "file": "services/infrastructure/utilityPrompts.ts"
+    },
+    {
+      "name": "NPC_INNER_STATE_RULES",
+      "file": "services/infrastructure/utilityPrompts.ts"
+    },
+    {
+      "name": "SCENE_EVENT_RULES",
+      "file": "services/infrastructure/utilityPrompts.ts"
+    },
+    {
+      "name": "APPEARANCE_UPDATE_RULES",
+      "file": "services/infrastructure/utilityPrompts.ts"
+    },
+    {
+      "name": "DRIVES_UPDATE_RULES",
+      "file": "services/infrastructure/utilityPrompts.ts"
+    },
+    {
+      "name": "joinPromptSections",
+      "file": "services/infrastructure/utilityPrompts.ts"
+    },
+    {
+      "name": "backgroundQueue",
+      "file": "services/infrastructure/backgroundQueue.ts"
+    },
+    {
+      "name": "ThemeSetting",
+      "file": "services/infrastructure/themeService.ts"
+    },
+    {
+      "name": "ResolvedTheme",
+      "file": "services/infrastructure/themeService.ts"
+    },
+    {
+      "name": "resolveTheme",
+      "file": "services/infrastructure/themeService.ts"
+    },
+    {
+      "name": "applyTheme",
+      "file": "services/infrastructure/themeService.ts"
+    },
+    {
+      "name": "watchSystemTheme",
+      "file": "services/infrastructure/themeService.ts"
+    },
+    {
+      "name": "applyUIScale",
+      "file": "services/infrastructure/themeService.ts"
+    },
+    {
+      "name": "extractJsonRobust",
+      "file": "services/infrastructure/jsonExtract.ts"
+    },
+    {
+      "name": "extractJson",
+      "file": "services/infrastructure/jsonExtract.ts"
+    },
+    {
+      "name": "SaveFile",
+      "file": "services/infrastructure/saveFilePicker.ts"
+    },
+    {
+      "name": "encryptProvider",
+      "file": "services/infrastructure/settingsCrypto.ts"
+    },
+    {
+      "name": "decryptProvider",
+      "file": "services/infrastructure/settingsCrypto.ts"
+    },
+    {
+      "name": "encryptSettingsProviders",
+      "file": "services/infrastructure/settingsCrypto.ts"
+    },
+    {
+      "name": "decryptSettingsProviders",
+      "file": "services/infrastructure/settingsCrypto.ts"
+    },
+    {
+      "name": "encryptPreset",
+      "file": "services/infrastructure/settingsCrypto.ts"
+    },
+    {
+      "name": "decryptPreset",
+      "file": "services/infrastructure/settingsCrypto.ts"
+    },
+    {
+      "name": "encryptSettingsPresets",
+      "file": "services/infrastructure/settingsCrypto.ts"
+    },
+    {
+      "name": "decryptSettingsPresets",
+      "file": "services/infrastructure/settingsCrypto.ts"
+    }
+  ],
+  "components/DedupReviewModal.tsx": [
+    {
+      "name": "DedupReviewModal",
+      "file": "components/DedupReviewModal.tsx"
+    }
+  ],
+  "components/TelemetryStrip.tsx": [
+    {
+      "name": "TelemetryStrip",
+      "file": "components/TelemetryStrip.tsx"
+    }
+  ],
+  "components/LootDropTraceView.tsx": [
+    {
+      "name": "LootDropTraceView",
+      "file": "components/LootDropTraceView.tsx"
+    }
+  ],
+  "components/ErrorBoundary.tsx": [
+    {
+      "name": "ErrorBoundary",
+      "file": "components/ErrorBoundary.tsx"
+    }
+  ],
+  "components/GenerationProgress.tsx": [
+    {
+      "name": "GenerationProgress",
+      "file": "components/GenerationProgress.tsx"
+    }
+  ],
+  "components/ContextDrawer.tsx": [
+    {
+      "name": "ContextDrawer",
+      "file": "components/ContextDrawer.tsx"
+    }
+  ],
+  "components/SamplingPanel.tsx": [
+    {
+      "name": "SamplingPanel",
+      "file": "components/SamplingPanel.tsx"
+    }
+  ],
+  "components/UtilityCallStrip.tsx": [
+    {
+      "name": "UtilityCallStrip",
+      "file": "components/UtilityCallStrip.tsx"
+    }
+  ],
+  "components/SettingsModal.tsx": [
+    {
+      "name": "SettingsModal",
+      "file": "components/SettingsModal.tsx"
+    }
+  ],
+  "components/SceneNoteEditor.tsx": [
+    {
+      "name": "SceneNoteEditor",
+      "file": "components/SceneNoteEditor.tsx"
+    }
+  ],
+  "components/TokenGauge.tsx": [
+    {
+      "name": "TokenGauge",
+      "file": "components/TokenGauge.tsx"
+    }
+  ],
+  "components/NPCReviewModal.tsx": [
+    {
+      "name": "NPCReviewAction",
+      "file": "components/NPCReviewModal.tsx"
+    },
+    {
+      "name": "NPCReviewModal",
+      "file": "components/NPCReviewModal.tsx"
+    }
+  ],
+  "components/MobileNavBar.tsx": [
+    {
+      "name": "MobileNavBar",
+      "file": "components/MobileNavBar.tsx"
+    }
+  ],
+  "components/Toast.tsx": [
+    {
+      "name": "useToastStore",
+      "file": "components/Toast.tsx"
+    },
+    {
+      "name": "toast",
+      "file": "components/Toast.tsx"
+    },
+    {
+      "name": "ToastContainer",
+      "file": "components/Toast.tsx"
+    }
+  ],
+  "components/CampaignHub.tsx": [
+    {
+      "name": "CampaignHub",
+      "file": "components/CampaignHub.tsx"
+    }
+  ],
+  "components/ChatArea.tsx": [
+    {
+      "name": "ChatArea",
+      "file": "components/ChatArea.tsx"
+    }
+  ],
+  "components/ConfirmSheet.tsx": [
+    {
+      "name": "appConfirm",
+      "file": "components/ConfirmSheet.tsx"
+    },
+    {
+      "name": "ConfirmSheet",
+      "file": "components/ConfirmSheet.tsx"
+    }
+  ],
+  "components/BackupModal.tsx": [
+    {
+      "name": "BackupModal",
+      "file": "components/BackupModal.tsx"
+    }
+  ],
+  "components/NPCPressureInspector.tsx": [
+    {
+      "name": "NPCPressureInspector",
+      "file": "components/NPCPressureInspector.tsx"
+    }
+  ],
+  "components/NPCLedgerModal.tsx": [
+    {
+      "name": "NPCLedgerModal",
+      "file": "components/NPCLedgerModal.tsx"
+    }
+  ],
+  "components/PayloadTraceView.tsx": [
+    {
+      "name": "PayloadTraceView",
+      "file": "components/PayloadTraceView.tsx"
+    }
+  ],
+  "components/Header.tsx": [
+    {
+      "name": "Header",
+      "file": "components/Header.tsx"
+    }
+  ],
+  "components/settings": [
+    {
+      "name": "AdvancedEmbeddingPanel",
+      "file": "components/settings/AdvancedEmbeddingPanel.tsx"
+    },
+    {
+      "name": "DebugPanel",
+      "file": "components/settings/DebugPanel.tsx"
+    },
+    {
+      "name": "GlobalSettingsPanel",
+      "file": "components/settings/GlobalSettingsPanel.tsx"
+    },
+    {
+      "name": "ProvidersPanel",
+      "file": "components/settings/ProvidersPanel.tsx"
+    },
+    {
+      "name": "PresetsPanel",
+      "file": "components/settings/PresetsPanel.tsx"
+    }
+  ],
+  "components/context-drawer": [
+    {
+      "name": "CharacterProfileEditor",
+      "file": "components/context-drawer/CharacterProfileEditor.tsx"
+    },
+    {
+      "name": "GalleryTab",
+      "file": "components/context-drawer/GalleryTab.tsx"
+    },
+    {
+      "name": "TemplateField",
+      "file": "components/context-drawer/TemplateField.tsx"
+    },
+    {
+      "name": "EnginesTab",
+      "file": "components/context-drawer/EnginesTab.tsx"
+    },
+    {
+      "name": "ChapterCard",
+      "file": "components/context-drawer/ChapterCard.tsx"
+    },
+    {
+      "name": "BookkeepingTab",
+      "file": "components/context-drawer/BookkeepingTab.tsx"
+    },
+    {
+      "name": "TimelineDotRow",
+      "file": "components/context-drawer/TimelineDotRow.tsx"
+    },
+    {
+      "name": "MemoryTab",
+      "file": "components/context-drawer/MemoryTab.tsx"
+    },
+    {
+      "name": "ResolvedStatePanel",
+      "file": "components/context-drawer/ResolvedStatePanel.tsx"
+    },
+    {
+      "name": "Toggle",
+      "file": "components/context-drawer/Toggle.tsx"
+    },
+    {
+      "name": "LoreTab",
+      "file": "components/context-drawer/LoreTab.tsx"
+    },
+    {
+      "name": "RulesManagerTab",
+      "file": "components/context-drawer/RulesManagerTab.tsx"
+    },
+    {
+      "name": "TokenCounter",
+      "file": "components/context-drawer/TokenCounter.tsx"
+    },
+    {
+      "name": "ChapterTab",
+      "file": "components/context-drawer/ChapterTab.tsx"
+    },
+    {
+      "name": "RulesTab",
+      "file": "components/context-drawer/RulesTab.tsx"
+    }
+  ],
+  "components/chat": [
+    {
+      "name": "DiceRollModal",
+      "file": "components/chat/DiceRollModal.tsx"
+    },
+    {
+      "name": "DivergenceEntryModal",
+      "file": "components/chat/DivergenceEntryModal.tsx"
+    },
+    {
+      "name": "LoreCheckModal",
+      "file": "components/chat/LoreCheckModal.tsx"
+    },
+    {
+      "name": "ArcInjectorButton",
+      "file": "components/chat/ArcInjectorButton.tsx"
+    },
+    {
+      "name": "normalizeEmphasis",
+      "file": "components/chat/ContentWithChips.tsx"
+    },
+    {
+      "name": "ContentWithChips",
+      "file": "components/chat/ContentWithChips.tsx"
+    },
+    {
+      "name": "ChatInput",
+      "file": "components/chat/ChatInput.tsx"
+    },
+    {
+      "name": "RenameNpcModal",
+      "file": "components/chat/RenameNpcModal.tsx"
+    },
+    {
+      "name": "PinnedMemoriesPanel",
+      "file": "components/chat/PinnedMemoriesPanel.tsx"
+    },
+    {
+      "name": "ToolCallChips",
+      "file": "components/chat/ToolCallChips.tsx"
+    },
+    {
+      "name": "LootRollModal",
+      "file": "components/chat/LootRollModal.tsx"
+    },
+    {
+      "name": "RegenerateSheetProps",
+      "file": "components/chat/RegenerateSheet.tsx"
+    },
+    {
+      "name": "RegenerateSheet",
+      "file": "components/chat/RegenerateSheet.tsx"
+    },
+    {
+      "name": "PrecontextBox",
+      "file": "components/chat/PrecontextBox.tsx"
+    },
+    {
+      "name": "MessageBubble",
+      "file": "components/chat/MessageBubble.tsx"
+    },
+    {
+      "name": "ActionSpeedDial",
+      "file": "components/chat/ActionSpeedDial.tsx"
+    }
+  ],
+  "components/npc-ledger": [
+    {
+      "name": "NPCListView",
+      "file": "components/npc-ledger/NPCListView.tsx"
+    },
+    {
+      "name": "NPCGalleryView",
+      "file": "components/npc-ledger/NPCGalleryView.tsx"
+    },
+    {
+      "name": "NPCEditForm",
+      "file": "components/npc-ledger/NPCEditForm.tsx"
+    },
+    {
+      "name": "NPCSuggestionsPanel",
+      "file": "components/npc-ledger/NPCSuggestionsPanel.tsx"
+    },
+    {
+      "name": "NPCPortraitSection",
+      "file": "components/npc-ledger/NPCPortraitSection.tsx"
+    }
+  ],
+  "components/pc": [
+    {
+      "name": "PCCreationResult",
+      "file": "components/pc/PCCreationWizard.tsx"
+    },
+    {
+      "name": "PCCreationWizard",
+      "file": "components/pc/PCCreationWizard.tsx"
+    },
+    {
+      "name": "WorldPrimerPanel",
+      "file": "components/pc/WorldPrimerPanel.tsx"
+    }
+  ],
+  "components/engine-trace": [
+    {
+      "name": "EngineTraceView",
+      "file": "components/engine-trace/EngineTraceView.tsx"
+    }
+  ]
+}

@@ -1,0 +1,505 @@
+{
+  "total_edges": 1196,
+  "edges_sample": [
+    {
+      "source": "store/useAppStore.ts",
+      "target": "zustand",
+      "type": "static"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "./slices/settingsSlice",
+      "type": "static"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "./slices/campaignSlice",
+      "type": "static"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "./slices/chatSlice",
+      "type": "static"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "./slices/uiSlice",
+      "type": "static"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "./slices/archiveSlice",
+      "type": "static"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "./slices/loreSlice",
+      "type": "static"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "./slices/npcSlice",
+      "type": "static"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "./slices/pressureSlice",
+      "type": "static"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "../services/embedding/embeddingScheduler",
+      "type": "static"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "./slices/settingsSlice",
+      "type": "static"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "./slices/uiSlice",
+      "type": "static"
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "idb-keyval",
+      "type": "static"
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "../types",
+      "type": "static"
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "../services/storage/imageStorage",
+      "type": "static"
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "../services/lore/loreIndexer",
+      "type": "static"
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "../services/npc/agencyBands",
+      "type": "static"
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "../services/apiClient",
+      "type": "dynamic"
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "../services/apiClient",
+      "type": "dynamic"
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "../services/apiClient",
+      "type": "dynamic"
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "../services/apiClient",
+      "type": "dynamic"
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "../services/campaign-state",
+      "type": "dynamic"
+    },
+    {
+      "source": "store/settingsMigration.ts",
+      "target": "../types",
+      "type": "static"
+    },
+    {
+      "source": "store/settingsMigration.ts",
+      "target": "../utils/uid",
+      "type": "static"
+    },
+    {
+      "source": "utils/haptics.ts",
+      "target": "@capacitor/core",
+      "type": "static"
+    },
+    {
+      "source": "utils/haptics.ts",
+      "target": "@capacitor/haptics",
+      "type": "static"
+    },
+    {
+      "source": "utils/llmCall.ts",
+      "target": "../types",
+      "type": "static"
+    },
+    {
+      "source": "utils/llmCall.ts",
+      "target": "../services/llm/llmRequestQueue",
+      "type": "static"
+    },
+    {
+      "source": "utils/llmCall.ts",
+      "target": "./llmApiHelper",
+      "type": "static"
+    },
+    {
+      "source": "utils/llmCall.ts",
+      "target": "@capacitor/core",
+      "type": "static"
+    },
+    {
+      "source": "utils/llmCall.ts",
+      "target": "../services/llm/utilityCallTracker",
+      "type": "static"
+    },
+    {
+      "source": "utils/llmCall.ts",
+      "target": "../services/llm/cacheTelemetry",
+      "type": "static"
+    },
+    {
+      "source": "utils/llmCall.ts",
+      "target": "../types/llmMessages",
+      "type": "static"
+    },
+    {
+      "source": "utils/llmApiHelper.ts",
+      "target": "../types",
+      "type": "static"
+    },
+    {
+      "source": "utils/entityResolution.ts",
+      "target": "../types",
+      "type": "static"
+    },
+    {
+      "source": "utils/samplingProfiles.ts",
+      "target": "../types",
+      "type": "static"
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "idb-keyval",
+      "type": "static"
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "@capacitor/core",
+      "type": "static"
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "@capacitor/filesystem",
+      "type": "static"
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "./infrastructure",
+      "type": "static"
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "./lore/lootTreeLoader",
+      "type": "static"
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "../types",
+      "type": "static"
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "../store/campaignStore",
+      "type": "static"
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "./storage/_helpers",
+      "type": "static"
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "../utils/uid",
+      "type": "static"
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "./embedding",
+      "type": "dynamic"
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "./storage",
+      "type": "dynamic"
+    },
+    {
+      "source": "services/apiClient.ts",
+      "target": "../types",
+      "type": "static"
+    },
+    {
+      "source": "services/apiClient.ts",
+      "target": "./storage",
+      "type": "static"
+    },
+    {
+      "source": "services/apiClient.ts",
+      "target": "./storage/backupStorage",
+      "type": "static"
+    },
+    {
+      "source": "services/apiClient.ts",
+      "target": "idb-keyval",
+      "type": "static"
+    },
+    {
+      "source": "services/apiClient.ts",
+      "target": "../store/campaignStore",
+      "type": "dynamic"
+    },
+    {
+      "source": "services/apiClient.ts",
+      "target": "../store/campaignStore",
+      "type": "dynamic"
+    },
+    {
+      "source": "services/apiClient.ts",
+      "target": "./infrastructure",
+      "type": "dynamic"
+    },
+    {
+      "source": "services/chatEngine.ts",
+      "target": "./chatEngine",
+      "type": "static"
+    },
+    {
+      "source": "services/chatEngine.ts",
+      "target": "./payload",
+      "type": "static"
+    },
+    {
+      "source": "services/chatEngine.ts",
+      "target": "./llm/llmService",
+      "type": "static"
+    },
+    {
+      "source": "services/chatEngine.ts",
+      "target": "./llm/llmService",
+      "type": "static"
+    },
+    {
+      "source": "services/chatEngine.ts",
+      "target": "./npc",
+      "type": "static"
+    },
+    {
+      "source": "services/chatEngine.ts",
+      "target": "./engine",
+      "type": "static"
+    },
+    {
+      "source": "services/chatEngine.ts",
+      "target": "./archive",
+      "type": "static"
+    },
+    {
+      "source": "services/callLLM.ts",
+      "target": "../utils/llmCall",
+      "type": "static"
+    },
+    {
+      "source": "services/callLLM.ts",
+      "target": "./llm/llmRequestQueue",
+      "type": "static"
+    },
+    {
+      "source": "hooks/useBackHandler.ts",
+      "target": "react",
+      "type": "static"
+    },
+    {
+      "source": "hooks/useBackHandler.ts",
+      "target": "../services/backHandler",
+      "type": "static"
+    },
+    {
+      "source": "hooks/useLoreIndexer.ts",
+      "target": "react",
+      "type": "static"
+    },
+    {
+      "source": "hooks/useLoreIndexer.ts",
+      "target": "../store/useAppStore",
+      "type": "static"
+    },
+    {
+      "source": "hooks/useLoreIndexer.ts",
+      "target": "../services/lore/loreIndexer",
+      "type": "static"
+    },
+    {
+      "source": "hooks/useLoreIndexer.ts",
+      "target": "../store/campaignStore",
+      "type": "static"
+    },
+    {
+      "source": "hooks/useRulesIndexer.ts",
+      "target": "react",
+      "type": "static"
+    },
+    {
+      "source": "hooks/useRulesIndexer.ts",
+      "target": "../store/useAppStore",
+      "type": "static"
+    },
+    {
+      "source": "hooks/useRulesIndexer.ts",
+      "target": "../services/lore",
+      "type": "static"
+    },
+    {
+      "source": "hooks/useRulesIndexer.ts",
+      "target": "../services/infrastructure",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useSwipeVariants.ts",
+      "target": "react",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useSwipeVariants.ts",
+      "target": "../../store/useAppStore",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useSwipeVariants.ts",
+      "target": "../../services/turn/swipeGeneration",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useSwipeVariants.ts",
+      "target": "../../services/turn/pendingCommit",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useSwipeVariants.ts",
+      "target": "../../types",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useSwipeVariants.ts",
+      "target": "../Toast",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useSwipeVariants.ts",
+      "target": "../../store/campaignStore",
+      "type": "dynamic"
+    },
+    {
+      "source": "components/hooks/useSwipeVariants.ts",
+      "target": "../../store/campaignStore",
+      "type": "dynamic"
+    },
+    {
+      "source": "components/hooks/useMessageEditor.ts",
+      "target": "react",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useMessageEditor.ts",
+      "target": "../../types",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useMessageEditor.ts",
+      "target": "../../store/useAppStore",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useMessageEditor.ts",
+      "target": "../../services/apiClient",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useMessageEditor.ts",
+      "target": "../Toast",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useMessageEditor.ts",
+      "target": "../../services/turn",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useCondenser.ts",
+      "target": "react",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useCondenser.ts",
+      "target": "../../types",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useCondenser.ts",
+      "target": "../../services/payload",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useRetryStoryAI.ts",
+      "target": "react",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useRetryStoryAI.ts",
+      "target": "../../store/useAppStore",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useRetryStoryAI.ts",
+      "target": "../../services/turn/swipeGeneration",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useRetryStoryAI.ts",
+      "target": "../../services/turn/pendingCommit",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useRetryStoryAI.ts",
+      "target": "../../types",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useRetryStoryAI.ts",
+      "target": "../../services/llm/llmService",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useRetryStoryAI.ts",
+      "target": "../Toast",
+      "type": "static"
+    },
+    {
+      "source": "components/hooks/useRetryStoryAI.ts",
+      "target": "../../store/campaignStore",
+      "type": "dynamic"
+    },
+    {
+      "source": "store/slices/settingsSlice.ts",
+      "target": "zustand",
+      "type": "static"
+    },
+    {
+      "source": "store/slices/settingsSlice.ts",
+      "target": "../../types",
+      "type": "static"
+    }
+  ]
+}

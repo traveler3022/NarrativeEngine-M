@@ -1,0 +1,294 @@
+[
+  {
+    "file": "store/campaignStore.ts",
+    "target": "../services/apiClient"
+  },
+  {
+    "file": "store/campaignStore.ts",
+    "target": "../services/apiClient"
+  },
+  {
+    "file": "store/campaignStore.ts",
+    "target": "../services/apiClient"
+  },
+  {
+    "file": "store/campaignStore.ts",
+    "target": "../services/apiClient"
+  },
+  {
+    "file": "store/campaignStore.ts",
+    "target": "../services/campaign-state"
+  },
+  {
+    "file": "services/campaignBundle.ts",
+    "target": "./embedding"
+  },
+  {
+    "file": "services/campaignBundle.ts",
+    "target": "./storage"
+  },
+  {
+    "file": "services/apiClient.ts",
+    "target": "../store/campaignStore"
+  },
+  {
+    "file": "services/apiClient.ts",
+    "target": "../store/campaignStore"
+  },
+  {
+    "file": "services/apiClient.ts",
+    "target": "./infrastructure"
+  },
+  {
+    "file": "components/hooks/useSwipeVariants.ts",
+    "target": "../../store/campaignStore"
+  },
+  {
+    "file": "components/hooks/useSwipeVariants.ts",
+    "target": "../../store/campaignStore"
+  },
+  {
+    "file": "components/hooks/useRetryStoryAI.ts",
+    "target": "../../store/campaignStore"
+  },
+  {
+    "file": "store/slices/npcSlice.ts",
+    "target": "../../store/campaignStore"
+  },
+  {
+    "file": "store/slices/pressureSlice.ts",
+    "target": "../../store/campaignStore"
+  },
+  {
+    "file": "store/slices/chatSlice.ts",
+    "target": "../../store/campaignStore"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../store/campaignStore"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../types"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../services/turn"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../services/storage"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../services/infrastructure"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../store/campaignStore"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../services/embedding"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../store/useAppStore"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../services/storage"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "target": "../../services/apiClient"
+  },
+  {
+    "file": "store/slices/loreSlice.ts",
+    "target": "../../store/campaignStore"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "target": "../../store/campaignStore"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "target": "../../store/campaignStore"
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "target": "../storage"
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "target": "../storage"
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "target": "../storage"
+  },
+  {
+    "file": "services/npc/agencyCollision.ts",
+    "target": "./agencyConstants"
+  },
+  {
+    "file": "services/npc/agencyCollision.ts",
+    "target": "./agencyConstants"
+  },
+  {
+    "file": "services/npc/agencyCollision.ts",
+    "target": "./agencyConstants"
+  },
+  {
+    "file": "services/npc/agencyCollision.ts",
+    "target": "./agencyConstants"
+  },
+  {
+    "file": "services/storage/imageStorage.ts",
+    "target": "idb-keyval"
+  },
+  {
+    "file": "services/storage/index.ts",
+    "target": "../embedding"
+  },
+  {
+    "file": "services/storage/index.ts",
+    "target": "../../types"
+  },
+  {
+    "file": "services/storage/index.ts",
+    "target": "../embedding"
+  },
+  {
+    "file": "services/storage/archiveStorage.ts",
+    "target": "../../types"
+  },
+  {
+    "file": "services/storage/archiveStorage.ts",
+    "target": "../../types"
+  },
+  {
+    "file": "services/storage/archiveStorage.ts",
+    "target": "../../types"
+  },
+  {
+    "file": "services/storage/archiveStorage.ts",
+    "target": "../../types"
+  },
+  {
+    "file": "services/storage/archiveStorage.ts",
+    "target": "../../types"
+  },
+  {
+    "file": "services/storage/archiveStorage.ts",
+    "target": "../../types"
+  },
+  {
+    "file": "services/storage/archiveStorage.ts",
+    "target": "../../types"
+  },
+  {
+    "file": "services/storage/archiveStorage.ts",
+    "target": "../../types"
+  },
+  {
+    "file": "services/storage/archiveStorage.ts",
+    "target": "../../types"
+  },
+  {
+    "file": "services/storage/archiveStorage.ts",
+    "target": "../../types"
+  },
+  {
+    "file": "services/embedding/backfillRunner.ts",
+    "target": "../lore"
+  },
+  {
+    "file": "services/embedding/backfillRunner.ts",
+    "target": "../../store/useAppStore"
+  },
+  {
+    "file": "services/embedding/backfillRunner.ts",
+    "target": "../lore"
+  },
+  {
+    "file": "services/embedding/backfillRunner.ts",
+    "target": "../../store/useAppStore"
+  },
+  {
+    "file": "services/embedding/embedder.ts",
+    "target": "../../store/useAppStore"
+  },
+  {
+    "file": "services/embedding/embedder.ts",
+    "target": "./embeddingScheduler"
+  },
+  {
+    "file": "services/arc/arcConstants.ts",
+    "target": "../../types"
+  },
+  {
+    "file": "services/arc/arcConstants.ts",
+    "target": "../../types"
+  },
+  {
+    "file": "services/image/portrait.ts",
+    "target": "../../types"
+  },
+  {
+    "file": "services/turn/stages/rulesStage.ts",
+    "target": "../../lore"
+  },
+  {
+    "file": "services/turn/stages/factsTimelineStage.ts",
+    "target": "../../campaign-state"
+  },
+  {
+    "file": "components/CampaignHub.tsx",
+    "target": "../services/lore"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "target": "../store/campaignStore"
+  },
+  {
+    "file": "components/context-drawer/LoreTab.tsx",
+    "target": "../../store/campaignStore"
+  },
+  {
+    "file": "components/context-drawer/LoreTab.tsx",
+    "target": "../../store/campaignStore"
+  },
+  {
+    "file": "components/chat/DivergenceEntryModal.tsx",
+    "target": "../../utils/llmCall"
+  },
+  {
+    "file": "components/chat/DivergenceEntryModal.tsx",
+    "target": "../../services/infrastructure"
+  },
+  {
+    "file": "components/chat/DivergenceEntryModal.tsx",
+    "target": "../../services/infrastructure"
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "target": "../../utils/llmCall"
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "target": "../../utils/llmCall"
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "target": "../../utils/uid"
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "target": "../../types"
+  },
+  {
+    "file": "components/pc/WorldPrimerPanel.tsx",
+    "target": "../../utils/llmCall"
+  }
+]
