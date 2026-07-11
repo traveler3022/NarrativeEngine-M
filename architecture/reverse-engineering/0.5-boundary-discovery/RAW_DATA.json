@@ -1,0 +1,992 @@
+{
+  "clusters": {
+    "store/useAppStore.ts": 1,
+    "store/campaignStore.ts": 1,
+    "store/settingsMigration.ts": 1,
+    "utils": 8,
+    "services/campaignBundle.ts": 1,
+    "services/backHandler.ts": 1,
+    "services/apiClient.ts": 1,
+    "services/chatEngine.ts": 1,
+    "services/callLLM.ts": 1,
+    "test": 1,
+    "hooks": 3,
+    "types": 2,
+    "components/hooks": 4,
+    "store/slices": 8,
+    "services/turn": 24,
+    "services/archive": 9,
+    "services/llm": 7,
+    "services/engine": 9,
+    "services/npc": 32,
+    "services/storage": 10,
+    "services/embedding": 7,
+    "services/tts": 2,
+    "services/payload": 10,
+    "services/campaign-state": 9,
+    "services/retrieval": 1,
+    "services/arc": 6,
+    "services/image": 4,
+    "services/lore": 11,
+    "services/infrastructure": 8,
+    "main.tsx": 1,
+    "App.tsx": 1,
+    "components/DedupReviewModal.tsx": 1,
+    "components/TelemetryStrip.tsx": 1,
+    "components/LootDropTraceView.tsx": 1,
+    "components/ErrorBoundary.tsx": 1,
+    "components/GenerationProgress.tsx": 1,
+    "components/ContextDrawer.tsx": 1,
+    "components/SamplingPanel.tsx": 1,
+    "components/UtilityCallStrip.tsx": 1,
+    "components/SettingsModal.tsx": 1,
+    "components/SceneNoteEditor.tsx": 1,
+    "components/TokenGauge.tsx": 1,
+    "components/NPCReviewModal.tsx": 1,
+    "components/MobileNavBar.tsx": 1,
+    "components/Toast.tsx": 1,
+    "components/CampaignHub.tsx": 1,
+    "components/ChatArea.tsx": 1,
+    "components/ConfirmSheet.tsx": 1,
+    "components/BackupModal.tsx": 1,
+    "components/NPCPressureInspector.tsx": 1,
+    "components/NPCLedgerModal.tsx": 1,
+    "components/PayloadTraceView.tsx": 1,
+    "components/Header.tsx": 1,
+    "components/settings": 5,
+    "components/context-drawer": 15,
+    "components/chat": 14,
+    "components/npc-ledger": 5,
+    "components/pc": 2,
+    "components/engine-trace": 1
+  },
+  "intra": 739,
+  "inter": 154,
+  "coupling_ratio": 0.17245240761478164,
+  "inter_edges": [
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/slices/settingsSlice.ts",
+      "src_cluster": "store/useAppStore.ts",
+      "tgt_cluster": "store/slices"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/slices/uiSlice.ts",
+      "src_cluster": "store/useAppStore.ts",
+      "tgt_cluster": "store/slices"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/slices/archiveSlice.ts",
+      "src_cluster": "store/useAppStore.ts",
+      "tgt_cluster": "store/slices"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/slices/loreSlice.ts",
+      "src_cluster": "store/useAppStore.ts",
+      "tgt_cluster": "store/slices"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/slices/chatSlice.ts",
+      "src_cluster": "store/useAppStore.ts",
+      "tgt_cluster": "store/slices"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/slices/pressureSlice.ts",
+      "src_cluster": "store/useAppStore.ts",
+      "tgt_cluster": "store/slices"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/../services/embedding/embeddingScheduler.ts",
+      "src_cluster": "store/useAppStore.ts",
+      "tgt_cluster": "store/.."
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/slices/npcSlice.ts",
+      "src_cluster": "store/useAppStore.ts",
+      "tgt_cluster": "store/slices"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/slices/campaignSlice.ts",
+      "src_cluster": "store/useAppStore.ts",
+      "tgt_cluster": "store/slices"
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "store/../services/npc/agencyBands.ts",
+      "src_cluster": "store/campaignStore.ts",
+      "tgt_cluster": "store/.."
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "store/../types/index.ts",
+      "src_cluster": "store/campaignStore.ts",
+      "tgt_cluster": "store/.."
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "store/../services/storage/imageStorage.ts",
+      "src_cluster": "store/campaignStore.ts",
+      "tgt_cluster": "store/.."
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "store/../services/lore/loreIndexer.ts",
+      "src_cluster": "store/campaignStore.ts",
+      "tgt_cluster": "store/.."
+    },
+    {
+      "source": "store/settingsMigration.ts",
+      "target": "store/../types/index.ts",
+      "src_cluster": "store/settingsMigration.ts",
+      "tgt_cluster": "store/.."
+    },
+    {
+      "source": "store/settingsMigration.ts",
+      "target": "store/../utils/uid.ts",
+      "src_cluster": "store/settingsMigration.ts",
+      "tgt_cluster": "store/.."
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "services/../store/campaignStore.ts",
+      "src_cluster": "services/campaignBundle.ts",
+      "tgt_cluster": "services/.."
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "services/infrastructure/index.ts",
+      "src_cluster": "services/campaignBundle.ts",
+      "tgt_cluster": "services/infrastructure"
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "services/storage/_helpers.ts",
+      "src_cluster": "services/campaignBundle.ts",
+      "tgt_cluster": "services/storage"
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "services/../types/index.ts",
+      "src_cluster": "services/campaignBundle.ts",
+      "tgt_cluster": "services/.."
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "services/lore/lootTreeLoader.ts",
+      "src_cluster": "services/campaignBundle.ts",
+      "tgt_cluster": "services/lore"
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "services/../utils/uid.ts",
+      "src_cluster": "services/campaignBundle.ts",
+      "tgt_cluster": "services/.."
+    },
+    {
+      "source": "services/apiClient.ts",
+      "target": "services/../types/index.ts",
+      "src_cluster": "services/apiClient.ts",
+      "tgt_cluster": "services/.."
+    },
+    {
+      "source": "services/apiClient.ts",
+      "target": "services/storage/index.ts",
+      "src_cluster": "services/apiClient.ts",
+      "tgt_cluster": "services/storage"
+    },
+    {
+      "source": "services/apiClient.ts",
+      "target": "services/storage/backupStorage.ts",
+      "src_cluster": "services/apiClient.ts",
+      "tgt_cluster": "services/storage"
+    },
+    {
+      "source": "services/chatEngine.ts",
+      "target": "services/llm/llmService.ts",
+      "src_cluster": "services/chatEngine.ts",
+      "tgt_cluster": "services/llm"
+    },
+    {
+      "source": "services/chatEngine.ts",
+      "target": "services/archive/index.ts",
+      "src_cluster": "services/chatEngine.ts",
+      "tgt_cluster": "services/archive"
+    },
+    {
+      "source": "services/chatEngine.ts",
+      "target": "services/payload/index.ts",
+      "src_cluster": "services/chatEngine.ts",
+      "tgt_cluster": "services/payload"
+    },
+    {
+      "source": "services/chatEngine.ts",
+      "target": "services/npc/index.ts",
+      "src_cluster": "services/chatEngine.ts",
+      "tgt_cluster": "services/npc"
+    },
+    {
+      "source": "services/chatEngine.ts",
+      "target": "services/engine/index.ts",
+      "src_cluster": "services/chatEngine.ts",
+      "tgt_cluster": "services/engine"
+    },
+    {
+      "source": "services/callLLM.ts",
+      "target": "services/../utils/llmCall.ts",
+      "src_cluster": "services/callLLM.ts",
+      "tgt_cluster": "services/.."
+    },
+    {
+      "source": "services/callLLM.ts",
+      "target": "services/llm/llmRequestQueue.ts",
+      "src_cluster": "services/callLLM.ts",
+      "tgt_cluster": "services/llm"
+    },
+    {
+      "source": "main.tsx",
+      "target": "App.tsx",
+      "src_cluster": "main.tsx",
+      "tgt_cluster": "App.tsx"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/ErrorBoundary.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/ErrorBoundary.tsx"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/Header.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/Header.tsx"
+    },
+    {
+      "source": "App.tsx",
+      "target": "store/campaignStore.ts",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "store/campaignStore.ts"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/BackupModal.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/BackupModal.tsx"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/chat/DiceRollModal.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/chat"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/chat/LoreCheckModal.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/chat"
+    },
+    {
+      "source": "App.tsx",
+      "target": "store/useAppStore.ts",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "store/useAppStore.ts"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/Toast.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/Toast.tsx"
+    },
+    {
+      "source": "App.tsx",
+      "target": "hooks/useLoreIndexer.ts",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "hooks"
+    },
+    {
+      "source": "App.tsx",
+      "target": "services/tts/speech.ts",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "services/tts"
+    },
+    {
+      "source": "App.tsx",
+      "target": "services/backHandler.ts",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "services/backHandler.ts"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/ContextDrawer.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/ContextDrawer.tsx"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/chat/LootRollModal.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/chat"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/CampaignHub.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/CampaignHub.tsx"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/ChatArea.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/ChatArea.tsx"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/SettingsModal.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/SettingsModal.tsx"
+    },
+    {
+      "source": "App.tsx",
+      "target": "hooks/useRulesIndexer.ts",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "hooks"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/NPCLedgerModal.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/NPCLedgerModal.tsx"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/MobileNavBar.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/MobileNavBar.tsx"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/ConfirmSheet.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/ConfirmSheet.tsx"
+    },
+    {
+      "source": "App.tsx",
+      "target": "services/turn/index.ts",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "services/turn"
+    },
+    {
+      "source": "components/DedupReviewModal.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/DedupReviewModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/DedupReviewModal.tsx",
+      "target": "components/../hooks/useBackHandler.ts",
+      "src_cluster": "components/DedupReviewModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/DedupReviewModal.tsx",
+      "target": "components/../services/campaign-state/index.ts",
+      "src_cluster": "components/DedupReviewModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/TelemetryStrip.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/TelemetryStrip.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/TelemetryStrip.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/TelemetryStrip.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/TelemetryStrip.tsx",
+      "target": "components/../services/llm/utilityCallTracker.ts",
+      "src_cluster": "components/TelemetryStrip.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/LootDropTraceView.tsx",
+      "target": "components/../services/engine/index.ts",
+      "src_cluster": "components/LootDropTraceView.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/GenerationProgress.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/GenerationProgress.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/../hooks/useBackHandler.ts",
+      "src_cluster": "components/ContextDrawer.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/context-drawer/LoreTab.tsx",
+      "src_cluster": "components/ContextDrawer.tsx",
+      "tgt_cluster": "components/context-drawer"
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/context-drawer/ChapterTab.tsx",
+      "src_cluster": "components/ContextDrawer.tsx",
+      "tgt_cluster": "components/context-drawer"
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/context-drawer/BookkeepingTab.tsx",
+      "src_cluster": "components/ContextDrawer.tsx",
+      "tgt_cluster": "components/context-drawer"
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/context-drawer/RulesManagerTab.tsx",
+      "src_cluster": "components/ContextDrawer.tsx",
+      "tgt_cluster": "components/context-drawer"
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/context-drawer/MemoryTab.tsx",
+      "src_cluster": "components/ContextDrawer.tsx",
+      "tgt_cluster": "components/context-drawer"
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/context-drawer/EnginesTab.tsx",
+      "src_cluster": "components/ContextDrawer.tsx",
+      "tgt_cluster": "components/context-drawer"
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/ContextDrawer.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/context-drawer/RulesTab.tsx",
+      "src_cluster": "components/ContextDrawer.tsx",
+      "tgt_cluster": "components/context-drawer"
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/context-drawer/GalleryTab.tsx",
+      "src_cluster": "components/ContextDrawer.tsx",
+      "tgt_cluster": "components/context-drawer"
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/context-drawer/ResolvedStatePanel.tsx",
+      "src_cluster": "components/ContextDrawer.tsx",
+      "tgt_cluster": "components/context-drawer"
+    },
+    {
+      "source": "components/SamplingPanel.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/SamplingPanel.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/SamplingPanel.tsx",
+      "target": "components/../utils/samplingProfiles.ts",
+      "src_cluster": "components/SamplingPanel.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/UtilityCallStrip.tsx",
+      "target": "components/../services/llm/utilityCallTracker.ts",
+      "src_cluster": "components/UtilityCallStrip.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/SettingsModal.tsx",
+      "target": "components/../hooks/useBackHandler.ts",
+      "src_cluster": "components/SettingsModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/SettingsModal.tsx",
+      "target": "components/settings/AdvancedEmbeddingPanel.tsx",
+      "src_cluster": "components/SettingsModal.tsx",
+      "tgt_cluster": "components/settings"
+    },
+    {
+      "source": "components/SettingsModal.tsx",
+      "target": "components/settings/GlobalSettingsPanel.tsx",
+      "src_cluster": "components/SettingsModal.tsx",
+      "tgt_cluster": "components/settings"
+    },
+    {
+      "source": "components/SettingsModal.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/SettingsModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/SettingsModal.tsx",
+      "target": "components/settings/PresetsPanel.tsx",
+      "src_cluster": "components/SettingsModal.tsx",
+      "tgt_cluster": "components/settings"
+    },
+    {
+      "source": "components/SettingsModal.tsx",
+      "target": "components/settings/DebugPanel.tsx",
+      "src_cluster": "components/SettingsModal.tsx",
+      "tgt_cluster": "components/settings"
+    },
+    {
+      "source": "components/SettingsModal.tsx",
+      "target": "components/settings/ProvidersPanel.tsx",
+      "src_cluster": "components/SettingsModal.tsx",
+      "tgt_cluster": "components/settings"
+    },
+    {
+      "source": "components/SceneNoteEditor.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/SceneNoteEditor.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/TokenGauge.tsx",
+      "target": "components/../services/infrastructure/index.ts",
+      "src_cluster": "components/TokenGauge.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/TokenGauge.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/TokenGauge.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/TokenGauge.tsx",
+      "target": "components/../services/campaign-state/index.ts",
+      "src_cluster": "components/TokenGauge.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCReviewModal.tsx",
+      "target": "components/../services/npc/index.ts",
+      "src_cluster": "components/NPCReviewModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCReviewModal.tsx",
+      "target": "components/../hooks/useBackHandler.ts",
+      "src_cluster": "components/NPCReviewModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/MobileNavBar.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/MobileNavBar.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/MobileNavBar.tsx",
+      "target": "components/../utils/haptics.ts",
+      "src_cluster": "components/MobileNavBar.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/CampaignHub.tsx",
+      "target": "components/../store/slices/campaignSlice.ts",
+      "src_cluster": "components/CampaignHub.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/CampaignHub.tsx",
+      "target": "components/../hooks/useBackHandler.ts",
+      "src_cluster": "components/CampaignHub.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/CampaignHub.tsx",
+      "target": "components/../store/slices/npcSlice.ts",
+      "src_cluster": "components/CampaignHub.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/CampaignHub.tsx",
+      "target": "components/../store/campaignStore.ts",
+      "src_cluster": "components/CampaignHub.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/CampaignHub.tsx",
+      "target": "components/Toast.tsx",
+      "src_cluster": "components/CampaignHub.tsx",
+      "tgt_cluster": "components/Toast.tsx"
+    },
+    {
+      "source": "components/CampaignHub.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/CampaignHub.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/CampaignHub.tsx",
+      "target": "components/../services/campaignBundle.ts",
+      "src_cluster": "components/CampaignHub.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/CampaignHub.tsx",
+      "target": "components/../services/lore/index.ts",
+      "src_cluster": "components/CampaignHub.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/CampaignHub.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/CampaignHub.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/CampaignHub.tsx",
+      "target": "components/../services/apiClient.ts",
+      "src_cluster": "components/CampaignHub.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/TelemetryStrip.tsx",
+      "src_cluster": "components/ChatArea.tsx",
+      "tgt_cluster": "components/TelemetryStrip.tsx"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/hooks/useCondenser.ts",
+      "src_cluster": "components/ChatArea.tsx",
+      "tgt_cluster": "components/hooks"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/chat/PinnedMemoriesPanel.tsx",
+      "src_cluster": "components/ChatArea.tsx",
+      "tgt_cluster": "components/chat"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/hooks/useMessageEditor.ts",
+      "src_cluster": "components/ChatArea.tsx",
+      "tgt_cluster": "components/hooks"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/ChatArea.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/../services/turn/index.ts",
+      "src_cluster": "components/ChatArea.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/Toast.tsx",
+      "src_cluster": "components/ChatArea.tsx",
+      "tgt_cluster": "components/Toast.tsx"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/chat/MessageBubble.tsx",
+      "src_cluster": "components/ChatArea.tsx",
+      "tgt_cluster": "components/chat"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/ConfirmSheet.tsx",
+      "src_cluster": "components/ChatArea.tsx",
+      "tgt_cluster": "components/ConfirmSheet.tsx"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/pc/PCCreationWizard.tsx",
+      "src_cluster": "components/ChatArea.tsx",
+      "tgt_cluster": "components/pc"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/../utils/haptics.ts",
+      "src_cluster": "components/ChatArea.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/chat/RenameNpcModal.tsx",
+      "src_cluster": "components/ChatArea.tsx",
+      "tgt_cluster": "components/chat"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/chat/ActionSpeedDial.tsx",
+      "src_cluster": "components/ChatArea.tsx",
+      "tgt_cluster": "components/chat"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/chat/RegenerateSheet.tsx",
+      "src_cluster": "components/ChatArea.tsx",
+      "tgt_cluster": "components/chat"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/ChatArea.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/hooks/useRetryStoryAI.ts",
+      "src_cluster": "components/ChatArea.tsx",
+      "tgt_cluster": "components/hooks"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/hooks/useSwipeVariants.ts",
+      "src_cluster": "components/ChatArea.tsx",
+      "tgt_cluster": "components/hooks"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/chat/ChatInput.tsx",
+      "src_cluster": "components/ChatArea.tsx",
+      "tgt_cluster": "components/chat"
+    },
+    {
+      "source": "components/ConfirmSheet.tsx",
+      "target": "components/../hooks/useBackHandler.ts",
+      "src_cluster": "components/ConfirmSheet.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/ConfirmSheet.tsx",
+      "target": "components/../utils/haptics.ts",
+      "src_cluster": "components/ConfirmSheet.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/BackupModal.tsx",
+      "target": "components/../hooks/useBackHandler.ts",
+      "src_cluster": "components/BackupModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/BackupModal.tsx",
+      "target": "components/Toast.tsx",
+      "src_cluster": "components/BackupModal.tsx",
+      "tgt_cluster": "components/Toast.tsx"
+    },
+    {
+      "source": "components/BackupModal.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/BackupModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/BackupModal.tsx",
+      "target": "components/ConfirmSheet.tsx",
+      "src_cluster": "components/BackupModal.tsx",
+      "tgt_cluster": "components/ConfirmSheet.tsx"
+    },
+    {
+      "source": "components/BackupModal.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/BackupModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/BackupModal.tsx",
+      "target": "components/../services/apiClient.ts",
+      "src_cluster": "components/BackupModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCPressureInspector.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/NPCPressureInspector.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCPressureInspector.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/NPCPressureInspector.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/NPCReviewModal.tsx",
+      "src_cluster": "components/NPCLedgerModal.tsx",
+      "tgt_cluster": "components/NPCReviewModal.tsx"
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../hooks/useBackHandler.ts",
+      "src_cluster": "components/NPCLedgerModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../services/npc/index.ts",
+      "src_cluster": "components/NPCLedgerModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/npc-ledger/NPCSuggestionsPanel.tsx",
+      "src_cluster": "components/NPCLedgerModal.tsx",
+      "tgt_cluster": "components/npc-ledger"
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../services/campaign-state/index.ts",
+      "src_cluster": "components/NPCLedgerModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../services/image/portrait.ts",
+      "src_cluster": "components/NPCLedgerModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/Toast.tsx",
+      "src_cluster": "components/NPCLedgerModal.tsx",
+      "tgt_cluster": "components/Toast.tsx"
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/NPCLedgerModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/npc-ledger/NPCListView.tsx",
+      "src_cluster": "components/NPCLedgerModal.tsx",
+      "tgt_cluster": "components/npc-ledger"
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/npc-ledger/NPCEditForm.tsx",
+      "src_cluster": "components/NPCLedgerModal.tsx",
+      "tgt_cluster": "components/npc-ledger"
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../services/chatEngine.ts",
+      "src_cluster": "components/NPCLedgerModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../services/storage/imageStorage.ts",
+      "src_cluster": "components/NPCLedgerModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/npc-ledger/NPCGalleryView.tsx",
+      "src_cluster": "components/NPCLedgerModal.tsx",
+      "tgt_cluster": "components/npc-ledger"
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../utils/uid.ts",
+      "src_cluster": "components/NPCLedgerModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/NPCLedgerModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../services/apiClient.ts",
+      "src_cluster": "components/NPCLedgerModal.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/PayloadTraceView.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/PayloadTraceView.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/PayloadTraceView.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/PayloadTraceView.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/Header.tsx",
+      "target": "components/../services/npc/index.ts",
+      "src_cluster": "components/Header.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/Header.tsx",
+      "target": "components/../store/campaignStore.ts",
+      "src_cluster": "components/Header.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/Header.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/Header.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/Header.tsx",
+      "target": "components/Toast.tsx",
+      "src_cluster": "components/Header.tsx",
+      "tgt_cluster": "components/Toast.tsx"
+    },
+    {
+      "source": "components/Header.tsx",
+      "target": "components/../utils/haptics.ts",
+      "src_cluster": "components/Header.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/Header.tsx",
+      "target": "components/TokenGauge.tsx",
+      "src_cluster": "components/Header.tsx",
+      "tgt_cluster": "components/TokenGauge.tsx"
+    },
+    {
+      "source": "components/Header.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/Header.tsx",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/Header.tsx",
+      "target": "components/../services/apiClient.ts",
+      "src_cluster": "components/Header.tsx",
+      "tgt_cluster": "components/.."
+    }
+  ]
+}

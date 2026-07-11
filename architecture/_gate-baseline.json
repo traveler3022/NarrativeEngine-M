@@ -1,0 +1,9 @@
+{
+  "total": 21,
+  "byType": {
+    "domain→ui": 1,
+    "domain→state": 10,
+    "state→domain": 10
+  },
+  "date": "2026-07-11T12:38:35.367Z"
+}

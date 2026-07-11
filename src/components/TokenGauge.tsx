@@ -1,39 +1,77 @@
 import { useMemo } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { countTokens } from '../services/tokenizer';
+import { useShallow } from 'zustand/react/shallow';
+import { countTokens } from '../services/infrastructure';
+import { countRegisterTokens } from '../services/campaign-state';
 
 export function TokenGauge() {
-    const { context, messages, settings, condenser } = useAppStore();
+    const { context, settings, divergenceRegister } = useAppStore(useShallow(s => ({
+        context: s.context,
+        settings: s.settings,
+        divergenceRegister: s.divergenceRegister,
+    })));
+
+    const messageContents = useAppStore(useShallow(s => {
+        const activeMessages = (s.condenser.condensedUpToIndex !== undefined && s.condenser.condensedUpToIndex >= 0)
+            ? s.messages.slice(s.condenser.condensedUpToIndex + 1)
+            : s.messages;
+        return activeMessages.map(m => m.content || '');
+    }));
 
     const systemText = useMemo(() => {
         const parts: string[] = [];
         if (context.loreRaw) parts.push(context.loreRaw);
         if (context.rulesRaw) parts.push(context.rulesRaw);
-        if (context.canonStateActive && context.canonState) parts.push(context.canonState);
-        if (context.headerIndexActive && context.headerIndex) parts.push(context.headerIndex);
         if (context.starterActive && context.starter) parts.push(context.starter);
         if (context.continuePromptActive && context.continuePrompt) parts.push(context.continuePrompt);
-        if (context.characterProfileActive && context.characterProfile) parts.push(`[CHARACTER PROFILE]\n${context.characterProfile}`);
+        if (context.characterProfileActive && context.characterProfile) {
+            // Mirror the payload builder's structured injection: identity + active
+            // traits (core floor + extended). For the gauge we use all active traits
+            // since we don't have the planner's eventTypes here — the actual
+            // payload will be smaller after scene-tag filtering.
+            const p = context.characterProfile;
+            const lines: string[] = ['[CHARACTER PROFILE]'];
+            const idParts: string[] = [];
+            if (p.identity.name) idParts.push(p.identity.name);
+            if (p.identity.race) idParts.push(p.identity.race);
+            if (p.identity.class) idParts.push(p.identity.class);
+            if (p.identity.archetype) idParts.push(p.identity.archetype);
+            if (p.identity.level !== undefined) idParts.push(`Level ${p.identity.level}`);
+            if (idParts.length > 0) lines.push(idParts.join(' | '));
+            if (p.stats) {
+                const s = p.stats;
+                lines.push(`VIT ${s.VIT} | PWR ${s.PWR} | RES ${s.RES} | FOC ${s.FOC} | SPD ${s.SPD} | WIL ${s.WIL}`);
+            }
+            const active = (p.activeTraits ?? []).filter(t => !t.superseded);
+            for (const t of active) {
+                lines.push(`▸ [${t.category}] ${t.text} [imp:${t.importance}${t.eventTags.length > 0 ? ` tags:${t.eventTags.join(',')}` : ''}]`);
+            }
+            lines.push('[END CHARACTER PROFILE]');
+            parts.push(lines.join('\n'));
+        }
         if (context.inventoryActive && context.inventory) parts.push(`[PLAYER INVENTORY]\n${context.inventory}`);
-        if (condenser.condensedSummary) parts.push(condenser.condensedSummary);
         return parts.join('\n\n');
-    }, [context.loreRaw, context.rulesRaw, context.canonState, context.canonStateActive, context.headerIndex, context.headerIndexActive, context.starter, context.starterActive, context.continuePrompt, context.continuePromptActive, context.characterProfile, context.characterProfileActive, context.inventory, context.inventoryActive, condenser.condensedSummary]);
+    }, [context.loreRaw, context.rulesRaw, context.starter, context.starterActive, context.continuePrompt, context.continuePromptActive, context.characterProfile, context.characterProfileActive, context.inventory, context.inventoryActive]);
 
     const systemTokens = useMemo(() => countTokens(systemText), [systemText]);
 
+    const divTokens = useMemo(() => {
+        if (!divergenceRegister || divergenceRegister.entries.length === 0) return 0;
+        return countRegisterTokens(divergenceRegister);
+    }, [divergenceRegister]);
+
+    const totalSystemTokens = systemTokens + divTokens;
+
     const historyText = useMemo(() => {
-        const activeMessages = (condenser.condensedUpToIndex !== undefined && condenser.condensedUpToIndex >= 0)
-            ? messages.slice(condenser.condensedUpToIndex + 1)
-            : messages;
-        return activeMessages.map((m) => m.content || '').join('');
-    }, [messages, condenser.condensedUpToIndex]);
+        return messageContents.join('');
+    }, [messageContents]);
 
     const historyTokens = useMemo(() => countTokens(historyText), [historyText]);
 
     const total = settings.contextLimit;
-    const remaining = Math.max(0, total - systemTokens - historyTokens);
+    const remaining = Math.max(0, total - totalSystemTokens - historyTokens);
 
-    const pctSystem = Math.min((systemTokens / total) * 100, 100);
+    const pctSystem = Math.min((totalSystemTokens / total) * 100, 100);
     const pctHistory = Math.min((historyTokens / total) * 100, 100 - pctSystem);
     const pctFree = 100 - pctSystem - pctHistory;
 
@@ -59,7 +97,7 @@ export function TokenGauge() {
             </div>
 
             <div className="flex gap-3 text-[10px] shrink-0">
-                <span className="text-ember">SYS:{systemTokens}</span>
+                <span className="text-ember">SYS:{totalSystemTokens}{divTokens > 0 ? <span className="text-amber-400">+{divTokens}</span> : ''}</span>
                 <span className="text-ice">HIS:{historyTokens}</span>
                 <span className="text-text-dim">FREE:{remaining}</span>
             </div>

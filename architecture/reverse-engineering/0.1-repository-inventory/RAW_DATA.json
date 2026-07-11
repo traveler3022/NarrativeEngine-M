@@ -1,0 +1,1252 @@
+{
+  "total_files": 249,
+  "total_lines": 44278,
+  "total_exports": 1029,
+  "files": [
+    {
+      "file": "App.tsx",
+      "lines": 216,
+      "exports": 1
+    },
+    {
+      "file": "components/BackupModal.tsx",
+      "lines": 219,
+      "exports": 1
+    },
+    {
+      "file": "components/CampaignHub.tsx",
+      "lines": 517,
+      "exports": 1
+    },
+    {
+      "file": "components/ChatArea.tsx",
+      "lines": 565,
+      "exports": 1
+    },
+    {
+      "file": "components/ConfirmSheet.tsx",
+      "lines": 103,
+      "exports": 2
+    },
+    {
+      "file": "components/ContextDrawer.tsx",
+      "lines": 173,
+      "exports": 1
+    },
+    {
+      "file": "components/DedupReviewModal.tsx",
+      "lines": 212,
+      "exports": 1
+    },
+    {
+      "file": "components/ErrorBoundary.tsx",
+      "lines": 45,
+      "exports": 1
+    },
+    {
+      "file": "components/GenerationProgress.tsx",
+      "lines": 105,
+      "exports": 1
+    },
+    {
+      "file": "components/Header.tsx",
+      "lines": 437,
+      "exports": 1
+    },
+    {
+      "file": "components/LootDropTraceView.tsx",
+      "lines": 157,
+      "exports": 1
+    },
+    {
+      "file": "components/MobileNavBar.tsx",
+      "lines": 74,
+      "exports": 1
+    },
+    {
+      "file": "components/NPCLedgerModal.tsx",
+      "lines": 435,
+      "exports": 1
+    },
+    {
+      "file": "components/NPCPressureInspector.tsx",
+      "lines": 116,
+      "exports": 1
+    },
+    {
+      "file": "components/NPCReviewModal.tsx",
+      "lines": 171,
+      "exports": 2
+    },
+    {
+      "file": "components/PayloadTraceView.tsx",
+      "lines": 144,
+      "exports": 1
+    },
+    {
+      "file": "components/SamplingPanel.tsx",
+      "lines": 170,
+      "exports": 1
+    },
+    {
+      "file": "components/SceneNoteEditor.tsx",
+      "lines": 71,
+      "exports": 1
+    },
+    {
+      "file": "components/SettingsModal.tsx",
+      "lines": 82,
+      "exports": 1
+    },
+    {
+      "file": "components/TelemetryStrip.tsx",
+      "lines": 86,
+      "exports": 1
+    },
+    {
+      "file": "components/Toast.tsx",
+      "lines": 108,
+      "exports": 3
+    },
+    {
+      "file": "components/TokenGauge.tsx",
+      "lines": 108,
+      "exports": 1
+    },
+    {
+      "file": "components/UtilityCallStrip.tsx",
+      "lines": 62,
+      "exports": 1
+    },
+    {
+      "file": "components/chat/ActionSpeedDial.tsx",
+      "lines": 63,
+      "exports": 1
+    },
+    {
+      "file": "components/chat/ArcInjectorButton.tsx",
+      "lines": 145,
+      "exports": 1
+    },
+    {
+      "file": "components/chat/ChatInput.tsx",
+      "lines": 88,
+      "exports": 1
+    },
+    {
+      "file": "components/chat/ContentWithChips.tsx",
+      "lines": 143,
+      "exports": 2
+    },
+    {
+      "file": "components/chat/DiceRollModal.tsx",
+      "lines": 173,
+      "exports": 1
+    },
+    {
+      "file": "components/chat/DivergenceEntryModal.tsx",
+      "lines": 139,
+      "exports": 1
+    },
+    {
+      "file": "components/chat/LootRollModal.tsx",
+      "lines": 150,
+      "exports": 1
+    },
+    {
+      "file": "components/chat/LoreCheckModal.tsx",
+      "lines": 404,
+      "exports": 1
+    },
+    {
+      "file": "components/chat/MessageBubble.tsx",
+      "lines": 781,
+      "exports": 1
+    },
+    {
+      "file": "components/chat/PinnedMemoriesPanel.tsx",
+      "lines": 236,
+      "exports": 1
+    },
+    {
+      "file": "components/chat/PrecontextBox.tsx",
+      "lines": 32,
+      "exports": 1
+    },
+    {
+      "file": "components/chat/RegenerateSheet.tsx",
+      "lines": 274,
+      "exports": 2
+    },
+    {
+      "file": "components/chat/RenameNpcModal.tsx",
+      "lines": 134,
+      "exports": 1
+    },
+    {
+      "file": "components/chat/ToolCallChips.tsx",
+      "lines": 96,
+      "exports": 1
+    },
+    {
+      "file": "components/context-drawer/BookkeepingTab.tsx",
+      "lines": 62,
+      "exports": 1
+    },
+    {
+      "file": "components/context-drawer/ChapterCard.tsx",
+      "lines": 324,
+      "exports": 1
+    },
+    {
+      "file": "components/context-drawer/ChapterTab.tsx",
+      "lines": 280,
+      "exports": 1
+    },
+    {
+      "file": "components/context-drawer/CharacterProfileEditor.tsx",
+      "lines": 254,
+      "exports": 1
+    },
+    {
+      "file": "components/context-drawer/EnginesTab.tsx",
+      "lines": 766,
+      "exports": 1
+    },
+    {
+      "file": "components/context-drawer/GalleryTab.tsx",
+      "lines": 205,
+      "exports": 1
+    },
+    {
+      "file": "components/context-drawer/LoreTab.tsx",
+      "lines": 407,
+      "exports": 1
+    },
+    {
+      "file": "components/context-drawer/MemoryTab.tsx",
+      "lines": 916,
+      "exports": 1
+    },
+    {
+      "file": "components/context-drawer/ResolvedStatePanel.tsx",
+      "lines": 218,
+      "exports": 1
+    },
+    {
+      "file": "components/context-drawer/RulesManagerTab.tsx",
+      "lines": 443,
+      "exports": 1
+    },
+    {
+      "file": "components/context-drawer/RulesTab.tsx",
+      "lines": 79,
+      "exports": 1
+    },
+    {
+      "file": "components/context-drawer/TemplateField.tsx",
+      "lines": 39,
+      "exports": 1
+    },
+    {
+      "file": "components/context-drawer/TimelineDotRow.tsx",
+      "lines": 132,
+      "exports": 1
+    },
+    {
+      "file": "components/context-drawer/Toggle.tsx",
+      "lines": 14,
+      "exports": 1
+    },
+    {
+      "file": "components/context-drawer/TokenCounter.tsx",
+      "lines": 21,
+      "exports": 1
+    },
+    {
+      "file": "components/engine-trace/EngineTraceView.tsx",
+      "lines": 132,
+      "exports": 1
+    },
+    {
+      "file": "components/hooks/useCondenser.ts",
+      "lines": 25,
+      "exports": 1
+    },
+    {
+      "file": "components/hooks/useMessageEditor.ts",
+      "lines": 308,
+      "exports": 2
+    },
+    {
+      "file": "components/hooks/useRetryStoryAI.ts",
+      "lines": 204,
+      "exports": 1
+    },
+    {
+      "file": "components/hooks/useSwipeVariants.ts",
+      "lines": 393,
+      "exports": 1
+    },
+    {
+      "file": "components/npc-ledger/NPCEditForm.tsx",
+      "lines": 827,
+      "exports": 1
+    },
+    {
+      "file": "components/npc-ledger/NPCGalleryView.tsx",
+      "lines": 70,
+      "exports": 1
+    },
+    {
+      "file": "components/npc-ledger/NPCListView.tsx",
+      "lines": 63,
+      "exports": 1
+    },
+    {
+      "file": "components/npc-ledger/NPCPortraitSection.tsx",
+      "lines": 111,
+      "exports": 1
+    },
+    {
+      "file": "components/npc-ledger/NPCSuggestionsPanel.tsx",
+      "lines": 137,
+      "exports": 1
+    },
+    {
+      "file": "components/pc/PCCreationWizard.tsx",
+      "lines": 542,
+      "exports": 2
+    },
+    {
+      "file": "components/pc/WorldPrimerPanel.tsx",
+      "lines": 99,
+      "exports": 1
+    },
+    {
+      "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+      "lines": 327,
+      "exports": 1
+    },
+    {
+      "file": "components/settings/DebugPanel.tsx",
+      "lines": 194,
+      "exports": 1
+    },
+    {
+      "file": "components/settings/GlobalSettingsPanel.tsx",
+      "lines": 338,
+      "exports": 1
+    },
+    {
+      "file": "components/settings/PresetsPanel.tsx",
+      "lines": 189,
+      "exports": 1
+    },
+    {
+      "file": "components/settings/ProvidersPanel.tsx",
+      "lines": 270,
+      "exports": 1
+    },
+    {
+      "file": "hooks/useBackHandler.ts",
+      "lines": 26,
+      "exports": 1
+    },
+    {
+      "file": "hooks/useLoreIndexer.ts",
+      "lines": 54,
+      "exports": 1
+    },
+    {
+      "file": "hooks/useRulesIndexer.ts",
+      "lines": 59,
+      "exports": 1
+    },
+    {
+      "file": "main.tsx",
+      "lines": 10,
+      "exports": 0
+    },
+    {
+      "file": "services/apiClient.ts",
+      "lines": 141,
+      "exports": 1
+    },
+    {
+      "file": "services/arc/arcConstants.ts",
+      "lines": 59,
+      "exports": 10
+    },
+    {
+      "file": "services/arc/arcDice.ts",
+      "lines": 85,
+      "exports": 3
+    },
+    {
+      "file": "services/arc/arcSpawn.ts",
+      "lines": 308,
+      "exports": 4
+    },
+    {
+      "file": "services/arc/arcStance.ts",
+      "lines": 158,
+      "exports": 1
+    },
+    {
+      "file": "services/arc/arcSurface.ts",
+      "lines": 29,
+      "exports": 1
+    },
+    {
+      "file": "services/arc/index.ts",
+      "lines": 29,
+      "exports": 6
+    },
+    {
+      "file": "services/archive/archiveChapterEngine.ts",
+      "lines": 331,
+      "exports": 8
+    },
+    {
+      "file": "services/archive/archiveIndexer.ts",
+      "lines": 134,
+      "exports": 6
+    },
+    {
+      "file": "services/archive/archiveMemory.ts",
+      "lines": 494,
+      "exports": 8
+    },
+    {
+      "file": "services/archive/chapterSummaryWriter.ts",
+      "lines": 118,
+      "exports": 3
+    },
+    {
+      "file": "services/archive/deepArchiveSearch.ts",
+      "lines": 356,
+      "exports": 1
+    },
+    {
+      "file": "services/archive/divergenceExtractor.ts",
+      "lines": 579,
+      "exports": 3
+    },
+    {
+      "file": "services/archive/importanceRater.ts",
+      "lines": 59,
+      "exports": 2
+    },
+    {
+      "file": "services/archive/index.ts",
+      "lines": 7,
+      "exports": 6
+    },
+    {
+      "file": "services/archive/saveFileEngine.ts",
+      "lines": 24,
+      "exports": 3
+    },
+    {
+      "file": "services/backHandler.ts",
+      "lines": 44,
+      "exports": 3
+    },
+    {
+      "file": "services/callLLM.ts",
+      "lines": 3,
+      "exports": 2
+    },
+    {
+      "file": "services/campaign-state/characterProfileParser.ts",
+      "lines": 239,
+      "exports": 1
+    },
+    {
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "lines": 322,
+      "exports": 23
+    },
+    {
+      "file": "services/campaign-state/factClusterer.ts",
+      "lines": 260,
+      "exports": 6
+    },
+    {
+      "file": "services/campaign-state/factDeduper.ts",
+      "lines": 176,
+      "exports": 4
+    },
+    {
+      "file": "services/campaign-state/index.ts",
+      "lines": 38,
+      "exports": 13
+    },
+    {
+      "file": "services/campaign-state/inventoryParser.ts",
+      "lines": 48,
+      "exports": 1
+    },
+    {
+      "file": "services/campaign-state/knowledgeScope.ts",
+      "lines": 125,
+      "exports": 7
+    },
+    {
+      "file": "services/campaign-state/semanticMemory.ts",
+      "lines": 254,
+      "exports": 7
+    },
+    {
+      "file": "services/campaign-state/timelineResolver.ts",
+      "lines": 69,
+      "exports": 6
+    },
+    {
+      "file": "services/campaignBundle.ts",
+      "lines": 229,
+      "exports": 5
+    },
+    {
+      "file": "services/chatEngine.ts",
+      "lines": 10,
+      "exports": 6
+    },
+    {
+      "file": "services/embedding/backfillRunner.ts",
+      "lines": 416,
+      "exports": 7
+    },
+    {
+      "file": "services/embedding/embedder.ts",
+      "lines": 218,
+      "exports": 9
+    },
+    {
+      "file": "services/embedding/embedder.worker.ts",
+      "lines": 160,
+      "exports": 0
+    },
+    {
+      "file": "services/embedding/embedderPool.ts",
+      "lines": 64,
+      "exports": 1
+    },
+    {
+      "file": "services/embedding/embeddingScheduler.ts",
+      "lines": 311,
+      "exports": 9
+    },
+    {
+      "file": "services/embedding/index.ts",
+      "lines": 10,
+      "exports": 9
+    },
+    {
+      "file": "services/embedding/vectorSearch.ts",
+      "lines": 168,
+      "exports": 6
+    },
+    {
+      "file": "services/engine/charIntroEngine.ts",
+      "lines": 144,
+      "exports": 2
+    },
+    {
+      "file": "services/engine/diceTier.ts",
+      "lines": 61,
+      "exports": 4
+    },
+    {
+      "file": "services/engine/engineRolls.ts",
+      "lines": 275,
+      "exports": 8
+    },
+    {
+      "file": "services/engine/index.ts",
+      "lines": 26,
+      "exports": 14
+    },
+    {
+      "file": "services/engine/lootDropTelemetry.ts",
+      "lines": 83,
+      "exports": 5
+    },
+    {
+      "file": "services/engine/lootEngine.ts",
+      "lines": 245,
+      "exports": 1
+    },
+    {
+      "file": "services/engine/pcCreationScript.ts",
+      "lines": 235,
+      "exports": 15
+    },
+    {
+      "file": "services/engine/tagGeneration.ts",
+      "lines": 71,
+      "exports": 1
+    },
+    {
+      "file": "services/engine/troublemaker.ts",
+      "lines": 94,
+      "exports": 1
+    },
+    {
+      "file": "services/image/composePrompt.ts",
+      "lines": 216,
+      "exports": 5
+    },
+    {
+      "file": "services/image/imageClient.ts",
+      "lines": 172,
+      "exports": 2
+    },
+    {
+      "file": "services/image/index.ts",
+      "lines": 82,
+      "exports": 1
+    },
+    {
+      "file": "services/image/portrait.ts",
+      "lines": 48,
+      "exports": 1
+    },
+    {
+      "file": "services/infrastructure/backgroundQueue.ts",
+      "lines": 66,
+      "exports": 1
+    },
+    {
+      "file": "services/infrastructure/index.ts",
+      "lines": 8,
+      "exports": 7
+    },
+    {
+      "file": "services/infrastructure/jsonExtract.ts",
+      "lines": 94,
+      "exports": 2
+    },
+    {
+      "file": "services/infrastructure/saveFilePicker.ts",
+      "lines": 8,
+      "exports": 1
+    },
+    {
+      "file": "services/infrastructure/settingsCrypto.ts",
+      "lines": 119,
+      "exports": 8
+    },
+    {
+      "file": "services/infrastructure/themeService.ts",
+      "lines": 50,
+      "exports": 6
+    },
+    {
+      "file": "services/infrastructure/tokenizer.ts",
+      "lines": 13,
+      "exports": 1
+    },
+    {
+      "file": "services/infrastructure/utilityPrompts.ts",
+      "lines": 143,
+      "exports": 16
+    },
+    {
+      "file": "services/llm/cacheTelemetry.ts",
+      "lines": 139,
+      "exports": 8
+    },
+    {
+      "file": "services/llm/index.ts",
+      "lines": 31,
+      "exports": 4
+    },
+    {
+      "file": "services/llm/llmRequestQueue.ts",
+      "lines": 144,
+      "exports": 6
+    },
+    {
+      "file": "services/llm/llmService.ts",
+      "lines": 413,
+      "exports": 3
+    },
+    {
+      "file": "services/llm/payloadSanitizer.ts",
+      "lines": 104,
+      "exports": 1
+    },
+    {
+      "file": "services/llm/sceneStakesTelemetry.ts",
+      "lines": 53,
+      "exports": 4
+    },
+    {
+      "file": "services/llm/utilityCallTracker.ts",
+      "lines": 220,
+      "exports": 9
+    },
+    {
+      "file": "services/lore/index.ts",
+      "lines": 13,
+      "exports": 12
+    },
+    {
+      "file": "services/lore/lootTreeLoader.ts",
+      "lines": 221,
+      "exports": 1
+    },
+    {
+      "file": "services/lore/loreCheck.ts",
+      "lines": 326,
+      "exports": 7
+    },
+    {
+      "file": "services/lore/loreChunker.ts",
+      "lines": 390,
+      "exports": 2
+    },
+    {
+      "file": "services/lore/loreEngineSeeder.ts",
+      "lines": 187,
+      "exports": 1
+    },
+    {
+      "file": "services/lore/loreIndexer.ts",
+      "lines": 96,
+      "exports": 4
+    },
+    {
+      "file": "services/lore/loreKeywordEnricher.ts",
+      "lines": 139,
+      "exports": 1
+    },
+    {
+      "file": "services/lore/loreNPCParser.ts",
+      "lines": 270,
+      "exports": 1
+    },
+    {
+      "file": "services/lore/loreRetriever.ts",
+      "lines": 221,
+      "exports": 2
+    },
+    {
+      "file": "services/lore/rulesIndexer.ts",
+      "lines": 255,
+      "exports": 4
+    },
+    {
+      "file": "services/lore/rulesRetriever.ts",
+      "lines": 126,
+      "exports": 1
+    },
+    {
+      "file": "services/npc/agencyAudition.ts",
+      "lines": 111,
+      "exports": 4
+    },
+    {
+      "file": "services/npc/agencyBands.ts",
+      "lines": 102,
+      "exports": 8
+    },
+    {
+      "file": "services/npc/agencyCollision.ts",
+      "lines": 244,
+      "exports": 10
+    },
+    {
+      "file": "services/npc/agencyConstants.ts",
+      "lines": 121,
+      "exports": 38
+    },
+    {
+      "file": "services/npc/agencyDice.ts",
+      "lines": 64,
+      "exports": 5
+    },
+    {
+      "file": "services/npc/agencyDigest.ts",
+      "lines": 56,
+      "exports": 3
+    },
+    {
+      "file": "services/npc/agencyDrift.ts",
+      "lines": 114,
+      "exports": 3
+    },
+    {
+      "file": "services/npc/agencyGoals.ts",
+      "lines": 54,
+      "exports": 2
+    },
+    {
+      "file": "services/npc/agencyHeartbeat.ts",
+      "lines": 70,
+      "exports": 2
+    },
+    {
+      "file": "services/npc/agencyLifecycle.ts",
+      "lines": 27,
+      "exports": 3
+    },
+    {
+      "file": "services/npc/agencyPools.ts",
+      "lines": 312,
+      "exports": 13
+    },
+    {
+      "file": "services/npc/agencyProgress.ts",
+      "lines": 63,
+      "exports": 4
+    },
+    {
+      "file": "services/npc/agencySelection.ts",
+      "lines": 117,
+      "exports": 5
+    },
+    {
+      "file": "services/npc/agencyTimeskip.ts",
+      "lines": 76,
+      "exports": 2
+    },
+    {
+      "file": "services/npc/agencyTimeskipRun.ts",
+      "lines": 394,
+      "exports": 7
+    },
+    {
+      "file": "services/npc/agencyWantDraw.ts",
+      "lines": 36,
+      "exports": 2
+    },
+    {
+      "file": "services/npc/dispositionGroups.ts",
+      "lines": 254,
+      "exports": 8
+    },
+    {
+      "file": "services/npc/hexRoll.ts",
+      "lines": 240,
+      "exports": 7
+    },
+    {
+      "file": "services/npc/hexVoiceGuide.ts",
+      "lines": 58,
+      "exports": 1
+    },
+    {
+      "file": "services/npc/index.ts",
+      "lines": 47,
+      "exports": 35
+    },
+    {
+      "file": "services/npc/manualAdd.ts",
+      "lines": 79,
+      "exports": 3
+    },
+    {
+      "file": "services/npc/nameBank.ts",
+      "lines": 140,
+      "exports": 6
+    },
+    {
+      "file": "services/npc/nameSwap.ts",
+      "lines": 174,
+      "exports": 8
+    },
+    {
+      "file": "services/npc/npcBehaviorDirective.ts",
+      "lines": 161,
+      "exports": 3
+    },
+    {
+      "file": "services/npc/npcDetector.ts",
+      "lines": 299,
+      "exports": 4
+    },
+    {
+      "file": "services/npc/npcGeneration.ts",
+      "lines": 1307,
+      "exports": 14
+    },
+    {
+      "file": "services/npc/npcManualResolve.ts",
+      "lines": 82,
+      "exports": 4
+    },
+    {
+      "file": "services/npc/npcPressureTracker.ts",
+      "lines": 184,
+      "exports": 5
+    },
+    {
+      "file": "services/npc/npcReview.ts",
+      "lines": 133,
+      "exports": 4
+    },
+    {
+      "file": "services/npc/reactionMenu.ts",
+      "lines": 143,
+      "exports": 5
+    },
+    {
+      "file": "services/npc/reactionRepression.ts",
+      "lines": 197,
+      "exports": 11
+    },
+    {
+      "file": "services/npc/relationMeter.ts",
+      "lines": 116,
+      "exports": 4
+    },
+    {
+      "file": "services/payload/condenser.ts",
+      "lines": 42,
+      "exports": 5
+    },
+    {
+      "file": "services/payload/contextMinifier.ts",
+      "lines": 162,
+      "exports": 2
+    },
+    {
+      "file": "services/payload/contextRecommender.ts",
+      "lines": 181,
+      "exports": 2
+    },
+    {
+      "file": "services/payload/index.ts",
+      "lines": 39,
+      "exports": 10
+    },
+    {
+      "file": "services/payload/payloadBudgeter.ts",
+      "lines": 37,
+      "exports": 2
+    },
+    {
+      "file": "services/payload/payloadBuilder.ts",
+      "lines": 257,
+      "exports": 4
+    },
+    {
+      "file": "services/payload/payloadHistoryFitting.ts",
+      "lines": 90,
+      "exports": 3
+    },
+    {
+      "file": "services/payload/payloadStableContent.ts",
+      "lines": 161,
+      "exports": 3
+    },
+    {
+      "file": "services/payload/payloadWorldContext.ts",
+      "lines": 734,
+      "exports": 6
+    },
+    {
+      "file": "services/payload/semanticReranker.ts",
+      "lines": 91,
+      "exports": 2
+    },
+    {
+      "file": "services/retrieval/lexicalFusion.ts",
+      "lines": 73,
+      "exports": 2
+    },
+    {
+      "file": "services/storage/_helpers.ts",
+      "lines": 24,
+      "exports": 5
+    },
+    {
+      "file": "services/storage/archiveStorage.ts",
+      "lines": 213,
+      "exports": 1
+    },
+    {
+      "file": "services/storage/backupStorage.ts",
+      "lines": 97,
+      "exports": 2
+    },
+    {
+      "file": "services/storage/chapterStorage.ts",
+      "lines": 147,
+      "exports": 2
+    },
+    {
+      "file": "services/storage/embeddingStorage.ts",
+      "lines": 214,
+      "exports": 4
+    },
+    {
+      "file": "services/storage/entityStorage.ts",
+      "lines": 23,
+      "exports": 1
+    },
+    {
+      "file": "services/storage/factStorage.ts",
+      "lines": 12,
+      "exports": 1
+    },
+    {
+      "file": "services/storage/imageStorage.ts",
+      "lines": 41,
+      "exports": 1
+    },
+    {
+      "file": "services/storage/index.ts",
+      "lines": 134,
+      "exports": 1
+    },
+    {
+      "file": "services/storage/timelineStorage.ts",
+      "lines": 58,
+      "exports": 1
+    },
+    {
+      "file": "services/tts/proseStripper.ts",
+      "lines": 85,
+      "exports": 3
+    },
+    {
+      "file": "services/tts/speech.ts",
+      "lines": 435,
+      "exports": 7
+    },
+    {
+      "file": "services/turn/aiTier.ts",
+      "lines": 47,
+      "exports": 4
+    },
+    {
+      "file": "services/turn/index.ts",
+      "lines": 60,
+      "exports": 8
+    },
+    {
+      "file": "services/turn/pendingCommit.ts",
+      "lines": 340,
+      "exports": 12
+    },
+    {
+      "file": "services/turn/sceneStakesTag.ts",
+      "lines": 58,
+      "exports": 2
+    },
+    {
+      "file": "services/turn/stages/archiveRecallStage.ts",
+      "lines": 147,
+      "exports": 1
+    },
+    {
+      "file": "services/turn/stages/deepScanStage.ts",
+      "lines": 47,
+      "exports": 1
+    },
+    {
+      "file": "services/turn/stages/expandQueryStage.ts",
+      "lines": 55,
+      "exports": 1
+    },
+    {
+      "file": "services/turn/stages/factsTimelineStage.ts",
+      "lines": 37,
+      "exports": 1
+    },
+    {
+      "file": "services/turn/stages/loreStage.ts",
+      "lines": 19,
+      "exports": 1
+    },
+    {
+      "file": "services/turn/stages/npcSemanticRecallStage.ts",
+      "lines": 34,
+      "exports": 1
+    },
+    {
+      "file": "services/turn/stages/plannerStage.ts",
+      "lines": 102,
+      "exports": 2
+    },
+    {
+      "file": "services/turn/stages/recommenderStage.ts",
+      "lines": 61,
+      "exports": 1
+    },
+    {
+      "file": "services/turn/stages/rerankStage.ts",
+      "lines": 63,
+      "exports": 1
+    },
+    {
+      "file": "services/turn/stages/retrievalTypes.ts",
+      "lines": 18,
+      "exports": 1
+    },
+    {
+      "file": "services/turn/stages/rulesStage.ts",
+      "lines": 46,
+      "exports": 1
+    },
+    {
+      "file": "services/turn/stages/sceneNumberStage.ts",
+      "lines": 26,
+      "exports": 1
+    },
+    {
+      "file": "services/turn/stages/semanticCandidatesStage.ts",
+      "lines": 90,
+      "exports": 1
+    },
+    {
+      "file": "services/turn/swipeGeneration.ts",
+      "lines": 109,
+      "exports": 7
+    },
+    {
+      "file": "services/turn/toolHandlers.ts",
+      "lines": 204,
+      "exports": 9
+    },
+    {
+      "file": "services/turn/turnContext.ts",
+      "lines": 135,
+      "exports": 2
+    },
+    {
+      "file": "services/turn/turnOrchestrator.ts",
+      "lines": 496,
+      "exports": 2
+    },
+    {
+      "file": "services/turn/turnPostProcess.ts",
+      "lines": 1238,
+      "exports": 6
+    },
+    {
+      "file": "services/turn/turnTypes.ts",
+      "lines": 115,
+      "exports": 4
+    },
+    {
+      "file": "services/turn/utilityLLM.ts",
+      "lines": 22,
+      "exports": 1
+    },
+    {
+      "file": "store/campaignStore.ts",
+      "lines": 291,
+      "exports": 20
+    },
+    {
+      "file": "store/settingsMigration.ts",
+      "lines": 219,
+      "exports": 4
+    },
+    {
+      "file": "store/slices/archiveSlice.ts",
+      "lines": 60,
+      "exports": 2
+    },
+    {
+      "file": "store/slices/campaignSlice.ts",
+      "lines": 282,
+      "exports": 4
+    },
+    {
+      "file": "store/slices/chatSlice.ts",
+      "lines": 614,
+      "exports": 4
+    },
+    {
+      "file": "store/slices/loreSlice.ts",
+      "lines": 31,
+      "exports": 2
+    },
+    {
+      "file": "store/slices/npcSlice.ts",
+      "lines": 211,
+      "exports": 5
+    },
+    {
+      "file": "store/slices/pressureSlice.ts",
+      "lines": 57,
+      "exports": 3
+    },
+    {
+      "file": "store/slices/settingsSlice.ts",
+      "lines": 303,
+      "exports": 13
+    },
+    {
+      "file": "store/slices/uiSlice.ts",
+      "lines": 96,
+      "exports": 4
+    },
+    {
+      "file": "store/useAppStore.ts",
+      "lines": 59,
+      "exports": 3
+    },
+    {
+      "file": "test/setup.ts",
+      "lines": 1,
+      "exports": 0
+    },
+    {
+      "file": "types/index.ts",
+      "lines": 1138,
+      "exports": 106
+    },
+    {
+      "file": "types/llmMessages.ts",
+      "lines": 110,
+      "exports": 15
+    },
+    {
+      "file": "utils/entityResolution.ts",
+      "lines": 45,
+      "exports": 2
+    },
+    {
+      "file": "utils/haptics.ts",
+      "lines": 27,
+      "exports": 4
+    },
+    {
+      "file": "utils/llmApiHelper.ts",
+      "lines": 437,
+      "exports": 11
+    },
+    {
+      "file": "utils/llmCall.ts",
+      "lines": 202,
+      "exports": 3
+    },
+    {
+      "file": "utils/samplingProfiles.ts",
+      "lines": 97,
+      "exports": 3
+    },
+    {
+      "file": "utils/stopWords.ts",
+      "lines": 6,
+      "exports": 1
+    },
+    {
+      "file": "utils/stripThink.ts",
+      "lines": 46,
+      "exports": 1
+    },
+    {
+      "file": "utils/uid.ts",
+      "lines": 4,
+      "exports": 1
+    }
+  ]
+}

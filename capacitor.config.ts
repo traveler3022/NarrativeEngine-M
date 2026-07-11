@@ -5,18 +5,21 @@ const config: CapacitorConfig = {
   appName: 'Narrative Engine',
   webDir: 'dist',
   android: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#0b0f12',
   },
   server: {
     androidScheme: 'https',
   },
   plugins: {
     StatusBar: {
-      style: 'LIGHT',
-      backgroundColor: '#FFFFFF',
+      style: 'DARK',
+      backgroundColor: '#0b0f12',
     },
     Keyboard: {
-      resize: 'body',
+      // Note: `resize` only takes effect on iOS. On Android we drive the
+      // app height from window.visualViewport (see App.tsx), which reports
+      // the actual keyboard-excluded viewport on every device/WebView.
+      resize: 'native',
       resizeOnFullScreen: true,
     },
   },

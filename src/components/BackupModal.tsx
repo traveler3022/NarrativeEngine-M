@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
 import { X, RotateCcw, Trash2, Save, Clock, Loader2 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
+import { useBackHandler } from '../hooks/useBackHandler';
+import { appConfirm } from './ConfirmSheet';
 import { api } from '../services/apiClient';
+import { switchCampaign } from '../services/campaignLifecycle';
 import type { BackupMeta } from '../types';
 import { toast } from './Toast';
 
 export function BackupModal() {
-    const { backupModalOpen, toggleBackupModal, activeCampaignId } = useAppStore();
+    const backupModalOpen = useAppStore(s => s.backupModalOpen);
+    const toggleBackupModal = useAppStore(s => s.toggleBackupModal);
+    const activeCampaignId = useAppStore(s => s.activeCampaignId);
     const [backups, setBackups] = useState<BackupMeta[]>([]);
     const [loading, setLoading] = useState(false);
     const [creating, setCreating] = useState(false);
@@ -24,6 +29,8 @@ export function BackupModal() {
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [backupModalOpen, toggleBackupModal]);
+
+    useBackHandler(backupModalOpen, toggleBackupModal);
 
     if (!backupModalOpen) return null;
 
@@ -59,11 +66,16 @@ export function BackupModal() {
         if (!activeCampaignId) return;
         const backup = backups.find(b => b.timestamp === ts);
         const lbl = backup ? new Date(backup.timestamp).toLocaleString() : String(ts);
-        if (!window.confirm(`Restore from "${lbl}"?\n\nYour current state will be saved as a backup first.`)) return;
+        if (!(await appConfirm({
+            title: 'Restore backup',
+            body: `Restore from "${lbl}"?\n\nYour current state will be saved as a backup first.`,
+            confirmLabel: 'Restore',
+        }))) return;
 
         setRestoringTs(ts);
         const ok = await api.backup.restore(activeCampaignId, ts);
         if (ok) {
+            await switchCampaign(activeCampaignId);
             toast.success('Restored from backup');
         } else {
             toast.error('Restore failed');
@@ -73,7 +85,12 @@ export function BackupModal() {
 
     async function handleDelete(ts: number) {
         if (!activeCampaignId) return;
-        if (!window.confirm('Delete this backup permanently?')) return;
+        if (!(await appConfirm({
+            title: 'Delete backup',
+            body: 'Delete this backup permanently?',
+            confirmLabel: 'Delete',
+            danger: true,
+        }))) return;
         await api.backup.delete(activeCampaignId, ts);
         toast.success('Backup deleted');
         await loadBackups();
@@ -101,7 +118,7 @@ export function BackupModal() {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={toggleBackupModal}>
             <div
-                className="bg-surface border border-border rounded-lg w-full max-w-lg max-h-[85vh] flex flex-col mx-4"
+                className="bg-surface border border-border rounded-lg w-full max-w-lg max-h-[calc(85*var(--app-vh))] flex flex-col mx-4"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between p-4 border-b border-border">

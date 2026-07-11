@@ -1,5 +1,5 @@
 import type { ArchiveChapter, SemanticFact } from '../../types';
-import { extractNPCFacts } from '../archiveIndexer';
+import { extractNPCFacts } from '../archive';
 import { getList, setList, k } from './_helpers';
 import { archiveStorage } from './archiveStorage';
 import { chapterStorage } from './chapterStorage';
@@ -8,6 +8,7 @@ import { timelineStorage } from './timelineStorage';
 import { entityStorage } from './entityStorage';
 import { backupStorage } from './backupStorage';
 import { embeddingStorage } from './embeddingStorage';
+import { imageStorage } from './imageStorage';
 
 export const offlineStorage = {
     archive: {
@@ -21,11 +22,11 @@ export const offlineStorage = {
 
             const { sceneId, sceneNumber, indexEntry, timestamp } = core;
 
-            import('../embedder').then(({ embedText }) => {
-                const combinedText = `${userContent}\n${assistantContent}`.slice(0, 500);
-                return embedText(combinedText);
-            }).then(vec => {
-                if (vec) embeddingStorage.store(cid, sceneId, Array.from(vec), 'scene');
+            import('../embedding').then(async ({ embedText, getCurrentModelId }) => {
+                const modelId = getCurrentModelId();
+                const combinedText = `${userContent}\n${assistantContent}`;
+                const vec = await embedText(combinedText);
+                if (vec) embeddingStorage.store(cid, sceneId, Array.from(vec), 'scene', modelId);
             }).catch(() => {});
 
             const npcNames = indexEntry.npcsMentioned;
@@ -51,7 +52,7 @@ export const offlineStorage = {
                 }
             }
 
-            let chapters = await getList<ArchiveChapter>(k(cid, 'chapters'));
+            const chapters = await getList<ArchiveChapter>(k(cid, 'chapters'));
             let openChapter = chapters.find(c => !c.sealedAt);
             if (!openChapter) {
                 const nextNum = chapters.length + 1;
@@ -59,6 +60,7 @@ export const offlineStorage = {
                     chapterId: `CH${String(nextNum).padStart(2, '0')}`,
                     title: `Chapter ${nextNum}`,
                     sceneRange: [sceneId, sceneId],
+                    sceneIds: [sceneId],
                     summary: '', keywords: [], npcs: [], majorEvents: [], unresolvedThreads: [],
                     tone: '', themes: [], sceneCount: 1,
                 };
@@ -66,6 +68,15 @@ export const offlineStorage = {
             } else {
                 openChapter.sceneRange[1] = sceneId;
                 openChapter.sceneCount = (openChapter.sceneCount || 0) + 1;
+                if (!openChapter.sceneIds) openChapter.sceneIds = [];
+                // B4 — guard against recording the boundary scene twice. The new open
+                // chapter's sceneRange is seeded to the next scene id; if sceneIds was
+                // pre-seeded with that same id (e.g. by a legacy backfill), don't push it
+                // again. Only append if this sceneId isn't already the last entry.
+                const last = openChapter.sceneIds[openChapter.sceneIds.length - 1];
+                if (last !== sceneId) {
+                    openChapter.sceneIds.push(sceneId);
+                }
             }
             await setList(k(cid, 'chapters'), chapters);
 
@@ -88,6 +99,25 @@ export const offlineStorage = {
             return archiveStorage.deleteFrom(cid, fromSceneId);
         },
 
+        async deleteScene(cid: string, sceneId: string) {
+            const res = await archiveStorage.deleteScene(cid, sceneId);
+            if (res.ok) {
+                await embeddingStorage.deleteByTypeAndId(cid, 'scene', sceneId).catch(() => {});
+            }
+            return res;
+        },
+
+        async updateSceneAssistant(cid: string, sceneId: string, assistantContent: string) {
+            const res = await archiveStorage.updateSceneAssistant(cid, sceneId, assistantContent);
+            if (res.ok) {
+                import('../embedding').then(async ({ embedText, getCurrentModelId }) => {
+                    const vec = await embedText(`${res.userContent}\n${assistantContent}`);
+                    if (vec) embeddingStorage.store(cid, sceneId, Array.from(vec), 'scene', getCurrentModelId());
+                }).catch(() => {});
+            }
+            return res;
+        },
+
         async clear(cid: string) {
             return archiveStorage.clear(cid);
         },
@@ -99,4 +129,5 @@ export const offlineStorage = {
     entities: entityStorage,
     backup: backupStorage,
     embeddings: embeddingStorage,
+    images: imageStorage,
 };

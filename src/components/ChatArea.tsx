@@ -1,57 +1,40 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { 
-    Send, Save, Loader2, Zap, Scroll, Edit2, RotateCcw, Trash2, Check, X, Square, 
-    Terminal, Dice5, ChevronDown, ChevronUp
+/**
+ * @refactor RF-017
+ * @violations 0 (see architecture/reverse-engineering/0.15-architecture-violations/RAW_DATA.json)
+ * @waves W11e
+ * @ports (component split + TurnCallbacks)
+ * @godFile RF-017 (565 lines)
+ * @see architecture/phase3-refactor-planning/3.1-refactor-case-catalog.md
+ * @see architecture/phase3-refactor-planning/3.6-traceability-matrix.md
+ * @see REFACTOR-MAP.md
+ */
+
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import {
+    Loader2,
+    ChevronDown, ChevronUp, X
 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
 import { useAppStore } from '../store/useAppStore';
-import type { PipelinePhase, StreamingStats } from '../types';
-import { runTurn } from '../services/turnOrchestrator';
-import { GenerationProgress } from './GenerationProgress';
+import { useShallow } from 'zustand/react/shallow';
+import type { PipelinePhase, StreamingStats, LLMProvider } from '../types';
+import { runTurn, commitPendingTurn, findRetryableMessage } from '../services/turn';
+import { TelemetryStrip } from './TelemetryStrip';
 import { useMessageEditor } from './hooks/useMessageEditor';
 import { useCondenser } from './hooks/useCondenser';
-import { api } from '../services/apiClient';
-import { set } from 'idb-keyval';
 import { toast } from './Toast';
+import { MessageBubble } from './chat/MessageBubble';
 
-function renderContentWithChips(content: string) {
-    const parts = content.split(/(\[[\s\S]*?\])/g);
-    return parts.map((part, i) => {
-        if (part.startsWith('[') && part.endsWith(']')) {
-            const tag = part.slice(1, -1);
-            const isDice = tag.includes('D20:') || tag.includes('DICE OUTCOMES:');
-            const isEvent = tag.includes('EVENT:') || tag.includes('SURPRISE') || tag.includes('ENCOUNTER');
-            const isWorld = tag.includes('WORLD_EVENT');
+import { PinnedMemoriesPanel } from './chat/PinnedMemoriesPanel';
 
-            return (
-                <span
-                    key={i}
-                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 mx-0.5 my-0.5 rounded border text-[10px] font-black uppercase tracking-widest leading-none align-middle shadow-sm transition-all hover:scale-105 active:scale-95 cursor-default select-none ${
-                    isDice ? 'bg-terminal/10 border-terminal/30 text-terminal' :
-                        isEvent ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' :
-                            isWorld ? 'bg-red-500/10 border-red-500/30 text-red-500' :
-                                'bg-ice/10 border-ice/30 text-ice'
-                    }`}
-                >
-                    {isDice ? <Dice5 size={10} strokeWidth={3} /> : <Terminal size={10} strokeWidth={3} />}
-                    {tag}
-                </span>
-            );
-        }
-        return (
-            <div key={i} className="text-text-primary/90 leading-relaxed">
-                <ReactMarkdown
-                    components={{
-                        strong: ({children}) => <strong className="text-terminal font-black">{children}</strong>,
-                        em: ({children}) => <em className="text-ice italic opacity-90">{children}</em>
-                    }}
-                >
-                    {part}
-                </ReactMarkdown>
-            </div>
-        );
-    });
-}
+import { ChatInput } from './chat/ChatInput';
+import { appConfirm } from './ConfirmSheet';
+import { hapticLight } from '../utils/haptics';
+import { ActionSpeedDial } from './chat/ActionSpeedDial';
+import { RenameNpcModal } from './chat/RenameNpcModal';
+import { PCCreationWizard } from './pc/PCCreationWizard';
+import { RegenerateSheet } from './chat/RegenerateSheet';
+import { useSwipeVariants } from './hooks/useSwipeVariants';
+import { useRetryStoryAI } from './hooks/useRetryStoryAI';
 
 export function ChatArea() {
     const {
@@ -65,41 +48,99 @@ export function ChatArea() {
         setArchiveIndex,
         setChapters,
         setSemanticFacts,
-        clearArchive,
         updateLastAssistant,
         updateContext,
         setCondensed,
-        setCondensing,
         resetCondenser,
         activeCampaignId,
-        deleteMessage,
         deleteMessagesFrom,
         getActiveStoryEndpoint,
         getActiveSummarizerEndpoint,
         getActiveUtilityEndpoint,
+        getActiveAuxiliaryEndpoint,
         addMessage,
-        updateNPC,
-        addNPC,
+            updateNPC,
+            addNPC,
         updateLastMessage,
         setTimeline,
         deepArmed,
         setDeepArmed,
-    } = useAppStore();
+        armedRoll,
+        setArmedRoll,
+        armedLoot,
+        clearArmedLoot,
+        setDivergenceRegister,
+        updateMessageDivergence,
+        pinnedExcerpts,
+    } = useAppStore(useShallow(s => ({
+        messages: s.messages,
+        settings: s.settings,
+        context: s.context,
+        condenser: s.condenser,
+        loreChunks: s.loreChunks,
+        npcLedger: s.npcLedger,
+        archiveIndex: s.archiveIndex,
+        setArchiveIndex: s.setArchiveIndex,
+        setChapters: s.setChapters,
+        setSemanticFacts: s.setSemanticFacts,
+        updateLastAssistant: s.updateLastAssistant,
+        updateContext: s.updateContext,
+        setCondensed: s.setCondensed,
+        resetCondenser: s.resetCondenser,
+        activeCampaignId: s.activeCampaignId,
+        deleteMessagesFrom: s.deleteMessagesFrom,
+        getActiveStoryEndpoint: s.getActiveStoryEndpoint,
+        getActiveSummarizerEndpoint: s.getActiveSummarizerEndpoint,
+        getActiveUtilityEndpoint: s.getActiveUtilityEndpoint,
+        getActiveAuxiliaryEndpoint: s.getActiveAuxiliaryEndpoint,
+        addMessage: s.addMessage,
+        updateNPC: s.updateNPC,
+        addNPC: s.addNPC,
+        updateLastMessage: s.updateLastMessage,
+        setTimeline: s.setTimeline,
+        deepArmed: s.deepArmed,
+        setDeepArmed: s.setDeepArmed,
+        armedRoll: s.armedRoll,
+        setArmedRoll: s.setArmedRoll,
+        armedLoot: s.armedLoot,
+        clearArmedLoot: s.clearArmedLoot,
+        setDivergenceRegister: s.setDivergenceRegister,
+        updateMessageDivergence: s.updateMessageDivergence,
+        pinnedExcerpts: s.pinnedExcerpts,
+    })));
 
     const [input, setInput] = useState('');
     const [isStreaming, setStreaming] = useState(false);
+    const [pinnedPanelOpen, setPinnedPanelOpen] = useState(false);
     const [isCheckingNotes, setIsCheckingNotes] = useState(false);
     const [visibleCount, setVisibleCount] = useState(10);
     const [loadingStatus, setLoadingStatus] = useState<string | null>(null);
     const [forcedAIs, setForcedAIs] = useState<('enemy' | 'neutral' | 'ally')[]>([]);
     const [showScrollFab, setShowScrollFab] = useState(false);
-    const [showCondensedPanel, setShowCondensedPanel] = useState(false);
+    const [showPCCreator, setShowPCCreator] = useState(false);
+    const [swipeSheetMessageId, setSwipeSheetMessageId] = useState<string | null>(null);
+
+    // Swipe Generation v1: the hook must be keyed on the PENDING message id
+    // (the latest GM message with a swipe set), NOT on whether the sheet is
+    // open. The bubble's touch-swipe gestures call prevSwipe/generateSwipe
+    // even when the sheet is closed. The sheet reads from the same hook via props.
+    const pendingMessageId = useMemo(() => {
+        for (let i = messages.length - 1; i >= 0; i--) {
+            const m = messages[i];
+            if (m.role === 'assistant' && m.pendingCommit && m.swipeSet?.length) return m.id;
+            if (m.role === 'system' && m.name === 'scene-marker') break;
+        }
+        return null;
+    }, [messages]);
+
+    const swipe = useSwipeVariants(pendingMessageId);
+    const retry = useRetryStoryAI();
+
     const [streamingStats, setStreamingStatsLocal] = useState<StreamingStats | null>(null);
-    const [isSaving, setIsSaving] = useState(false);
     const streamStartRef = useRef<number>(0);
     const bottomRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLTextAreaElement>(null);
+    const inputRef = useRef<HTMLTextAreaElement | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
 
     const resetTextareaHeight = () => {
@@ -110,18 +151,48 @@ export function ChatArea() {
         const textToUse = overrideText || input.trim();
         if (!textToUse || isStreaming) return;
 
+        // Claim the turn synchronously so taps can't fire duplicate turns and the Stop
+        // button appears immediately (not only once runTurn starts streaming).
+        setStreaming(true);
+        const turnAbort = (abortControllerRef.current = new AbortController());
+
+        if (turnAbort.signal.aborted) { setStreaming(false); return; }
+
         const useDeepScan = deepArmed && !!settings.enableDeepArchiveSearch;
         setDeepArmed(false);
+
+        // Consume the armed dice mode (cleared whether or not a roll was set this turn).
+        const useArmedRoll = armedRoll;
+        setArmedRoll(null);
+
+        // Loot Engine WO-05: consume the armed loot drop (cleared whether or not
+        // one was set this turn). Mirrors the dice capture-and-clear above.
+        const useArmedLoot = armedLoot;
+        clearArmedLoot();
 
         if (!overrideText) {
             setInput('');
             resetTextareaHeight();
         }
 
-        abortControllerRef.current = new AbortController();
+        const llmInput = textToUse;
 
-        await runTurn({
-            input: textToUse,
+        try {
+            // Swipe Generation v1: commit any pending swipe turn BEFORE the next
+            // turn's gatherContext (handlePostTurn clears agencyDigest/arcDigest
+            // and appends the archive scene the next payload builds against).
+            // Ordering: commit is awaited before runTurn starts.
+            await commitPendingTurn();
+            // Smart Retry v1: clear stale `retryable` on any old bubble before the
+            // new turn starts. The snapshot was just nulled by commitPendingTurn's
+            // no-pending-message branch, so any prior Retry button is now dead —
+            // hide it so the user doesn't tap a button that can't resolve.
+            const staleRetry = findRetryableMessage(useAppStore.getState().messages);
+            if (staleRetry) {
+                useAppStore.getState().updateMessage(staleRetry.id, { retryable: undefined, precontext: undefined });
+            }
+            await runTurn({
+            input: llmInput,
             displayInput: textToUse,
             settings,
             context,
@@ -136,8 +207,23 @@ export function ChatArea() {
             provider: getActiveStoryEndpoint(),
             getMessages: () => useAppStore.getState().messages,
             getFreshProvider: () => getActiveStoryEndpoint(),
-            getFreshSummarizerProvider: () => getActiveSummarizerEndpoint?.() ?? getActiveStoryEndpoint(),
+            getFreshSummarizerProvider: () => {
+                const s = getActiveSummarizerEndpoint?.();
+                return (s?.endpoint && s?.modelName) ? s : undefined;
+            },
             getUtilityEndpoint: () => getActiveUtilityEndpoint(),
+            getFreshAuxiliaryProvider: () => {
+                const aux = getActiveAuxiliaryEndpoint?.();
+                return aux?.modelName ? aux : getActiveStoryEndpoint();
+            },
+            getExtractionProvider: () => {
+                const hasEndpoint = (p?: LLMProvider) => !!(p?.endpoint && p?.modelName);
+                const a = getActiveAuxiliaryEndpoint?.();
+                if (hasEndpoint(a)) return a!;
+                const s = getActiveSummarizerEndpoint?.();
+                if (hasEndpoint(s)) return s!;
+                return getActiveStoryEndpoint();
+            },
             forcedInterventions: forcedAIs,
             incrementBookkeepingTurnCounter: () => useAppStore.getState().incrementBookkeepingTurnCounter(),
             autoBookkeepingInterval: useAppStore.getState().autoBookkeepingInterval,
@@ -146,6 +232,11 @@ export function ChatArea() {
             pinnedChapterIds: useAppStore.getState().pinnedChapterIds,
             clearPinnedChapters: () => useAppStore.getState().clearPinnedChapters(),
             deepContextSearch: useDeepScan,
+            armedRoll: useArmedRoll,
+            armedLoot: useArmedLoot,
+            divergenceRegister: useAppStore.getState().divergenceRegister,
+            onStageNpcIds: useAppStore.getState().onStageNpcIds,
+            pinnedExcerpts: useAppStore.getState().pinnedExcerpts,
         }, {
             onCheckingNotes: setIsCheckingNotes,
             addMessage,
@@ -156,9 +247,9 @@ export function ChatArea() {
             updateContext,
             setArchiveIndex,
             updateNPC,
-            addNPC,
+        addNPC,
+        addNpcSuggestions: (names: string[], context?: string) => useAppStore.getState().addNpcSuggestions(names, context),
             setCondensed,
-            setCondensing,
             setStreaming,
             setLoadingStatus,
             setLastPayloadTrace: useAppStore.getState().setLastPayloadTrace,
@@ -166,10 +257,14 @@ export function ChatArea() {
             setChapters,
             setPipelinePhase: (phase: PipelinePhase) => useAppStore.getState().setPipelinePhase(phase),
             setStreamingStats: (stats: StreamingStats | null) => useAppStore.getState().setStreamingStats(stats),
+            setDivergenceRegister: (reg) => { setDivergenceRegister(reg); if (activeCampaignId) import('../services/persistence/campaignStore').then(m => m.saveDivergenceRegister(activeCampaignId, reg)); },
+            updateMessageDivergence: updateMessageDivergence,
+            setOnStageNpcIds: (ids) => useAppStore.getState().setOnStageNpcIds(ids),
         }, abortControllerRef.current!);
-
-        setForcedAIs([]);
-        setLoadingStatus(null);
+        } finally {
+            setForcedAIs([]);
+            setLoadingStatus(null);
+        }
     };
 
     const {
@@ -178,12 +273,9 @@ export function ChatArea() {
         cancelEditing,
         handleEditSubmit,
         handleRegenerate,
+        handleDeleteOutput,
     } = useMessageEditor({
         messages,
-        input,
-        setInput,
-        inputRef,
-        resetTextareaHeight,
         activeCampaignId,
         archiveIndex,
         condenser,
@@ -197,43 +289,31 @@ export function ChatArea() {
     });
 
     const {
-        triggerCondense,
-        condenseAbortRef,
-        condensePhase,
-        editingSummary,
-        setEditingSummary,
-        summaryDraft,
-        setSummaryDraft,
-        handleRetcon,
+        triggerCondense: triggerTrim,
     } = useCondenser({
-        activeCampaignId,
-        isStreaming,
         messages,
         condenser,
-        settings,
-        context,
-        npcLedger,
         setCondensed,
-        setCondensing,
         resetCondenser,
-        updateContext,
-        setArchiveIndex,
-        setSemanticFacts,
-        getActiveSummarizerEndpoint: () => getActiveSummarizerEndpoint?.() ?? getActiveStoryEndpoint(),
-        getActiveStoryEndpoint: () => getActiveStoryEndpoint(),
     });
 
-    useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages.length]);
 
     const pipelinePhase = useAppStore(s => s.pipelinePhase);
+    const keyboardVisible = useAppStore(s => s.keyboardVisible);
 
     useEffect(() => {
         if (pipelinePhase === 'generating') {
             streamStartRef.current = Date.now();
         }
     }, [pipelinePhase]);
+
+    // When the soft keyboard opens, keep the latest message in view (the nav bar
+    // disappears and the viewport shrinks, so the tail would otherwise be hidden).
+    useEffect(() => {
+        if (keyboardVisible) {
+            requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ block: 'end' }));
+        }
+    }, [keyboardVisible]);
 
     useEffect(() => {
         if (pipelinePhase !== 'generating') {
@@ -263,6 +343,23 @@ export function ChatArea() {
         return () => el.removeEventListener('scroll', handleScroll);
     }, []);
 
+    const scrollToPrevMessage = () => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        const els = Array.from(container.querySelectorAll<HTMLElement>(':scope > [data-message-id]'));
+        if (!els.length) return;
+        const cTop = container.getBoundingClientRect().top;
+        const threshold = 4;
+        // step up to the message whose top sits just above the viewport top
+        let target: HTMLElement | null = null;
+        for (const el of els) {
+            if (el.getBoundingClientRect().top - cTop < -threshold) target = el;
+            else break;
+        }
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        else container.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     const handleStop = () => {
         abortControllerRef.current?.abort();
         abortControllerRef.current = null;
@@ -281,32 +378,19 @@ export function ChatArea() {
         }
     };
 
+    const stableDeleteMessage = useCallback((id: string) => handleDeleteOutput(id), [handleDeleteOutput]);
 
-    const handleForceSave = () => {
-        setIsSaving(true);
-        const state = useAppStore.getState();
-        if (state.activeCampaignId) {
-            try {
-                set(`nn_settings`, { settings: state.settings, activeCampaignId: state.activeCampaignId });
-                set(`nn_campaign_${state.activeCampaignId}_state`, { context: state.context, messages: state.messages, condenser: state.condenser });
-                set(`nn_campaign_${state.activeCampaignId}_npcs`, state.npcLedger);
-                toast.success('Campaign saved');
-            } catch (e) {
-                toast.error('Save failed');
-            }
-        }
-        setTimeout(() => setIsSaving(false), 2000);
-    };
+    const visibleMessages = useMemo(() => messages.filter(msg => msg.role !== 'tool').slice(-visibleCount), [messages, visibleCount]);
 
-    const handleClearArchive = async () => {
-        if (!activeCampaignId || !window.confirm('Delete archive?')) return;
-        try {
-            await api.archive.clear(activeCampaignId);
-            clearArchive();
-        } catch (err) {
-            toast.error('Failed to clear archive');
+    // Map tool_call_id -> result content, sourced from the (filtered-out) `tool` role
+    // messages, so each assistant bubble can surface what its tool call returned.
+    const toolResultById = useMemo(() => {
+        const map = new Map<string, string>();
+        for (const m of messages) {
+            if (m.role === 'tool' && m.tool_call_id) map.set(m.tool_call_id, m.content);
         }
-    };
+        return map;
+    }, [messages]);
 
     return (
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative md:pb-0">
@@ -326,14 +410,34 @@ export function ChatArea() {
                 </div>
             )}
 
-            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-2 md:px-4 py-4 space-y-3 nav-clearance">
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-2 md:px-4 py-4 space-y-3 relative">
                 {messages.length === 0 && (
                     <div className="flex items-center justify-center h-full">
-                        <div className="text-center space-y-3">
+                        <div className="text-center space-y-4">
                             <div className="text-4xl">⚔</div>
                             <p className="text-text-dim text-xs uppercase tracking-widest">
                                 Awaiting transmission...
                             </p>
+                            <div className="space-y-2">
+                                <button
+                                    onClick={() => setShowPCCreator(true)}
+                                    className="block w-full px-6 py-2.5 bg-terminal/20 text-terminal border border-terminal/30 rounded hover:bg-terminal/30 transition-colors text-[11px] uppercase tracking-widest"
+                                >
+                                    Create Character
+                                </button>
+                                {(() => {
+                                    const auxProvider = useAppStore.getState().getActiveAuxiliaryEndpoint?.();
+                                    return auxProvider ? (
+                                        <p className="text-[9px] text-text-dim">
+                                            Or type a message to begin — you can create a character later from the NPC ledger.
+                                        </p>
+                                    ) : (
+                                        <p className="text-[9px] text-text-dim">
+                                            Type a message to begin. Configure an auxiliary AI in settings for guided character creation.
+                                        </p>
+                                    );
+                                })()}
+                            </div>
                         </div>
                     </div>
                 )}
@@ -349,217 +453,123 @@ export function ChatArea() {
                     </div>
                 )}
 
-                {messages.slice(-visibleCount).filter(msg => msg.role !== 'tool').map((msg) => {
-                    const markdownContent = typeof msg.displayContent === 'string' ? msg.displayContent : (typeof msg.content === 'string' ? msg.content : '');
-                    let thinkingBlock = '';
-                    const thinkMatch = markdownContent.match(/<think>([\s\S]*?)<\/think>/i);
-                    const cleanContent = thinkMatch ? markdownContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim() : markdownContent;
-                    if (thinkMatch) thinkingBlock = thinkMatch[1].trim();
-
-                    const isEnemy = msg.name === 'AI_ENEMY';
-                    const isNeutral = msg.name === 'AI_NEUTRAL';
-                    const isAlly = msg.name === 'AI_ALLY';
-
-                    return (
-                        <div key={msg.id} className={`group flex animate-[msg-in_0.2s_ease-out] ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[95%] md:max-w-[75%] px-3 md:px-4 py-2 md:py-3 text-sm font-mono leading-relaxed relative ${
-                                msg.role === 'user' ? 'bg-terminal/8 border-l-2 border-terminal text-text-primary' :
-                                msg.role === 'system' ? 'bg-ember/8 border-l-2 border-ember text-ember/80' :
-                                isEnemy ? 'bg-red-500/5 border-l-2 border-red-500 text-text-primary' :
-                                isNeutral ? 'bg-amber-500/5 border-l-2 border-amber-500 text-text-primary' :
-                                isAlly ? 'bg-emerald-500/5 border-l-2 border-emerald-500 text-text-primary' :
-                                'bg-void-lighter border-l-2 border-border text-text-primary'
-                            }`}>
-                                <div className={`absolute -top-3 ${msg.role === 'user' ? 'left-2' : 'right-2'} flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-void-darker border border-border p-[2px] rounded z-10`}>
-                                    {msg.role !== 'system' && (
-                                        <button title="Edit" onClick={() => startEditing(msg)} className="text-text-dim hover:text-terminal p-1 bg-void-lighter rounded">
-                                            <Edit2 size={10} />
-                                        </button>
-                                    )}
-                                    {msg.role === 'assistant' && (
-                                        <button title="Regenerate" onClick={() => handleRegenerate(msg.id)} className="text-text-dim hover:text-terminal p-1 bg-void-lighter rounded">
-                                            <RotateCcw size={10} />
-                                        </button>
-                                    )}
-                                    <button title="Delete" onClick={() => deleteMessage(msg.id)} className="text-text-dim hover:text-red-400 p-1 bg-void-lighter rounded">
-                                        <Trash2 size={10} />
-                                    </button>
-                                </div>
-
-                                <div className="flex items-center gap-2 mb-1">
-                                    <span className={`text-[10px] uppercase tracking-widest ${msg.role === 'user' ? 'text-terminal' : msg.role === 'system' ? 'text-ember' : 'text-ice'}`}>
-                                        {msg.role === 'user' ? '► YOU' : msg.role === 'system' ? '◆ SYS' : isEnemy ? '◇ [ENEMY]' : isNeutral ? '◇ [NEUTRAL]' : isAlly ? '◇ [ALLY]' : '◇ GM'}
-                                    </span>
-                                    <span className="text-[9px] text-text-dim">{new Date(msg.timestamp).toLocaleTimeString()}</span>
-                                </div>
-
-                                <div className="gm-prose prose-sm leading-relaxed overflow-hidden">
-                                    {thinkingBlock && settings.showReasoning && (
-                                        <details className="mb-3 bg-void-darker border border-terminal/20 rounded overflow-hidden group/think">
-                                            <summary className="cursor-pointer p-2 text-[10px] text-terminal/60 uppercase tracking-widest flex items-center gap-2 bg-terminal/5">
-                                                <Loader2 size={10} className={isStreaming && msg.id === messages[messages.length - 1].id ? "animate-spin" : ""} />
-                                                Cognitive Process
-                                            </summary>
-                                            <div className="p-3 text-[11px] text-text-dim/80 italic border-t border-terminal/10 bg-void-darker/50">
-                                                {thinkingBlock}
-                                            </div>
-                                        </details>
-                                    )}
-                                    {renderContentWithChips(cleanContent)}
-                                </div>
-
-                                {(msg as any).parsedArgs?.summary && Array.isArray((msg as any).parsedArgs.summary) && (
-                                    <div className="mt-4 bg-terminal/5 border border-terminal/20 rounded p-3 relative overflow-hidden group/summary animate-in fade-in zoom-in duration-300">
-                                        <div className="absolute top-0 right-0 p-1.5 opacity-20"><Terminal size={12} className="text-terminal" /></div>
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <div className="w-1 h-3 bg-terminal animate-pulse" />
-                                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-terminal/80">System Analysis Result</span>
-                                        </div>
-                                        <ul className="space-y-2">
-                                            {((msg as any).parsedArgs.summary as any[]).map((s, i) => (
-                                                <li key={i} className="text-[11px] text-text-dim/90 flex gap-2 leading-snug">
-                                                    <span className="text-terminal opacity-50 font-mono mt-0.5">▸</span>
-                                                    <span>{typeof s === 'string' ? s : String(s)}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-
-                                {settings.debugMode && msg.debugPayload && (
-                                    <details className="mt-3 border-t border-border/10 pt-3 group/debug">
-                                        <summary className="cursor-pointer text-[9px] text-text-dim/30 hover:text-terminal transition-colors uppercase tracking-[0.3em] list-none flex items-center gap-1.5">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50" />
-                                            Engine Trace Data
-                                        </summary>
-                                        <pre className="mt-2 bg-void p-2 text-[9px] font-mono text-terminal/60 overflow-x-auto rounded border border-terminal/5 whitespace-pre-wrap break-all">{JSON.stringify(msg.debugPayload, null, 2)}</pre>
-                                    </details>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })}
+                {visibleMessages.map((msg, idx) => (
+                    <MessageBubble
+                        key={msg.id}
+                        msg={msg}
+                        isStreaming={isStreaming}
+                        isLastMessage={idx === visibleMessages.length - 1}
+                        isEditing={editingMessageId === msg.id}
+                        onStartEdit={startEditing}
+                        onCancelEdit={cancelEditing}
+                        onSubmitEdit={handleEditSubmit}
+                        onRegenerate={handleRegenerate}
+                        onDelete={stableDeleteMessage}
+                        showReasoning={settings.showReasoning ?? false}
+                        debugMode={settings.debugMode ?? false}
+                        toolResult={msg.tool_calls?.[0] ? toolResultById.get(msg.tool_calls[0].id) : undefined}
+                        onOpenSwipeSheet={(id) => setSwipeSheetMessageId(id)}
+                        onSwipeNavigate={(_id, direction) => {
+                            // Touch-swipe on the bubble navigates EXISTING filled slots.
+                            // New variants are generated only via the Generate button in the
+                            // sheet (with optional guidance), not by swiping past the end.
+                            hapticLight();
+                            if (direction === 'prev') swipe.prevSwipe();
+                            else swipe.nextSwipe();
+                        }}
+                        onRetry={(id) => retry.retryStoryAI(id)}
+                    />
+                ))}
 
                 {isCheckingNotes || isStreaming ? (
                     <div className="flex items-center gap-2 text-terminal/80 text-[10px] uppercase tracking-widest px-4 py-2 bg-terminal/5 rounded-sm border border-terminal/10 mb-4 mx-2">
                         <Loader2 size={12} className="animate-spin" />
-                        <span className="animate-pulse">{isCheckingNotes ? 'GM is checking archives...' : 'Transmission in progress...'}</span>
+                        <span className="animate-pulse">
+                            {isCheckingNotes
+                                ? 'GM is checking archives...'
+                                : pipelinePhase === 'gathering-context' || pipelinePhase === 'building-prompt'
+                                    ? 'GM is gathering context...'
+                                    : 'Transmission in progress...'}
+                        </span>
                     </div>
                 ) : null}
                 <div ref={bottomRef} />
             </div>
 
-            <div className="px-2 md:px-4 pb-1 flex gap-2 overflow-x-auto no-scrollbar">
-                <button onClick={handleForceSave} disabled={isSaving} className="flex items-center gap-1.5 bg-void border border-emerald-500/30 text-emerald-500 text-[10px] uppercase tracking-wider px-3 py-1.5 min-h-[40px] rounded transition-all">
-                    {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} SAVE
-                </button>
-                {condenser.isCondensing ? (
-                    <button onClick={() => condenseAbortRef.current?.abort()} className="flex items-center gap-1.5 bg-void border border-amber-500/30 text-amber-500 text-[10px] uppercase tracking-wider px-3 py-1.5 min-h-[40px] rounded transition-all">
-                        <Square size={13} /> STOP
-                    </button>
-                ) : (
-                    <button onClick={triggerCondense} disabled={messages.length < 6} className="flex items-center gap-1.5 bg-void border border-terminal/30 text-terminal text-[10px] uppercase tracking-wider px-3 py-1.5 min-h-[40px] rounded transition-all">
-                        <Zap size={13} /> CONDENSE
-                    </button>
-                )}
-                <button onClick={() => setShowCondensedPanel(p => !p)} className={`flex items-center gap-1.5 bg-void border ${showCondensedPanel ? 'border-terminal text-terminal' : 'border-ice/30 text-ice'} text-[10px] uppercase tracking-wider px-3 py-1.5 min-h-[40px] rounded transition-all`}>
-                    {showCondensedPanel ? <ChevronUp size={13} /> : <ChevronDown size={13} />} MEMORY
-                </button>
+            <PinnedMemoriesPanel open={pinnedPanelOpen} onClose={() => setPinnedPanelOpen(false)} />
 
-                <button onClick={() => api.archive.open(activeCampaignId || '')} className="flex items-center gap-1.5 bg-void border border-ice/30 text-ice text-[10px] uppercase tracking-wider px-3 py-1.5 min-h-[40px] rounded ml-auto transition-all hover:bg-ice/5"><Scroll size={13} /> ARCHIVE</button>
-                <button onClick={handleClearArchive} disabled={!activeCampaignId} className="flex items-center gap-1.5 bg-void border border-red-500/20 text-red-500/60 hover:text-red-500 text-[10px] uppercase tracking-wider px-3 py-1.5 min-h-[40px] rounded transition-all hover:bg-red-500/5 hover:border-red-500/40"><Trash2 size={13} /> CLEAR</button>
-            </div>
-
-            {showCondensedPanel && (
-                <div className="px-2 md:px-4 pb-1">
-                    <div className="bg-void-lighter border border-terminal/20 rounded p-3">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] text-terminal uppercase tracking-widest font-bold">Condensed Memory</span>
-                            <div className="flex items-center gap-1">
-                                {editingSummary ? (
-                                    <>
-                                        <button onClick={() => { setCondensed(summaryDraft, condenser.condensedUpToIndex); setEditingSummary(false); }} className="text-[9px] text-terminal hover:underline px-1">Save</button>
-                                        <button onClick={() => setEditingSummary(false)} className="text-[9px] text-text-dim hover:underline px-1">Cancel</button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <button onClick={() => { setSummaryDraft(condenser.condensedSummary); setEditingSummary(true); }} className="text-[9px] text-terminal hover:underline px-1">Edit</button>
-                                        <button onClick={handleRetcon} className="text-[9px] text-amber-500 hover:underline px-1">Retcon</button>
-                                        <button onClick={() => { resetCondenser(); setEditingSummary(false); }} className="text-[9px] text-red-400 hover:underline px-1">Reset</button>
-                                        <button onClick={() => { setShowCondensedPanel(false); setEditingSummary(false); }} className="text-[9px] text-text-dim hover:underline px-1"><X size={10} /></button>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                        {editingSummary ? (
-                            <textarea value={summaryDraft} onChange={e => setSummaryDraft(e.target.value)} className="w-full bg-void border border-border rounded px-2 py-1 text-xs text-text-primary font-mono resize-y min-h-[60px] max-h-[200px]" />
-                        ) : (
-                            <div className="text-[11px] text-text-dim/80 font-mono whitespace-pre-wrap max-h-[200px] overflow-y-auto">
-                                {condenser.condensedSummary || <span className="italic opacity-50">No condensed summary yet</span>}
-                            </div>
+            {messages.length > 1 && (
+                <div className="relative z-40">
+                    <div className="absolute bottom-full right-3 mb-2 flex flex-col gap-2">
+                        <button
+                            onClick={scrollToPrevMessage}
+                            title="Jump to previous message"
+                            className="w-11 h-11 rounded-full bg-terminal text-surface shadow-lg flex items-center justify-center"
+                        >
+                            <ChevronUp size={20} />
+                        </button>
+                        {showScrollFab && (
+                            <button
+                                onClick={() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                                title="Jump to latest message"
+                                className="w-11 h-11 rounded-full bg-terminal text-surface shadow-lg flex items-center justify-center"
+                            >
+                                <ChevronDown size={20} />
+                            </button>
                         )}
                     </div>
                 </div>
             )}
 
-            <GenerationProgress phase={pipelinePhase} stats={streamingStats} />
+            <TelemetryStrip phase={pipelinePhase} stats={streamingStats} loadingStatus={loadingStatus} />
 
-            <div className="flex-shrink-0 bg-void border-t border-border">
-                {editingMessageId && <div className="bg-terminal/10 border-b border-border px-4 py-2 flex items-center justify-between text-terminal text-[11px] font-bold uppercase"><Edit2 size={12}/> Editing <button onClick={cancelEditing}><X size={12}/></button></div>}
 
-                {condenser.isCondensing && (
-                    <div className="py-1.5 px-4 bg-amber-500/10 border-b border-amber-500/20 flex items-center justify-between">
-                        <div className="flex items-center gap-2 animate-pulse">
-                            <Loader2 size={10} className="animate-spin text-amber-500" />
-                            <span className="text-[9px] uppercase tracking-widest text-amber-500 font-bold">
-                                {condensePhase === 'save' ? 'Archiving session state...' : 'Compressing history...'}
-                            </span>
-                        </div>
-                        <button
-                            onClick={() => condenseAbortRef.current?.abort()}
-                            className="text-[9px] text-amber-500/60 hover:text-amber-500 uppercase tracking-wider transition-colors"
-                        >
-                            Stop
-                        </button>
-                    </div>
-                )}
+            <ChatInput
+                input={input}
+                isStreaming={isStreaming}
+                onChange={handleInputChange}
+                onSend={() => handleSend()}
+                onStop={handleStop}
+                inputRef={inputRef}
+                leading={
+                    <ActionSpeedDial
+                        onTrim={async () => { if (await appConfirm({ title: 'Trim history', body: 'Trim conversation history? This condenses older messages.', confirmLabel: 'Trim' })) triggerTrim(); }}
+                        pinnedCount={pinnedExcerpts.length}
+                        onOpenPins={() => setPinnedPanelOpen(true)}
+                        trimDisabled={messages.length < 6}
+                    />
+                }
+            />
 
-                {loadingStatus && (
-                    <div className="py-1.5 px-4 bg-terminal/10 border-b border-terminal/20 flex items-center gap-2 animate-pulse">
-                        <Loader2 size={10} className="animate-spin text-terminal" />
-                        <span className="text-[9px] uppercase tracking-widest text-terminal font-bold">{loadingStatus}</span>
-                    </div>
-                )}
+            <RenameNpcModal />
 
-                <div className="px-2 sm:px-4 pb-1 pt-1">
-                    <div className="flex gap-1 border border-border bg-void focus-within:border-terminal items-center p-1 rounded-sm">
-                        <div className="relative shrink-0 ml-1">
-                            <select value={settings.activePresetId} onChange={(e) => useAppStore.getState().setActivePreset(e.target.value)} 
-                                className="h-[32px] bg-surface border border-border text-text-dim pl-2 pr-6 text-[10px] font-bold uppercase transition-colors appearance-none rounded focus:border-terminal overflow-hidden max-w-[100px]">
-                                {settings.presets.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                            </select>
-                            <svg className="absolute right-1.5 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-text-dim pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                        </div>
-                        <textarea ref={inputRef} value={input} onChange={handleInputChange} 
-                            disabled={condenser.isCondensing}
-                            placeholder={condenser.isCondensing ? 'Condensing history...' : editingMessageId ? 'Edit...' : 'What do you do?'}
-                            className="flex-1 bg-transparent px-2 py-2 text-[16px] md:text-sm text-text-primary placeholder:text-text-dim/40 font-mono resize-none border-none outline-none min-h-[40px] leading-5 disabled:opacity-40 disabled:cursor-not-allowed" />
-                        <button
-                            onClick={isStreaming ? handleStop : (editingMessageId ? handleEditSubmit : () => handleSend())}
-                            disabled={!isStreaming && !input.trim()}
-                            className={`h-[32px] w-[40px] rounded transition-all flex items-center justify-center shrink-0 ${
-                                isStreaming ? 'text-amber-500 hover:bg-amber-500/10' :
-                                'text-terminal hover:bg-terminal/10'
-                            }`}>
-                            {isStreaming ? <Square size={16} fill="currentColor" /> : (editingMessageId ? <Check size={16} /> : <Send size={16} />)}
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {showScrollFab && (
-                <button onClick={() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' })} className="fixed bottom-[calc(160px+env(safe-area-inset-bottom))] right-4 z-50 w-10 h-10 rounded-full bg-terminal text-surface shadow-lg flex items-center justify-center"><ChevronDown size={20} /></button>
+            {showPCCreator && (
+                <PCCreationWizard
+                    onComplete={(result) => {
+                        useAppStore.getState().updateNPC(result.npcEntry.id, { ...result.npcEntry });
+                        useAppStore.getState().updateContext({
+                            characterProfile: result.characterProfile,
+                            characterProfileActive: true,
+                            characterProfileUserDisabled: false,
+                        });
+                        setShowPCCreator(false);
+                        toast.success(`Character "${result.npcEntry.name}" created!`);
+                    }}
+                    onCancel={() => setShowPCCreator(false)}
+                />
             )}
+
+            <RegenerateSheet
+                messageId={swipeSheetMessageId}
+                onClose={() => setSwipeSheetMessageId(null)}
+                swipeGenLoading={swipe.swipeGenLoading}
+                generateSwipe={swipe.generateSwipe}
+                nextSwipe={swipe.nextSwipe}
+                prevSwipe={swipe.prevSwipe}
+                getSessionOffset={swipe.getSessionOffset}
+                setSessionOffset={swipe.setSessionOffset}
+                getSwipeTemperature={swipe.getSwipeTemperature}
+            />
         </div>
     );
 }

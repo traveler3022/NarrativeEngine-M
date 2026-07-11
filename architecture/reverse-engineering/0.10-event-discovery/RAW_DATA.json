@@ -1,0 +1,2498 @@
+[
+  {
+    "file": "store/campaignStore.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "store/settingsMigration.ts",
+    "pattern": "onfig("
+  },
+  {
+    "file": "store/settingsMigration.ts",
+    "pattern": "onfig("
+  },
+  {
+    "file": "store/settingsMigration.ts",
+    "pattern": "onfig("
+  },
+  {
+    "file": "store/settingsMigration.ts",
+    "pattern": "onfig("
+  },
+  {
+    "file": "utils/haptics.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "utils/haptics.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "utils/llmCall.ts",
+    "pattern": "onstructor("
+  },
+  {
+    "file": "utils/llmCall.ts",
+    "pattern": "onRateLimitHit("
+  },
+  {
+    "file": "utils/llmCall.ts",
+    "pattern": "ontent("
+  },
+  {
+    "file": "utils/llmCall.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "utils/llmCall.ts",
+    "pattern": "ontent("
+  },
+  {
+    "file": "utils/llmCall.ts",
+    "pattern": "onRateLimitHit("
+  },
+  {
+    "file": "utils/llmApiHelper.ts",
+    "pattern": "ontent("
+  },
+  {
+    "file": "hooks/useRulesIndexer.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "types/index.ts",
+    "pattern": "onfig("
+  },
+  {
+    "file": "types/index.ts",
+    "pattern": "onfig("
+  },
+  {
+    "file": "components/hooks/useSwipeVariants.ts",
+    "pattern": "ontroller("
+  },
+  {
+    "file": "components/hooks/useMessageEditor.ts",
+    "pattern": "ondenser("
+  },
+  {
+    "file": "components/hooks/useMessageEditor.ts",
+    "pattern": "ontent("
+  },
+  {
+    "file": "components/hooks/useMessageEditor.ts",
+    "pattern": "onAfterEdit("
+  },
+  {
+    "file": "components/hooks/useMessageEditor.ts",
+    "pattern": "ontent("
+  },
+  {
+    "file": "components/hooks/useMessageEditor.ts",
+    "pattern": "onAfterRegenerate("
+  },
+  {
+    "file": "components/hooks/useCondenser.ts",
+    "pattern": "ondenser("
+  },
+  {
+    "file": "components/hooks/useCondenser.ts",
+    "pattern": "ondensed("
+  },
+  {
+    "file": "components/hooks/useRetryStoryAI.ts",
+    "pattern": "ontent("
+  },
+  {
+    "file": "components/hooks/useRetryStoryAI.ts",
+    "pattern": "ontroller("
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "pattern": "ondensed("
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "pattern": "ondense("
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "pattern": "ondenseBudgetRatio("
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "pattern": "ondensed("
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "pattern": "oncilePendingCommitOnLaunch("
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "symbol": "TurnCallbacks"
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "pattern": "ontextSummary("
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "pattern": "ontextSummary("
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "pattern": "onCheckingNotes("
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "pattern": "onCheckingNotes("
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "pattern": "onCheckingNotes("
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "pattern": "onCheckingNotes("
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "pattern": "onCheckingNotes("
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "pattern": "onCheckingNotes("
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "pattern": "ontextSummary("
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "pattern": "onCheckingNotes("
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "pattern": "onCheckingNotes("
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "pattern": "onCheckingNotes("
+  },
+  {
+    "file": "services/turn/turnOrchestrator.ts",
+    "pattern": "onCheckingNotes("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnPostProcess.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/turnTypes.ts",
+    "symbol": "TurnCallbacks"
+  },
+  {
+    "file": "services/turn/turnContext.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/toolHandlers.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/turn/swipeGeneration.ts",
+    "pattern": "ontroller("
+  },
+  {
+    "file": "services/turn/swipeGeneration.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/turn/swipeGeneration.ts",
+    "pattern": "onChunk("
+  },
+  {
+    "file": "services/turn/swipeGeneration.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/turn/index.ts",
+    "symbol": "TurnCallbacks"
+  },
+  {
+    "file": "services/turn/sceneStakesTag.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/archive/importanceRater.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/archive/chapterSummaryWriter.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/archive/chapterSummaryWriter.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/archive/archiveMemory.ts",
+    "pattern": "ontextActivations("
+  },
+  {
+    "file": "services/archive/archiveMemory.ts",
+    "pattern": "onsWithFacts("
+  },
+  {
+    "file": "services/archive/archiveMemory.ts",
+    "pattern": "ontextActivations("
+  },
+  {
+    "file": "services/archive/archiveMemory.ts",
+    "pattern": "onsWithFacts("
+  },
+  {
+    "file": "services/archive/deepArchiveSearch.ts",
+    "pattern": "onversationExcerpt("
+  },
+  {
+    "file": "services/archive/deepArchiveSearch.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/archive/deepArchiveSearch.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/archive/deepArchiveSearch.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/archive/deepArchiveSearch.ts",
+    "pattern": "ontent("
+  },
+  {
+    "file": "services/archive/deepArchiveSearch.ts",
+    "pattern": "onStatus("
+  },
+  {
+    "file": "services/archive/deepArchiveSearch.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/archive/deepArchiveSearch.ts",
+    "pattern": "onStatus("
+  },
+  {
+    "file": "services/archive/deepArchiveSearch.ts",
+    "pattern": "onStatus("
+  },
+  {
+    "file": "services/archive/deepArchiveSearch.ts",
+    "pattern": "onversationExcerpt("
+  },
+  {
+    "file": "services/archive/deepArchiveSearch.ts",
+    "pattern": "onStatus("
+  },
+  {
+    "file": "services/archive/deepArchiveSearch.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/archive/deepArchiveSearch.ts",
+    "pattern": "onStatus("
+  },
+  {
+    "file": "services/archive/deepArchiveSearch.ts",
+    "pattern": "onStatus("
+  },
+  {
+    "file": "services/archive/deepArchiveSearch.ts",
+    "pattern": "onStatus("
+  },
+  {
+    "file": "services/archive/deepArchiveSearch.ts",
+    "pattern": "ontent("
+  },
+  {
+    "file": "services/archive/archiveChapterEngine.ts",
+    "pattern": "ontextActivations("
+  },
+  {
+    "file": "services/archive/archiveChapterEngine.ts",
+    "pattern": "onsWithFacts("
+  },
+  {
+    "file": "services/archive/archiveChapterEngine.ts",
+    "pattern": "ontroller("
+  },
+  {
+    "file": "services/archive/divergenceExtractor.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/archive/divergenceExtractor.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/archive/divergenceExtractor.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/archive/divergenceExtractor.ts",
+    "pattern": "oning("
+  },
+  {
+    "file": "services/archive/divergenceExtractor.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/archive/divergenceExtractor.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/llm/utilityCallTracker.ts",
+    "pattern": "emit("
+  },
+  {
+    "file": "services/llm/utilityCallTracker.ts",
+    "pattern": "notifyDeadline("
+  },
+  {
+    "file": "services/llm/utilityCallTracker.ts",
+    "pattern": "emit("
+  },
+  {
+    "file": "services/llm/utilityCallTracker.ts",
+    "pattern": "emit("
+  },
+  {
+    "file": "services/llm/utilityCallTracker.ts",
+    "pattern": "notifyDeadline("
+  },
+  {
+    "file": "services/llm/utilityCallTracker.ts",
+    "pattern": "emit("
+  },
+  {
+    "file": "services/llm/utilityCallTracker.ts",
+    "pattern": "notifyDeadline("
+  },
+  {
+    "file": "services/llm/utilityCallTracker.ts",
+    "pattern": "notifyDeadline("
+  },
+  {
+    "file": "services/llm/utilityCallTracker.ts",
+    "pattern": "emit("
+  },
+  {
+    "file": "services/llm/utilityCallTracker.ts",
+    "pattern": "emit("
+  },
+  {
+    "file": "services/llm/utilityCallTracker.ts",
+    "pattern": "notifyDeadline("
+  },
+  {
+    "file": "services/llm/utilityCallTracker.ts",
+    "pattern": "emit("
+  },
+  {
+    "file": "services/llm/utilityCallTracker.ts",
+    "pattern": "subscribe("
+  },
+  {
+    "file": "services/llm/sceneStakesTelemetry.ts",
+    "pattern": "emit("
+  },
+  {
+    "file": "services/llm/sceneStakesTelemetry.ts",
+    "pattern": "emit("
+  },
+  {
+    "file": "services/llm/sceneStakesTelemetry.ts",
+    "pattern": "emit("
+  },
+  {
+    "file": "services/llm/sceneStakesTelemetry.ts",
+    "pattern": "subscribe("
+  },
+  {
+    "file": "services/llm/llmRequestQueue.ts",
+    "pattern": "onstructor("
+  },
+  {
+    "file": "services/llm/llmRequestQueue.ts",
+    "pattern": "onRateLimitHit("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "onStreamStory("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "onError("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "ontent("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "onChunk("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "onDone("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "onError("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "onError("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "onStreamStory("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "ontroller("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "onStreamStory("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "onError("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "ontent("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "onChunk("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "onDone("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "onError("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "onChunk("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "onDone("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "onDone("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "onError("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "onError("
+  },
+  {
+    "file": "services/llm/llmService.ts",
+    "pattern": "onnection("
+  },
+  {
+    "file": "services/llm/cacheTelemetry.ts",
+    "pattern": "emit("
+  },
+  {
+    "file": "services/llm/cacheTelemetry.ts",
+    "pattern": "emit("
+  },
+  {
+    "file": "services/llm/cacheTelemetry.ts",
+    "pattern": "emit("
+  },
+  {
+    "file": "services/llm/cacheTelemetry.ts",
+    "pattern": "subscribe("
+  },
+  {
+    "file": "services/engine/tagGeneration.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/engine/tagGeneration.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/engine/lootDropTelemetry.ts",
+    "pattern": "emit("
+  },
+  {
+    "file": "services/engine/lootDropTelemetry.ts",
+    "pattern": "emit("
+  },
+  {
+    "file": "services/engine/lootDropTelemetry.ts",
+    "pattern": "emit("
+  },
+  {
+    "file": "services/engine/lootDropTelemetry.ts",
+    "pattern": "subscribe("
+  },
+  {
+    "file": "services/engine/charIntroEngine.ts",
+    "pattern": "onFromResponse("
+  },
+  {
+    "file": "services/engine/charIntroEngine.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/engine/charIntroEngine.ts",
+    "pattern": "onFromResponse("
+  },
+  {
+    "file": "services/engine/charIntroEngine.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/engine/troublemaker.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/engine/troublemaker.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/engine/lootEngine.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/engine/lootEngine.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/engine/pcCreationScript.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/npcBehaviorDirective.ts",
+    "pattern": "onBand("
+  },
+  {
+    "file": "services/npc/npcBehaviorDirective.ts",
+    "pattern": "onMenu("
+  },
+  {
+    "file": "services/npc/npcBehaviorDirective.ts",
+    "pattern": "onToMenu("
+  },
+  {
+    "file": "services/npc/npcBehaviorDirective.ts",
+    "pattern": "onBand("
+  },
+  {
+    "file": "services/npc/npcBehaviorDirective.ts",
+    "pattern": "onBand("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "onalityHex("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "ongWant("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "offeredTraitNames("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "onalityToHex("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "onalityHex("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "onalityHex("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "ongWant("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "ongWant("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "onsistentTraits("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "ongWant("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "offeredTraitNames("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "offeredTraitNames("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "onBand("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "onTone("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "onTone("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "ongWant("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "offeredTraitNames("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "onalityHex("
+  },
+  {
+    "file": "services/npc/npcGeneration.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/npc/agencyCollision.ts",
+    "pattern": "onTone("
+  },
+  {
+    "file": "services/npc/agencyCollision.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/agencyCollision.ts",
+    "pattern": "onTone("
+  },
+  {
+    "file": "services/npc/agencyCollision.ts",
+    "pattern": "oneWord("
+  },
+  {
+    "file": "services/npc/agencyCollision.ts",
+    "pattern": "oneWord("
+  },
+  {
+    "file": "services/npc/agencyTimeskipRun.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/agencyTimeskipRun.ts",
+    "pattern": "ontextAllow("
+  },
+  {
+    "file": "services/npc/agencyTimeskipRun.ts",
+    "pattern": "onTone("
+  },
+  {
+    "file": "services/npc/npcManualResolve.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/npcManualResolve.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/npcManualResolve.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/npcReview.ts",
+    "pattern": "onProgress("
+  },
+  {
+    "file": "services/npc/npcReview.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/npc/npcReview.ts",
+    "pattern": "onProgress("
+  },
+  {
+    "file": "services/npc/agencyDrift.ts",
+    "pattern": "onsumeTierCross("
+  },
+  {
+    "file": "services/npc/reactionRepression.ts",
+    "pattern": "onOf("
+  },
+  {
+    "file": "services/npc/reactionRepression.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/reactionRepression.ts",
+    "pattern": "onToken("
+  },
+  {
+    "file": "services/npc/reactionRepression.ts",
+    "pattern": "onToMenu("
+  },
+  {
+    "file": "services/npc/reactionRepression.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/reactionRepression.ts",
+    "pattern": "onToken("
+  },
+  {
+    "file": "services/npc/reactionRepression.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/manualAdd.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/manualAdd.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/agencyTimeskip.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/agencyTimeskip.ts",
+    "pattern": "ontextAllow("
+  },
+  {
+    "file": "services/npc/agencyDice.ts",
+    "pattern": "onus("
+  },
+  {
+    "file": "services/npc/agencyDice.ts",
+    "pattern": "onus("
+  },
+  {
+    "file": "services/npc/reactionMenu.ts",
+    "pattern": "onOf("
+  },
+  {
+    "file": "services/npc/reactionMenu.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/reactionMenu.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/reactionMenu.ts",
+    "pattern": "onMenu("
+  },
+  {
+    "file": "services/npc/reactionMenu.ts",
+    "pattern": "onOf("
+  },
+  {
+    "file": "services/npc/reactionMenu.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/agencyBands.ts",
+    "pattern": "onBand("
+  },
+  {
+    "file": "services/npc/agencyBands.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/hexRoll.ts",
+    "pattern": "ondaryEnvelope("
+  },
+  {
+    "file": "services/npc/hexRoll.ts",
+    "pattern": "ondaryEnvelope("
+  },
+  {
+    "file": "services/npc/hexRoll.ts",
+    "pattern": "onsistentTraits("
+  },
+  {
+    "file": "services/npc/agencySelection.ts",
+    "pattern": "ontextAllow("
+  },
+  {
+    "file": "services/npc/agencySelection.ts",
+    "pattern": "ontextAllow("
+  },
+  {
+    "file": "services/npc/agencySelection.ts",
+    "pattern": "ontextAllow("
+  },
+  {
+    "file": "services/npc/npcPressureTracker.ts",
+    "pattern": "onsName("
+  },
+  {
+    "file": "services/npc/npcPressureTracker.ts",
+    "pattern": "onounNearName("
+  },
+  {
+    "file": "services/npc/npcPressureTracker.ts",
+    "pattern": "onAt("
+  },
+  {
+    "file": "services/npc/npcPressureTracker.ts",
+    "pattern": "onsName("
+  },
+  {
+    "file": "services/npc/npcPressureTracker.ts",
+    "pattern": "onounNearName("
+  },
+  {
+    "file": "services/npc/npcPressureTracker.ts",
+    "pattern": "onAt("
+  },
+  {
+    "file": "services/npc/npcPressureTracker.ts",
+    "pattern": "onsName("
+  },
+  {
+    "file": "services/npc/npcPressureTracker.ts",
+    "pattern": "onounNearName("
+  },
+  {
+    "file": "services/npc/relationMeter.ts",
+    "pattern": "onTone("
+  },
+  {
+    "file": "services/npc/relationMeter.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/relationMeter.ts",
+    "pattern": "onTone("
+  },
+  {
+    "file": "services/npc/nameSwap.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/npc/nameSwap.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/npc/npcDetector.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/npc/npcDetector.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/npc/agencyProgress.ts",
+    "pattern": "onsumeTierCross("
+  },
+  {
+    "file": "services/storage/embeddingStorage.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/storage/embeddingStorage.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/storage/embeddingStorage.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/embedding/backfillRunner.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/embedding/backfillRunner.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/embedding/embeddingScheduler.ts",
+    "pattern": "subscribe("
+  },
+  {
+    "file": "services/embedding/embeddingScheduler.ts",
+    "pattern": "subscribe("
+  },
+  {
+    "file": "services/embedding/embeddingScheduler.ts",
+    "pattern": "ontroller("
+  },
+  {
+    "file": "services/tts/speech.ts",
+    "symbol": "SpeakCallbacks"
+  },
+  {
+    "file": "services/tts/speech.ts",
+    "pattern": "addListener("
+  },
+  {
+    "file": "services/payload/contextRecommender.ts",
+    "pattern": "onversationExcerpt("
+  },
+  {
+    "file": "services/payload/contextRecommender.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/payload/contextRecommender.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/payload/contextRecommender.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/payload/contextRecommender.ts",
+    "pattern": "onversationExcerpt("
+  },
+  {
+    "file": "services/payload/contextRecommender.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/payload/contextRecommender.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/payload/payloadWorldContext.ts",
+    "pattern": "onContextFor("
+  },
+  {
+    "file": "services/payload/payloadWorldContext.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/payload/payloadWorldContext.ts",
+    "pattern": "onBand("
+  },
+  {
+    "file": "services/payload/payloadWorldContext.ts",
+    "pattern": "onMenu("
+  },
+  {
+    "file": "services/payload/payloadWorldContext.ts",
+    "pattern": "onToMenu("
+  },
+  {
+    "file": "services/payload/payloadWorldContext.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/payload/payloadWorldContext.ts",
+    "pattern": "onContextFor("
+  },
+  {
+    "file": "services/payload/payloadWorldContext.ts",
+    "pattern": "onBand("
+  },
+  {
+    "file": "services/payload/payloadBuilder.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/payload/condenser.ts",
+    "pattern": "ondenseBudgetRatio("
+  },
+  {
+    "file": "services/payload/condenser.ts",
+    "pattern": "ondense("
+  },
+  {
+    "file": "services/payload/semanticReranker.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/campaign-state/divergenceRegister.ts",
+    "pattern": "oning("
+  },
+  {
+    "file": "services/campaign-state/inventoryParser.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/campaign-state/knowledgeScope.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/campaign-state/knowledgeScope.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/campaign-state/knowledgeScope.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/campaign-state/factDeduper.ts",
+    "pattern": "onProgress("
+  },
+  {
+    "file": "services/campaign-state/factDeduper.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/campaign-state/factDeduper.ts",
+    "pattern": "onProgress("
+  },
+  {
+    "file": "services/campaign-state/characterProfileParser.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/campaign-state/semanticMemory.ts",
+    "pattern": "ontextEntities("
+  },
+  {
+    "file": "services/campaign-state/semanticMemory.ts",
+    "pattern": "ontextEntities("
+  },
+  {
+    "file": "services/campaign-state/semanticMemory.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/campaign-state/semanticMemory.ts",
+    "pattern": "ontextEntities("
+  },
+  {
+    "file": "services/campaign-state/semanticMemory.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/campaign-state/timelineResolver.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/campaign-state/factClusterer.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/campaign-state/factClusterer.ts",
+    "pattern": "onStatus("
+  },
+  {
+    "file": "services/campaign-state/factClusterer.ts",
+    "pattern": "onStatus("
+  },
+  {
+    "file": "services/campaign-state/factClusterer.ts",
+    "pattern": "onStatus("
+  },
+  {
+    "file": "services/arc/arcSpawn.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/arc/arcSpawn.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/arc/arcSpawn.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/image/imageClient.ts",
+    "pattern": "onRateLimitHit("
+  },
+  {
+    "file": "services/image/imageClient.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/image/imageClient.ts",
+    "pattern": "onRateLimitHit("
+  },
+  {
+    "file": "services/lore/loreCheck.ts",
+    "pattern": "onStatus("
+  },
+  {
+    "file": "services/lore/loreCheck.ts",
+    "pattern": "onStatus("
+  },
+  {
+    "file": "services/lore/loreCheck.ts",
+    "pattern": "onStatus("
+  },
+  {
+    "file": "services/lore/loreCheck.ts",
+    "pattern": "onStatus("
+  },
+  {
+    "file": "services/lore/loreCheck.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/lore/loreCheck.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/lore/rulesIndexer.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/lore/loreNPCParser.ts",
+    "pattern": "ongWant("
+  },
+  {
+    "file": "services/lore/loreKeywordEnricher.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/lore/loreKeywordEnricher.ts",
+    "pattern": "onse("
+  },
+  {
+    "file": "services/lore/loreKeywordEnricher.ts",
+    "pattern": "onse("
+  },
+  {
+    "file": "services/infrastructure/utilityPrompts.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/infrastructure/backgroundQueue.ts",
+    "pattern": "onstructor("
+  },
+  {
+    "file": "services/infrastructure/backgroundQueue.ts",
+    "pattern": "oncurrent("
+  },
+  {
+    "file": "services/infrastructure/jsonExtract.ts",
+    "pattern": "on("
+  },
+  {
+    "file": "services/turn/stages/expandQueryStage.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/turn/stages/plannerStage.ts",
+    "pattern": "ons("
+  },
+  {
+    "file": "services/turn/stages/recommenderStage.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/stages/factsTimelineStage.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/stages/factsTimelineStage.ts",
+    "pattern": "ontext("
+  },
+  {
+    "file": "services/turn/stages/archiveRecallStage.ts",
+    "pattern": "ontroller("
+  },
+  {
+    "file": "App.tsx",
+    "pattern": "addListener("
+  },
+  {
+    "file": "App.tsx",
+    "pattern": "addListener("
+  },
+  {
+    "file": "App.tsx",
+    "pattern": "addListener("
+  },
+  {
+    "file": "App.tsx",
+    "pattern": "oncilePendingCommitOnLaunch("
+  },
+  {
+    "file": "components/DedupReviewModal.tsx",
+    "pattern": "onStop("
+  },
+  {
+    "file": "components/DedupReviewModal.tsx",
+    "pattern": "onCancel("
+  },
+  {
+    "file": "components/DedupReviewModal.tsx",
+    "pattern": "onStop("
+  },
+  {
+    "file": "components/DedupReviewModal.tsx",
+    "pattern": "onCancel("
+  },
+  {
+    "file": "components/DedupReviewModal.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/DedupReviewModal.tsx",
+    "pattern": "onSkipGroup("
+  },
+  {
+    "file": "components/DedupReviewModal.tsx",
+    "pattern": "onToggleDisable("
+  },
+  {
+    "file": "components/ErrorBoundary.tsx",
+    "pattern": "onentDidCatch("
+  },
+  {
+    "file": "components/GenerationProgress.tsx",
+    "pattern": "onProgress("
+  },
+  {
+    "file": "components/ContextDrawer.tsx",
+    "pattern": "ontextDrawer("
+  },
+  {
+    "file": "components/SamplingPanel.tsx",
+    "pattern": "onUpdate("
+  },
+  {
+    "file": "components/SamplingPanel.tsx",
+    "pattern": "onUpdate("
+  },
+  {
+    "file": "components/SamplingPanel.tsx",
+    "pattern": "onUpdate("
+  },
+  {
+    "file": "components/SamplingPanel.tsx",
+    "pattern": "onChange("
+  },
+  {
+    "file": "components/SamplingPanel.tsx",
+    "pattern": "onChange("
+  },
+  {
+    "file": "components/SceneNoteEditor.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/SceneNoteEditor.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/SceneNoteEditor.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/NPCReviewModal.tsx",
+    "pattern": "onStop("
+  },
+  {
+    "file": "components/NPCReviewModal.tsx",
+    "pattern": "onCancel("
+  },
+  {
+    "file": "components/NPCReviewModal.tsx",
+    "pattern": "onStop("
+  },
+  {
+    "file": "components/NPCReviewModal.tsx",
+    "pattern": "onCancel("
+  },
+  {
+    "file": "components/NPCReviewModal.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/NPCReviewModal.tsx",
+    "pattern": "onSetAction("
+  },
+  {
+    "file": "components/Toast.tsx",
+    "pattern": "ontainer("
+  },
+  {
+    "file": "components/CampaignHub.tsx",
+    "pattern": "onfirmDelete("
+  },
+  {
+    "file": "components/CampaignHub.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/CampaignHub.tsx",
+    "pattern": "onfirmDelete("
+  },
+  {
+    "file": "components/CampaignHub.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/CampaignHub.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/CampaignHub.tsx",
+    "pattern": "onfirmDelete("
+  },
+  {
+    "file": "components/CampaignHub.tsx",
+    "pattern": "onfirmDelete("
+  },
+  {
+    "file": "components/CampaignHub.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/CampaignHub.tsx",
+    "pattern": "onfirmDelete("
+  },
+  {
+    "file": "components/CampaignHub.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "pattern": "ontroller("
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "pattern": "ons("
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "pattern": "ondenser("
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "pattern": "onFrame("
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "pattern": "onfirm("
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/ConfirmSheet.tsx",
+    "pattern": "onfirm("
+  },
+  {
+    "file": "components/ConfirmSheet.tsx",
+    "pattern": "emit("
+  },
+  {
+    "file": "components/ConfirmSheet.tsx",
+    "pattern": "subscribe("
+  },
+  {
+    "file": "components/ConfirmSheet.tsx",
+    "pattern": "onfirm("
+  },
+  {
+    "file": "components/ConfirmSheet.tsx",
+    "pattern": "emit("
+  },
+  {
+    "file": "components/ConfirmSheet.tsx",
+    "pattern": "emit("
+  },
+  {
+    "file": "components/ConfirmSheet.tsx",
+    "pattern": "onfirmSheet("
+  },
+  {
+    "file": "components/ConfirmSheet.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/BackupModal.tsx",
+    "pattern": "onfirm("
+  },
+  {
+    "file": "components/BackupModal.tsx",
+    "pattern": "onfirm("
+  },
+  {
+    "file": "components/BackupModal.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/NPCLedgerModal.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/NPCLedgerModal.tsx",
+    "pattern": "onfirm("
+  },
+  {
+    "file": "components/NPCLedgerModal.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/NPCLedgerModal.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/NPCLedgerModal.tsx",
+    "pattern": "onfirm("
+  },
+  {
+    "file": "components/NPCLedgerModal.tsx",
+    "pattern": "ons("
+  },
+  {
+    "file": "components/NPCLedgerModal.tsx",
+    "pattern": "ons("
+  },
+  {
+    "file": "components/NPCLedgerModal.tsx",
+    "pattern": "ons("
+  },
+  {
+    "file": "components/NPCLedgerModal.tsx",
+    "pattern": "ons("
+  },
+  {
+    "file": "components/NPCLedgerModal.tsx",
+    "pattern": "ons("
+  },
+  {
+    "file": "components/Header.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/Header.tsx",
+    "pattern": "ontains("
+  },
+  {
+    "file": "components/Header.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/Header.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/Header.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/Header.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/Header.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "pattern": "onfirmDialog("
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "pattern": "onfirmDialog("
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "pattern": "onfirmDialog("
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "pattern": "onfirm("
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "pattern": "onfirmDialog("
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "pattern": "onfirmDialog("
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "pattern": "onfirm("
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "pattern": "onfirm("
+  },
+  {
+    "file": "components/settings/DebugPanel.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/settings/DebugPanel.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/settings/ProvidersPanel.tsx",
+    "pattern": "onnection("
+  },
+  {
+    "file": "components/context-drawer/CharacterProfileEditor.tsx",
+    "pattern": "onChange("
+  },
+  {
+    "file": "components/context-drawer/CharacterProfileEditor.tsx",
+    "pattern": "onChange("
+  },
+  {
+    "file": "components/context-drawer/CharacterProfileEditor.tsx",
+    "pattern": "onChange("
+  },
+  {
+    "file": "components/context-drawer/CharacterProfileEditor.tsx",
+    "pattern": "onChange("
+  },
+  {
+    "file": "components/context-drawer/CharacterProfileEditor.tsx",
+    "pattern": "onChange("
+  },
+  {
+    "file": "components/context-drawer/CharacterProfileEditor.tsx",
+    "pattern": "onChange("
+  },
+  {
+    "file": "components/context-drawer/CharacterProfileEditor.tsx",
+    "pattern": "onChange("
+  },
+  {
+    "file": "components/context-drawer/CharacterProfileEditor.tsx",
+    "pattern": "onChange("
+  },
+  {
+    "file": "components/context-drawer/GalleryTab.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/TemplateField.tsx",
+    "pattern": "onChange("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "onPopulate("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "onfig("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "onfig("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "onfig("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "onfig("
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/ChapterCard.tsx",
+    "pattern": "onRename("
+  },
+  {
+    "file": "components/context-drawer/ChapterCard.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/ChapterCard.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/ChapterCard.tsx",
+    "pattern": "onTogglePin("
+  },
+  {
+    "file": "components/context-drawer/ChapterCard.tsx",
+    "pattern": "onDismissThread("
+  },
+  {
+    "file": "components/context-drawer/ChapterCard.tsx",
+    "pattern": "onSplit("
+  },
+  {
+    "file": "components/context-drawer/BookkeepingTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/BookkeepingTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/BookkeepingTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/TimelineDotRow.tsx",
+    "pattern": "ontains("
+  },
+  {
+    "file": "components/context-drawer/TimelineDotRow.tsx",
+    "pattern": "onClose("
+  },
+  {
+    "file": "components/context-drawer/TimelineDotRow.tsx",
+    "pattern": "onDelete("
+  },
+  {
+    "file": "components/context-drawer/TimelineDotRow.tsx",
+    "pattern": "onDeleteEvent("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "onApply("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "onInput("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "onInput("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "onInput("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "onApply("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "ons("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "ons("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "ons("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "ons("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "ons("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "ons("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "onfirm("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/MemoryTab.tsx",
+    "pattern": "onfirmReviewEntry("
+  },
+  {
+    "file": "components/context-drawer/ResolvedStatePanel.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/ResolvedStatePanel.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/ResolvedStatePanel.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/Toggle.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/context-drawer/Toggle.tsx",
+    "pattern": "onChange("
+  },
+  {
+    "file": "components/context-drawer/LoreTab.tsx",
+    "pattern": "ondary("
+  },
+  {
+    "file": "components/context-drawer/LoreTab.tsx",
+    "pattern": "onfirmRegenId("
+  },
+  {
+    "file": "components/context-drawer/LoreTab.tsx",
+    "pattern": "onfirmRegenId("
+  },
+  {
+    "file": "components/context-drawer/LoreTab.tsx",
+    "pattern": "ondaryKeyword("
+  },
+  {
+    "file": "components/context-drawer/LoreTab.tsx",
+    "pattern": "ondary("
+  },
+  {
+    "file": "components/context-drawer/LoreTab.tsx",
+    "pattern": "ondaryKeyword("
+  },
+  {
+    "file": "components/context-drawer/LoreTab.tsx",
+    "pattern": "ondaryKeyword("
+  },
+  {
+    "file": "components/context-drawer/LoreTab.tsx",
+    "pattern": "onfirmRegenId("
+  },
+  {
+    "file": "components/context-drawer/RulesManagerTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/RulesManagerTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/RulesManagerTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/context-drawer/RulesManagerTab.tsx",
+    "pattern": "ondary("
+  },
+  {
+    "file": "components/context-drawer/RulesManagerTab.tsx",
+    "pattern": "onfirmRegenId("
+  },
+  {
+    "file": "components/context-drawer/RulesManagerTab.tsx",
+    "pattern": "onfirmRegenId("
+  },
+  {
+    "file": "components/context-drawer/RulesManagerTab.tsx",
+    "pattern": "ondaryKeyword("
+  },
+  {
+    "file": "components/context-drawer/RulesManagerTab.tsx",
+    "pattern": "ondary("
+  },
+  {
+    "file": "components/context-drawer/RulesManagerTab.tsx",
+    "pattern": "ondaryKeyword("
+  },
+  {
+    "file": "components/context-drawer/RulesManagerTab.tsx",
+    "pattern": "ondaryKeyword("
+  },
+  {
+    "file": "components/context-drawer/RulesManagerTab.tsx",
+    "pattern": "onfirmRegenId("
+  },
+  {
+    "file": "components/context-drawer/RulesTab.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/chat/DiceRollModal.tsx",
+    "pattern": "onClose("
+  },
+  {
+    "file": "components/chat/DiceRollModal.tsx",
+    "pattern": "onClose("
+  },
+  {
+    "file": "components/chat/DiceRollModal.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/chat/DivergenceEntryModal.tsx",
+    "pattern": "onAdd("
+  },
+  {
+    "file": "components/chat/DivergenceEntryModal.tsx",
+    "pattern": "onClose("
+  },
+  {
+    "file": "components/chat/DivergenceEntryModal.tsx",
+    "pattern": "ons("
+  },
+  {
+    "file": "components/chat/DivergenceEntryModal.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/chat/DivergenceEntryModal.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/chat/LoreCheckModal.tsx",
+    "pattern": "ontroller("
+  },
+  {
+    "file": "components/chat/LoreCheckModal.tsx",
+    "pattern": "ontroller("
+  },
+  {
+    "file": "components/chat/LoreCheckModal.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/chat/ArcInjectorButton.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/chat/ArcInjectorButton.tsx",
+    "pattern": "ontext("
+  },
+  {
+    "file": "components/chat/ContentWithChips.tsx",
+    "pattern": "ontentWithChips("
+  },
+  {
+    "file": "components/chat/ChatInput.tsx",
+    "pattern": "onSend("
+  },
+  {
+    "file": "components/chat/RenameNpcModal.tsx",
+    "pattern": "onClose("
+  },
+  {
+    "file": "components/chat/RenameNpcModal.tsx",
+    "pattern": "onClose("
+  },
+  {
+    "file": "components/chat/RenameNpcModal.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/chat/PinnedMemoriesPanel.tsx",
+    "pattern": "onfirmClear("
+  },
+  {
+    "file": "components/chat/PinnedMemoriesPanel.tsx",
+    "pattern": "onClose("
+  },
+  {
+    "file": "components/chat/PinnedMemoriesPanel.tsx",
+    "pattern": "onfirmClear("
+  },
+  {
+    "file": "components/chat/PinnedMemoriesPanel.tsx",
+    "pattern": "onfirmClear("
+  },
+  {
+    "file": "components/chat/PinnedMemoriesPanel.tsx",
+    "pattern": "onfirmClear("
+  },
+  {
+    "file": "components/chat/LootRollModal.tsx",
+    "pattern": "onClose("
+  },
+  {
+    "file": "components/chat/LootRollModal.tsx",
+    "pattern": "onClose("
+  },
+  {
+    "file": "components/chat/LootRollModal.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/chat/RegenerateSheet.tsx",
+    "pattern": "onOffset("
+  },
+  {
+    "file": "components/chat/RegenerateSheet.tsx",
+    "pattern": "onOffset("
+  },
+  {
+    "file": "components/chat/RegenerateSheet.tsx",
+    "pattern": "onClose("
+  },
+  {
+    "file": "components/chat/RegenerateSheet.tsx",
+    "pattern": "onOffset("
+  },
+  {
+    "file": "components/chat/RegenerateSheet.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/chat/PrecontextBox.tsx",
+    "pattern": "ontextBox("
+  },
+  {
+    "file": "components/chat/MessageBubble.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/chat/MessageBubble.tsx",
+    "pattern": "onFrame("
+  },
+  {
+    "file": "components/chat/MessageBubble.tsx",
+    "pattern": "onRange("
+  },
+  {
+    "file": "components/chat/MessageBubble.tsx",
+    "pattern": "onSubmitEdit("
+  },
+  {
+    "file": "components/chat/MessageBubble.tsx",
+    "pattern": "onCancelEdit("
+  },
+  {
+    "file": "components/chat/MessageBubble.tsx",
+    "pattern": "onStartEdit("
+  },
+  {
+    "file": "components/chat/MessageBubble.tsx",
+    "pattern": "onOpenSwipeSheet("
+  },
+  {
+    "file": "components/chat/MessageBubble.tsx",
+    "pattern": "onfirm("
+  },
+  {
+    "file": "components/chat/MessageBubble.tsx",
+    "pattern": "onRegenerate("
+  },
+  {
+    "file": "components/chat/MessageBubble.tsx",
+    "pattern": "onTagDivergence("
+  },
+  {
+    "file": "components/chat/MessageBubble.tsx",
+    "pattern": "onDelete("
+  },
+  {
+    "file": "components/chat/MessageBubble.tsx",
+    "pattern": "onRetry("
+  },
+  {
+    "file": "components/chat/ActionSpeedDial.tsx",
+    "pattern": "onSpeedDial("
+  },
+  {
+    "file": "components/chat/ActionSpeedDial.tsx",
+    "pattern": "ontains("
+  },
+  {
+    "file": "components/chat/ActionSpeedDial.tsx",
+    "pattern": "onTrim("
+  },
+  {
+    "file": "components/chat/ActionSpeedDial.tsx",
+    "pattern": "onOpenPins("
+  },
+  {
+    "file": "components/npc-ledger/NPCListView.tsx",
+    "pattern": "onToggleCheck("
+  },
+  {
+    "file": "components/npc-ledger/NPCListView.tsx",
+    "pattern": "onSelect("
+  },
+  {
+    "file": "components/npc-ledger/NPCListView.tsx",
+    "pattern": "onDelete("
+  },
+  {
+    "file": "components/npc-ledger/NPCGalleryView.tsx",
+    "pattern": "onToggleCheck("
+  },
+  {
+    "file": "components/npc-ledger/NPCGalleryView.tsx",
+    "pattern": "onSelect("
+  },
+  {
+    "file": "components/npc-ledger/NPCGalleryView.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/npc-ledger/NPCGalleryView.tsx",
+    "pattern": "onToggleCheck("
+  },
+  {
+    "file": "components/npc-ledger/NPCGalleryView.tsx",
+    "pattern": "onDelete("
+  },
+  {
+    "file": "components/npc-ledger/NPCEditForm.tsx",
+    "pattern": "onBand("
+  },
+  {
+    "file": "components/npc-ledger/NPCEditForm.tsx",
+    "pattern": "onBand("
+  },
+  {
+    "file": "components/npc-ledger/NPCEditForm.tsx",
+    "pattern": "onTargetId("
+  },
+  {
+    "file": "components/npc-ledger/NPCEditForm.tsx",
+    "pattern": "onTargetId("
+  },
+  {
+    "file": "components/npc-ledger/NPCEditForm.tsx",
+    "pattern": "onDelete("
+  },
+  {
+    "file": "components/npc-ledger/NPCSuggestionsPanel.tsx",
+    "pattern": "onsPanel("
+  },
+  {
+    "file": "components/npc-ledger/NPCSuggestionsPanel.tsx",
+    "pattern": "onAccept("
+  },
+  {
+    "file": "components/npc-ledger/NPCSuggestionsPanel.tsx",
+    "pattern": "onDismiss("
+  },
+  {
+    "file": "components/npc-ledger/NPCSuggestionsPanel.tsx",
+    "pattern": "onClearAll("
+  },
+  {
+    "file": "components/npc-ledger/NPCPortraitSection.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/npc-ledger/NPCPortraitSection.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "pattern": "onWizard("
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "pattern": "on("
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "pattern": "onComplete("
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "pattern": "onsStep("
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "pattern": "onAnswer("
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "pattern": "onSuggest("
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "pattern": "onField("
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "pattern": "onChange("
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "pattern": "onChange("
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "pattern": "onChange("
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "pattern": "onArchetypePreset("
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "pattern": "onStatChange("
+  },
+  {
+    "file": "components/pc/PCCreationWizard.tsx",
+    "pattern": "onStatChange("
+  }
+]

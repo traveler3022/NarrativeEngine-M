@@ -1,0 +1,87 @@
+[
+  {
+    "file": "store/campaignStore.ts",
+    "operations": [
+      "keys",
+      "set",
+      "del",
+      "get"
+    ]
+  },
+  {
+    "file": "services/campaignBundle.ts",
+    "operations": [
+      "set",
+      "get"
+    ]
+  },
+  {
+    "file": "services/apiClient.ts",
+    "operations": [
+      "set",
+      "get"
+    ]
+  },
+  {
+    "file": "store/slices/settingsSlice.ts",
+    "operations": [
+      "set",
+      "get"
+    ]
+  },
+  {
+    "file": "services/storage/imageStorage.ts",
+    "operations": [
+      "keys",
+      "set",
+      "del",
+      "get"
+    ]
+  },
+  {
+    "file": "services/storage/backupStorage.ts",
+    "operations": [
+      "set",
+      "get"
+    ]
+  },
+  {
+    "file": "services/storage/embeddingStorage.ts",
+    "operations": [
+      "set",
+      "del",
+      "delMany",
+      "get",
+      "keys",
+      "getMany"
+    ]
+  },
+  {
+    "file": "services/storage/_helpers.ts",
+    "operations": [
+      "set",
+      "get"
+    ]
+  },
+  {
+    "file": "services/storage/archiveStorage.ts",
+    "operations": [
+      "del",
+      "get"
+    ]
+  },
+  {
+    "file": "services/embedding/backfillRunner.ts",
+    "operations": [
+      "del",
+      "get"
+    ]
+  },
+  {
+    "file": "services/infrastructure/settingsCrypto.ts",
+    "operations": [
+      "set",
+      "get"
+    ]
+  }
+]

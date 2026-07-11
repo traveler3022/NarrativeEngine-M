@@ -1,7 +1,7 @@
 import { memo, useState, useEffect, useRef } from 'react';
 import {
     ChevronDown, ChevronUp, Lock, Unlock, AlertCircle,
-    RefreshCcw, Edit2, Check, X, GitMerge, Scissors, Pin, PinOff
+    RefreshCcw, Edit2, Check, X, GitMerge, Scissors, Pin, PinOff, XCircle
 } from 'lucide-react';
 import type { ArchiveChapter, TimelineEvent } from '../../types';
 import { TimelineDotRow } from './TimelineDotRow';
@@ -21,6 +21,7 @@ interface ChapterCardProps {
     onTogglePin?: () => void;
     timelineEvents?: TimelineEvent[];
     onDeleteTimelineEvent?: (eventId: string) => void;
+    onDismissThread?: (threadText: string) => void;
 }
 
 export const ChapterCard = memo(function ChapterCard({
@@ -38,6 +39,7 @@ export const ChapterCard = memo(function ChapterCard({
     onTogglePin,
     timelineEvents,
     onDeleteTimelineEvent,
+    onDismissThread,
 }: ChapterCardProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [editTitle, setEditTitle] = useState(chapter.title);
@@ -207,6 +209,33 @@ export const ChapterCard = memo(function ChapterCard({
                             </div>
                         )}
 
+                        {(chapter.unresolvedThreads ?? []).length > 0 && (() => {
+                            const resolved = new Set(chapter.resolvedThreads ?? []);
+                            const visible = (chapter.unresolvedThreads ?? []).filter(t => !resolved.has(t));
+                            if (visible.length === 0) return null;
+                            return (
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold uppercase text-ember/60 tracking-wider font-mono">Unresolved Threads</label>
+                                    <ul className="text-xs text-text-secondary space-y-0.5 pl-1">
+                                        {visible.map((thread, i) => (
+                                            <li key={i} className="flex items-center gap-1">
+                                                <span className="truncate flex-1">{thread}</span>
+                                                {onDismissThread && (
+                                                    <button
+                                                        onClick={() => onDismissThread(thread)}
+                                                        className="text-text-muted hover:text-ember transition-colors shrink-0"
+                                                        title="Mark resolved"
+                                                    >
+                                                        <XCircle size={12} />
+                                                    </button>
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            );
+                        })()}
+
                         <div className="pt-3 flex flex-wrap gap-2 border-t border-border/30 mt-4">
                             {status === 'open' && (
                                 <button
@@ -228,7 +257,7 @@ export const ChapterCard = memo(function ChapterCard({
                                     }`}
                                 >
                                     <RefreshCcw size={12} />
-                                    <span>{status === 'invalidated' ? 'Repair Summary' : 'Regenerate'}</span>
+                                    <span>{status === 'invalidated' ? 'Regenerate Chapter' : 'Regenerate'}</span>
                                 </button>
                             )}
 

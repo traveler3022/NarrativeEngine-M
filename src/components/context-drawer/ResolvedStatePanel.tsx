@@ -2,14 +2,19 @@ import React, { useState, useMemo } from 'react';
 import { ChevronDown, ChevronUp, Plus, X, Globe } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { api } from '../../services/apiClient';
-import { queryTimeline } from '../../services/timelineResolver';
+import { queryTimeline } from '../../services/campaign-state';
 import { TIMELINE_PREDICATES } from '../../types';
 import { toast } from '../Toast';
 
 const PREDICATE_LIST = TIMELINE_PREDICATES as unknown as string[];
 
 export const ResolvedStatePanel: React.FC = () => {
-    const { timeline, activeCampaignId, chapters, setTimeline, addTimelineEvent, removeTimelineEvent } = useAppStore();
+    const timeline = useAppStore(s => s.timeline);
+    const activeCampaignId = useAppStore(s => s.activeCampaignId);
+    const chapters = useAppStore(s => s.chapters);
+    const setTimeline = useAppStore(s => s.setTimeline);
+    const addTimelineEvent = useAppStore(s => s.addTimelineEvent);
+    const removeTimelineEvent = useAppStore(s => s.removeTimelineEvent);
 
     const [collapsed, setCollapsed] = useState(true);
     const [filter, setFilter] = useState('');

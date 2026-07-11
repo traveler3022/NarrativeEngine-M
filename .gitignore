@@ -23,3 +23,40 @@ data
 *.njsproj
 *.sln
 *.sw?
+
+.claude/
+.opencode/
+reddit_post.json
+*.apk
+
+# ADB / debug screenshots
+_adb_shot.png
+*_adb_shot.png
+
+# Graphify Outputs
+graphify-out/
+
+# AI agent tooling / local artifacts
+.agent/
+.graphifyignore
+AGENTS.md
+CLAUDE.md
+opencode.json
+
+# Internal planning / work-order docs (kept local, not version-controlled)
+Upgrade/
+
+# Environment variables (sensitive API keys, etc.)
+.env
+.env.local
+.env.*.local
+
+# Testing and coverage
+coverage/
+
+# Build caches and system files
+.vite
+.eslintcache
+*.tsbuildinfo
+Thumbs.db
+

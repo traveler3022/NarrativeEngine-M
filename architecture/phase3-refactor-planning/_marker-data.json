@@ -1,0 +1,609 @@
+[
+  {
+    "file": "src/store/useAppStore.ts",
+    "rfs": [
+      "RF-010"
+    ],
+    "violations": [
+      {
+        "target": "../services/embedding/embeddingScheduler",
+        "type": "static",
+        "rf": "RF-010",
+        "wave": "W6"
+      }
+    ],
+    "godFile": null
+  },
+  {
+    "file": "src/store/campaignStore.ts",
+    "rfs": [
+      "RF-009"
+    ],
+    "violations": [
+      {
+        "target": "../services/storage/imageStorage",
+        "type": "static",
+        "rf": "RF-009",
+        "wave": "W5"
+      },
+      {
+        "target": "../services/lore/loreIndexer",
+        "type": "static",
+        "rf": "RF-009",
+        "wave": "W5"
+      },
+      {
+        "target": "../services/npc/agencyBands",
+        "type": "static",
+        "rf": "RF-009",
+        "wave": "W5"
+      },
+      {
+        "target": "../services/apiClient",
+        "type": "dynamic",
+        "rf": "RF-009",
+        "wave": "W5"
+      },
+      {
+        "target": "../services/apiClient",
+        "type": "dynamic",
+        "rf": "RF-009",
+        "wave": "W5"
+      },
+      {
+        "target": "../services/apiClient",
+        "type": "dynamic",
+        "rf": "RF-009",
+        "wave": "W5"
+      },
+      {
+        "target": "../services/apiClient",
+        "type": "dynamic",
+        "rf": "RF-009",
+        "wave": "W5"
+      },
+      {
+        "target": "../services/campaign-state",
+        "type": "dynamic",
+        "rf": "RF-009",
+        "wave": "W5"
+      }
+    ],
+    "godFile": {
+      "file": "store/campaignStore.ts",
+      "rf": "RF-009",
+      "wave": "W5",
+      "lines": 0,
+      "alsoRF": []
+    }
+  },
+  {
+    "file": "src/store/slices/settingsSlice.ts",
+    "rfs": [
+      "RF-010",
+      "RF-007"
+    ],
+    "violations": [
+      {
+        "target": "../../services/infrastructure",
+        "type": "static",
+        "rf": "RF-010",
+        "wave": "W6"
+      },
+      {
+        "target": "../../services/infrastructure/themeService",
+        "type": "static",
+        "rf": "RF-010",
+        "wave": "W6"
+      },
+      {
+        "target": "../../services/infrastructure/themeService",
+        "type": "static",
+        "rf": "RF-010",
+        "wave": "W6"
+      },
+      {
+        "target": "../../components/Toast",
+        "type": "static",
+        "rf": "RF-007",
+        "wave": "W0(advance)/W3(close)"
+      }
+    ],
+    "godFile": null
+  },
+  {
+    "file": "src/store/slices/npcSlice.ts",
+    "rfs": [
+      "RF-010",
+      "RF-007"
+    ],
+    "violations": [
+      {
+        "target": "../../services/embedding",
+        "type": "static",
+        "rf": "RF-010",
+        "wave": "W6"
+      },
+      {
+        "target": "../../services/storage/embeddingStorage",
+        "type": "static",
+        "rf": "RF-010",
+        "wave": "W6"
+      },
+      {
+        "target": "../../services/storage/imageStorage",
+        "type": "static",
+        "rf": "RF-010",
+        "wave": "W6"
+      },
+      {
+        "target": "../../services/npc",
+        "type": "static",
+        "rf": "RF-010",
+        "wave": "W6"
+      },
+      {
+        "target": "../../components/Toast",
+        "type": "static",
+        "rf": "RF-007",
+        "wave": "W0(advance)/W3(close)"
+      }
+    ],
+    "godFile": null
+  },
+  {
+    "file": "src/store/slices/chatSlice.ts",
+    "rfs": [
+      "RF-010",
+      "RF-014",
+      "RF-007"
+    ],
+    "violations": [
+      {
+        "target": "../../services/campaign-state",
+        "type": "static",
+        "rf": "RF-010",
+        "wave": "W6"
+      },
+      {
+        "target": "../../services/infrastructure",
+        "type": "static",
+        "rf": "RF-010",
+        "wave": "W6"
+      },
+      {
+        "target": "../../services/storage/imageStorage",
+        "type": "static",
+        "rf": "RF-010",
+        "wave": "W6"
+      }
+    ],
+    "godFile": {
+      "file": "store/slices/chatSlice.ts",
+      "rf": "RF-014",
+      "wave": "W10",
+      "lines": 614,
+      "alsoRF": [
+        "RF-007",
+        "RF-010"
+      ]
+    }
+  },
+  {
+    "file": "src/store/slices/campaignSlice.ts",
+    "rfs": [
+      "RF-008",
+      "RF-007"
+    ],
+    "violations": [
+      {
+        "target": "../../services/embedding",
+        "type": "static",
+        "rf": "RF-008",
+        "wave": "W4"
+      },
+      {
+        "target": "../../services/storage/embeddingStorage",
+        "type": "static",
+        "rf": "RF-008",
+        "wave": "W4"
+      },
+      {
+        "target": "../../services/campaign-state",
+        "type": "static",
+        "rf": "RF-008",
+        "wave": "W4"
+      },
+      {
+        "target": "../../services/turn",
+        "type": "dynamic",
+        "rf": "RF-008",
+        "wave": "W4"
+      },
+      {
+        "target": "../../services/storage",
+        "type": "dynamic",
+        "rf": "RF-008",
+        "wave": "W4"
+      },
+      {
+        "target": "../../services/infrastructure",
+        "type": "dynamic",
+        "rf": "RF-008",
+        "wave": "W4"
+      },
+      {
+        "target": "../../services/embedding",
+        "type": "dynamic",
+        "rf": "RF-008",
+        "wave": "W4"
+      },
+      {
+        "target": "../../services/storage",
+        "type": "dynamic",
+        "rf": "RF-008",
+        "wave": "W4"
+      },
+      {
+        "target": "../../services/apiClient",
+        "type": "dynamic",
+        "rf": "RF-008",
+        "wave": "W4"
+      },
+      {
+        "target": "../../components/Toast",
+        "type": "static",
+        "rf": "RF-007",
+        "wave": "W0(advance)/W3(close)"
+      }
+    ],
+    "godFile": null
+  },
+  {
+    "file": "src/services/campaignBundle.ts",
+    "rfs": [
+      "RF-004"
+    ],
+    "violations": [
+      {
+        "target": "../store/campaignStore",
+        "type": "static",
+        "rf": "RF-004",
+        "wave": "W0(advance)/W1(close)"
+      }
+    ],
+    "godFile": null
+  },
+  {
+    "file": "src/services/apiClient.ts",
+    "rfs": [
+      "RF-004"
+    ],
+    "violations": [
+      {
+        "target": "../store/campaignStore",
+        "type": "dynamic",
+        "rf": "RF-004",
+        "wave": "W0(advance)/W1(close)"
+      },
+      {
+        "target": "../store/campaignStore",
+        "type": "dynamic",
+        "rf": "RF-004",
+        "wave": "W0(advance)/W1(close)"
+      }
+    ],
+    "godFile": null
+  },
+  {
+    "file": "src/services/turn/pendingCommit.ts",
+    "rfs": [
+      "RF-001",
+      "RF-004",
+      "RF-006"
+    ],
+    "violations": [
+      {
+        "target": "../../store/useAppStore",
+        "type": "static",
+        "rf": "RF-001",
+        "wave": "W0(advance)/W1(close)"
+      },
+      {
+        "target": "../../store/campaignStore",
+        "type": "dynamic",
+        "rf": "RF-004",
+        "wave": "W0(advance)/W1(close)"
+      },
+      {
+        "target": "../../store/campaignStore",
+        "type": "dynamic",
+        "rf": "RF-004",
+        "wave": "W0(advance)/W1(close)"
+      },
+      {
+        "target": "../../components/Toast",
+        "type": "static",
+        "rf": "RF-006",
+        "wave": "W0(advance)/W2(close)"
+      }
+    ],
+    "godFile": null
+  },
+  {
+    "file": "src/services/turn/turnPostProcess.ts",
+    "rfs": [
+      "RF-004",
+      "RF-006",
+      "RF-013"
+    ],
+    "violations": [
+      {
+        "target": "../../store/campaignStore",
+        "type": "static",
+        "rf": "RF-004",
+        "wave": "W0(advance)/W1(close)"
+      },
+      {
+        "target": "../../components/Toast",
+        "type": "static",
+        "rf": "RF-006",
+        "wave": "W0(advance)/W2(close)"
+      }
+    ],
+    "godFile": {
+      "file": "services/turn/turnPostProcess.ts",
+      "rf": "RF-013",
+      "wave": "W9",
+      "lines": 1238
+    }
+  },
+  {
+    "file": "src/services/turn/turnTypes.ts",
+    "rfs": [
+      "RF-001"
+    ],
+    "violations": [
+      {
+        "target": "../../store/slices/uiSlice",
+        "type": "static",
+        "rf": "RF-001",
+        "wave": "W0(advance)/W1(close)"
+      }
+    ],
+    "godFile": null
+  },
+  {
+    "file": "src/services/engine/engineRolls.ts",
+    "rfs": [
+      "RF-005"
+    ],
+    "violations": [
+      {
+        "target": "../../store/slices/settingsSlice",
+        "type": "static",
+        "rf": "RF-005",
+        "wave": "W0(advance)/W1(close)"
+      }
+    ],
+    "godFile": null
+  },
+  {
+    "file": "src/services/embedding/backfillRunner.ts",
+    "rfs": [
+      "RF-001"
+    ],
+    "violations": [
+      {
+        "target": "../../store/useAppStore",
+        "type": "dynamic",
+        "rf": "RF-001",
+        "wave": "W0(advance)/W1(close)"
+      },
+      {
+        "target": "../../store/useAppStore",
+        "type": "dynamic",
+        "rf": "RF-001",
+        "wave": "W0(advance)/W1(close)"
+      }
+    ],
+    "godFile": null
+  },
+  {
+    "file": "src/services/embedding/embeddingScheduler.ts",
+    "rfs": [
+      "RF-001"
+    ],
+    "violations": [
+      {
+        "target": "../../store/slices/uiSlice",
+        "type": "static",
+        "rf": "RF-001",
+        "wave": "W0(advance)/W1(close)"
+      }
+    ],
+    "godFile": null
+  },
+  {
+    "file": "src/services/embedding/embedder.ts",
+    "rfs": [
+      "RF-001"
+    ],
+    "violations": [
+      {
+        "target": "../../store/useAppStore",
+        "type": "dynamic",
+        "rf": "RF-001",
+        "wave": "W0(advance)/W1(close)"
+      }
+    ],
+    "godFile": null
+  },
+  {
+    "file": "src/services/image/index.ts",
+    "rfs": [
+      "RF-001",
+      "RF-006"
+    ],
+    "violations": [
+      {
+        "target": "../../store/useAppStore",
+        "type": "static",
+        "rf": "RF-001",
+        "wave": "W0(advance)/W1(close)"
+      },
+      {
+        "target": "../../components/Toast",
+        "type": "static",
+        "rf": "RF-006",
+        "wave": "W0(advance)/W2(close)"
+      }
+    ],
+    "godFile": null
+  },
+  {
+    "file": "src/services/image/portrait.ts",
+    "rfs": [
+      "RF-001",
+      "RF-006"
+    ],
+    "violations": [
+      {
+        "target": "../../store/useAppStore",
+        "type": "static",
+        "rf": "RF-001",
+        "wave": "W0(advance)/W1(close)"
+      },
+      {
+        "target": "../../components/Toast",
+        "type": "static",
+        "rf": "RF-006",
+        "wave": "W0(advance)/W2(close)"
+      }
+    ],
+    "godFile": null
+  },
+  {
+    "file": "src/services/lore/loreKeywordEnricher.ts",
+    "rfs": [
+      "RF-004"
+    ],
+    "violations": [
+      {
+        "target": "../../store/campaignStore",
+        "type": "static",
+        "rf": "RF-004",
+        "wave": "W0(advance)/W1(close)"
+      }
+    ],
+    "godFile": null
+  },
+  {
+    "file": "src/services/turn/turnOrchestrator.ts",
+    "rfs": [
+      "RF-006"
+    ],
+    "violations": [
+      {
+        "target": "../../components/Toast",
+        "type": "static",
+        "rf": "RF-006",
+        "wave": "W0(advance)/W2(close)"
+      }
+    ],
+    "godFile": null
+  },
+  {
+    "file": "src/services/campaign-state/divergenceRegister.ts",
+    "rfs": [
+      "RF-006"
+    ],
+    "violations": [
+      {
+        "target": "../../components/Toast",
+        "type": "static",
+        "rf": "RF-006",
+        "wave": "W0(advance)/W2(close)"
+      }
+    ],
+    "godFile": null
+  },
+  {
+    "file": "src/services/npc/npcGeneration.ts",
+    "rfs": [
+      "RF-012"
+    ],
+    "violations": [],
+    "godFile": {
+      "file": "services/npc/npcGeneration.ts",
+      "rf": "RF-012",
+      "wave": "W8",
+      "lines": 1307
+    }
+  },
+  {
+    "file": "src/components/context-drawer/MemoryTab.tsx",
+    "rfs": [
+      "RF-015"
+    ],
+    "violations": [],
+    "godFile": {
+      "file": "components/context-drawer/MemoryTab.tsx",
+      "rf": "RF-015",
+      "wave": "W11a",
+      "lines": 916
+    }
+  },
+  {
+    "file": "src/components/chat/MessageBubble.tsx",
+    "rfs": [
+      "RF-016"
+    ],
+    "violations": [],
+    "godFile": {
+      "file": "components/chat/MessageBubble.tsx",
+      "rf": "RF-016",
+      "wave": "W11b",
+      "lines": 781
+    }
+  },
+  {
+    "file": "src/components/ChatArea.tsx",
+    "rfs": [
+      "RF-017"
+    ],
+    "violations": [],
+    "godFile": {
+      "file": "components/ChatArea.tsx",
+      "rf": "RF-017",
+      "wave": "W11e",
+      "lines": 565
+    }
+  },
+  {
+    "file": "src/components/pc/PCCreationWizard.tsx",
+    "rfs": [
+      "RF-018"
+    ],
+    "violations": [],
+    "godFile": {
+      "file": "components/pc/PCCreationWizard.tsx",
+      "rf": "RF-018",
+      "wave": "W11c",
+      "lines": 542
+    }
+  },
+  {
+    "file": "src/components/CampaignHub.tsx",
+    "rfs": [
+      "RF-019"
+    ],
+    "violations": [],
+    "godFile": {
+      "file": "components/CampaignHub.tsx",
+      "rf": "RF-019",
+      "wave": "W11d",
+      "lines": 517
+    }
+  }
+]

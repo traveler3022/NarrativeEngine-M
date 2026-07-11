@@ -1,24 +1,35 @@
+/**
+ * @refactor RF-019
+ * @violations 0 (see architecture/reverse-engineering/0.15-architecture-violations/RAW_DATA.json)
+ * @waves W11d
+ * @ports (component split)
+ * @godFile RF-019 (517 lines)
+ * @see architecture/phase3-refactor-planning/3.1-refactor-case-catalog.md
+ * @see architecture/phase3-refactor-planning/3.6-traceability-matrix.md
+ * @see REFACTOR-MAP.md
+ */
+
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, Trash2, Play, Clock, BookOpen, Pencil, Settings, Download, Upload, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Play, Clock, BookOpen, Pencil, Settings, Download, Upload, Loader2, Package } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import {
     listCampaigns, deleteCampaign, loadCampaignState,
-    saveCampaign, saveCampaignState, saveLoreChunks, getLoreChunks,
-    getNPCLedger, saveNPCLedger, loadArchiveIndex, loadChapters, loadSemanticFacts
-} from '../store/campaignStore';
-import { chunkLoreFile } from '../services/loreChunker';
-import { extractEngineSeeds } from '../services/loreEngineSeeder';
-import { parseNPCsFromLore } from '../services/loreNPCParser';
-import { dedupeNPCLedger, defaultContext } from '../store/slices/campaignSlice';
+    saveCampaign, saveCampaignState, saveLoreChunks,
+    getNPCLedger, saveNPCLedger, getLoreChunks,
+} from '../services/persistence/campaignStore';
+import { chunkLoreFile, extractEngineSeeds, parseNPCsFromLore, loadLootTree } from '../services/lore';
+import { defaultContext } from '../store/slices/campaignSlice';
+import { dedupeNPCLedger } from '../store/slices/npcSlice';
 import { api } from '../services/apiClient';
-import { downloadBundle, importBundle } from '../services/campaignBundle';
+import { downloadBundle, importBundle, readFileChunked } from '../services/campaignBundle';
+import { useBackHandler } from '../hooks/useBackHandler';
 import { toast } from './Toast';
+import { switchCampaign } from '../services/campaignLifecycle';
 import type { Campaign } from '../types';
 
-const DEFAULT_CONDENSER = { condensedSummary: '', condensedUpToIndex: -1, isCondensing: false };
+const DEFAULT_CONDENSER = { condensedUpToIndex: -1 };
 
 export function CampaignHub() {
-    useAppStore(); // state accessed via useAppStore.setState / useAppStore.getState
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
     const [isExporting, setIsExporting] = useState<string | null>(null);
@@ -37,6 +48,8 @@ export function CampaignHub() {
     const [loreName, setLoreName] = useState('');
     const [rulesFile, setRulesFile] = useState<File | null>(null);
     const [rulesName, setRulesName] = useState('');
+    const [lootFile, setLootFile] = useState<File | null>(null);
+    const [lootName, setLootName] = useState('');
 
     const refresh = useCallback(async () => {
         const list = await listCampaigns();
@@ -57,8 +70,14 @@ export function CampaignHub() {
         setLoreName('');
         setRulesFile(null);
         setRulesName('');
+        setLootFile(null);
+        setLootName('');
         setEditingCampaign(null);
     };
+
+    // Hardware back dismisses whichever hub overlay is open.
+    useBackHandler(modalOpen, () => { setModalOpen(false); resetForm(); });
+    useBackHandler(confirmDelete !== null, () => setConfirmDelete(null));
 
     const openCreate = () => {
         resetForm();
@@ -73,6 +92,8 @@ export function CampaignHub() {
         setRulesName('');
         setLoreFile(null);
         setRulesFile(null);
+        setLootFile(null);
+        setLootName('');
         setCoverFile(null);
         setModalOpen(true);
     };
@@ -108,8 +129,27 @@ export function CampaignHub() {
 
         if (loreFile) {
             const loreText = await loreFile.text();
-            const chunks = chunkLoreFile(loreText);
+            const newChunks = chunkLoreFile(loreText);
+            const existingChunks = await getLoreChunks(campaign.id);
+            const preservedModes = new Map(
+                existingChunks
+                    .filter(c => c.modesUserEdited)
+                    .map(c => [c.id, { activationModes: c.activationModes, modesUserEdited: true as const }])
+            );
+            const chunks = newChunks.map(c => {
+                const p = preservedModes.get(c.id);
+                return p ? { ...c, ...p } : c;
+            });
             await saveLoreChunks(campaign.id, chunks);
+
+            // Non-blocking LLM keyword enrichment — fire and forget
+            const utilityEndpointForEnrichment = useAppStore.getState().getActiveUtilityEndpoint();
+            if (utilityEndpointForEnrichment?.endpoint) {
+                import('../services/lore').then(({ enrichLoreKeywords }) => {
+                    enrichLoreKeywords(campaign.id, chunks, utilityEndpointForEnrichment)
+                        .catch(err => console.warn('[LoreEnricher] Background enrichment failed:', err));
+                }).catch(() => {});
+            }
 
             const seeds = extractEngineSeeds(chunks);
             if (seeds) {
@@ -137,6 +177,11 @@ export function CampaignHub() {
                             where: seeds.worldWhere.length > 0 ? seeds.worldWhere : (ctx.worldEventConfig?.where ?? []),
                             why: seeds.worldWhy.length > 0 ? seeds.worldWhy : (ctx.worldEventConfig?.why ?? []),
                             what: seeds.worldWhat.length > 0 ? seeds.worldWhat : (ctx.worldEventConfig?.what ?? []),
+                        },
+                        npcIntroConfig: {
+                            initialDC: ctx.npcIntroConfig?.initialDC ?? 196,
+                            dcReduction: ctx.npcIntroConfig?.dcReduction ?? 2,
+                            characters: seeds.characterIntros.length > 0 ? seeds.characterIntros : (ctx.npcIntroConfig?.characters ?? []),
                         },
                     },
                     messages: existingState?.messages ?? [],
@@ -166,6 +211,28 @@ export function CampaignHub() {
             });
         }
 
+        // Loot Engine WO-03: load + validate the optional loot.json into ctx.lootTree.
+        // loadLootTree returns null (never throws) on bad input — the campaign
+        // simply has no loot table, so the manual trigger no-ops (WO-05).
+        if (lootFile) {
+            try {
+                const lootRaw = JSON.parse(await lootFile.text());
+                const lootTree = loadLootTree(lootRaw);
+                const existingState = await loadCampaignState(campaign.id);
+                const ctx = { ...defaultContext, ...(existingState?.context ?? {}) };
+                await saveCampaignState(campaign.id, {
+                    context: { ...ctx, ...(lootTree ? { lootTree } : {}) },
+                    messages: existingState?.messages ?? [],
+                    condenser: existingState?.condenser ?? DEFAULT_CONDENSER,
+                });
+                if (lootTree) toast.success('Loot table loaded — the Loot button is armed.');
+                else toast.warning('loot.json was invalid — no loot table loaded (see console).');
+            } catch (err) {
+                console.warn('[CampaignHub] loot.json parse failed:', err);
+                toast.warning('loot.json could not be parsed — no loot table loaded.');
+            }
+        }
+
         setModalOpen(false);
         resetForm();
         refresh();
@@ -177,41 +244,23 @@ export function CampaignHub() {
     };
 
     const handleSelectCampaign = async (campaign: Campaign) => {
-        const now = new Date().getTime();
-        const updatedCampaign = { ...campaign, lastPlayedAt: now };
+        const updatedCampaign = { ...campaign, lastPlayedAt: Date.now() };
         await saveCampaign(updatedCampaign);
-
-        const state = await loadCampaignState(campaign.id);
-        const chunks = await getLoreChunks(campaign.id);
-        const npcs = await getNPCLedger(campaign.id);
-        const archiveIndex = await loadArchiveIndex(campaign.id);
-        const [facts, chaps] = await Promise.all([
-            loadSemanticFacts(campaign.id).catch(() => []),
-            loadChapters(campaign.id).catch(() => []),
-        ]);
-
-        useAppStore.setState({
-            context: { ...defaultContext, ...(state?.context ?? {}) },
-            messages: state?.messages ?? [],
-            condenser: { ...(state?.condenser ?? DEFAULT_CONDENSER), isCondensing: false },
-            loreChunks: chunks,
-            npcLedger: npcs,
-            archiveIndex,
-            semanticFacts: facts,
-            chapters: chaps,
-            activeCampaignId: campaign.id,
-        });
+        await switchCampaign(campaign.id);
     };
 
     const handleExport = async (campaignId: string, e: React.MouseEvent) => {
         e.stopPropagation();
         setIsExporting(campaignId);
         try {
-            await downloadBundle(campaignId);
+            const includeDebug = useAppStore.getState().settings.debugMode === true;
+            await downloadBundle(campaignId, includeDebug);
             toast.success('Campaign saved to Downloads folder');
         } catch (err) {
             if (err instanceof Error && err.message === 'Cancelled') return;
-            toast.error('Export failed');
+            const msg = err instanceof Error ? err.message : String(err);
+            console.error('[export] handler error:', err);
+            toast.error(msg.startsWith('Export failed') ? msg : `Export failed: ${msg}`);
         } finally {
             setIsExporting(null);
         }
@@ -223,7 +272,7 @@ export function CampaignHub() {
         e.target.value = '';
         setIsImporting(true);
         try {
-            const bundle = JSON.parse(await file.text());
+            const bundle = JSON.parse(await readFileChunked(file));
             await importBundle(bundle);
             await refresh();
             toast.success(`"${bundle.campaign?.name ?? 'Campaign'}" imported — rebuilding search index in background`);
@@ -255,12 +304,12 @@ export function CampaignHub() {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-void p-4 md:p-8 relative">
-            <input ref={importInputRef} type="file" accept=".campaign,.json" className="hidden" onChange={handleImportFile} />
+            <input ref={importInputRef} type="file" accept=".campaign, .json, application/json, application/octet-stream, */*" className="hidden" onChange={handleImportFile} />
 
             {/* Settings button */}
             <button
                 onClick={() => useAppStore.getState().toggleSettings()}
-                className="absolute top-4 right-4 sm:top-8 sm:right-8 p-3 text-text-dim hover:text-terminal transition-colors bg-surface border border-border rounded-full hover:border-terminal z-50"
+                className="absolute safe-top-abs right-4 sm:right-8 p-3 text-text-dim hover:text-terminal transition-colors bg-surface border border-border rounded-full hover:border-terminal z-50"
                 title="Global Settings"
             >
                 <Settings size={20} />
@@ -270,7 +319,7 @@ export function CampaignHub() {
             <button
                 onClick={() => importInputRef.current?.click()}
                 disabled={isImporting}
-                className="absolute top-4 left-4 sm:top-8 sm:left-8 p-3 text-text-dim hover:text-terminal transition-colors bg-surface border border-border rounded-full hover:border-terminal z-50 disabled:opacity-40"
+                className="absolute safe-top-abs left-4 sm:left-8 p-3 text-text-dim hover:text-terminal transition-colors bg-surface border border-border rounded-full hover:border-terminal z-50 disabled:opacity-40"
                 title="Import Campaign"
             >
                 {isImporting ? <Loader2 size={20} className="animate-spin" /> : <Upload size={20} />}
@@ -361,7 +410,7 @@ export function CampaignHub() {
 
             {/* Delete Confirmation */}
             {confirmDelete && (
-                <div className="fixed inset-0 bg-ember/40 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setConfirmDelete(null)}>
+                <div className="fixed inset-0 bg-ember/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setConfirmDelete(null)}>
                     <div className="bg-surface border border-danger rounded-lg p-6 max-w-sm" onClick={(e) => e.stopPropagation()}>
                         <p className="text-text-primary text-sm mb-4">Delete this campaign? All data (chat, lore, saves) will be lost.</p>
                         <div className="flex gap-3 justify-end">
@@ -378,8 +427,8 @@ export function CampaignHub() {
 
             {/* Create / Edit Campaign Modal */}
             {modalOpen && (
-                <div className="fixed inset-0 bg-ember/40 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => { setModalOpen(false); resetForm(); }}>
-                    <div className="bg-surface border border-border rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+                <div className="fixed inset-0 bg-ember/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => { setModalOpen(false); resetForm(); }}>
+                    <div className="bg-surface border border-border rounded-lg p-6 w-full max-w-md max-h-[calc(85*var(--app-vh))] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                         <h2 className="text-terminal text-sm font-bold tracking-widest uppercase mb-6">
                             {editingCampaign ? 'Edit Campaign' : 'New Campaign'}
                         </h2>
@@ -432,7 +481,7 @@ export function CampaignHub() {
                         <label className="block text-text-dim text-xs uppercase tracking-wider mb-1">
                             Rules (.md) {editingCampaign && <span className="text-text-dim/50 normal-case">— re-upload to replace</span>}
                         </label>
-                        <label className="flex items-center gap-2 px-3 py-3 md:py-2 bg-void border border-border rounded cursor-pointer hover:border-terminal transition-colors mb-8">
+                        <label className="flex items-center gap-2 px-3 py-3 md:py-2 bg-void border border-border rounded cursor-pointer hover:border-terminal transition-colors mb-1">
                             <BookOpen size={16} className="text-text-dim" />
                             <span className="text-sm text-text-dim">{rulesName || 'Choose file...'}</span>
                             <input type="file" accept=".md,.txt" className="hidden" onChange={(e) => {
@@ -440,6 +489,21 @@ export function CampaignHub() {
                                 if (f) { setRulesFile(f); setRulesName(f.name); }
                             }} />
                         </label>
+                        <p className="text-text-dim text-xs mb-4 opacity-60">System rules — always-active context</p>
+
+                        {/* Loot Table (optional — Loot Engine WO-03) */}
+                        <label className="block text-text-dim text-xs uppercase tracking-wider mb-1">
+                            Loot Table (.json) <span className="text-text-dim/50 normal-case">— optional</span> {editingCampaign && <span className="text-text-dim/50 normal-case">— re-upload to replace</span>}
+                        </label>
+                        <label className="flex items-center gap-2 px-3 py-3 md:py-2 bg-void border border-border rounded cursor-pointer hover:border-terminal transition-colors mb-1">
+                            <Package size={16} className="text-text-dim" />
+                            <span className="text-sm text-text-dim">{lootName || 'Choose file...'}</span>
+                            <input type="file" accept=".json,application/json" className="hidden" onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) { setLootFile(f); setLootName(f.name); }
+                            }} />
+                        </label>
+                        <p className="text-text-dim text-xs mb-8 opacity-60">World loot tree — powers the Loot button (manual drops)</p>
 
                         {/* Actions */}
                         <div className="flex gap-3 justify-end">

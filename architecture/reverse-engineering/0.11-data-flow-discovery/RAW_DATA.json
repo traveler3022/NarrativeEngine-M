@@ -1,0 +1,872 @@
+[
+  {
+    "file": "hooks/useLoreIndexer.ts",
+    "op": "subscribe",
+    "target": "loreChunks"
+  },
+  {
+    "file": "hooks/useLoreIndexer.ts",
+    "op": "subscribe",
+    "target": "activeCampaignId"
+  },
+  {
+    "file": "hooks/useLoreIndexer.ts",
+    "op": "subscribe",
+    "target": "setLoreChunks"
+  },
+  {
+    "file": "hooks/useRulesIndexer.ts",
+    "op": "subscribe",
+    "target": "context"
+  },
+  {
+    "file": "hooks/useRulesIndexer.ts",
+    "op": "subscribe",
+    "target": "context"
+  },
+  {
+    "file": "hooks/useRulesIndexer.ts",
+    "op": "subscribe",
+    "target": "updateContext"
+  },
+  {
+    "file": "hooks/useRulesIndexer.ts",
+    "op": "subscribe",
+    "target": "activeCampaignId"
+  },
+  {
+    "file": "hooks/useRulesIndexer.ts",
+    "op": "subscribe",
+    "target": "settings"
+  },
+  {
+    "file": "hooks/useRulesIndexer.ts",
+    "op": "subscribe",
+    "target": "getActiveUtilityEndpoint"
+  },
+  {
+    "file": "components/hooks/useSwipeVariants.ts",
+    "op": "read",
+    "target": "messages"
+  },
+  {
+    "file": "components/hooks/useSwipeVariants.ts",
+    "op": "read",
+    "target": "messages"
+  },
+  {
+    "file": "components/hooks/useSwipeVariants.ts",
+    "op": "read",
+    "target": "messages"
+  },
+  {
+    "file": "components/hooks/useSwipeVariants.ts",
+    "op": "write",
+    "target": "setState"
+  },
+  {
+    "file": "components/hooks/useSwipeVariants.ts",
+    "op": "write",
+    "target": "setState"
+  },
+  {
+    "file": "components/hooks/useSwipeVariants.ts",
+    "op": "write",
+    "target": "setState"
+  },
+  {
+    "file": "components/hooks/useSwipeVariants.ts",
+    "op": "write",
+    "target": "setState"
+  },
+  {
+    "file": "components/hooks/useSwipeVariants.ts",
+    "op": "write",
+    "target": "setState"
+  },
+  {
+    "file": "components/hooks/useSwipeVariants.ts",
+    "op": "write",
+    "target": "setState"
+  },
+  {
+    "file": "components/hooks/useSwipeVariants.ts",
+    "op": "write",
+    "target": "setState"
+  },
+  {
+    "file": "components/hooks/useMessageEditor.ts",
+    "op": "read",
+    "target": "condenser"
+  },
+  {
+    "file": "components/hooks/useMessageEditor.ts",
+    "op": "read",
+    "target": "messages"
+  },
+  {
+    "file": "components/hooks/useMessageEditor.ts",
+    "op": "read",
+    "target": "updateMessage"
+  },
+  {
+    "file": "components/hooks/useMessageEditor.ts",
+    "op": "read",
+    "target": "deleteMessage"
+  },
+  {
+    "file": "components/hooks/useMessageEditor.ts",
+    "op": "read",
+    "target": "deleteMessage"
+  },
+  {
+    "file": "components/hooks/useMessageEditor.ts",
+    "op": "read",
+    "target": "updateMessageContent"
+  },
+  {
+    "file": "components/hooks/useMessageEditor.ts",
+    "op": "read",
+    "target": "updateMessage"
+  },
+  {
+    "file": "components/hooks/useMessageEditor.ts",
+    "op": "read",
+    "target": "updateMessageContent"
+  },
+  {
+    "file": "components/hooks/useMessageEditor.ts",
+    "op": "write",
+    "target": "setState"
+  },
+  {
+    "file": "components/hooks/useRetryStoryAI.ts",
+    "op": "read",
+    "target": "updateMessageContent"
+  },
+  {
+    "file": "components/hooks/useRetryStoryAI.ts",
+    "op": "write",
+    "target": "setState"
+  },
+  {
+    "file": "components/hooks/useRetryStoryAI.ts",
+    "op": "write",
+    "target": "setState"
+  },
+  {
+    "file": "components/hooks/useRetryStoryAI.ts",
+    "op": "write",
+    "target": "setState"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "op": "read",
+    "target": "setEmbeddingsReindexing"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "op": "read",
+    "target": "setEmbeddingsReindexing"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "op": "read",
+    "target": "setEmbeddingsReindexing"
+  },
+  {
+    "file": "store/slices/campaignSlice.ts",
+    "op": "read",
+    "target": "setEmbeddingsReindexing"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "addMessage"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "updateLastAssistant"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "messages"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "updateLastMessage"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "updateContext"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "setArchiveIndex"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "updateNPC"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "addNPC"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "addNpcSuggestions"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "setCondensed"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "setLastPayloadTrace"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "setSemanticFacts"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "setChapters"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "setPipelinePhase"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "setStreamingStats"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "setDivergenceRegister"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "updateMessageDivergence"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "applyPressurePatch"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "setOnStageNpcIds"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "setCondensed"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "context"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "condenser"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "pinnedExcerpts"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "messages"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "incrementBookkeepingTurnCounter"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "autoBookkeepingInterval"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "resetBookkeepingTurnCounter"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "pinnedChapterIds"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "read",
+    "target": "clearPinnedChapters"
+  },
+  {
+    "file": "services/turn/pendingCommit.ts",
+    "op": "write",
+    "target": "setState"
+  },
+  {
+    "file": "services/embedding/embedder.ts",
+    "op": "read",
+    "target": "settings"
+  },
+  {
+    "file": "services/image/index.ts",
+    "op": "read",
+    "target": "setMessageImage"
+  },
+  {
+    "file": "services/image/index.ts",
+    "op": "read",
+    "target": "setMessageImage"
+  },
+  {
+    "file": "services/image/index.ts",
+    "op": "read",
+    "target": "setMessageImage"
+  },
+  {
+    "file": "services/image/portrait.ts",
+    "op": "read",
+    "target": "updateNPC"
+  },
+  {
+    "file": "App.tsx",
+    "op": "read",
+    "target": "setKeyboardVisible"
+  },
+  {
+    "file": "App.tsx",
+    "op": "read",
+    "target": "setKeyboardHeight"
+  },
+  {
+    "file": "App.tsx",
+    "op": "read",
+    "target": "settings"
+  },
+  {
+    "file": "App.tsx",
+    "op": "read",
+    "target": "context"
+  },
+  {
+    "file": "App.tsx",
+    "op": "write",
+    "target": "setState"
+  },
+  {
+    "file": "App.tsx",
+    "op": "write",
+    "target": "setState"
+  },
+  {
+    "file": "App.tsx",
+    "op": "subscribe",
+    "target": "activeCampaignId"
+  },
+  {
+    "file": "App.tsx",
+    "op": "subscribe",
+    "target": "settingsLoaded"
+  },
+  {
+    "file": "App.tsx",
+    "op": "subscribe",
+    "target": "loadSettings"
+  },
+  {
+    "file": "App.tsx",
+    "op": "subscribe",
+    "target": "keyboardVisible"
+  },
+  {
+    "file": "components/TelemetryStrip.tsx",
+    "op": "read",
+    "target": "getActiveStoryEndpoint"
+  },
+  {
+    "file": "components/ContextDrawer.tsx",
+    "op": "subscribe",
+    "target": "drawerOpen"
+  },
+  {
+    "file": "components/ContextDrawer.tsx",
+    "op": "subscribe",
+    "target": "toggleDrawer"
+  },
+  {
+    "file": "components/ContextDrawer.tsx",
+    "op": "subscribe",
+    "target": "setMobileView"
+  },
+  {
+    "file": "components/ContextDrawer.tsx",
+    "op": "subscribe",
+    "target": "mobileView"
+  },
+  {
+    "file": "components/MobileNavBar.tsx",
+    "op": "write",
+    "target": "setState"
+  },
+  {
+    "file": "components/MobileNavBar.tsx",
+    "op": "write",
+    "target": "setState"
+  },
+  {
+    "file": "components/MobileNavBar.tsx",
+    "op": "write",
+    "target": "setState"
+  },
+  {
+    "file": "components/MobileNavBar.tsx",
+    "op": "write",
+    "target": "setState"
+  },
+  {
+    "file": "components/MobileNavBar.tsx",
+    "op": "subscribe",
+    "target": "mobileView"
+  },
+  {
+    "file": "components/MobileNavBar.tsx",
+    "op": "subscribe",
+    "target": "setMobileView"
+  },
+  {
+    "file": "components/MobileNavBar.tsx",
+    "op": "subscribe",
+    "target": "toggleDrawer"
+  },
+  {
+    "file": "components/MobileNavBar.tsx",
+    "op": "subscribe",
+    "target": "drawerOpen"
+  },
+  {
+    "file": "components/MobileNavBar.tsx",
+    "op": "subscribe",
+    "target": "npcLedger"
+  },
+  {
+    "file": "components/MobileNavBar.tsx",
+    "op": "subscribe",
+    "target": "npcPressure"
+  },
+  {
+    "file": "components/MobileNavBar.tsx",
+    "op": "subscribe",
+    "target": "settings"
+  },
+  {
+    "file": "components/MobileNavBar.tsx",
+    "op": "subscribe",
+    "target": "keyboardVisible"
+  },
+  {
+    "file": "components/CampaignHub.tsx",
+    "op": "read",
+    "target": "getActiveUtilityEndpoint"
+  },
+  {
+    "file": "components/CampaignHub.tsx",
+    "op": "read",
+    "target": "setActiveCampaign"
+  },
+  {
+    "file": "components/CampaignHub.tsx",
+    "op": "read",
+    "target": "settings"
+  },
+  {
+    "file": "components/CampaignHub.tsx",
+    "op": "read",
+    "target": "toggleSettings"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "messages"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "updateMessage"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "messages"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "semanticFacts"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "chapters"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "messages"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "incrementBookkeepingTurnCounter"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "autoBookkeepingInterval"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "resetBookkeepingTurnCounter"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "timeline"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "pinnedChapterIds"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "clearPinnedChapters"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "divergenceRegister"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "onStageNpcIds"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "pinnedExcerpts"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "addNpcSuggestions"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "setLastPayloadTrace"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "setPipelinePhase"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "setStreamingStats"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "setOnStageNpcIds"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "messages"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "setPipelinePhase"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "setStreamingStats"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "getActiveAuxiliaryEndpoint"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "updateNPC"
+  },
+  {
+    "file": "components/ChatArea.tsx",
+    "op": "read",
+    "target": "updateContext"
+  },
+  {
+    "file": "components/BackupModal.tsx",
+    "op": "read",
+    "target": "setActiveCampaign"
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "op": "read",
+    "target": "activeCampaignId"
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "op": "read",
+    "target": "setEmbeddingsReindexing"
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "op": "read",
+    "target": "setEmbeddingsReindexing"
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "op": "read",
+    "target": "setEmbeddingsReindexing"
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "op": "read",
+    "target": "setEmbeddingsReindexing"
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "op": "read",
+    "target": "setEmbeddingsReindexing"
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "op": "read",
+    "target": "setEmbeddingsReindexing"
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "op": "read",
+    "target": "setEmbeddingsReindexing"
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "op": "read",
+    "target": "setEmbeddingsReindexing"
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "op": "read",
+    "target": "setEmbeddingsReindexing"
+  },
+  {
+    "file": "components/settings/AdvancedEmbeddingPanel.tsx",
+    "op": "read",
+    "target": "setEmbeddingsReindexing"
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "op": "read",
+    "target": "getActiveStoryEndpoint"
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "op": "read",
+    "target": "getActiveStoryEndpoint"
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "op": "read",
+    "target": "getActiveStoryEndpoint"
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "op": "read",
+    "target": "getActiveStoryEndpoint"
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "op": "read",
+    "target": "getActiveStoryEndpoint"
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "op": "subscribe",
+    "target": "context"
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "op": "subscribe",
+    "target": "updateContext"
+  },
+  {
+    "file": "components/context-drawer/EnginesTab.tsx",
+    "op": "subscribe",
+    "target": "settings"
+  },
+  {
+    "file": "components/context-drawer/BookkeepingTab.tsx",
+    "op": "subscribe",
+    "target": "context"
+  },
+  {
+    "file": "components/context-drawer/BookkeepingTab.tsx",
+    "op": "subscribe",
+    "target": "updateContext"
+  },
+  {
+    "file": "components/context-drawer/BookkeepingTab.tsx",
+    "op": "subscribe",
+    "target": "messages"
+  },
+  {
+    "file": "components/context-drawer/BookkeepingTab.tsx",
+    "op": "subscribe",
+    "target": "getActiveStoryEndpoint"
+  },
+  {
+    "file": "components/context-drawer/LoreTab.tsx",
+    "op": "subscribe",
+    "target": "loreChunks"
+  },
+  {
+    "file": "components/context-drawer/LoreTab.tsx",
+    "op": "subscribe",
+    "target": "updateLoreChunk"
+  },
+  {
+    "file": "components/context-drawer/LoreTab.tsx",
+    "op": "subscribe",
+    "target": "setLoreChunks"
+  },
+  {
+    "file": "components/context-drawer/LoreTab.tsx",
+    "op": "subscribe",
+    "target": "activeCampaignId"
+  },
+  {
+    "file": "components/context-drawer/LoreTab.tsx",
+    "op": "subscribe",
+    "target": "settings"
+  },
+  {
+    "file": "components/context-drawer/RulesManagerTab.tsx",
+    "op": "subscribe",
+    "target": "context"
+  },
+  {
+    "file": "components/context-drawer/RulesManagerTab.tsx",
+    "op": "subscribe",
+    "target": "updateContext"
+  },
+  {
+    "file": "components/context-drawer/RulesManagerTab.tsx",
+    "op": "subscribe",
+    "target": "activeCampaignId"
+  },
+  {
+    "file": "components/context-drawer/RulesManagerTab.tsx",
+    "op": "subscribe",
+    "target": "settings"
+  },
+  {
+    "file": "components/context-drawer/RulesManagerTab.tsx",
+    "op": "subscribe",
+    "target": "getActiveUtilityEndpoint"
+  },
+  {
+    "file": "components/context-drawer/ChapterTab.tsx",
+    "op": "read",
+    "target": "getActiveUtilityEndpoint"
+  },
+  {
+    "file": "components/context-drawer/ChapterTab.tsx",
+    "op": "read",
+    "target": "getActiveStoryEndpoint"
+  },
+  {
+    "file": "components/context-drawer/ChapterTab.tsx",
+    "op": "read",
+    "target": "npcLedger"
+  },
+  {
+    "file": "components/context-drawer/ChapterTab.tsx",
+    "op": "read",
+    "target": "divergenceRegister"
+  },
+  {
+    "file": "components/context-drawer/ChapterTab.tsx",
+    "op": "read",
+    "target": "setDivergenceRegister"
+  },
+  {
+    "file": "components/context-drawer/RulesTab.tsx",
+    "op": "subscribe",
+    "target": "context"
+  },
+  {
+    "file": "components/context-drawer/RulesTab.tsx",
+    "op": "subscribe",
+    "target": "updateContext"
+  },
+  {
+    "file": "components/context-drawer/RulesTab.tsx",
+    "op": "subscribe",
+    "target": "settings"
+  },
+  {
+    "file": "components/chat/ChatInput.tsx",
+    "op": "read",
+    "target": "setActivePreset"
+  },
+  {
+    "file": "components/chat/RegenerateSheet.tsx",
+    "op": "read",
+    "target": "settings"
+  },
+  {
+    "file": "components/chat/RegenerateSheet.tsx",
+    "op": "read",
+    "target": "settings"
+  },
+  {
+    "file": "components/chat/MessageBubble.tsx",
+    "op": "read",
+    "target": "updateSettings"
+  }
+]

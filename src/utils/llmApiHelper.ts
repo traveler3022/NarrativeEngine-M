@@ -1,6 +1,34 @@
-import type { LLMProvider, ApiFormat, SamplingConfig } from '../types';
+import type { LLMProvider, ApiFormat, SamplingConfig, ThinkingEffort } from '../types';
 
 type AnyProvider = LLMProvider;
+
+const OPENAI_EFFORT_MAP: Record<Exclude<ThinkingEffort, 'off'>, string> = {
+    low: 'low',
+    medium: 'medium',
+    high: 'high',
+    max: 'xhigh',
+};
+
+const DEEPSEEK_EFFORT_MAP: Record<Exclude<ThinkingEffort, 'off'>, string> = {
+    low: 'high',
+    medium: 'high',
+    high: 'high',
+    max: 'max',
+};
+
+export const CLAUDE_BUDGET_MAP: Record<Exclude<ThinkingEffort, 'off'>, number> = {
+    low: 2048,
+    medium: 8192,
+    high: 16384,
+    max: 32768,
+};
+
+const GEMINI_LEVEL_MAP: Record<Exclude<ThinkingEffort, 'off'>, string> = {
+    low: 'LOW',
+    medium: 'MEDIUM',
+    high: 'HIGH',
+    max: 'HIGH',
+};
 
 export function getApiFormat(provider: AnyProvider): ApiFormat {
     return provider.apiFormat || 'openai';
@@ -68,19 +96,24 @@ export function buildChatHeaders(provider: AnyProvider): Record<string, string> 
         }
     } else if (format === 'gemini') {
         // Gemini auth goes in URL param, not headers
-    } else if (provider.apiKey) {
-        headers['Authorization'] = `Bearer ${provider.apiKey}`;
+    } else {
+        headers['User-Agent'] = 'Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+        if (provider.apiKey) {
+            headers['Authorization'] = `Bearer ${provider.apiKey}`;
+        }
     }
     return headers;
 }
 
-function transformClaudeMessages(messages: { role: string; content: string | null; name?: string; tool_calls?: unknown[]; tool_call_id?: string; reasoning_content?: string }[]): { system?: string; messages: { role: string; content: string | unknown[] }[] } {
-    const systemParts: string[] = [];
+type ClaudeSystemBlock = { type: 'text'; text: string; cache_control?: { type: 'ephemeral' } };
+
+function transformClaudeMessages(messages: { role: string; content: string | null; name?: string; tool_calls?: unknown[]; tool_call_id?: string; reasoning_content?: string; cache_control?: { type: 'ephemeral' } }[]): { system?: string | ClaudeSystemBlock[]; messages: { role: string; content: string | unknown[] }[] } {
+    const systemBlocks: { text: string; cache_control?: { type: 'ephemeral' } }[] = [];
     const transformed: { role: string; content: string | unknown[] }[] = [];
 
     for (const m of messages) {
         if (m.role === 'system') {
-            systemParts.push(m.content || '');
+            systemBlocks.push({ text: m.content || '', ...(m.cache_control ? { cache_control: m.cache_control } : {}) });
             continue;
         }
 
@@ -94,7 +127,13 @@ function transformClaudeMessages(messages: { role: string; content: string | nul
                     try { input = JSON.parse(t.function.arguments); } catch { input = { _raw: t.function.arguments }; }
                     content.push({ type: 'tool_use', id: t.id, name: t.function.name, input });
                 }
+                if (m.cache_control) {
+                    const lastBlock = content[content.length - 1] as Record<string, unknown>;
+                    content[content.length - 1] = { ...lastBlock, cache_control: m.cache_control };
+                }
                 transformed.push({ role: 'assistant', content });
+            } else if (m.cache_control) {
+                transformed.push({ role: 'assistant', content: [{ type: 'text', text: m.content || '', cache_control: m.cache_control }] });
             } else {
                 transformed.push({ role: 'assistant', content: m.content || '' });
             }
@@ -113,11 +152,26 @@ function transformClaudeMessages(messages: { role: string; content: string | nul
             continue;
         }
 
-        transformed.push({ role: m.role, content: m.content || '' });
+        if (m.cache_control) {
+            transformed.push({ role: m.role, content: [{ type: 'text', text: m.content || '', cache_control: m.cache_control }] });
+        } else {
+            transformed.push({ role: m.role, content: m.content || '' });
+        }
     }
 
-    const result: { system?: string; messages: { role: string; content: string | unknown[] }[] } = { messages: transformed };
-    if (systemParts.length > 0) result.system = systemParts.join('\n\n');
+    const result: { system?: string | ClaudeSystemBlock[]; messages: { role: string; content: string | unknown[] }[] } = { messages: transformed };
+    if (systemBlocks.length > 0) {
+        const hasCacheControl = systemBlocks.some(b => b.cache_control);
+        if (hasCacheControl) {
+            result.system = systemBlocks.map(b => ({
+                type: 'text' as const,
+                text: b.text,
+                ...(b.cache_control ? { cache_control: b.cache_control } : {}),
+            }));
+        } else {
+            result.system = systemBlocks.map(b => b.text).join('\n\n');
+        }
+    }
     return result;
 }
 
@@ -189,8 +243,8 @@ function transformOllamaMessages(
 
 export function buildChatBody(
     provider: AnyProvider,
-    messages: { role: string; content: string | null; name?: string; tool_calls?: unknown[]; tool_call_id?: string; reasoning_content?: string }[],
-    options?: { stream?: boolean; max_tokens?: number; temperature?: number; tools?: unknown[]; sampling?: SamplingConfig }
+    messages: { role: string; content: string | null; name?: string; tool_calls?: unknown[]; tool_call_id?: string; reasoning_content?: string; cache_control?: { type: 'ephemeral' } }[],
+    options?: { stream?: boolean; max_tokens?: number; temperature?: number; tools?: unknown[]; sampling?: SamplingConfig; thinkingEffort?: ThinkingEffort }
 ): Record<string, unknown> {
     const format = getApiFormat(provider);
     const stream = options?.stream ?? false;
@@ -211,6 +265,12 @@ export function buildChatBody(
         if (options?.sampling?.top_k !== undefined) body.top_k = options.sampling.top_k;
 
         if (options?.tools && options.tools.length > 0) body.tools = options.tools;
+
+        const effort = options?.thinkingEffort !== undefined ? options.thinkingEffort : provider.thinkingEffort;
+        if (effort && effort !== 'off') {
+            body.thinking = { type: 'enabled', budget_tokens: CLAUDE_BUDGET_MAP[effort] };
+        }
+
         return body;
     }
 
@@ -229,6 +289,12 @@ export function buildChatBody(
         if (options?.sampling?.top_k !== undefined) genConfig.topK = options.sampling.top_k;
         if (options?.sampling?.frequency_penalty !== undefined) genConfig.frequencyPenalty = options.sampling.frequency_penalty;
         if (options?.sampling?.presence_penalty !== undefined) genConfig.presencePenalty = options.sampling.presence_penalty;
+
+        const effort = options?.thinkingEffort !== undefined ? options.thinkingEffort : provider.thinkingEffort;
+        if (effort && effort !== 'off') {
+            genConfig.thinkingConfig = { thinkingLevel: GEMINI_LEVEL_MAP[effort] };
+        }
+
         body.generationConfig = genConfig;
 
         if (options?.tools && options.tools.length > 0) {
@@ -238,11 +304,22 @@ export function buildChatBody(
     }
 
     const isOllama = format === 'ollama';
+    const sanitizedMessages = isOllama
+        ? transformOllamaMessages(messages)
+        : messages.map(({ cache_control: _cache_control, ...rest }) => rest);
+
     const body: Record<string, unknown> = {
         model: provider.modelName,
-        messages: isOllama ? transformOllamaMessages(messages) : messages,
+        messages: sanitizedMessages,
         stream,
     };
+
+    // Ask OpenAI-compatible providers to emit a final usage chunk while streaming
+    // (DeepSeek reports prompt-cache hit/miss here). Harmless for servers that
+    // ignore it; skipped for Ollama which has its own usage fields.
+    if (stream && !isOllama) {
+        body.stream_options = { include_usage: true };
+    }
 
     const resolvedMaxTokens = options?.sampling?.max_tokens ?? options?.max_tokens;
     if (resolvedMaxTokens !== undefined) body.max_tokens = resolvedMaxTokens;
@@ -265,6 +342,21 @@ export function buildChatBody(
 
     if (!isOllama && options?.tools && options.tools.length > 0) {
         body.tools = options.tools;
+    }
+
+    const effort = options?.thinkingEffort !== undefined ? options.thinkingEffort : provider.thinkingEffort;
+    if (effort && effort !== 'off') {
+        if (isOllama) {
+            body.think = effort;
+        } else {
+            const isDeepSeek = /deepseek/i.test(provider.endpoint);
+            if (isDeepSeek) {
+                body.reasoning_effort = DEEPSEEK_EFFORT_MAP[effort];
+                body.thinking = { type: 'enabled' };
+            } else {
+                body.reasoning_effort = OPENAI_EFFORT_MAP[effort];
+            }
+        }
     }
 
     return body;
