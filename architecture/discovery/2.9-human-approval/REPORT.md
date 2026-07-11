@@ -1,175 +1,121 @@
-# 2.9 Human Approval — REPORT
+# 2.9 Discovery Review Gate
 
 Generated: 2026-07-11
 Protocol: Evidence-First (EVIDENCE_FIRST_PROTOCOL.md)
+Purpose: Review Discovery quality and completeness. No Design decisions.
 
 ---
 
-## Purpose
+## Review Criteria
 
-Present the complete Discovery findings for human review. Phase 3
-is blocked until this document is approved.
+### 1. Evidence
 
----
+| Check | Status | Notes |
+|-------|--------|-------|
+| All claims have Evidence? | ⚠️ Partial | Most claims are Verified/Inferred with file+line refs. Some "Inferred" claims lack exact line numbers (e.g., "campaignStore.ts lines 1-280" is too broad). |
+| Every result references File/Symbol/Import/Line? | ⚠️ Partial | 2.2 layer-id-cards has full refs. 2.3-2.6 use module-level refs. Some lack symbol-level precision. |
+| Any claim without Evidence? | ❌ Yes | 2.3 REPORT mentions "campaignStore has 7 responsibilities" without listing each with line numbers. 2.6 "TurnCallbacks" hidden channel mentioned but not fully traced. |
 
-## Discovery Summary (2.2 — 2.8)
+**Verdict: ⚠️ Needs improvement** — 3 claims need tighter evidence.
 
-### Layers Discovered (10)
+### 2. Coverage
 
-| Layer | Files | Status |
-|-------|-------|--------|
-| Entry | 2 | ⚠️ God Component (App.tsx) |
-| UI | 68 | ⚠️ 3 persistence violations |
-| State (Store) | 12 | 🔴 God Layer — 25 service imports |
-| Domain (Services) | ~180 | ✅ Clean (0 store imports) |
-| Candidate Ports | 10 | 🟡 Hypothesis — 8/10 align |
-| Candidate Adapters | 10 | 🟡 Hypothesis — 2 violations |
-| Persistence | 7 files scattered | 🔴 No gateway |
-| Infrastructure | 8 | ✅ Clean |
-| Types | 6 | ✅ Clean |
-| Utils | 7 | ⚠️ 1 circular dep |
-| i18n | 3 | ✅ Clean |
+| Check | Status | Notes |
+|-------|--------|-------|
+| All repository layers covered? | ✅ Yes | 10 layers identified in 2.2/layer-id-cards.md |
+| All modules examined? | ✅ Yes | 278 non-test files scanned (2.3/RAW_DATA.json) |
+| All State ownership documented? | ✅ Yes | 67 state types in 2.3/state-ownership.json |
+| All imports traced? | ✅ Yes | 663 cross-layer edges in 2.2/raw-data.json |
+| All exports classified? | ✅ Yes | 594 exports in 2.4/RAW_DATA.json |
+| All interactions mapped? | ⚠️ Partial | 114 import-based interactions mapped. Callback-based interactions (TurnCallbacks) not fully traced — noted as "hidden channel" in 2.6 but not exhaustively documented. |
+| Dynamic imports covered? | ✅ Yes | 2.2/runtime-graph.md covers all dynamic imports |
 
-### Boundaries Validated (5)
+**Verdict: ⚠️ Needs improvement** — TurnCallbacks hidden channel needs full tracing.
 
-| ID | Boundary | Verdict | Violations |
-|----|----------|---------|------------|
-| BV-1 | State vs Domain | ✅ Validated | 25 (critical) |
-| BV-2 | Persistence vs State | ✅ Validated | 7 files, no gateway |
-| BV-3 | UI vs Logic | ✅ Validated | 3 (minor) |
-| BV-4 | NPC Sub-domain | ✅ Validated | 28 files should split into 5 |
-| BV-5 | Turn Pipeline | ✅ Validated | 0 (already clean) |
+### 3. Consistency
 
-### Capabilities Discovered (18)
+| Check | Status | Notes |
+|-------|--------|-------|
+| Diagrams match Raw Data? | ✅ Yes | Layer map (2.2) matches raw-data.json counts. Capability map (2.4) matches RAW_DATA.json module counts. |
+| Contradictions between 2.2-2.8? | ⚠️ Minor | 2.2 reports "services → store: 0" (non-test). 2.6 reports "18 state→service violations". These are not contradictory — they measure different directions. But the terminology could be clearer. |
+| Capabilities extracted from code? | ✅ Yes | All 18 capabilities in 2.4 have file+export evidence. None are assumed from memory or pattern. |
+| Boundaries from code? | ✅ Yes | All 5 boundaries in 2.7 have import graph evidence. |
+| Incremental rule followed? | ❌ No | 2.3 contains ownership analysis (belongs to 2.5). 2.5 contains some interaction analysis (belongs to 2.6). 2.8 repeats findings from 2.2-2.7 instead of only reviewing. |
 
-| ID | Capability | Exports | Risk |
-|----|-----------|---------|------|
-| CAP-1 | NPC Generation | 10 | God File (1306 lines) |
-| CAP-2 | NPC Agency | 193 | Too large — should split |
-| CAP-3 | NPC Detection | 12 | ✅ OK |
-| CAP-4 | Turn Orchestration | 14 | ✅ OK (13 stages, well-structured) |
-| CAP-5 | Campaign State | 55 | ✅ OK |
-| CAP-6 | Archive | 31 | ✅ OK |
-| CAP-7 | Embedding | 31 | ✅ OK |
-| CAP-8 | LLM | 31 | ✅ OK |
-| CAP-9 | Payload | 27 | ✅ OK |
-| CAP-10 | Lore | 23 | ✅ OK |
-| CAP-11 | Engine | 39 | ✅ OK |
-| CAP-12 | Image | 9 | ✅ OK |
-| CAP-13 | Storage | 19 | ✅ OK |
-| CAP-14 | API | 1 | ✅ OK |
-| CAP-15 | Arc | 18 | ✅ OK |
-| CAP-16 | State | 12 | 🔴 God Layer |
-| CAP-17 | UI | 68 files | ⚠️ 3 violations |
-| CAP-18 | Infrastructure | 35 | ✅ OK |
+**Verdict: ❌ Needs correction** — Incremental rule violated. Steps overlap.
 
-### Interaction Findings
+### 4. Completeness
 
-| Metric | Value |
-|--------|-------|
-| Total cross-capability interactions | 114 |
-| State → Service violations | 18 |
-| Service → State violations | 0 |
-| Circular dependencies | 1 (Utils ↔ LLM) |
-| Hidden interaction channels | 1 (TurnCallbacks, 20+ callbacks) |
+| Check | Status | Notes |
+|-------|--------|-------|
+| Open Questions registered? | ✅ Yes | Each step has "Open Questions" section. 17 total across 2.2-2.8. |
+| Unknowns registered? | ✅ Yes | Each step has "Unknowns" section. 12 total. |
+| Boundary counter-evidence? | ⚠️ Partial | BV-5 (Turn Pipeline) has counter-evidence ("already clean"). BV-1 through BV-4 only have supporting evidence — no counter-evidence explored. |
+| Interaction completeness? | ⚠️ Partial | Import-based interactions complete. Callback-based interactions (TurnCallbacks) not fully documented. Happy path flows documented; error/edge flows not. |
+| All test files accounted for? | ✅ Yes | Test-only leaks documented in 2.2/violations.md (4 files). |
 
-### Candidate Port Review
+**Verdict: ⚠️ Needs improvement** — Counter-evidence for boundaries + callback interactions.
 
-| Port | Aligns? | Action |
-|------|---------|--------|
-| NotificationPort | ✅ | Keep |
-| MessagingPort | ✅ | Keep |
-| NPCCapability | ⚠️ | Split into sub-ports (BV-4) |
-| ArchivePort | ✅ | Keep |
-| CampaignContextPort | ✅ | Keep |
-| SettingsPort | ✅ | Keep |
-| UIStatePort | ⚠️ | Convert to event bus |
-| LoreRepositoryPort | ✅ | Keep |
-| ChapterRepositoryPort | ✅ | Keep |
-| CampaignRepositoryPort | ✅ | Keep |
+### 5. Readiness
+
+| Question | Answer |
+|----------|--------|
+| Is Discovery complete? | ⚠️ Mostly — 3 gaps identified |
+| If not, what must be re-discovered? | (1) TurnCallbacks full tracing, (2) campaignStore responsibility line-level evidence, (3) Incremental rule corrections |
+| Is Knowledge Base sufficient for Phase 3? | ⚠️ Conditional — sufficient for BV-1 (State/Domain) and BV-2 (Persistence) work. Not sufficient for BV-4 (NPC split) until counter-evidence is explored. |
 
 ---
 
-## Architecture Knowledge Base
+## Gaps Found
 
-The following artifacts constitute the complete Architecture
-Knowledge Base for NarrativeEngine-M:
-
-```
-architecture/
-├── DISCOVERY_PROTOCOL.md          ← Phase 2 reset protocol
-├── EVIDENCE_FIRST_PROTOCOL.md     ← Zero Assumption Rule
-├── BOUNDARIES.md                  ← Candidate reference (to be updated)
-├── discovery/
-│   ├── 2.1-audit/
-│   │   └── REPORT.md
-│   ├── 2.2-dependency-discovery/
-│   │   ├── REPORT.md              ← Dependency summary
-│   │   ├── import-graph.md         ← Static import edges
-│   │   ├── runtime-graph.md        ← Dynamic import edges
-│   │   ├── layer-map.md            ← Layer relationships
-│   │   ├── violations.md           ← 25 violations
-│   │   ├── raw-data.json           ← 663 edges (machine-readable)
-│   │   └── layer-id-cards.md       ← 10 layer identification cards
-│   ├── 2.3-boundary-discovery/
-│   │   ├── REPORT.md               ← 3 boundary candidates
-│   │   ├── RAW_DATA.json           ← Cluster analysis
-│   │   └── state-ownership.json    ← 67 state types
-│   ├── 2.4-capability-discovery/
-│   │   ├── REPORT.md               ← 18 capabilities
-│   │   └── RAW_DATA.json           ← 594 exports
-│   ├── 2.5-responsibility-discovery/
-│   │   ├── REPORT.md               ← Responsibility matrix
-│   │   └── RAW_DATA.json           ← NPC subgroups, turn stages, store audit
-│   ├── 2.6-interaction-discovery/
-│   │   ├── REPORT.md               ← 114 interactions, 3 flows
-│   │   └── RAW_DATA.json           ← 29 interaction pairs
-│   ├── 2.7-boundary-validation/
-│   │   └── REPORT.md               ← 5 validated boundaries
-│   ├── 2.8-architecture-review/
-│   │   └── REPORT.md               ← Coupling, cohesion, risks, debt, port review
-│   └── 2.9-human-approval/
-│       └── REPORT.md               ← This document
-```
-
-Total: 22 artifacts, ~5000 lines of evidence-based documentation.
+| # | Gap | Severity | Affected Steps | Fix |
+|---|-----|----------|---------------|-----|
+| G1 | TurnCallbacks not fully traced | 🟡 Medium | 2.6 | Trace all 20+ callbacks in turnTypes.ts |
+| G2 | campaignStore "7 responsibilities" lacks line-level evidence | 🟡 Medium | 2.3, 2.5 | List each responsibility with exact line range |
+| G3 | Incremental rule violated — steps overlap | 🟡 Medium | 2.3, 2.5, 2.8 | Refactor reports to be delta-only |
+| G4 | No counter-evidence for BV-1 through BV-4 | 🟢 Low | 2.7 | Explore "why this boundary might be wrong" |
+| G5 | Error/edge interaction flows not documented | 🟢 Low | 2.6 | Document at least 1 error flow |
 
 ---
 
-## Open Questions for Human
+## Gate Verdict
 
-1. Should candidate ports be revised before Phase 3, or during?
-2. Should persistence gateway be a port or a service?
-3. Should NPC sub-domain split happen in Phase 3 or Phase 4?
-4. Should App.tsx split happen now or later?
-5. Is the 13-stage turn pipeline acceptable as-is?
-6. Should chatSlice be split (143 fields, 4 data domains)?
+### CONDITIONAL PASS
 
----
+Discovery is substantially complete. The Knowledge Base (20 artifacts,
+~13,000 lines) provides sufficient evidence for the primary
+architectural findings:
 
-## Approval Gate
+- BV-1 (State vs Domain): 25 violations, 15 misplaced responsibilities
+- BV-2 (Persistence vs State): 7 scattered files, no gateway
+- BV-3 (UI vs Logic): 3 minor violations
+- BV-5 (Turn Pipeline): clean, no change needed
 
-Phase 3 is BLOCKED until the project owner reviews this document
-and grants approval.
+3 gaps must be addressed before Phase 3 work on BV-4 (NPC split):
+- G1: TurnCallbacks tracing
+- G2: campaignStore line-level evidence
+- G4: BV-4 counter-evidence
 
-### Approval Status: ⏳ PENDING
-
-### Approval Conditions:
-- [ ] Project owner has read 2.2-2.8 reports
-- [ ] Open questions answered
-- [ ] Candidate port revision plan agreed
-- [ ] Phase 3 priority order agreed
-- [ ] Explicit "approved" given
+G3 (incremental rule) should be corrected but does not block Phase 3.
 
 ---
 
-## Next Steps After Approval
+## Conditions for PASS
 
-Phase 3 (Implementation) may begin with:
-1. Port revision (split NPC, convert UIState)
-2. Store → Service extraction (15 misplaced responsibilities)
-3. Persistence gateway creation
-4. God File splitting (npcGeneration, turnPostProcess)
-5. App.tsx splitting
+- [ ] G1: TurnCallbacks fully traced (all callbacks mapped)
+- [ ] G2: campaignStore responsibilities with line-level evidence
+- [ ] G4: At least one counter-evidence explored for BV-4
 
-All Phase 3 work must reference Discovery artifacts as evidence.
+G3 and G5 are recommended but not blocking.
+
+---
+
+## What This Gate Did NOT Do
+
+- Did NOT approve any Design
+- Did NOT decide port structure
+- Did NOT decide split order
+- Did NOT approve any Refactor
+- Did NOT answer "should we merge/split X"
+
+All Design decisions belong to Phase 3.
