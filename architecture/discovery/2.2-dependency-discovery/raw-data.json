@@ -1,0 +1,392 @@
+{
+  "total_cross_layer_edges": 663,
+  "layer_pair_counts": {
+    "adapters\u2192components (static)": 1,
+    "adapters\u2192ports (static)": 10,
+    "adapters\u2192services (static)": 1,
+    "adapters\u2192store (static)": 9,
+    "components\u2192external (dynamic)": 13,
+    "components\u2192external (static)": 179,
+    "components\u2192services (dynamic)": 1,
+    "components\u2192services (static)": 21,
+    "components\u2192store (dynamic)": 1,
+    "components\u2192store (static)": 17,
+    "components\u2192utils (static)": 6,
+    "ports\u2192external (dynamic)": 1,
+    "ports\u2192external (static)": 9,
+    "ports\u2192types (static)": 1,
+    "services\u2192external (dynamic)": 25,
+    "services\u2192external (static)": 291,
+    "services\u2192ports (dynamic)": 2,
+    "services\u2192types (static)": 1,
+    "services\u2192utils (static)": 2,
+    "store\u2192external (dynamic)": 14,
+    "store\u2192external (static)": 36,
+    "store\u2192services (dynamic)": 5,
+    "store\u2192services (static)": 5,
+    "store\u2192types (static)": 3,
+    "store\u2192utils (static)": 1,
+    "utils\u2192external (static)": 4,
+    "utils\u2192services (static)": 3,
+    "utils\u2192types (static)": 1
+  },
+  "store_to_services": [
+    {
+      "source_layer": "store",
+      "target_layer": "services",
+      "source_file": "store/useAppStore.ts",
+      "target": "../services/embedding/embeddingScheduler",
+      "type": "static"
+    },
+    {
+      "source_layer": "store",
+      "target_layer": "services",
+      "source_file": "store/useAppStore.ts",
+      "target": "../services/engine/constants",
+      "type": "static"
+    },
+    {
+      "source_layer": "store",
+      "target_layer": "services",
+      "source_file": "store/campaignStore.ts",
+      "target": "../services/storage/imageStorage",
+      "type": "static"
+    },
+    {
+      "source_layer": "store",
+      "target_layer": "services",
+      "source_file": "store/campaignStore.ts",
+      "target": "../services/lore/loreIndexer",
+      "type": "static"
+    },
+    {
+      "source_layer": "store",
+      "target_layer": "services",
+      "source_file": "store/campaignStore.ts",
+      "target": "../services/npc/agencyBands",
+      "type": "static"
+    },
+    {
+      "source_layer": "store",
+      "target_layer": "services",
+      "source_file": "store/campaignStore.ts",
+      "target": "../services/apiClient",
+      "type": "dynamic"
+    },
+    {
+      "source_layer": "store",
+      "target_layer": "services",
+      "source_file": "store/campaignStore.ts",
+      "target": "../services/apiClient",
+      "type": "dynamic"
+    },
+    {
+      "source_layer": "store",
+      "target_layer": "services",
+      "source_file": "store/campaignStore.ts",
+      "target": "../services/apiClient",
+      "type": "dynamic"
+    },
+    {
+      "source_layer": "store",
+      "target_layer": "services",
+      "source_file": "store/campaignStore.ts",
+      "target": "../services/apiClient",
+      "type": "dynamic"
+    },
+    {
+      "source_layer": "store",
+      "target_layer": "services",
+      "source_file": "store/campaignStore.ts",
+      "target": "../services/campaign-state",
+      "type": "dynamic"
+    }
+  ],
+  "services_to_store": [],
+  "services_to_components": [],
+  "store_to_components": [],
+  "components_to_store": [
+    {
+      "source_layer": "components",
+      "target_layer": "store",
+      "source_file": "components/TelemetryStrip.tsx",
+      "target": "../store/useAppStore",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "store",
+      "source_file": "components/ContextDrawer.tsx",
+      "target": "../store/useAppStore",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "store",
+      "source_file": "components/SettingsModal.tsx",
+      "target": "../store/useAppStore",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "store",
+      "source_file": "components/SceneNoteEditor.tsx",
+      "target": "../store/useAppStore",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "store",
+      "source_file": "components/TokenGauge.tsx",
+      "target": "../store/useAppStore",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "store",
+      "source_file": "components/MobileNavBar.tsx",
+      "target": "../store/useAppStore",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "store",
+      "source_file": "components/CampaignHub.tsx",
+      "target": "../store/useAppStore",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "store",
+      "source_file": "components/CampaignHub.tsx",
+      "target": "../store/campaignStore",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "store",
+      "source_file": "components/CampaignHub.tsx",
+      "target": "../store/slices/campaignSlice",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "store",
+      "source_file": "components/CampaignHub.tsx",
+      "target": "../store/slices/npcSlice",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "store",
+      "source_file": "components/ChatArea.tsx",
+      "target": "../store/useAppStore",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "store",
+      "source_file": "components/ChatArea.tsx",
+      "target": "../store/campaignStore",
+      "type": "dynamic"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "store",
+      "source_file": "components/BackupModal.tsx",
+      "target": "../store/useAppStore",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "store",
+      "source_file": "components/NPCPressureInspector.tsx",
+      "target": "../store/useAppStore",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "store",
+      "source_file": "components/NPCLedgerModal.tsx",
+      "target": "../store/useAppStore",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "store",
+      "source_file": "components/PayloadTraceView.tsx",
+      "target": "../store/useAppStore",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "store",
+      "source_file": "components/Header.tsx",
+      "target": "../store/useAppStore",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "store",
+      "source_file": "components/Header.tsx",
+      "target": "../store/campaignStore",
+      "type": "static"
+    }
+  ],
+  "components_to_services": [
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/DedupReviewModal.tsx",
+      "target": "../services/campaign-state",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/TelemetryStrip.tsx",
+      "target": "../services/llm/utilityCallTracker",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/LootDropTraceView.tsx",
+      "target": "../services/engine",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/LootDropTraceView.tsx",
+      "target": "../services/engine",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/UtilityCallStrip.tsx",
+      "target": "../services/llm/utilityCallTracker",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/TokenGauge.tsx",
+      "target": "../services/infrastructure",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/TokenGauge.tsx",
+      "target": "../services/campaign-state",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/NPCReviewModal.tsx",
+      "target": "../services/npc",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/CampaignHub.tsx",
+      "target": "../services/lore",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/CampaignHub.tsx",
+      "target": "../services/apiClient",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/CampaignHub.tsx",
+      "target": "../services/campaignBundle",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/CampaignHub.tsx",
+      "target": "../services/lore",
+      "type": "dynamic"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/ChatArea.tsx",
+      "target": "../services/turn",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/BackupModal.tsx",
+      "target": "../services/apiClient",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/NPCLedgerModal.tsx",
+      "target": "../services/chatEngine",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/NPCLedgerModal.tsx",
+      "target": "../services/apiClient",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/NPCLedgerModal.tsx",
+      "target": "../services/npc",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/NPCLedgerModal.tsx",
+      "target": "../services/campaign-state",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/NPCLedgerModal.tsx",
+      "target": "../services/storage/imageStorage",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/NPCLedgerModal.tsx",
+      "target": "../services/image/portrait",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/Header.tsx",
+      "target": "../services/npc",
+      "type": "static"
+    },
+    {
+      "source_layer": "components",
+      "target_layer": "services",
+      "source_file": "components/Header.tsx",
+      "target": "../services/apiClient",
+      "type": "static"
+    }
+  ]
+}
