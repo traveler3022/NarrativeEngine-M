@@ -1,0 +1,57 @@
+name: debug-build
+
+on:
+  push:
+    branches: [refactor/architecture-isolation]
+  workflow_dispatch:
+
+# Cancel in-progress runs for the same ref so a red build is fresh.
+concurrency:
+  group: debug-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Typecheck + Build
+        id: build
+        run: npm run build
+        continue-on-error: true
+
+      - name: Lint (best effort)
+        if: always()
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Report status
+        if: always()
+        run: |
+          if [ "${{ steps.build.outcome }}" = "success" ]; then
+            echo "::notice title=BUILD OK::debug-build passed on ${{ github.ref }}"
+          else
+            echo "::error title=BUILD FAILED::debug-build failed on ${{ github.ref }}"
+            exit 1
+          fi
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            tsconfig*.tsbuildinfo
+            node_modules/.cache
+          if-no-files-found: ignore
