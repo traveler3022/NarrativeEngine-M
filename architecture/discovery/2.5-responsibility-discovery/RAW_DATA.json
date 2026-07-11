@@ -1,0 +1,262 @@
+{
+  "cap2_npc_agency_subgroups": {
+    "Wants & Goals": [
+      {
+        "file": "agencyWantDraw",
+        "comment": ""
+      },
+      {
+        "file": "agencyGoals",
+        "comment": ""
+      }
+    ],
+    "Collision": [
+      {
+        "file": "agencyCollision",
+        "comment": ""
+      }
+    ],
+    "Utilities & Constants": [
+      {
+        "file": "agencyDigest",
+        "comment": ""
+      },
+      {
+        "file": "agencyBands",
+        "comment": ""
+      },
+      {
+        "file": "agencyConstants",
+        "comment": ""
+      },
+      {
+        "file": "agencyPools",
+        "comment": ""
+      }
+    ],
+    "Timeskip Simulation": [
+      {
+        "file": "agencyTimeskipRun",
+        "comment": ""
+      },
+      {
+        "file": "agencyTimeskip",
+        "comment": ""
+      }
+    ],
+    "Personality Drift": [
+      {
+        "file": "agencyDrift",
+        "comment": ""
+      }
+    ],
+    "Heartbeat & Lifecycle": [
+      {
+        "file": "agencyHeartbeat",
+        "comment": ""
+      },
+      {
+        "file": "agencyLifecycle",
+        "comment": ""
+      },
+      {
+        "file": "agencySelection",
+        "comment": ""
+      }
+    ],
+    "Progression & Dice": [
+      {
+        "file": "agencyDice",
+        "comment": ""
+      },
+      {
+        "file": "agencyProgress",
+        "comment": ""
+      }
+    ],
+    "Audition & Power Rung": [
+      {
+        "file": "agencyAudition",
+        "comment": ""
+      }
+    ],
+    "Voice Directive": [
+      {
+        "file": "hexVoiceGuide",
+        "comment": ""
+      }
+    ],
+    "Hex Roll & Disposition": [
+      {
+        "file": "hexRoll",
+        "comment": ""
+      }
+    ],
+    "Disposition Groups": [
+      {
+        "file": "dispositionGroups",
+        "comment": ""
+      }
+    ],
+    "Relationship Meter": [
+      {
+        "file": "relationMeter",
+        "comment": ""
+      }
+    ],
+    "Repression & Reactions": [
+      {
+        "file": "reactionRepression",
+        "comment": ""
+      },
+      {
+        "file": "reactionMenu",
+        "comment": ""
+      }
+    ],
+    "Pressure Tracking": [
+      {
+        "file": "npcPressureTracker",
+        "comment": ""
+      }
+    ]
+  },
+  "cap4_turn_stages": [
+    {
+      "file": "archiveRecallStage",
+      "name": "archiveRecall"
+    },
+    {
+      "file": "deepScanStage",
+      "name": "deepScan"
+    },
+    {
+      "file": "expandQueryStage",
+      "name": "expandQuery"
+    },
+    {
+      "file": "factsTimelineStage",
+      "name": "factsTimeline"
+    },
+    {
+      "file": "loreStage",
+      "name": "lore"
+    },
+    {
+      "file": "npcSemanticRecallStage",
+      "name": "npcSemanticRecall"
+    },
+    {
+      "file": "plannerStage",
+      "name": "planner"
+    },
+    {
+      "file": "recommenderStage",
+      "name": "recommender"
+    },
+    {
+      "file": "rerankStage",
+      "name": "rerank"
+    },
+    {
+      "file": "retrievalTypes",
+      "name": "retrievalTypes"
+    },
+    {
+      "file": "rulesStage",
+      "name": "rules"
+    },
+    {
+      "file": "sceneNumberStage",
+      "name": "sceneNumber"
+    },
+    {
+      "file": "semanticCandidatesStage",
+      "name": "semanticCandidates"
+    }
+  ],
+  "cap16_store_slice_responsibilities": [
+    {
+      "file": "archiveSlice",
+      "service_imports": [],
+      "dynamic_service_imports": [],
+      "state_field_count": 30,
+      "has_domain_logic": false
+    },
+    {
+      "file": "campaignSlice",
+      "service_imports": [
+        "embedding",
+        "storage/embeddingStorage",
+        "campaign-state",
+        "engine/constants"
+      ],
+      "dynamic_service_imports": [
+        "turn",
+        "storage",
+        "infrastructure",
+        "embedding",
+        "storage",
+        "apiClient"
+      ],
+      "state_field_count": 96,
+      "has_domain_logic": true
+    },
+    {
+      "file": "chatSlice",
+      "service_imports": [
+        "campaign-state",
+        "infrastructure",
+        "storage/imageStorage"
+      ],
+      "dynamic_service_imports": [],
+      "state_field_count": 143,
+      "has_domain_logic": true
+    },
+    {
+      "file": "loreSlice",
+      "service_imports": [],
+      "dynamic_service_imports": [],
+      "state_field_count": 7,
+      "has_domain_logic": false
+    },
+    {
+      "file": "npcSlice",
+      "service_imports": [
+        "embedding",
+        "storage/embeddingStorage",
+        "storage/imageStorage",
+        "npc"
+      ],
+      "dynamic_service_imports": [],
+      "state_field_count": 29,
+      "has_domain_logic": true
+    },
+    {
+      "file": "pressureSlice",
+      "service_imports": [],
+      "dynamic_service_imports": [],
+      "state_field_count": 9,
+      "has_domain_logic": false
+    },
+    {
+      "file": "settingsSlice",
+      "service_imports": [
+        "infrastructure",
+        "infrastructure/themeService",
+        "engine/constants",
+        "infrastructure/themeService"
+      ],
+      "dynamic_service_imports": [],
+      "state_field_count": 47,
+      "has_domain_logic": true
+    },
+    {
+      "file": "uiSlice",
+      "service_imports": [],
+      "dynamic_service_imports": [],
+      "state_field_count": 54,
+      "has_domain_logic": false
+    }
+  ]
+}
