@@ -1,0 +1,5439 @@
+{
+  "total_exports": 594,
+  "by_module": {
+    "npc": 193,
+    "turn": 62,
+    "campaign-state": 55,
+    "engine": 39,
+    "infrastructure": 35,
+    "archive": 31,
+    "embedding": 31,
+    "llm": 31,
+    "payload": 27,
+    "lore": 23,
+    "storage": 19,
+    "arc": 18,
+    "tts": 10,
+    "image": 9,
+    "campaignBundle.ts": 5,
+    "backHandler.ts": 3,
+    "retrieval": 2,
+    "apiClient.ts": 1
+  },
+  "by_op_type": {
+    "utility": 344,
+    "read": 99,
+    "create": 37,
+    "orchestrate": 36,
+    "update": 28,
+    "search": 24,
+    "delete": 20,
+    "persist": 6
+  },
+  "capabilities": [
+    {
+      "name": "api",
+      "file": "services/apiClient.ts",
+      "module": "apiClient.ts",
+      "line": 6,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "ARC_TICK_DC",
+      "file": "services/arc/arcConstants.ts",
+      "module": "arc",
+      "line": 12,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// a higher initial. Same {fired,nextDc} shape as rollHeartbeat."
+    },
+    {
+      "name": "LADDER_MIN",
+      "file": "services/arc/arcConstants.ts",
+      "module": "arc",
+      "line": 15,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// Ladder length bounds (spawn validates/clamps to this)."
+    },
+    {
+      "name": "LADDER_MAX",
+      "file": "services/arc/arcConstants.ts",
+      "module": "arc",
+      "line": 16,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// Ladder length bounds (spawn validates/clamps to this)."
+    },
+    {
+      "name": "MAX_ACTIVE_ARCS",
+      "file": "services/arc/arcConstants.ts",
+      "module": "arc",
+      "line": 19,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// How many arcs may simmer at once. New spawns blocked at/above this."
+    },
+    {
+      "name": "TYPE_COOLDOWN_SEAMS",
+      "file": "services/arc/arcConstants.ts",
+      "module": "arc",
+      "line": 22,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// Seams a fired ArcType is suppressed from re-spawning."
+    },
+    {
+      "name": "ARC_STANCE_MOD",
+      "file": "services/arc/arcConstants.ts",
+      "module": "arc",
+      "line": 30,
+      "async": false,
+      "op_type": "utility",
+      "comment": "//   ignored / unaware \u2192 neutral"
+    },
+    {
+      "name": "ARC_BAND_RUNG_DELTA",
+      "file": "services/arc/arcConstants.ts",
+      "module": "arc",
+      "line": 40,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": "// critFail regresses, fail/failBut stall, success climbs, critSuccess jumps."
+    },
+    {
+      "name": "ARC_SURFACE_EMIT_MIN",
+      "file": "services/arc/arcConstants.ts",
+      "module": "arc",
+      "line": 52,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// without demanding a scene. 'rumor' and 'direct' always surface."
+    },
+    {
+      "name": "ARC_SURFACE_TIER",
+      "file": "services/arc/arcConstants.ts",
+      "module": "arc",
+      "line": 55,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// Surface tier ordering used by arcSurfaceLine to tag the digest line."
+    },
+    {
+      "name": "rollArcTick",
+      "file": "services/arc/arcDice.ts",
+      "module": "arc",
+      "line": 21,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "rollArcOutcome",
+      "file": "services/arc/arcDice.ts",
+      "module": "arc",
+      "line": 44,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "advanceRung",
+      "file": "services/arc/arcDice.ts",
+      "module": "arc",
+      "line": 63,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": "*/"
+    },
+    {
+      "name": "SpawnArcAnchor",
+      "file": "services/arc/arcSpawn.ts",
+      "module": "arc",
+      "line": 50,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "SpawnArcInput",
+      "file": "services/arc/arcSpawn.ts",
+      "module": "arc",
+      "line": 54,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "spawnArc",
+      "file": "services/arc/arcSpawn.ts",
+      "module": "arc",
+      "line": 199,
+      "async": true,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "pickArcSpawnInput",
+      "file": "services/arc/arcSpawn.ts",
+      "module": "arc",
+      "line": 264,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "scanArcStance",
+      "file": "services/arc/arcStance.ts",
+      "module": "arc",
+      "line": 123,
+      "async": false,
+      "op_type": "read",
+      "comment": "*/"
+    },
+    {
+      "name": "arcSurfaceLine",
+      "file": "services/arc/arcSurface.ts",
+      "module": "arc",
+      "line": 18,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "AutoSealResult",
+      "file": "services/archive/archiveChapterEngine.ts",
+      "module": "archive",
+      "line": 11,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "shouldAutoSeal",
+      "file": "services/archive/archiveChapterEngine.ts",
+      "module": "archive",
+      "line": 16,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "sealChapter",
+      "file": "services/archive/archiveChapterEngine.ts",
+      "module": "archive",
+      "line": 33,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "scoreChapter",
+      "file": "services/archive/archiveChapterEngine.ts",
+      "module": "archive",
+      "line": 89,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "rankChapters",
+      "file": "services/archive/archiveChapterEngine.ts",
+      "module": "archive",
+      "line": 124,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "iterativeChapterFilter",
+      "file": "services/archive/archiveChapterEngine.ts",
+      "module": "archive",
+      "line": 217,
+      "async": true,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "recallWithChapterFunnel",
+      "file": "services/archive/archiveChapterEngine.ts",
+      "module": "archive",
+      "line": 263,
+      "async": true,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "extractIndexKeywords",
+      "file": "services/archive/archiveIndexer.ts",
+      "module": "archive",
+      "line": 5,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "extractNPCNames",
+      "file": "services/archive/archiveIndexer.ts",
+      "module": "archive",
+      "line": 21,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "extractKeywordStrengths",
+      "file": "services/archive/archiveIndexer.ts",
+      "module": "archive",
+      "line": 28,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "extractNPCStrengths",
+      "file": "services/archive/archiveIndexer.ts",
+      "module": "archive",
+      "line": 55,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "extractNPCFacts",
+      "file": "services/archive/archiveIndexer.ts",
+      "module": "archive",
+      "line": 80,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "buildArchiveIndexEntry",
+      "file": "services/archive/archiveIndexer.ts",
+      "module": "archive",
+      "line": 114,
+      "async": false,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "computeArchiveIdf",
+      "file": "services/archive/archiveMemory.ts",
+      "module": "archive",
+      "line": 28,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "clearIdfCache",
+      "file": "services/archive/archiveMemory.ts",
+      "module": "archive",
+      "line": 69,
+      "async": false,
+      "op_type": "delete",
+      "comment": ""
+    },
+    {
+      "name": "extractContextActivations",
+      "file": "services/archive/archiveMemory.ts",
+      "module": "archive",
+      "line": 163,
+      "async": false,
+      "op_type": "read",
+      "comment": "*/"
+    },
+    {
+      "name": "expandActivationsWithFacts",
+      "file": "services/archive/archiveMemory.ts",
+      "module": "archive",
+      "line": 212,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "fuseRecall",
+      "file": "services/archive/archiveMemory.ts",
+      "module": "archive",
+      "line": 236,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u2500\u2500\u2500 RRF Fusion \u2500\u2500\u2500"
+    },
+    {
+      "name": "retrieveArchiveMemory",
+      "file": "services/archive/archiveMemory.ts",
+      "module": "archive",
+      "line": 280,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "fetchArchiveScenes",
+      "file": "services/archive/archiveMemory.ts",
+      "module": "archive",
+      "line": 417,
+      "async": true,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "recallArchiveScenes",
+      "file": "services/archive/archiveMemory.ts",
+      "module": "archive",
+      "line": 477,
+      "async": true,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "ChapterSummaryOutput",
+      "file": "services/archive/chapterSummaryWriter.ts",
+      "module": "archive",
+      "line": 14,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "parseChapterSummaryOutput",
+      "file": "services/archive/chapterSummaryWriter.ts",
+      "module": "archive",
+      "line": 66,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "generateChapterSummary",
+      "file": "services/archive/chapterSummaryWriter.ts",
+      "module": "archive",
+      "line": 91,
+      "async": true,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "deepArchiveScan",
+      "file": "services/archive/deepArchiveSearch.ts",
+      "module": "archive",
+      "line": 207,
+      "async": true,
+      "op_type": "read",
+      "comment": "// \u2500\u2500 Main entry point \u2500\u2500"
+    },
+    {
+      "name": "CombinedSealResult",
+      "file": "services/archive/divergenceExtractor.ts",
+      "module": "archive",
+      "line": 200,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "parseCombinedSealOutput",
+      "file": "services/archive/divergenceExtractor.ts",
+      "module": "archive",
+      "line": 399,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "sealChapterCombined",
+      "file": "services/archive/divergenceExtractor.ts",
+      "module": "archive",
+      "line": 526,
+      "async": true,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "rateImportance",
+      "file": "services/archive/importanceRater.ts",
+      "module": "archive",
+      "line": 22,
+      "async": true,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "heuristicImportance",
+      "file": "services/archive/importanceRater.ts",
+      "module": "archive",
+      "line": 50,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "truncateScenesToBudget",
+      "file": "services/archive/saveFileEngine.ts",
+      "module": "archive",
+      "line": 5,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "registerBackHandler",
+      "file": "services/backHandler.ts",
+      "module": "backHandler.ts",
+      "line": 20,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": "*/"
+    },
+    {
+      "name": "popBackHandler",
+      "file": "services/backHandler.ts",
+      "module": "backHandler.ts",
+      "line": 32,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": "*/"
+    },
+    {
+      "name": "_resetBackHandlers",
+      "file": "services/backHandler.ts",
+      "module": "backHandler.ts",
+      "line": 40,
+      "async": false,
+      "op_type": "delete",
+      "comment": "/** Test-only: reset the registry between test cases. */"
+    },
+    {
+      "name": "scanCharacterProfile",
+      "file": "services/campaign-state/characterProfileParser.ts",
+      "module": "campaign-state",
+      "line": 32,
+      "async": true,
+      "op_type": "read",
+      "comment": "*/"
+    },
+    {
+      "name": "EMPTY_REGISTER",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 5,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "DIVERGENCE_CATEGORIES",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 14,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "CATEGORY_LABELS",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 20,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "CATEGORY_DEFINITIONS",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 30,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "coerceCategory",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 40,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "stripReasoning",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 46,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "mergeSealEntries",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 56,
+      "async": false,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "renderRegisterForPayload",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 75,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "countRegisterTokens",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 207,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "getDivergenceSceneIds",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 211,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "toggleChapter",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 219,
+      "async": false,
+      "op_type": "update",
+      "comment": ""
+    },
+    {
+      "name": "toggleCategory",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 227,
+      "async": false,
+      "op_type": "update",
+      "comment": ""
+    },
+    {
+      "name": "pinFact",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 239,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "editFact",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 246,
+      "async": false,
+      "op_type": "update",
+      "comment": ""
+    },
+    {
+      "name": "deleteFact",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 253,
+      "async": false,
+      "op_type": "delete",
+      "comment": ""
+    },
+    {
+      "name": "deleteChapter",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 258,
+      "async": false,
+      "op_type": "delete",
+      "comment": ""
+    },
+    {
+      "name": "toggleFact",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 265,
+      "async": false,
+      "op_type": "update",
+      "comment": ""
+    },
+    {
+      "name": "dismissReviewFlag",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 272,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "editKnownBy",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 284,
+      "async": false,
+      "op_type": "update",
+      "comment": "*/"
+    },
+    {
+      "name": "applySubjectTokens",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 295,
+      "async": false,
+      "op_type": "update",
+      "comment": "*/"
+    },
+    {
+      "name": "getEntriesForChapter",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 303,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "getEntriesForNpc",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 307,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "migrateV1ToV2",
+      "file": "services/campaign-state/divergenceRegister.ts",
+      "module": "campaign-state",
+      "line": 311,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "ClusteringCancelled",
+      "file": "services/campaign-state/factClusterer.ts",
+      "module": "campaign-state",
+      "line": 13,
+      "async": false,
+      "op_type": "delete",
+      "comment": ""
+    },
+    {
+      "name": "runFactClustering",
+      "file": "services/campaign-state/factClusterer.ts",
+      "module": "campaign-state",
+      "line": 15,
+      "async": true,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "SubjectTokenUpdate",
+      "file": "services/campaign-state/factClusterer.ts",
+      "module": "campaign-state",
+      "line": 152,
+      "async": false,
+      "op_type": "update",
+      "comment": "// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+    },
+    {
+      "name": "AssignSubjectTokensResult",
+      "file": "services/campaign-state/factClusterer.ts",
+      "module": "campaign-state",
+      "line": 153,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+    },
+    {
+      "name": "deriveSubjectTokenUpdates",
+      "file": "services/campaign-state/factClusterer.ts",
+      "module": "campaign-state",
+      "line": 177,
+      "async": false,
+      "op_type": "update",
+      "comment": "*/"
+    },
+    {
+      "name": "assignSubjectTokens",
+      "file": "services/campaign-state/factClusterer.ts",
+      "module": "campaign-state",
+      "line": 236,
+      "async": true,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "DedupGroup",
+      "file": "services/campaign-state/factDeduper.ts",
+      "module": "campaign-state",
+      "line": 13,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "DedupCancelled",
+      "file": "services/campaign-state/factDeduper.ts",
+      "module": "campaign-state",
+      "line": 20,
+      "async": false,
+      "op_type": "delete",
+      "comment": ""
+    },
+    {
+      "name": "DedupResult",
+      "file": "services/campaign-state/factDeduper.ts",
+      "module": "campaign-state",
+      "line": 22,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "runFactDedup",
+      "file": "services/campaign-state/factDeduper.ts",
+      "module": "campaign-state",
+      "line": 27,
+      "async": true,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "scanInventory",
+      "file": "services/campaign-state/inventoryParser.ts",
+      "module": "campaign-state",
+      "line": 9,
+      "async": true,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "normalizeFaction",
+      "file": "services/campaign-state/knowledgeScope.ts",
+      "module": "campaign-state",
+      "line": 14,
+      "async": false,
+      "op_type": "utility",
+      "comment": "/** Normalize a faction string for matching: lowercase, trim, collapse internal whitespace. */"
+    },
+    {
+      "name": "normalizeSubjectToken",
+      "file": "services/campaign-state/knowledgeScope.ts",
+      "module": "campaign-state",
+      "line": 24,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "KnownByToken",
+      "file": "services/campaign-state/knowledgeScope.ts",
+      "module": "campaign-state",
+      "line": 35,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "parseKnownByToken",
+      "file": "services/campaign-state/knowledgeScope.ts",
+      "module": "campaign-state",
+      "line": 41,
+      "async": false,
+      "op_type": "read",
+      "comment": "/** Parse a single knownBy token. Returns null for malformed tokens (caller should ignore). */"
+    },
+    {
+      "name": "isKnownToAnyOnStage",
+      "file": "services/campaign-state/knowledgeScope.ts",
+      "module": "campaign-state",
+      "line": 63,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "compareSceneRef",
+      "file": "services/campaign-state/knowledgeScope.ts",
+      "module": "campaign-state",
+      "line": 89,
+      "async": false,
+      "op_type": "utility",
+      "comment": "/** Compare sceneRef as zero-padded numbers (numeric ascending). Falls back to string compare. */"
+    },
+    {
+      "name": "groupDivergencesBySubject",
+      "file": "services/campaign-state/knowledgeScope.ts",
+      "module": "campaign-state",
+      "line": 97,
+      "async": false,
+      "op_type": "utility",
+      "comment": "/** Group unpinned entries by subjectToken, sorting beats inside group, and sorting groups. */"
+    },
+    {
+      "name": "fetchFacts",
+      "file": "services/campaign-state/semanticMemory.ts",
+      "module": "campaign-state",
+      "line": 17,
+      "async": true,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "extractContextEntities",
+      "file": "services/campaign-state/semanticMemory.ts",
+      "module": "campaign-state",
+      "line": 26,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "queryFacts",
+      "file": "services/campaign-state/semanticMemory.ts",
+      "module": "campaign-state",
+      "line": 53,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "formatFactsForContext",
+      "file": "services/campaign-state/semanticMemory.ts",
+      "module": "campaign-state",
+      "line": 95,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "SelectedTraits",
+      "file": "services/campaign-state/semanticMemory.ts",
+      "module": "campaign-state",
+      "line": 122,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// not \"inject nothing\")."
+    },
+    {
+      "name": "queryTraits",
+      "file": "services/campaign-state/semanticMemory.ts",
+      "module": "campaign-state",
+      "line": 127,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "formatTraitsForContext",
+      "file": "services/campaign-state/semanticMemory.ts",
+      "module": "campaign-state",
+      "line": 217,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "ResolvedTruth",
+      "file": "services/campaign-state/timelineResolver.ts",
+      "module": "campaign-state",
+      "line": 4,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "resolveTimeline",
+      "file": "services/campaign-state/timelineResolver.ts",
+      "module": "campaign-state",
+      "line": 6,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "queryTimeline",
+      "file": "services/campaign-state/timelineResolver.ts",
+      "module": "campaign-state",
+      "line": 41,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "formatResolvedForContext",
+      "file": "services/campaign-state/timelineResolver.ts",
+      "module": "campaign-state",
+      "line": 54,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "getEventsByScene",
+      "file": "services/campaign-state/timelineResolver.ts",
+      "module": "campaign-state",
+      "line": 60,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "maxImportanceForScene",
+      "file": "services/campaign-state/timelineResolver.ts",
+      "module": "campaign-state",
+      "line": 64,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "CampaignBundle",
+      "file": "services/campaignBundle.ts",
+      "module": "campaignBundle.ts",
+      "line": 11,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "readFileChunked",
+      "file": "services/campaignBundle.ts",
+      "module": "campaignBundle.ts",
+      "line": 32,
+      "async": true,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "exportBundle",
+      "file": "services/campaignBundle.ts",
+      "module": "campaignBundle.ts",
+      "line": 69,
+      "async": true,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "downloadBundle",
+      "file": "services/campaignBundle.ts",
+      "module": "campaignBundle.ts",
+      "line": 117,
+      "async": true,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "importBundle",
+      "file": "services/campaignBundle.ts",
+      "module": "campaignBundle.ts",
+      "line": 165,
+      "async": true,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "BackfillProgress",
+      "file": "services/embedding/backfillRunner.ts",
+      "module": "embedding",
+      "line": 10,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "getBackfillCursor",
+      "file": "services/embedding/backfillRunner.ts",
+      "module": "embedding",
+      "line": 22,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "runBackfill",
+      "file": "services/embedding/backfillRunner.ts",
+      "module": "embedding",
+      "line": 26,
+      "async": true,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "backfillScenes",
+      "file": "services/embedding/backfillRunner.ts",
+      "module": "embedding",
+      "line": 145,
+      "async": true,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "backfillNPCs",
+      "file": "services/embedding/backfillRunner.ts",
+      "module": "embedding",
+      "line": 179,
+      "async": true,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "rebuildAllEmbeddings",
+      "file": "services/embedding/backfillRunner.ts",
+      "module": "embedding",
+      "line": 230,
+      "async": true,
+      "op_type": "create",
+      "comment": "*/"
+    },
+    {
+      "name": "runFullReindex",
+      "file": "services/embedding/backfillRunner.ts",
+      "module": "embedding",
+      "line": 320,
+      "async": true,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "DownloadProgress",
+      "file": "services/embedding/embedder.ts",
+      "module": "embedding",
+      "line": 13,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "warmupEmbedder",
+      "file": "services/embedding/embedder.ts",
+      "module": "embedding",
+      "line": 120,
+      "async": true,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "getLastInitError",
+      "file": "services/embedding/embedder.ts",
+      "module": "embedding",
+      "line": 152,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "switchEmbeddingModel",
+      "file": "services/embedding/embedder.ts",
+      "module": "embedding",
+      "line": 156,
+      "async": true,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "embedText",
+      "file": "services/embedding/embedder.ts",
+      "module": "embedding",
+      "line": 190,
+      "async": true,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "embedBatch",
+      "file": "services/embedding/embedder.ts",
+      "module": "embedding",
+      "line": 199,
+      "async": true,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "isEmbedderReady",
+      "file": "services/embedding/embedder.ts",
+      "module": "embedding",
+      "line": 208,
+      "async": false,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "getEmbedDims",
+      "file": "services/embedding/embedder.ts",
+      "module": "embedding",
+      "line": 212,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "getCurrentModelId",
+      "file": "services/embedding/embedder.ts",
+      "module": "embedding",
+      "line": 216,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "ProgressiveChunk",
+      "file": "services/embedding/embeddingScheduler.ts",
+      "module": "embedding",
+      "line": 8,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "registerStore",
+      "file": "services/embedding/embeddingScheduler.ts",
+      "module": "embedding",
+      "line": 53,
+      "async": false,
+      "op_type": "persist",
+      "comment": "*/"
+    },
+    {
+      "name": "enqueueProgressive",
+      "file": "services/embedding/embeddingScheduler.ts",
+      "module": "embedding",
+      "line": 204,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "enqueueProgressiveWithExistingCheck",
+      "file": "services/embedding/embeddingScheduler.ts",
+      "module": "embedding",
+      "line": 253,
+      "async": true,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "abortForCampaignSwitch",
+      "file": "services/embedding/embeddingScheduler.ts",
+      "module": "embedding",
+      "line": 275,
+      "async": false,
+      "op_type": "delete",
+      "comment": ""
+    },
+    {
+      "name": "abortForModelSwitch",
+      "file": "services/embedding/embeddingScheduler.ts",
+      "module": "embedding",
+      "line": 290,
+      "async": false,
+      "op_type": "delete",
+      "comment": ""
+    },
+    {
+      "name": "getQueueStats",
+      "file": "services/embedding/embeddingScheduler.ts",
+      "module": "embedding",
+      "line": 294,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "_resetForTesting",
+      "file": "services/embedding/embeddingScheduler.ts",
+      "module": "embedding",
+      "line": 298,
+      "async": false,
+      "op_type": "delete",
+      "comment": ""
+    },
+    {
+      "name": "_setStoreRefForTesting",
+      "file": "services/embedding/embeddingScheduler.ts",
+      "module": "embedding",
+      "line": 309,
+      "async": false,
+      "op_type": "persist",
+      "comment": ""
+    },
+    {
+      "name": "SearchHit",
+      "file": "services/embedding/vectorSearch.ts",
+      "module": "embedding",
+      "line": 4,
+      "async": false,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "cosineSimilarity",
+      "file": "services/embedding/vectorSearch.ts",
+      "module": "embedding",
+      "line": 24,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "mmrSelect",
+      "file": "services/embedding/vectorSearch.ts",
+      "module": "embedding",
+      "line": 41,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "searchVectors",
+      "file": "services/embedding/vectorSearch.ts",
+      "module": "embedding",
+      "line": 91,
+      "async": true,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "semanticSearch",
+      "file": "services/embedding/vectorSearch.ts",
+      "module": "embedding",
+      "line": 125,
+      "async": true,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "semanticSearchScored",
+      "file": "services/embedding/vectorSearch.ts",
+      "module": "embedding",
+      "line": 136,
+      "async": true,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "CharIntroResult",
+      "file": "services/engine/charIntroEngine.ts",
+      "module": "engine",
+      "line": 5,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "rollCharacterIntroEngine",
+      "file": "services/engine/charIntroEngine.ts",
+      "module": "engine",
+      "line": 87,
+      "async": true,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "DEFAULT_SURPRISE_TYPES",
+      "file": "services/engine/constants.ts",
+      "module": "engine",
+      "line": 20,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "DEFAULT_SURPRISE_TONES",
+      "file": "services/engine/constants.ts",
+      "module": "engine",
+      "line": 26,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "DEFAULT_ENCOUNTER_TYPES",
+      "file": "services/engine/constants.ts",
+      "module": "engine",
+      "line": 31,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "DEFAULT_ENCOUNTER_TONES",
+      "file": "services/engine/constants.ts",
+      "module": "engine",
+      "line": 37,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "DEFAULT_WORLD_WHO",
+      "file": "services/engine/constants.ts",
+      "module": "engine",
+      "line": 42,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "DEFAULT_WORLD_WHERE",
+      "file": "services/engine/constants.ts",
+      "module": "engine",
+      "line": 48,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "DEFAULT_WORLD_WHY",
+      "file": "services/engine/constants.ts",
+      "module": "engine",
+      "line": 54,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "DEFAULT_WORLD_WHAT",
+      "file": "services/engine/constants.ts",
+      "module": "engine",
+      "line": 61,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "mapTier",
+      "file": "services/engine/diceTier.ts",
+      "module": "engine",
+      "line": 11,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "EngineRollResult",
+      "file": "services/engine/engineRolls.ts",
+      "module": "engine",
+      "line": 10,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "rollEngines",
+      "file": "services/engine/engineRolls.ts",
+      "module": "engine",
+      "line": 19,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "ManualRollResult",
+      "file": "services/engine/engineRolls.ts",
+      "module": "engine",
+      "line": 94,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "resolveManualRoll",
+      "file": "services/engine/engineRolls.ts",
+      "module": "engine",
+      "line": 108,
+      "async": false,
+      "op_type": "read",
+      "comment": "*/"
+    },
+    {
+      "name": "rollDiceFairness",
+      "file": "services/engine/engineRolls.ts",
+      "module": "engine",
+      "line": 129,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "LootDropRecord",
+      "file": "services/engine/lootDropTelemetry.ts",
+      "module": "engine",
+      "line": 15,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "recordLootDrop",
+      "file": "services/engine/lootDropTelemetry.ts",
+      "module": "engine",
+      "line": 42,
+      "async": false,
+      "op_type": "utility",
+      "comment": "/** Record a resolved loot drop. Called from turnOrchestrator at send time. */"
+    },
+    {
+      "name": "clearLootDropHistory",
+      "file": "services/engine/lootDropTelemetry.ts",
+      "module": "engine",
+      "line": 60,
+      "async": false,
+      "op_type": "delete",
+      "comment": ""
+    },
+    {
+      "name": "getLootDropHistory",
+      "file": "services/engine/lootDropTelemetry.ts",
+      "module": "engine",
+      "line": 65,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "useLootDropHistory",
+      "file": "services/engine/lootDropTelemetry.ts",
+      "module": "engine",
+      "line": 76,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "resolveLootDrop",
+      "file": "services/engine/lootEngine.ts",
+      "module": "engine",
+      "line": 220,
+      "async": false,
+      "op_type": "read",
+      "comment": "*/"
+    },
+    {
+      "name": "PC_POINT_BUY",
+      "file": "services/engine/pcCreationScript.ts",
+      "module": "engine",
+      "line": 5,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u2500\u2500\u2500 Point-buy budget tables \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+    },
+    {
+      "name": "STAT_KEYS",
+      "file": "services/engine/pcCreationScript.ts",
+      "module": "engine",
+      "line": 13,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "StatKey",
+      "file": "services/engine/pcCreationScript.ts",
+      "module": "engine",
+      "line": 14,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "getPointCost",
+      "file": "services/engine/pcCreationScript.ts",
+      "module": "engine",
+      "line": 26,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "PointBuyAllocation",
+      "file": "services/engine/pcCreationScript.ts",
+      "module": "engine",
+      "line": 33,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u2500\u2500\u2500 Point-buy allocation logic \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+    },
+    {
+      "name": "DEFAULT_STATS",
+      "file": "services/engine/pcCreationScript.ts",
+      "module": "engine",
+      "line": 41,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "validateAllocation",
+      "file": "services/engine/pcCreationScript.ts",
+      "module": "engine",
+      "line": 43,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "allocateStat",
+      "file": "services/engine/pcCreationScript.ts",
+      "module": "engine",
+      "line": 67,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "ARCHETYPE_PRESETS",
+      "file": "services/engine/pcCreationScript.ts",
+      "module": "engine",
+      "line": 80,
+      "async": false,
+      "op_type": "delete",
+      "comment": "// \u2500\u2500\u2500 Quick-allocate presets \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+    },
+    {
+      "name": "CreationQuestion",
+      "file": "services/engine/pcCreationScript.ts",
+      "module": "engine",
+      "line": 90,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u2500\u2500\u2500 Creation question script (engine-static, no LLM) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+    },
+    {
+      "name": "CREATION_QUESTIONS",
+      "file": "services/engine/pcCreationScript.ts",
+      "module": "engine",
+      "line": 99,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "getPCTier",
+      "file": "services/engine/pcCreationScript.ts",
+      "module": "engine",
+      "line": 110,
+      "async": false,
+      "op_type": "read",
+      "comment": "// \u2500\u2500\u2500 OP toggle \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+    },
+    {
+      "name": "getPCBudget",
+      "file": "services/engine/pcCreationScript.ts",
+      "module": "engine",
+      "line": 114,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "buildCharacterProfileState",
+      "file": "services/engine/pcCreationScript.ts",
+      "module": "engine",
+      "line": 149,
+      "async": false,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "buildCharacterProfileText",
+      "file": "services/engine/pcCreationScript.ts",
+      "module": "engine",
+      "line": 213,
+      "async": false,
+      "op_type": "create",
+      "comment": "*/"
+    },
+    {
+      "name": "populateEngineTags",
+      "file": "services/engine/tagGeneration.ts",
+      "module": "engine",
+      "line": 15,
+      "async": true,
+      "op_type": "create",
+      "comment": "*/"
+    },
+    {
+      "name": "generateTroubleOptions",
+      "file": "services/engine/troublemaker.ts",
+      "module": "engine",
+      "line": 11,
+      "async": true,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "DEFAULT_STYLE",
+      "file": "services/image/composePrompt.ts",
+      "module": "image",
+      "line": 6,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// a character's solo portrait and their in-scene render visually consistent."
+    },
+    {
+      "name": "PORTRAIT_NEGATIVE",
+      "file": "services/image/composePrompt.ts",
+      "module": "image",
+      "line": 7,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// a character's solo portrait and their in-scene render visually consistent."
+    },
+    {
+      "name": "ComposeInput",
+      "file": "services/image/composePrompt.ts",
+      "module": "image",
+      "line": 25,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "ComposedPrompt",
+      "file": "services/image/composePrompt.ts",
+      "module": "image",
+      "line": 44,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "composeImagePrompt",
+      "file": "services/image/composePrompt.ts",
+      "module": "image",
+      "line": 120,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "GenerateImageOpts",
+      "file": "services/image/imageClient.ts",
+      "module": "image",
+      "line": 9,
+      "async": false,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "generateImage",
+      "file": "services/image/imageClient.ts",
+      "module": "image",
+      "line": 16,
+      "async": true,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "illustrateMessage",
+      "file": "services/image/index.ts",
+      "module": "image",
+      "line": 11,
+      "async": true,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "generateNPCPortrait",
+      "file": "services/image/portrait.ts",
+      "module": "image",
+      "line": 10,
+      "async": true,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "backgroundQueue",
+      "file": "services/infrastructure/backgroundQueue.ts",
+      "module": "infrastructure",
+      "line": 65,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "extractJsonRobust",
+      "file": "services/infrastructure/jsonExtract.ts",
+      "module": "infrastructure",
+      "line": 23,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "extractJson",
+      "file": "services/infrastructure/jsonExtract.ts",
+      "module": "infrastructure",
+      "line": 70,
+      "async": false,
+      "op_type": "read",
+      "comment": "*/"
+    },
+    {
+      "name": "SaveFile",
+      "file": "services/infrastructure/saveFilePicker.ts",
+      "module": "infrastructure",
+      "line": 7,
+      "async": false,
+      "op_type": "persist",
+      "comment": ""
+    },
+    {
+      "name": "encryptProvider",
+      "file": "services/infrastructure/settingsCrypto.ts",
+      "module": "infrastructure",
+      "line": 55,
+      "async": true,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "decryptProvider",
+      "file": "services/infrastructure/settingsCrypto.ts",
+      "module": "infrastructure",
+      "line": 61,
+      "async": true,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "encryptSettingsProviders",
+      "file": "services/infrastructure/settingsCrypto.ts",
+      "module": "infrastructure",
+      "line": 67,
+      "async": true,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "decryptSettingsProviders",
+      "file": "services/infrastructure/settingsCrypto.ts",
+      "module": "infrastructure",
+      "line": 71,
+      "async": true,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "encryptPreset",
+      "file": "services/infrastructure/settingsCrypto.ts",
+      "module": "infrastructure",
+      "line": 75,
+      "async": true,
+      "op_type": "delete",
+      "comment": ""
+    },
+    {
+      "name": "decryptPreset",
+      "file": "services/infrastructure/settingsCrypto.ts",
+      "module": "infrastructure",
+      "line": 94,
+      "async": true,
+      "op_type": "delete",
+      "comment": ""
+    },
+    {
+      "name": "encryptSettingsPresets",
+      "file": "services/infrastructure/settingsCrypto.ts",
+      "module": "infrastructure",
+      "line": 113,
+      "async": true,
+      "op_type": "delete",
+      "comment": ""
+    },
+    {
+      "name": "decryptSettingsPresets",
+      "file": "services/infrastructure/settingsCrypto.ts",
+      "module": "infrastructure",
+      "line": 117,
+      "async": true,
+      "op_type": "delete",
+      "comment": ""
+    },
+    {
+      "name": "ThemeSetting",
+      "file": "services/infrastructure/themeService.ts",
+      "module": "infrastructure",
+      "line": 1,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "ResolvedTheme",
+      "file": "services/infrastructure/themeService.ts",
+      "module": "infrastructure",
+      "line": 2,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "resolveTheme",
+      "file": "services/infrastructure/themeService.ts",
+      "module": "infrastructure",
+      "line": 4,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "applyTheme",
+      "file": "services/infrastructure/themeService.ts",
+      "module": "infrastructure",
+      "line": 15,
+      "async": false,
+      "op_type": "update",
+      "comment": ""
+    },
+    {
+      "name": "watchSystemTheme",
+      "file": "services/infrastructure/themeService.ts",
+      "module": "infrastructure",
+      "line": 20,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "applyUIScale",
+      "file": "services/infrastructure/themeService.ts",
+      "module": "infrastructure",
+      "line": 36,
+      "async": false,
+      "op_type": "update",
+      "comment": ""
+    },
+    {
+      "name": "countTokens",
+      "file": "services/infrastructure/tokenizer.ts",
+      "module": "infrastructure",
+      "line": 9,
+      "async": false,
+      "op_type": "read",
+      "comment": "*/"
+    },
+    {
+      "name": "INPUT_DELIMITER",
+      "file": "services/infrastructure/utilityPrompts.ts",
+      "module": "infrastructure",
+      "line": 17,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "JSON_ONLY_FOOTER",
+      "file": "services/infrastructure/utilityPrompts.ts",
+      "module": "infrastructure",
+      "line": 23,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "JSON_ARRAY_ONLY_FOOTER",
+      "file": "services/infrastructure/utilityPrompts.ts",
+      "module": "infrastructure",
+      "line": 26,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "ANCHOR_BEFORE_INPUT",
+      "file": "services/infrastructure/utilityPrompts.ts",
+      "module": "infrastructure",
+      "line": 30,
+      "async": false,
+      "op_type": "utility",
+      "comment": "/** Anchor line to put immediately before INPUT_DELIMITER to keep attention on the schema. */"
+    },
+    {
+      "name": "TTRPG_PERSONA_ARCHIVIST",
+      "file": "services/infrastructure/utilityPrompts.ts",
+      "module": "infrastructure",
+      "line": 37,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+    },
+    {
+      "name": "TTRPG_PERSONA_GM_ASSISTANT",
+      "file": "services/infrastructure/utilityPrompts.ts",
+      "module": "infrastructure",
+      "line": 38,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+    },
+    {
+      "name": "TTRPG_PERSONA_STATE_ANALYZER",
+      "file": "services/infrastructure/utilityPrompts.ts",
+      "module": "infrastructure",
+      "line": 39,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "TTRPG_PERSONA_RETRIEVAL_PLANNER",
+      "file": "services/infrastructure/utilityPrompts.ts",
+      "module": "infrastructure",
+      "line": 40,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "EVENT_TYPES_LIST",
+      "file": "services/infrastructure/utilityPrompts.ts",
+      "module": "infrastructure",
+      "line": 49,
+      "async": false,
+      "op_type": "read",
+      "comment": "/** Canonical event types \u2014 kept as a single source so any future change updates all callers. */"
+    },
+    {
+      "name": "KNOWNBY_RULES",
+      "file": "services/infrastructure/utilityPrompts.ts",
+      "module": "infrastructure",
+      "line": 58,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "buildSubjectTokenRules",
+      "file": "services/infrastructure/utilityPrompts.ts",
+      "module": "infrastructure",
+      "line": 80,
+      "async": false,
+      "op_type": "create",
+      "comment": "*/"
+    },
+    {
+      "name": "NPC_INNER_STATE_RULES",
+      "file": "services/infrastructure/utilityPrompts.ts",
+      "module": "infrastructure",
+      "line": 97,
+      "async": false,
+      "op_type": "utility",
+      "comment": "/** Pulled from saveFileEngine.ts NPC INNER STATE RULES. */"
+    },
+    {
+      "name": "SCENE_EVENT_RULES",
+      "file": "services/infrastructure/utilityPrompts.ts",
+      "module": "infrastructure",
+      "line": 106,
+      "async": false,
+      "op_type": "utility",
+      "comment": "/** Pulled from saveFileEngine.ts SCENE EVENT RULES. */"
+    },
+    {
+      "name": "APPEARANCE_UPDATE_RULES",
+      "file": "services/infrastructure/utilityPrompts.ts",
+      "module": "infrastructure",
+      "line": 116,
+      "async": false,
+      "op_type": "update",
+      "comment": "/** Pulled from npcGeneration.ts APPEARANCE UPDATE RULES. */"
+    },
+    {
+      "name": "DRIVES_UPDATE_RULES",
+      "file": "services/infrastructure/utilityPrompts.ts",
+      "module": "infrastructure",
+      "line": 121,
+      "async": false,
+      "op_type": "update",
+      "comment": "/** Pulled from npcGeneration.ts DRIVES UPDATE RULES. */"
+    },
+    {
+      "name": "joinPromptSections",
+      "file": "services/infrastructure/utilityPrompts.ts",
+      "module": "infrastructure",
+      "line": 137,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "CallStat",
+      "file": "services/llm/cacheTelemetry.ts",
+      "module": "llm",
+      "line": 14,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "CacheRollup",
+      "file": "services/llm/cacheTelemetry.ts",
+      "module": "llm",
+      "line": 23,
+      "async": false,
+      "op_type": "utility",
+      "comment": "/** date (YYYY-MM-DD) \u2192 call label \u2192 aggregated stats */"
+    },
+    {
+      "name": "recordCacheUsage",
+      "file": "services/llm/cacheTelemetry.ts",
+      "module": "llm",
+      "line": 68,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "getCacheRollup",
+      "file": "services/llm/cacheTelemetry.ts",
+      "module": "llm",
+      "line": 96,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "hitRatio",
+      "file": "services/llm/cacheTelemetry.ts",
+      "module": "llm",
+      "line": 101,
+      "async": false,
+      "op_type": "utility",
+      "comment": "/** Hit ratio (0\u20131) for a stat; cache hits / total prompt input. */"
+    },
+    {
+      "name": "totalsForDay",
+      "file": "services/llm/cacheTelemetry.ts",
+      "module": "llm",
+      "line": 107,
+      "async": false,
+      "op_type": "utility",
+      "comment": "/** Collapse a day's per-label stats into a single total. */"
+    },
+    {
+      "name": "clearCacheTelemetry",
+      "file": "services/llm/cacheTelemetry.ts",
+      "module": "llm",
+      "line": 122,
+      "async": false,
+      "op_type": "delete",
+      "comment": ""
+    },
+    {
+      "name": "useCacheTelemetry",
+      "file": "services/llm/cacheTelemetry.ts",
+      "module": "llm",
+      "line": 136,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "LLMCallPriority",
+      "file": "services/llm/llmRequestQueue.ts",
+      "module": "llm",
+      "line": 1,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "LLMRequestQueue",
+      "file": "services/llm/llmRequestQueue.ts",
+      "module": "llm",
+      "line": 10,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "normalizeEndpointKey",
+      "file": "services/llm/llmRequestQueue.ts",
+      "module": "llm",
+      "line": 102,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "isLocalEndpoint",
+      "file": "services/llm/llmRequestQueue.ts",
+      "module": "llm",
+      "line": 113,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "getQueueForEndpoint",
+      "file": "services/llm/llmRequestQueue.ts",
+      "module": "llm",
+      "line": 133,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "llmQueue",
+      "file": "services/llm/llmRequestQueue.ts",
+      "module": "llm",
+      "line": 144,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "OpenAIMessage",
+      "file": "services/llm/llmService.ts",
+      "module": "llm",
+      "line": 17,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "sendMessage",
+      "file": "services/llm/llmService.ts",
+      "module": "llm",
+      "line": 96,
+      "async": true,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "testConnection",
+      "file": "services/llm/llmService.ts",
+      "module": "llm",
+      "line": 385,
+      "async": true,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "sanitizePayloadForApi",
+      "file": "services/llm/payloadSanitizer.ts",
+      "module": "llm",
+      "line": 17,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "recordSceneStakesFallback",
+      "file": "services/llm/sceneStakesTelemetry.ts",
+      "module": "llm",
+      "line": 27,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "getSceneStakesFallbackCount",
+      "file": "services/llm/sceneStakesTelemetry.ts",
+      "module": "llm",
+      "line": 33,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "resetSceneStakesFallbackCount",
+      "file": "services/llm/sceneStakesTelemetry.ts",
+      "module": "llm",
+      "line": 37,
+      "async": false,
+      "op_type": "delete",
+      "comment": ""
+    },
+    {
+      "name": "useSceneStakesFallbackCount",
+      "file": "services/llm/sceneStakesTelemetry.ts",
+      "module": "llm",
+      "line": 51,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "UtilityCallStatus",
+      "file": "services/llm/utilityCallTracker.ts",
+      "module": "llm",
+      "line": 4,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "UtilityCallRecord",
+      "file": "services/llm/utilityCallTracker.ts",
+      "module": "llm",
+      "line": 6,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "UtilityCallHandle",
+      "file": "services/llm/utilityCallTracker.ts",
+      "module": "llm",
+      "line": 38,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "startUtilityCall",
+      "file": "services/llm/utilityCallTracker.ts",
+      "module": "llm",
+      "line": 52,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "getActiveCalls",
+      "file": "services/llm/utilityCallTracker.ts",
+      "module": "llm",
+      "line": 172,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "getCallHistory",
+      "file": "services/llm/utilityCallTracker.ts",
+      "module": "llm",
+      "line": 176,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "extendCall",
+      "file": "services/llm/utilityCallTracker.ts",
+      "module": "llm",
+      "line": 180,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "clearHistory",
+      "file": "services/llm/utilityCallTracker.ts",
+      "module": "llm",
+      "line": 190,
+      "async": false,
+      "op_type": "delete",
+      "comment": ""
+    },
+    {
+      "name": "useUtilityCalls",
+      "file": "services/llm/utilityCallTracker.ts",
+      "module": "llm",
+      "line": 200,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "loadLootTree",
+      "file": "services/lore/lootTreeLoader.ts",
+      "module": "lore",
+      "line": 117,
+      "async": false,
+      "op_type": "read",
+      "comment": "*/"
+    },
+    {
+      "name": "LoreCheckInput",
+      "file": "services/lore/loreCheck.ts",
+      "module": "lore",
+      "line": 27,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "buildSearchQuery",
+      "file": "services/lore/loreCheck.ts",
+      "module": "lore",
+      "line": 44,
+      "async": false,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "runLoreCheck",
+      "file": "services/lore/loreCheck.ts",
+      "module": "lore",
+      "line": 49,
+      "async": true,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "DirectRewriteInput",
+      "file": "services/lore/loreCheck.ts",
+      "module": "lore",
+      "line": 134,
+      "async": false,
+      "op_type": "persist",
+      "comment": ""
+    },
+    {
+      "name": "runDirectRewrite",
+      "file": "services/lore/loreCheck.ts",
+      "module": "lore",
+      "line": 147,
+      "async": true,
+      "op_type": "persist",
+      "comment": "*/"
+    },
+    {
+      "name": "buildRewritePrompt",
+      "file": "services/lore/loreCheck.ts",
+      "module": "lore",
+      "line": 162,
+      "async": false,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "buildVerifierPrompt",
+      "file": "services/lore/loreCheck.ts",
+      "module": "lore",
+      "line": 215,
+      "async": false,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "classifyCategory",
+      "file": "services/lore/loreChunker.ts",
+      "module": "lore",
+      "line": 128,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "chunkLoreFile",
+      "file": "services/lore/loreChunker.ts",
+      "module": "lore",
+      "line": 244,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "extractEngineSeeds",
+      "file": "services/lore/loreEngineSeeder.ts",
+      "module": "lore",
+      "line": 21,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "IndexingProgress",
+      "file": "services/lore/loreIndexer.ts",
+      "module": "lore",
+      "line": 6,
+      "async": false,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "deriveDefaultLoreMeta",
+      "file": "services/lore/loreIndexer.ts",
+      "module": "lore",
+      "line": 12,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "upgradeVectorOnlyDefault",
+      "file": "services/lore/loreIndexer.ts",
+      "module": "lore",
+      "line": 30,
+      "async": false,
+      "op_type": "update",
+      "comment": "*/"
+    },
+    {
+      "name": "indexLore",
+      "file": "services/lore/loreIndexer.ts",
+      "module": "lore",
+      "line": 39,
+      "async": true,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "enrichLoreKeywords",
+      "file": "services/lore/loreKeywordEnricher.ts",
+      "module": "lore",
+      "line": 75,
+      "async": true,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "parseNPCsFromLore",
+      "file": "services/lore/loreNPCParser.ts",
+      "module": "lore",
+      "line": 50,
+      "async": false,
+      "op_type": "read",
+      "comment": "*/"
+    },
+    {
+      "name": "retrieveRelevantLore",
+      "file": "services/lore/loreRetriever.ts",
+      "module": "lore",
+      "line": 4,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "searchLoreByQuery",
+      "file": "services/lore/loreRetriever.ts",
+      "module": "lore",
+      "line": 175,
+      "async": false,
+      "op_type": "read",
+      "comment": "*/"
+    },
+    {
+      "name": "IndexingProgress",
+      "file": "services/lore/rulesIndexer.ts",
+      "module": "lore",
+      "line": 141,
+      "async": false,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "indexRules",
+      "file": "services/lore/rulesIndexer.ts",
+      "module": "lore",
+      "line": 147,
+      "async": true,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "computeRulesThreshold",
+      "file": "services/lore/rulesIndexer.ts",
+      "module": "lore",
+      "line": 250,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "retrieveRelevantRules",
+      "file": "services/lore/rulesRetriever.ts",
+      "module": "lore",
+      "line": 4,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "currentActivity",
+      "file": "services/npc/agencyAudition.ts",
+      "module": "npc",
+      "line": 28,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "activityBumpPatch",
+      "file": "services/npc/agencyAudition.ts",
+      "module": "npc",
+      "line": 39,
+      "async": false,
+      "op_type": "update",
+      "comment": "*/"
+    },
+    {
+      "name": "SelectTickTargetResult",
+      "file": "services/npc/agencyAudition.ts",
+      "module": "npc",
+      "line": 44,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "selectTickTarget",
+      "file": "services/npc/agencyAudition.ts",
+      "module": "npc",
+      "line": 69,
+      "async": false,
+      "op_type": "read",
+      "comment": "*/"
+    },
+    {
+      "name": "relationBand",
+      "file": "services/npc/agencyBands.ts",
+      "module": "npc",
+      "line": 30,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "hexBand",
+      "file": "services/npc/agencyBands.ts",
+      "module": "npc",
+      "line": 39,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "affinityToPcRelation",
+      "file": "services/npc/agencyBands.ts",
+      "module": "npc",
+      "line": 50,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "describeHex",
+      "file": "services/npc/agencyBands.ts",
+      "module": "npc",
+      "line": 64,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "formatRungBand",
+      "file": "services/npc/agencyBands.ts",
+      "module": "npc",
+      "line": 76,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": "*/"
+    },
+    {
+      "name": "formatHexShift",
+      "file": "services/npc/agencyBands.ts",
+      "module": "npc",
+      "line": 85,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "formatRungShift",
+      "file": "services/npc/agencyBands.ts",
+      "module": "npc",
+      "line": 96,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": "*/"
+    },
+    {
+      "name": "goalsCoincide",
+      "file": "services/npc/agencyCollision.ts",
+      "module": "npc",
+      "line": 47,
+      "async": false,
+      "op_type": "utility",
+      "comment": "/** Two NPCs \"coincide\" when their chosen goal shares a target: same region OR \u22651 shared keyword. */"
+    },
+    {
+      "name": "topActiveGoal",
+      "file": "services/npc/agencyCollision.ts",
+      "module": "npc",
+      "line": 62,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*  for `pick` and we look up the partner's top active goal here). */"
+    },
+    {
+      "name": "RelationTone",
+      "file": "services/npc/agencyCollision.ts",
+      "module": "npc",
+      "line": 72,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u2500\u2500 Relations tone (max-magnitude, Opus-ratified) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+    },
+    {
+      "name": "relationTone",
+      "file": "services/npc/agencyCollision.ts",
+      "module": "npc",
+      "line": 75,
+      "async": false,
+      "op_type": "utility",
+      "comment": "/** Max-magnitude directed edge: a one-sided grudge still counts. Returns the tone + the magnitude. */"
+    },
+    {
+      "name": "DetectedCollision",
+      "file": "services/npc/agencyCollision.ts",
+      "module": "npc",
+      "line": 88,
+      "async": false,
+      "op_type": "read",
+      "comment": "// \u2500\u2500 Collision detection (one partner, deterministic tie-break) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+    },
+    {
+      "name": "detectCollision",
+      "file": "services/npc/agencyCollision.ts",
+      "module": "npc",
+      "line": 103,
+      "async": false,
+      "op_type": "read",
+      "comment": "*/"
+    },
+    {
+      "name": "TangleOutcome",
+      "file": "services/npc/agencyCollision.ts",
+      "module": "npc",
+      "line": 133,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u2500\u2500 Tangle resolution (cooperate / contest / mild contest) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+    },
+    {
+      "name": "resolveTangle",
+      "file": "services/npc/agencyCollision.ts",
+      "module": "npc",
+      "line": 153,
+      "async": false,
+      "op_type": "read",
+      "comment": "*/"
+    },
+    {
+      "name": "buildTangleDeltas",
+      "file": "services/npc/agencyCollision.ts",
+      "module": "npc",
+      "line": 213,
+      "async": false,
+      "op_type": "create",
+      "comment": "*/"
+    },
+    {
+      "name": "Band",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 7,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "DRIVE_MULT",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 11,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// Listless \u2193. Endpoints locked by spec (1.5 / 0.6); interior values are smooth + tunable."
+    },
+    {
+      "name": "KARMA_PER_FAIL",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 16,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u00a79.6 \u2014 karma nudge (per-goal, hidden)."
+    },
+    {
+      "name": "KARMA_CAP",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 17,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u00a79.6 \u2014 karma nudge (per-goal, hidden)."
+    },
+    {
+      "name": "GOAL_BASE_DC",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 24,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// that would cancel the karma nudge and re-open the Alden-freeze. Tunable."
+    },
+    {
+      "name": "BAND_PROGRESS",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 27,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u00a79.6 \u2014 degrees band \u2192 progress increment (Piece C reads this)."
+    },
+    {
+      "name": "QUOTA_HINTS",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 37,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u00a79.7 \u2014 quota by goal magnitude (seed; the migration picks by horizon, an LLM/heuristic may refine)."
+    },
+    {
+      "name": "QUOTA_BY_HORIZON",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 38,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u00a79.7 \u2014 quota by goal magnitude (seed; the migration picks by horizon, an LLM/heuristic may refine)."
+    },
+    {
+      "name": "BASE_HEAT",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 44,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u00a79.6 / \u00a79.5 \u2014 base_heat seeds (Piece A neglect builds on top of these)."
+    },
+    {
+      "name": "AMBITIOUS_HEAT_BONUS",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 45,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u00a79.6 / \u00a79.5 \u2014 base_heat seeds (Piece A neglect builds on top of these)."
+    },
+    {
+      "name": "TIMESKIP_K",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 48,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u00a79.7 Piece D \u2014 timeskip duration \u2192 tick budget (log curve)."
+    },
+    {
+      "name": "TIMESKIP_CAP",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 49,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u00a79.7 Piece D \u2014 timeskip duration \u2192 tick budget (log curve)."
+    },
+    {
+      "name": "HEARTBEAT_DC",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 52,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u00a75 / \u00a79.3#1 \u2014 heartbeat escalating-DC pity timer (mirrors the surprise/encounter engine)."
+    },
+    {
+      "name": "COLOR_ROLL_BASE",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 55,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u00a79.5 \u2014 novelty color roll (rare trait-bounded whiplash). Raised for eccentric/impulsive."
+    },
+    {
+      "name": "COLOR_ROLL_TRAIT_BONUS",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 56,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u00a79.5 \u2014 novelty color roll (rare trait-bounded whiplash). Raised for eccentric/impulsive."
+    },
+    {
+      "name": "COLOR_ROLL_TRAITS",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 57,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u00a79.5 \u2014 novelty color roll (rare trait-bounded whiplash). Raised for eccentric/impulsive."
+    },
+    {
+      "name": "DigestVisibility",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 63,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// to preserve the delayed-reveal payoff."
+    },
+    {
+      "name": "VISIBILITY_RUBRIC",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 65,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "DIGEST_PLAYER_CAP",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 74,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "HEX_AXIS_MIN",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 80,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// Drift is small + rare: at most \u00b11 per transformative event. A full overwrite is FORBIDDEN."
+    },
+    {
+      "name": "HEX_AXIS_MAX",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 81,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// Drift is small + rare: at most \u00b11 per transformative event. A full overwrite is FORBIDDEN."
+    },
+    {
+      "name": "HEX_DRIFT_MAX_STEP",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 82,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// Drift is small + rare: at most \u00b11 per transformative event. A full overwrite is FORBIDDEN."
+    },
+    {
+      "name": "PC_RELATION_MIN",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 85,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u00a79.4 \u2014 pcRelation drift uses the same \u22123..+3 band and \u00b11 step."
+    },
+    {
+      "name": "PC_RELATION_MAX",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 86,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u00a79.4 \u2014 pcRelation drift uses the same \u22123..+3 band and \u00b11 step."
+    },
+    {
+      "name": "PC_RELATION_MAX_STEP",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 87,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u00a79.4 \u2014 pcRelation drift uses the same \u22123..+3 band and \u00b11 step."
+    },
+    {
+      "name": "RUNG_MIN",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 90,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": "// \u00a73c \u2014 power-rung ladder. 0=Novice \u2026 4=Master. Word-bands are the ONLY thing the GM/payload sees."
+    },
+    {
+      "name": "RUNG_MAX",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 91,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": "// \u00a73c \u2014 power-rung ladder. 0=Novice \u2026 4=Master. Word-bands are the ONLY thing the GM/payload sees."
+    },
+    {
+      "name": "RUNG_DEFAULT",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 92,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": "// \u00a73c \u2014 power-rung ladder. 0=Novice \u2026 4=Master. Word-bands are the ONLY thing the GM/payload sees."
+    },
+    {
+      "name": "RUNG_CEILING_DEFAULT",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 93,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "RUNG_LABELS",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 94,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "DEEP_TIER_CAP",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 98,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// recurring few (no random parade as the ledger grows). All tunable."
+    },
+    {
+      "name": "AUDITION_PROB",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 99,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// recurring few (no random parade as the ledger grows). All tunable."
+    },
+    {
+      "name": "ACTIVITY_DECAY",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 100,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// recurring few (no random parade as the ledger grows). All tunable."
+    },
+    {
+      "name": "ACTIVITY_PROMOTE",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 107,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// 2\u00b7value beats. User-approved pending Opus ratification \u2014 re-read this comment before tuning."
+    },
+    {
+      "name": "ACTIVITY_RELEGATE",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 108,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// 2\u00b7value beats. User-approved pending Opus ratification \u2014 re-read this comment before tuning."
+    },
+    {
+      "name": "COLLISION_TANGLE_PROB",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 112,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// when two proximate NPCs' chosen goals coincide, their events may tangle into ONE shared beat."
+    },
+    {
+      "name": "COLLISION_OPPORTUNITY_BONUS",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 113,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// when two proximate NPCs' chosen goals coincide, their events may tangle into ONE shared beat."
+    },
+    {
+      "name": "OUTCOME_AXIS_MAP",
+      "file": "services/npc/agencyConstants.ts",
+      "module": "npc",
+      "line": 117,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// Piece C optional tier-cross nudge). Kept tiny + tunable; both WO-05 and WO-06 share this map."
+    },
+    {
+      "name": "karmaBonus",
+      "file": "services/npc/agencyDice.ts",
+      "module": "npc",
+      "line": 15,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "bandFromMargin",
+      "file": "services/npc/agencyDice.ts",
+      "module": "npc",
+      "line": 23,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "rollGoal",
+      "file": "services/npc/agencyDice.ts",
+      "module": "npc",
+      "line": 39,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "nextFailStreak",
+      "file": "services/npc/agencyDice.ts",
+      "module": "npc",
+      "line": 58,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "TickDelta",
+      "file": "services/npc/agencyDigest.ts",
+      "module": "npc",
+      "line": 5,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "buildDigest",
+      "file": "services/npc/agencyDigest.ts",
+      "module": "npc",
+      "line": 43,
+      "async": false,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "hexDelta",
+      "file": "services/npc/agencyDrift.ts",
+      "module": "npc",
+      "line": 15,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "applyGoalOutcomeNudge",
+      "file": "services/npc/agencyDrift.ts",
+      "module": "npc",
+      "line": 44,
+      "async": false,
+      "op_type": "update",
+      "comment": "*/"
+    },
+    {
+      "name": "applyTierCross",
+      "file": "services/npc/agencyDrift.ts",
+      "module": "npc",
+      "line": 96,
+      "async": false,
+      "op_type": "update",
+      "comment": "*/"
+    },
+    {
+      "name": "buildGoalsFromWants",
+      "file": "services/npc/agencyGoals.ts",
+      "module": "npc",
+      "line": 28,
+      "async": false,
+      "op_type": "create",
+      "comment": "*/"
+    },
+    {
+      "name": "upgradeWantsToGoals",
+      "file": "services/npc/agencyGoals.ts",
+      "module": "npc",
+      "line": 49,
+      "async": false,
+      "op_type": "update",
+      "comment": "*/"
+    },
+    {
+      "name": "rollHeartbeat",
+      "file": "services/npc/agencyHeartbeat.ts",
+      "module": "npc",
+      "line": 5,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "buildProximityRoster",
+      "file": "services/npc/agencyHeartbeat.ts",
+      "module": "npc",
+      "line": 19,
+      "async": false,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "isAgencyEligible",
+      "file": "services/npc/agencyLifecycle.ts",
+      "module": "npc",
+      "line": 3,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "filterUpdatableNPCs",
+      "file": "services/npc/agencyLifecycle.ts",
+      "module": "npc",
+      "line": 10,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "completeShortWant",
+      "file": "services/npc/agencyLifecycle.ts",
+      "module": "npc",
+      "line": 22,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "PoolTier",
+      "file": "services/npc/agencyPools.ts",
+      "module": "npc",
+      "line": 3,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "TraitEntry",
+      "file": "services/npc/agencyPools.ts",
+      "module": "npc",
+      "line": 9,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// 02_FLASH_TABLES.md DELIVERABLE 2); existing entries keep text/tier/hook unchanged."
+    },
+    {
+      "name": "WantEntry",
+      "file": "services/npc/agencyPools.ts",
+      "module": "npc",
+      "line": 10,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// 02_FLASH_TABLES.md DELIVERABLE 2); existing entries keep text/tier/hook unchanged."
+    },
+    {
+      "name": "ActionEntry",
+      "file": "services/npc/agencyPools.ts",
+      "module": "npc",
+      "line": 11,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// 02_FLASH_TABLES.md DELIVERABLE 2); existing entries keep text/tier/hook unchanged."
+    },
+    {
+      "name": "ReactionGate",
+      "file": "services/npc/agencyPools.ts",
+      "module": "npc",
+      "line": 20,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// be offered a jealousy/betrayal move (gate + low score = double exclusion)."
+    },
+    {
+      "name": "ReactionEntry",
+      "file": "services/npc/agencyPools.ts",
+      "module": "npc",
+      "line": 25,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "TRAIT_VOCAB",
+      "file": "services/npc/agencyPools.ts",
+      "module": "npc",
+      "line": 37,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "WANT_POOL",
+      "file": "services/npc/agencyPools.ts",
+      "module": "npc",
+      "line": 87,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "ACTION_POOL",
+      "file": "services/npc/agencyPools.ts",
+      "module": "npc",
+      "line": 147,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "TRAIT_NAMES",
+      "file": "services/npc/agencyPools.ts",
+      "module": "npc",
+      "line": 205,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "SHORT_WANTS",
+      "file": "services/npc/agencyPools.ts",
+      "module": "npc",
+      "line": 206,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "MEDIUM_WANTS",
+      "file": "services/npc/agencyPools.ts",
+      "module": "npc",
+      "line": 207,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "REACTION_VOCAB",
+      "file": "services/npc/agencyPools.ts",
+      "module": "npc",
+      "line": 211,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// Covers the full spectrum including relationship-driven and personality-driven moves."
+    },
+    {
+      "name": "progressDelta",
+      "file": "services/npc/agencyProgress.ts",
+      "module": "npc",
+      "line": 8,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "applyBandToGoal",
+      "file": "services/npc/agencyProgress.ts",
+      "module": "npc",
+      "line": 19,
+      "async": false,
+      "op_type": "update",
+      "comment": "*/"
+    },
+    {
+      "name": "canCrossTier",
+      "file": "services/npc/agencyProgress.ts",
+      "module": "npc",
+      "line": 48,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "consumeTierCross",
+      "file": "services/npc/agencyProgress.ts",
+      "module": "npc",
+      "line": 56,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "TickChoice",
+      "file": "services/npc/agencySelection.ts",
+      "module": "npc",
+      "line": 9,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "driveMult",
+      "file": "services/npc/agencySelection.ts",
+      "module": "npc",
+      "line": 19,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "contextAllow",
+      "file": "services/npc/agencySelection.ts",
+      "module": "npc",
+      "line": 28,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "goalScore",
+      "file": "services/npc/agencySelection.ts",
+      "module": "npc",
+      "line": 40,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "chooseTick",
+      "file": "services/npc/agencySelection.ts",
+      "module": "npc",
+      "line": 62,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "ticksForDuration",
+      "file": "services/npc/agencyTimeskip.ts",
+      "module": "npc",
+      "line": 10,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "allocateTicks",
+      "file": "services/npc/agencyTimeskip.ts",
+      "module": "npc",
+      "line": 21,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "TimeskipDetected",
+      "file": "services/npc/agencyTimeskipRun.ts",
+      "module": "npc",
+      "line": 15,
+      "async": false,
+      "op_type": "read",
+      "comment": "// \u2500\u2500 Detect \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+    },
+    {
+      "name": "TimeskipAmbiguous",
+      "file": "services/npc/agencyTimeskipRun.ts",
+      "module": "npc",
+      "line": 20,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "TimeskipResult",
+      "file": "services/npc/agencyTimeskipRun.ts",
+      "module": "npc",
+      "line": 26,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "detectTimeskip",
+      "file": "services/npc/agencyTimeskipRun.ts",
+      "module": "npc",
+      "line": 91,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "TimeskipConfig",
+      "file": "services/npc/agencyTimeskipRun.ts",
+      "module": "npc",
+      "line": 115,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// \u2500\u2500 Run \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+    },
+    {
+      "name": "TimeskipNarrationResult",
+      "file": "services/npc/agencyTimeskipRun.ts",
+      "module": "npc",
+      "line": 125,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "runTimeskip",
+      "file": "services/npc/agencyTimeskipRun.ts",
+      "module": "npc",
+      "line": 145,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "drawShortWants",
+      "file": "services/npc/agencyWantDraw.ts",
+      "module": "npc",
+      "line": 27,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "drawMediumWants",
+      "file": "services/npc/agencyWantDraw.ts",
+      "module": "npc",
+      "line": 32,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "AxisSpread",
+      "file": "services/npc/dispositionGroups.ts",
+      "module": "npc",
+      "line": 16,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// step (which groups plausibly appear in this scene), not from this table."
+    },
+    {
+      "name": "AxisEnvelope",
+      "file": "services/npc/dispositionGroups.ts",
+      "module": "npc",
+      "line": 18,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "GroupEnvelope",
+      "file": "services/npc/dispositionGroups.ts",
+      "module": "npc",
+      "line": 20,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "ENVELOPES",
+      "file": "services/npc/dispositionGroups.ts",
+      "module": "npc",
+      "line": 22,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "AxisModifier",
+      "file": "services/npc/dispositionGroups.ts",
+      "module": "npc",
+      "line": 248,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// does NOT author it. The derivation is the source of truth."
+    },
+    {
+      "name": "GroupModifiers",
+      "file": "services/npc/dispositionGroups.ts",
+      "module": "npc",
+      "line": 249,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// does NOT author it. The derivation is the source of truth."
+    },
+    {
+      "name": "MODIFIERS",
+      "file": "services/npc/dispositionGroups.ts",
+      "module": "npc",
+      "line": 250,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// does NOT author it. The derivation is the source of truth."
+    },
+    {
+      "name": "GROUP_KEYS",
+      "file": "services/npc/dispositionGroups.ts",
+      "module": "npc",
+      "line": 254,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// Intentionally empty \u2014 derivation in hexRoll.ts supersedes (see comment above)."
+    },
+    {
+      "name": "rollWeightedAxis",
+      "file": "services/npc/hexRoll.ts",
+      "module": "npc",
+      "line": 47,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "applySecondaryEnvelope",
+      "file": "services/npc/hexRoll.ts",
+      "module": "npc",
+      "line": 76,
+      "async": false,
+      "op_type": "update",
+      "comment": "*/"
+    },
+    {
+      "name": "rollHex",
+      "file": "services/npc/hexRoll.ts",
+      "module": "npc",
+      "line": 125,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "pickGroups",
+      "file": "services/npc/hexRoll.ts",
+      "module": "npc",
+      "line": 162,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "drawConsistentTraits",
+      "file": "services/npc/hexRoll.ts",
+      "module": "npc",
+      "line": 188,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "rollLooksTier",
+      "file": "services/npc/hexRoll.ts",
+      "module": "npc",
+      "line": 231,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "buildVoiceDirective",
+      "file": "services/npc/hexVoiceGuide.ts",
+      "module": "npc",
+      "line": 47,
+      "async": false,
+      "op_type": "create",
+      "comment": "*/"
+    },
+    {
+      "name": "AddNpcResult",
+      "file": "services/npc/manualAdd.ts",
+      "module": "npc",
+      "line": 5,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "AddNpcDeps",
+      "file": "services/npc/manualAdd.ts",
+      "module": "npc",
+      "line": 18,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "addNpcFromSelection",
+      "file": "services/npc/manualAdd.ts",
+      "module": "npc",
+      "line": 36,
+      "async": true,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "Gender",
+      "file": "services/npc/nameBank.ts",
+      "module": "npc",
+      "line": 19,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "NAME_CULTURES",
+      "file": "services/npc/nameBank.ts",
+      "module": "npc",
+      "line": 55,
+      "async": false,
+      "op_type": "utility",
+      "comment": "/** All culture header keys present in the bank. */"
+    },
+    {
+      "name": "isKnownName",
+      "file": "services/npc/nameBank.ts",
+      "module": "npc",
+      "line": 58,
+      "async": false,
+      "op_type": "utility",
+      "comment": "/** True if the given (first) name exists anywhere in the bank. */"
+    },
+    {
+      "name": "lookupCultures",
+      "file": "services/npc/nameBank.ts",
+      "module": "npc",
+      "line": 63,
+      "async": false,
+      "op_type": "utility",
+      "comment": "/** Cultures the name belongs to. Empty array if the name is not in the bank. */"
+    },
+    {
+      "name": "genderOf",
+      "file": "services/npc/nameBank.ts",
+      "module": "npc",
+      "line": 72,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "drawUnusedName",
+      "file": "services/npc/nameBank.ts",
+      "module": "npc",
+      "line": 99,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "SwapVerdict",
+      "file": "services/npc/nameSwap.ts",
+      "module": "npc",
+      "line": 29,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "SwapResult",
+      "file": "services/npc/nameSwap.ts",
+      "module": "npc",
+      "line": 31,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "SwapContext",
+      "file": "services/npc/nameSwap.ts",
+      "module": "npc",
+      "line": 38,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "Collision",
+      "file": "services/npc/nameSwap.ts",
+      "module": "npc",
+      "line": 61,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "detectCollisions",
+      "file": "services/npc/nameSwap.ts",
+      "module": "npc",
+      "line": 67,
+      "async": false,
+      "op_type": "read",
+      "comment": "*/"
+    },
+    {
+      "name": "decideSwap",
+      "file": "services/npc/nameSwap.ts",
+      "module": "npc",
+      "line": 88,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "applySwap",
+      "file": "services/npc/nameSwap.ts",
+      "module": "npc",
+      "line": 103,
+      "async": false,
+      "op_type": "update",
+      "comment": "*/"
+    },
+    {
+      "name": "swapDuplicateNames",
+      "file": "services/npc/nameSwap.ts",
+      "module": "npc",
+      "line": 116,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "BehaviorDirectiveOpts",
+      "file": "services/npc/npcBehaviorDirective.ts",
+      "module": "npc",
+      "line": 21,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "buildBehaviorDirective",
+      "file": "services/npc/npcBehaviorDirective.ts",
+      "module": "npc",
+      "line": 27,
+      "async": false,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "buildDriftAlert",
+      "file": "services/npc/npcBehaviorDirective.ts",
+      "module": "npc",
+      "line": 110,
+      "async": false,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "extractNPCNames",
+      "file": "services/npc/npcDetector.ts",
+      "module": "npc",
+      "line": 66,
+      "async": false,
+      "op_type": "read",
+      "comment": "/** Extract NPC names using explicit introduction signals only \u2014 no single-word prose fishing. */"
+    },
+    {
+      "name": "classifyNPCNames",
+      "file": "services/npc/npcDetector.ts",
+      "module": "npc",
+      "line": 170,
+      "async": false,
+      "op_type": "read",
+      "comment": "/** Filter extracted names against existing ledger, return { newNames, existingNpcs } */"
+    },
+    {
+      "name": "validateNPCCandidates",
+      "file": "services/npc/npcDetector.ts",
+      "module": "npc",
+      "line": 216,
+      "async": true,
+      "op_type": "read",
+      "comment": "*/"
+    },
+    {
+      "name": "COMBAT_TIER_ARCHETYPE_RUBRIC",
+      "file": "services/npc/npcDetector.ts",
+      "module": "npc",
+      "line": 279,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "buildNPCEmbeddingText",
+      "file": "services/npc/npcGeneration.ts",
+      "module": "npc",
+      "line": 105,
+      "async": false,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "embedAndStoreNPC",
+      "file": "services/npc/npcGeneration.ts",
+      "module": "npc",
+      "line": 120,
+      "async": true,
+      "op_type": "persist",
+      "comment": ""
+    },
+    {
+      "name": "validatePersonalityHex",
+      "file": "services/npc/npcGeneration.ts",
+      "module": "npc",
+      "line": 156,
+      "async": false,
+      "op_type": "read",
+      "comment": "/** Validate raw model output into a full PersonalityHex; missing/garbage axes default to 0. */"
+    },
+    {
+      "name": "validateTraits",
+      "file": "services/npc/npcGeneration.ts",
+      "module": "npc",
+      "line": 164,
+      "async": false,
+      "op_type": "read",
+      "comment": "/** Filter raw model traits to the controlled vocab, gate mature-tier by matureMode, dedupe, cap 5. */"
+    },
+    {
+      "name": "translatePersonalityToHex",
+      "file": "services/npc/npcGeneration.ts",
+      "module": "npc",
+      "line": 193,
+      "async": true,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "generateLongWant",
+      "file": "services/npc/npcGeneration.ts",
+      "module": "npc",
+      "line": 218,
+      "async": true,
+      "op_type": "create",
+      "comment": "*/"
+    },
+    {
+      "name": "generateNPCProfile",
+      "file": "services/npc/npcGeneration.ts",
+      "module": "npc",
+      "line": 241,
+      "async": true,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "updateExistingNPCs",
+      "file": "services/npc/npcGeneration.ts",
+      "module": "npc",
+      "line": 571,
+      "async": true,
+      "op_type": "update",
+      "comment": ""
+    },
+    {
+      "name": "PCCreationOverrides",
+      "file": "services/npc/npcGeneration.ts",
+      "module": "npc",
+      "line": 898,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "mergePCWithLLMProfile",
+      "file": "services/npc/npcGeneration.ts",
+      "module": "npc",
+      "line": 908,
+      "async": false,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "generatePCProfile",
+      "file": "services/npc/npcGeneration.ts",
+      "module": "npc",
+      "line": 929,
+      "async": true,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "populateAgencyFields",
+      "file": "services/npc/npcGeneration.ts",
+      "module": "npc",
+      "line": 1094,
+      "async": true,
+      "op_type": "create",
+      "comment": "*/"
+    },
+    {
+      "name": "bulkNpcUpdate",
+      "file": "services/npc/npcGeneration.ts",
+      "module": "npc",
+      "line": 1225,
+      "async": true,
+      "op_type": "update",
+      "comment": "*/"
+    },
+    {
+      "name": "backfillNPCDrives",
+      "file": "services/npc/npcGeneration.ts",
+      "module": "npc",
+      "line": 1238,
+      "async": true,
+      "op_type": "utility",
+      "comment": "// future: non-generation bulk ops (graduation/relocation) branch here."
+    },
+    {
+      "name": "NpcResolution",
+      "file": "services/npc/npcManualResolve.ts",
+      "module": "npc",
+      "line": 16,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "normalizeSelection",
+      "file": "services/npc/npcManualResolve.ts",
+      "module": "npc",
+      "line": 27,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "findLedgerMatches",
+      "file": "services/npc/npcManualResolve.ts",
+      "module": "npc",
+      "line": 63,
+      "async": false,
+      "op_type": "read",
+      "comment": "/** All ledger entries whose name or any alias matches `name`. */"
+    },
+    {
+      "name": "resolveNpcSelection",
+      "file": "services/npc/npcManualResolve.ts",
+      "module": "npc",
+      "line": 73,
+      "async": false,
+      "op_type": "read",
+      "comment": "/** Resolve a raw highlighted selection against the ledger. */"
+    },
+    {
+      "name": "DECAY_RATE",
+      "file": "services/npc/npcPressureTracker.ts",
+      "module": "npc",
+      "line": 3,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "PressureUpdate",
+      "file": "services/npc/npcPressureTracker.ts",
+      "module": "npc",
+      "line": 64,
+      "async": false,
+      "op_type": "update",
+      "comment": ""
+    },
+    {
+      "name": "scanPressure",
+      "file": "services/npc/npcPressureTracker.ts",
+      "module": "npc",
+      "line": 71,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "applyDecay",
+      "file": "services/npc/npcPressureTracker.ts",
+      "module": "npc",
+      "line": 143,
+      "async": false,
+      "op_type": "update",
+      "comment": ""
+    },
+    {
+      "name": "buildPressurePatch",
+      "file": "services/npc/npcPressureTracker.ts",
+      "module": "npc",
+      "line": 153,
+      "async": false,
+      "op_type": "create",
+      "comment": "*/"
+    },
+    {
+      "name": "NPCReviewCandidate",
+      "file": "services/npc/npcReview.ts",
+      "module": "npc",
+      "line": 12,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "NPCReviewCancelled",
+      "file": "services/npc/npcReview.ts",
+      "module": "npc",
+      "line": 18,
+      "async": false,
+      "op_type": "delete",
+      "comment": ""
+    },
+    {
+      "name": "NPCReviewResult",
+      "file": "services/npc/npcReview.ts",
+      "module": "npc",
+      "line": 20,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "runNPCReview",
+      "file": "services/npc/npcReview.ts",
+      "module": "npc",
+      "line": 41,
+      "async": true,
+      "op_type": "orchestrate",
+      "comment": "*/"
+    },
+    {
+      "name": "ReactionContext",
+      "file": "services/npc/reactionMenu.ts",
+      "module": "npc",
+      "line": 23,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "pcRelationOf",
+      "file": "services/npc/reactionMenu.ts",
+      "module": "npc",
+      "line": 30,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "scoreReaction",
+      "file": "services/npc/reactionMenu.ts",
+      "module": "npc",
+      "line": 42,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "passesGate",
+      "file": "services/npc/reactionMenu.ts",
+      "module": "npc",
+      "line": 73,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "buildReactionMenu",
+      "file": "services/npc/reactionMenu.ts",
+      "module": "npc",
+      "line": 106,
+      "async": false,
+      "op_type": "create",
+      "comment": "*/"
+    },
+    {
+      "name": "BURST_THRESHOLD",
+      "file": "services/npc/reactionRepression.ts",
+      "module": "npc",
+      "line": 34,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "RepressKind",
+      "file": "services/npc/reactionRepression.ts",
+      "module": "npc",
+      "line": 36,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "RepressionOutcome",
+      "file": "services/npc/reactionRepression.ts",
+      "module": "npc",
+      "line": 37,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "RepressionEvent",
+      "file": "services/npc/reactionRepression.ts",
+      "module": "npc",
+      "line": 39,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "repressKind",
+      "file": "services/npc/reactionRepression.ts",
+      "module": "npc",
+      "line": 58,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "repressKindOf",
+      "file": "services/npc/reactionRepression.ts",
+      "module": "npc",
+      "line": 69,
+      "async": false,
+      "op_type": "utility",
+      "comment": "/** Look up a menu text's repression kind (menu carries texts, not entries). */"
+    },
+    {
+      "name": "hideScoreOf",
+      "file": "services/npc/reactionRepression.ts",
+      "module": "npc",
+      "line": 82,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "rollRepression",
+      "file": "services/npc/reactionRepression.ts",
+      "module": "npc",
+      "line": 98,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "repressionToken",
+      "file": "services/npc/reactionRepression.ts",
+      "module": "npc",
+      "line": 135,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "applyRepressionToMenu",
+      "file": "services/npc/reactionRepression.ts",
+      "module": "npc",
+      "line": 157,
+      "async": false,
+      "op_type": "update",
+      "comment": "*/"
+    },
+    {
+      "name": "bookRepression",
+      "file": "services/npc/reactionRepression.ts",
+      "module": "npc",
+      "line": 180,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "RelationTone",
+      "file": "services/npc/relationMeter.ts",
+      "module": "npc",
+      "line": 25,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// Pure module, no I/O. Inject `rng` for deterministic tests (codebase convention)."
+    },
+    {
+      "name": "RELATION_TONES",
+      "file": "services/npc/relationMeter.ts",
+      "module": "npc",
+      "line": 27,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "isRelationTone",
+      "file": "services/npc/relationMeter.ts",
+      "module": "npc",
+      "line": 47,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "applyRelationTone",
+      "file": "services/npc/relationMeter.ts",
+      "module": "npc",
+      "line": 78,
+      "async": false,
+      "op_type": "update",
+      "comment": "*/"
+    },
+    {
+      "name": "AGGRESSIVENESS_RATIOS",
+      "file": "services/payload/condenser.ts",
+      "module": "payload",
+      "line": 8,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "getCondenseBudgetRatio",
+      "file": "services/payload/condenser.ts",
+      "module": "payload",
+      "line": 14,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "shouldCondense",
+      "file": "services/payload/condenser.ts",
+      "module": "payload",
+      "line": 19,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "getVerbatimWindow",
+      "file": "services/payload/condenser.ts",
+      "module": "payload",
+      "line": 34,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "computeTrimIndex",
+      "file": "services/payload/condenser.ts",
+      "module": "payload",
+      "line": 38,
+      "async": false,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "minifyLoreChunk",
+      "file": "services/payload/contextMinifier.ts",
+      "module": "payload",
+      "line": 102,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "minifyNPC",
+      "file": "services/payload/contextMinifier.ts",
+      "module": "payload",
+      "line": 140,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "RecommenderResult",
+      "file": "services/payload/contextRecommender.ts",
+      "module": "payload",
+      "line": 20,
+      "async": false,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "recommendContext",
+      "file": "services/payload/contextRecommender.ts",
+      "module": "payload",
+      "line": 114,
+      "async": true,
+      "op_type": "search",
+      "comment": "*/"
+    },
+    {
+      "name": "BudgetMap",
+      "file": "services/payload/payloadBudgeter.ts",
+      "module": "payload",
+      "line": 1,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "computeBudgets",
+      "file": "services/payload/payloadBudgeter.ts",
+      "module": "payload",
+      "line": 24,
+      "async": false,
+      "op_type": "read",
+      "comment": "*/"
+    },
+    {
+      "name": "BuildPayloadOptions",
+      "file": "services/payload/payloadBuilder.ts",
+      "module": "payload",
+      "line": 13,
+      "async": false,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "buildPayload",
+      "file": "services/payload/payloadBuilder.ts",
+      "module": "payload",
+      "line": 38,
+      "async": false,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "buildPinnedMemoriesBlock",
+      "file": "services/payload/payloadHistoryFitting.ts",
+      "module": "payload",
+      "line": 5,
+      "async": false,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "fitHistory",
+      "file": "services/payload/payloadHistoryFitting.ts",
+      "module": "payload",
+      "line": 20,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "pinnedExcerptsTokenCost",
+      "file": "services/payload/payloadHistoryFitting.ts",
+      "module": "payload",
+      "line": 86,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "StableContentResult",
+      "file": "services/payload/payloadStableContent.ts",
+      "module": "payload",
+      "line": 36,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "buildStablePreamble",
+      "file": "services/payload/payloadStableContent.ts",
+      "module": "payload",
+      "line": 44,
+      "async": false,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "buildDivergenceBlock",
+      "file": "services/payload/payloadStableContent.ts",
+      "module": "payload",
+      "line": 134,
+      "async": false,
+      "op_type": "create",
+      "comment": ""
+    },
+    {
+      "name": "computeOpenThreads",
+      "file": "services/payload/payloadWorldContext.ts",
+      "module": "payload",
+      "line": 25,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "WorldBlock",
+      "file": "services/payload/payloadWorldContext.ts",
+      "module": "payload",
+      "line": 49,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "NpcStrategy",
+      "file": "services/payload/payloadWorldContext.ts",
+      "module": "payload",
+      "line": 330,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "buildReservedNamesBlock",
+      "file": "services/payload/payloadWorldContext.ts",
+      "module": "payload",
+      "line": 341,
+      "async": false,
+      "op_type": "create",
+      "comment": "*/"
+    },
+    {
+      "name": "assembleWorldBlocks",
+      "file": "services/payload/payloadWorldContext.ts",
+      "module": "payload",
+      "line": 355,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "trimWorldBlocks",
+      "file": "services/payload/payloadWorldContext.ts",
+      "module": "payload",
+      "line": 693,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "RerankCandidate",
+      "file": "services/payload/semanticReranker.ts",
+      "module": "payload",
+      "line": 10,
+      "async": false,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "rerankCandidates",
+      "file": "services/payload/semanticReranker.ts",
+      "module": "payload",
+      "line": 16,
+      "async": true,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "computeIdf",
+      "file": "services/retrieval/lexicalFusion.ts",
+      "module": "retrieval",
+      "line": 15,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "fuseRRF",
+      "file": "services/retrieval/lexicalFusion.ts",
+      "module": "retrieval",
+      "line": 46,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "SceneRecord",
+      "file": "services/storage/_helpers.ts",
+      "module": "storage",
+      "line": 3,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "getList",
+      "file": "services/storage/_helpers.ts",
+      "module": "storage",
+      "line": 5,
+      "async": true,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "setList",
+      "file": "services/storage/_helpers.ts",
+      "module": "storage",
+      "line": 9,
+      "async": true,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "k",
+      "file": "services/storage/_helpers.ts",
+      "module": "storage",
+      "line": 13,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "computeHash",
+      "file": "services/storage/_helpers.ts",
+      "module": "storage",
+      "line": 15,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "archiveStorage",
+      "file": "services/storage/archiveStorage.ts",
+      "module": "storage",
+      "line": 15,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "BackupData",
+      "file": "services/storage/backupStorage.ts",
+      "module": "storage",
+      "line": 5,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "backupStorage",
+      "file": "services/storage/backupStorage.ts",
+      "module": "storage",
+      "line": 14,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "backfillSceneIds",
+      "file": "services/storage/chapterStorage.ts",
+      "module": "storage",
+      "line": 4,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "chapterStorage",
+      "file": "services/storage/chapterStorage.ts",
+      "module": "storage",
+      "line": 19,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "EMBEDDING_VERSION",
+      "file": "services/storage/embeddingStorage.ts",
+      "module": "storage",
+      "line": 5,
+      "async": false,
+      "op_type": "search",
+      "comment": "// the embedder worker). Rule vectors with version < 4 are re-embedded by indexRules."
+    },
+    {
+      "name": "VectorLike",
+      "file": "services/storage/embeddingStorage.ts",
+      "module": "storage",
+      "line": 15,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "EmbeddingRecord",
+      "file": "services/storage/embeddingStorage.ts",
+      "module": "storage",
+      "line": 20,
+      "async": false,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "embeddingStorage",
+      "file": "services/storage/embeddingStorage.ts",
+      "module": "storage",
+      "line": 85,
+      "async": false,
+      "op_type": "search",
+      "comment": ""
+    },
+    {
+      "name": "entityStorage",
+      "file": "services/storage/entityStorage.ts",
+      "module": "storage",
+      "line": 5,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "factStorage",
+      "file": "services/storage/factStorage.ts",
+      "module": "storage",
+      "line": 4,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "imageStorage",
+      "file": "services/storage/imageStorage.ts",
+      "module": "storage",
+      "line": 3,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "offlineStorage",
+      "file": "services/storage/index.ts",
+      "module": "storage",
+      "line": 13,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "timelineStorage",
+      "file": "services/storage/timelineStorage.ts",
+      "module": "storage",
+      "line": 10,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "proseForTTS",
+      "file": "services/tts/proseStripper.ts",
+      "module": "tts",
+      "line": 9,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "chunkSentencesForTTS",
+      "file": "services/tts/proseStripper.ts",
+      "module": "tts",
+      "line": 46,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "splitWords",
+      "file": "services/tts/proseStripper.ts",
+      "module": "tts",
+      "line": 83,
+      "async": false,
+      "op_type": "utility",
+      "comment": "/** Split a sentence into words. */"
+    },
+    {
+      "name": "SpeakHandle",
+      "file": "services/tts/speech.ts",
+      "module": "tts",
+      "line": 21,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "SpeakCallbacks",
+      "file": "services/tts/speech.ts",
+      "module": "tts",
+      "line": 32,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "speechSupported",
+      "file": "services/tts/speech.ts",
+      "module": "tts",
+      "line": 63,
+      "async": false,
+      "op_type": "utility",
+      "comment": "/** True if either Web Speech or native Capacitor TTS is available. */"
+    },
+    {
+      "name": "initVoices",
+      "file": "services/tts/speech.ts",
+      "module": "tts",
+      "line": 79,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "getSelectedVoice",
+      "file": "services/tts/speech.ts",
+      "module": "tts",
+      "line": 170,
+      "async": false,
+      "op_type": "read",
+      "comment": "/** Get the currently-selected voice. Loads voices first if needed. */"
+    },
+    {
+      "name": "speakChunks",
+      "file": "services/tts/speech.ts",
+      "module": "tts",
+      "line": 192,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "stopAllSpeech",
+      "file": "services/tts/speech.ts",
+      "module": "tts",
+      "line": 428,
+      "async": false,
+      "op_type": "utility",
+      "comment": "/** Force-stop any ongoing speech. Called on app background / unmount. */"
+    },
+    {
+      "name": "AiTier",
+      "file": "services/turn/aiTier.ts",
+      "module": "turn",
+      "line": 1,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "TierFeature",
+      "file": "services/turn/aiTier.ts",
+      "module": "turn",
+      "line": 2,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "tierAllows",
+      "file": "services/turn/aiTier.ts",
+      "module": "turn",
+      "line": 41,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "NPC_UPDATE_COOLDOWN",
+      "file": "services/turn/aiTier.ts",
+      "module": "turn",
+      "line": 46,
+      "async": false,
+      "op_type": "update",
+      "comment": "// 0 = every turn (Max), Infinity = never (Lite)"
+    },
+    {
+      "name": "capturePendingTurnSnapshot",
+      "file": "services/turn/pendingCommit.ts",
+      "module": "turn",
+      "line": 31,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "getActiveSnapshotId",
+      "file": "services/turn/pendingCommit.ts",
+      "module": "turn",
+      "line": 47,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "clearPendingTurnSnapshot",
+      "file": "services/turn/pendingCommit.ts",
+      "module": "turn",
+      "line": 51,
+      "async": false,
+      "op_type": "delete",
+      "comment": ""
+    },
+    {
+      "name": "getPendingTurnSnapshot",
+      "file": "services/turn/pendingCommit.ts",
+      "module": "turn",
+      "line": 55,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "getCachedSwipePayload",
+      "file": "services/turn/pendingCommit.ts",
+      "module": "turn",
+      "line": 59,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "patchCachedUserPrompt",
+      "file": "services/turn/pendingCommit.ts",
+      "module": "turn",
+      "line": 63,
+      "async": false,
+      "op_type": "update",
+      "comment": ""
+    },
+    {
+      "name": "findPendingCommitMessage",
+      "file": "services/turn/pendingCommit.ts",
+      "module": "turn",
+      "line": 89,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "findRetryableMessage",
+      "file": "services/turn/pendingCommit.ts",
+      "module": "turn",
+      "line": 98,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "commitPendingTurn",
+      "file": "services/turn/pendingCommit.ts",
+      "module": "turn",
+      "line": 139,
+      "async": true,
+      "op_type": "orchestrate",
+      "comment": "// \u2500\u2500 commitPendingTurn \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+    },
+    {
+      "name": "reconcilePendingCommitOnLaunch",
+      "file": "services/turn/pendingCommit.ts",
+      "module": "turn",
+      "line": 277,
+      "async": true,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "isLatestGmMessage",
+      "file": "services/turn/pendingCommit.ts",
+      "module": "turn",
+      "line": 286,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "hasSwipeSet",
+      "file": "services/turn/pendingCommit.ts",
+      "module": "turn",
+      "line": 296,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "extractAndStripSceneStakes",
+      "file": "services/turn/sceneStakesTag.ts",
+      "module": "turn",
+      "line": 10,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "classifySceneStakes",
+      "file": "services/turn/sceneStakesTag.ts",
+      "module": "turn",
+      "line": 26,
+      "async": true,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "archiveRecallStage",
+      "file": "services/turn/stages/archiveRecallStage.ts",
+      "module": "turn",
+      "line": 23,
+      "async": true,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "deepScanStage",
+      "file": "services/turn/stages/deepScanStage.ts",
+      "module": "turn",
+      "line": 11,
+      "async": true,
+      "op_type": "read",
+      "comment": "*/"
+    },
+    {
+      "name": "expandQuery",
+      "file": "services/turn/stages/expandQueryStage.ts",
+      "module": "turn",
+      "line": 15,
+      "async": true,
+      "op_type": "read",
+      "comment": "*/"
+    },
+    {
+      "name": "gatherFactsAndTimeline",
+      "file": "services/turn/stages/factsTimelineStage.ts",
+      "module": "turn",
+      "line": 9,
+      "async": true,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "loreStage",
+      "file": "services/turn/stages/loreStage.ts",
+      "module": "turn",
+      "line": 8,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "recallNpcsSemantically",
+      "file": "services/turn/stages/npcSemanticRecallStage.ts",
+      "module": "turn",
+      "line": 9,
+      "async": true,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "PlannerResult",
+      "file": "services/turn/stages/plannerStage.ts",
+      "module": "turn",
+      "line": 11,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "runPlannerCall",
+      "file": "services/turn/stages/plannerStage.ts",
+      "module": "turn",
+      "line": 28,
+      "async": true,
+      "op_type": "orchestrate",
+      "comment": "*/"
+    },
+    {
+      "name": "recommenderStage",
+      "file": "services/turn/stages/recommenderStage.ts",
+      "module": "turn",
+      "line": 12,
+      "async": true,
+      "op_type": "search",
+      "comment": "*/"
+    },
+    {
+      "name": "rerankStage",
+      "file": "services/turn/stages/rerankStage.ts",
+      "module": "turn",
+      "line": 12,
+      "async": true,
+      "op_type": "search",
+      "comment": "*/"
+    },
+    {
+      "name": "SemanticCandidates",
+      "file": "services/turn/stages/retrievalTypes.ts",
+      "module": "turn",
+      "line": 8,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "rulesStage",
+      "file": "services/turn/stages/rulesStage.ts",
+      "module": "turn",
+      "line": 10,
+      "async": true,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "sceneNumberStage",
+      "file": "services/turn/stages/sceneNumberStage.ts",
+      "module": "turn",
+      "line": 9,
+      "async": true,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "semanticCandidatesStage",
+      "file": "services/turn/stages/semanticCandidatesStage.ts",
+      "module": "turn",
+      "line": 25,
+      "async": true,
+      "op_type": "utility",
+      "comment": "*/"
+    },
+    {
+      "name": "MAX_SWIPES",
+      "file": "services/turn/swipeGeneration.ts",
+      "module": "turn",
+      "line": 8,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "SWIPE_BASE_TEMP_OFFSET",
+      "file": "services/turn/swipeGeneration.ts",
+      "module": "turn",
+      "line": 9,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "SWIPE_SYSTEM_LINE",
+      "file": "services/turn/swipeGeneration.ts",
+      "module": "turn",
+      "line": 12,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// System line appended to swipe generations (swipes 2\u20135) per the contract."
+    },
+    {
+      "name": "SwipeGenerationOptions",
+      "file": "services/turn/swipeGeneration.ts",
+      "module": "turn",
+      "line": 15,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "SwipeGenerationResult",
+      "file": "services/turn/swipeGeneration.ts",
+      "module": "turn",
+      "line": 25,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "generateSwipeVariant",
+      "file": "services/turn/swipeGeneration.ts",
+      "module": "turn",
+      "line": 33,
+      "async": false,
+      "op_type": "create",
+      "comment": "// If the user typed guidance, it's appended as an additional system message."
+    },
+    {
+      "name": "computeSwipeTemperature",
+      "file": "services/turn/swipeGeneration.ts",
+      "module": "turn",
+      "line": 106,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// remembered for the rest of the browse session, reset on commit."
+    },
+    {
+      "name": "ToolContext",
+      "file": "services/turn/toolHandlers.ts",
+      "module": "turn",
+      "line": 9,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "LoreHandlerResult",
+      "file": "services/turn/toolHandlers.ts",
+      "module": "turn",
+      "line": 14,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "NotebookHandlerResult",
+      "file": "services/turn/toolHandlers.ts",
+      "module": "turn",
+      "line": 18,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "DiceHandlerResult",
+      "file": "services/turn/toolHandlers.ts",
+      "module": "turn",
+      "line": 23,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "getToolDefinitions",
+      "file": "services/turn/toolHandlers.ts",
+      "module": "turn",
+      "line": 86,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "TOOL_DEFINITIONS",
+      "file": "services/turn/toolHandlers.ts",
+      "module": "turn",
+      "line": 90,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "handleLoreTool",
+      "file": "services/turn/toolHandlers.ts",
+      "module": "turn",
+      "line": 92,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "handleNotebookTool",
+      "file": "services/turn/toolHandlers.ts",
+      "module": "turn",
+      "line": 110,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "handleDiceTool",
+      "file": "services/turn/toolHandlers.ts",
+      "module": "turn",
+      "line": 157,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "GatheredContext",
+      "file": "services/turn/turnContext.ts",
+      "module": "turn",
+      "line": 19,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "gatherContext",
+      "file": "services/turn/turnContext.ts",
+      "module": "turn",
+      "line": 31,
+      "async": true,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "runTurn",
+      "file": "services/turn/turnOrchestrator.ts",
+      "module": "turn",
+      "line": 51,
+      "async": true,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "parsePresentHeader",
+      "file": "services/turn/turnPostProcess.ts",
+      "module": "turn",
+      "line": 71,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "resolveNPCIds",
+      "file": "services/turn/turnPostProcess.ts",
+      "module": "turn",
+      "line": 81,
+      "async": false,
+      "op_type": "read",
+      "comment": ""
+    },
+    {
+      "name": "runCombinedSeal",
+      "file": "services/turn/turnPostProcess.ts",
+      "module": "turn",
+      "line": 114,
+      "async": true,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "handlePostTurn",
+      "file": "services/turn/turnPostProcess.ts",
+      "module": "turn",
+      "line": 166,
+      "async": true,
+      "op_type": "orchestrate",
+      "comment": ""
+    },
+    {
+      "name": "autoEnableCharacterProfile",
+      "file": "services/turn/turnPostProcess.ts",
+      "module": "turn",
+      "line": 466,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// is left for scanCharacterProfile, which preserves identity and enriches it."
+    },
+    {
+      "name": "runArcTick",
+      "file": "services/turn/turnPostProcess.ts",
+      "module": "turn",
+      "line": 975,
+      "async": false,
+      "op_type": "orchestrate",
+      "comment": "// spawn at the seal seam (handleSealChapter)."
+    },
+    {
+      "name": "UtilityCallOpts",
+      "file": "services/turn/turnTypes.ts",
+      "module": "turn",
+      "line": 30,
+      "async": false,
+      "op_type": "utility",
+      "comment": "// is the production adapter; gatherContext defaults to it."
+    },
+    {
+      "name": "UtilityLLM",
+      "file": "services/turn/turnTypes.ts",
+      "module": "turn",
+      "line": 42,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "TurnCallbacks",
+      "file": "services/turn/turnTypes.ts",
+      "module": "turn",
+      "line": 49,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "TurnState",
+      "file": "services/turn/turnTypes.ts",
+      "module": "turn",
+      "line": 75,
+      "async": false,
+      "op_type": "utility",
+      "comment": ""
+    },
+    {
+      "name": "realUtilityLLM",
+      "file": "services/turn/utilityLLM.ts",
+      "module": "turn",
+      "line": 12,
+      "async": false,
+      "op_type": "utility",
+      "comment": "*/"
+    }
+  ],
+  "op_type_examples": {
+    "utility": [
+      "api",
+      "ARC_TICK_DC",
+      "LADDER_MIN",
+      "LADDER_MAX",
+      "MAX_ACTIVE_ARCS"
+    ],
+    "orchestrate": [
+      "ARC_BAND_RUNG_DELTA",
+      "advanceRung",
+      "AutoSealResult",
+      "shouldAutoSeal",
+      "sealChapter"
+    ],
+    "read": [
+      "scanArcStance",
+      "extractIndexKeywords",
+      "extractNPCNames",
+      "extractKeywordStrengths",
+      "extractNPCStrengths"
+    ],
+    "create": [
+      "buildArchiveIndexEntry",
+      "generateChapterSummary",
+      "mergeSealEntries",
+      "rebuildAllEmbeddings",
+      "buildCharacterProfileState"
+    ],
+    "delete": [
+      "clearIdfCache",
+      "_resetBackHandlers",
+      "deleteFact",
+      "deleteChapter",
+      "ClusteringCancelled"
+    ],
+    "update": [
+      "toggleChapter",
+      "toggleCategory",
+      "editFact",
+      "toggleFact",
+      "editKnownBy"
+    ],
+    "search": [
+      "runFullReindex",
+      "warmupEmbedder",
+      "switchEmbeddingModel",
+      "embedText",
+      "embedBatch"
+    ],
+    "persist": [
+      "registerStore",
+      "_setStoreRefForTesting",
+      "SaveFile",
+      "DirectRewriteInput",
+      "runDirectRewrite"
+    ]
+  }
+}
