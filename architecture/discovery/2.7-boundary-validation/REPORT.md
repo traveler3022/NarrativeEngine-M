@@ -173,3 +173,60 @@ Human Approval.
 
 3. The persistence gateway (BV-2) requires consolidating 7 files
    into one — high risk of data format incompatibility.
+
+---
+
+## G4 Fix: Counter-Evidence for Boundaries
+
+### BV-1: State vs Domain — Counter-Evidence
+
+**Question:** Why might this boundary be WRONG?
+
+**Counter 1:** Debounced persistence (saveController, debouncedSaveSettings) is inherently state-adjacent — the debounce timer needs to read fresh state to save it. Moving this out of store would require the service to poll state or receive state via parameter, adding complexity.
+- **Evidence:** saveController.ts lines 51-63 — `saveCampaignState` calls `_getStateForSave()` which reads live store
+- **Confidence:** ⚠️ Inferred — debouncing COULD be done via a port callback, but it's more natural in store
+- **Impact:** 2 of 25 violations (saveController) may be acceptable in store
+
+**Counter 2:** `dedupeNPCLedger` in npcSlice is a pure function that operates on state data. It doesn't call services — it's state-internal logic. Moving it out would be over-engineering.
+- **Evidence:** npcSlice.ts lines 37-86 — `dedupeNPCLedger` is a pure function, no service imports
+- **Confidence:** ✅ Verified — this is NOT a violation, it's state-internal utility
+- **Impact:** 1 of 25 "violations" is actually acceptable
+
+**Revised violation count:** 25 - 2 (debounce) - 1 (dedupe) = **22 true violations** (was 25)
+
+### BV-2: Persistence vs State — Counter-Evidence
+
+**Counter 1:** campaignStore's `loadCampaignState` calls `migrateV1ToV2` (line 278). Migration is a persistence concern — it transforms stored data into the current schema. This is arguably acceptable in the persistence layer.
+- **Evidence:** campaignStore.ts line 278 — `const { migrateV1ToV2 } = await import('../services/campaign-state')`
+- **Confidence:** ⚠️ Inferred — migration is persistence-adjacent, but the migration logic itself lives in campaign-state service
+- **Impact:** 1 of 5 campaignStore violations may be acceptable
+
+**Counter 2:** `imageStorage.deleteAll` in `deleteCampaign` (line 34-50) is cascade deletion — deleting related images when a campaign is deleted. This is a persistence concern, not domain logic.
+- **Evidence:** campaignStore.ts line 48 — `await imageStorage.deleteAll(id)`
+- **Confidence:** ✅ Verified — cascade delete is persistence, not domain
+- **Impact:** 1 of 5 campaignStore violations is acceptable
+
+**Revised:** campaignStore has 3 true domain violations (lore upgrade, NPC affinity, API backup) + 2 acceptable persistence concerns (migration, cascade delete).
+
+### BV-3: UI vs Logic — No counter-evidence found
+
+3 components import campaignStore directly. No counter-argument — these are clear violations.
+
+### BV-4: NPC Sub-domain Split — Counter-Evidence
+
+**Counter 1:** The 14 sub-groups share common types (NPCEntry, PersonalityHex, Goal). Splitting into 5 sub-capabilities would require shared type definitions — adding a coordination cost.
+- **Evidence:** All 28 files import NPCEntry from types/npc.ts
+- **Confidence:** ✅ Verified — shared types exist but are already in types/npc.ts (not in any sub-module)
+- **Impact:** Low — shared types don't prevent split
+
+**Counter 2:** The sub-groups are tightly coupled at runtime — Heartbeat calls Selection, Selection calls Dice, Dice calls Progress. Splitting them into separate capabilities with ports would add 4+ port boundaries for what is currently internal function calls.
+- **Evidence:** agencyHeartbeat.ts imports from agencySelection; agencySelection imports from agencyDice, agencyProgress
+- **Confidence:** ✅ Verified — runtime coupling is high
+- **Impact:** Medium — internal function calls (fast) vs port indirection (slower + more code)
+
+**Counter 3:** No external consumer needs individual sub-capabilities. Only npcGeneration (CAP-1) and turnPostProcess (CAP-4) consume NPC Agency — both consume the whole module, not individual sub-groups.
+- **Evidence:** grep for agency* imports outside services/npc/ → only npcGeneration and npcSlice
+- **Confidence:** ✅ Verified — no external sub-capability consumer
+- **Impact:** High — if no one needs individual sub-capabilities, splitting adds complexity without benefit
+
+**Revised BV-4 verdict:** ⚠️ CONDITIONAL — split is architecturally valid but may not be practically necessary. NPC Agency should remain as one capability with internal modularity (which it already has via separate files). External boundary stays at "NPC Agency" level, not sub-group level.

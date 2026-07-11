@@ -185,3 +185,80 @@ UI (NPCLedgerModal)
    input for boundary validation.
 
 3. Do NOT design ports yet.
+
+---
+
+## G1 Fix: TurnCallbacks Full Trace
+
+### Definition
+
+**File:** src/services/turn/turnTypes.ts, lines 49-71
+**Symbol:** TurnCallbacks (export type)
+**Confidence:** ✅ Verified
+
+### Callback Inventory (21 callbacks)
+
+| # | Callback | Required? | Call Sites | Provided By | Target |
+|---|---------|-----------|------------|-------------|--------|
+| 1 | onCheckingNotes | Yes | 0 | ChatArea:71 | UI flag |
+| 2 | addMessage | Yes | 9 | ChatArea:85 (store.addMessage) | State |
+| 3 | updateLastAssistant | Yes | 8 | ChatArea:75 (store.updateLastAssistant) | State |
+| 4 | updateLastMessage | Yes | 8 | ChatArea:76 (store.updateLastMessage) | State |
+| 5 | updateContext | Yes | 20 | ChatArea:76 (store.updateContext) | State |
+| 6 | setArchiveIndex | Yes | 4 | ChatArea:77 (store.setArchiveIndex) | State |
+| 7 | updateNPC | Yes | 16 | ChatArea:78 (store.updateNPC) | State |
+| 8 | addNPC | Yes | 0 | ChatArea:79 (store.addNPC) | State |
+| 9 | addNpcSuggestions | Optional | 1 | ChatArea:80 (store.addNpcSuggestions) | State |
+| 10 | setCondensed | Yes | 0 | ChatArea:81 (store.setCondensed) | State |
+| 11 | setStreaming | Yes | 14 | ChatArea:82 (store.setStreaming) | State |
+| 12 | setLastPayloadTrace | Optional | 4 | ChatArea:247 (store.setLastPayloadTrace) | State |
+| 13 | setLoadingStatus | Optional | 0 | Not provided | — |
+| 14 | setSemanticFacts | Optional | 1 | ChatArea:83 (store.setSemanticFacts) | State |
+| 15 | setChapters | Optional | 1 | ChatArea:84 (store.setChapters) | State |
+| 16 | setPipelinePhase | Optional | 15 | ChatArea:247 (store.setPipelinePhase) | State |
+| 17 | setStreamingStats | Optional | 10 | ChatArea:248 (store.setStreamingStats) | State |
+| 18 | setDivergenceRegister | Optional | 4 | ChatArea:249 (store.setDivergenceRegister) | State |
+| 19 | updateMessageDivergence | Optional | 0 | ChatArea:250 (store.updateMessageDivergence) | State |
+| 20 | applyPressurePatch | Optional | 2 | ChatArea:251 (store.applyPressurePatch) | State |
+| 21 | setOnStageNpcIds | Optional | 3 | ChatArea:252 (store.setOnStageNpcIds) | State |
+
+### Provider
+
+**File:** src/components/ChatArea.tsx, lines 71-252
+**Pattern:** All callbacks delegate to `useAppStore.getState().*`
+**Confidence:** ✅ Verified
+
+### Second Provider (pendingCommit)
+
+**File:** src/services/turn/pendingCommit.ts, lines 108-138
+**Pattern:** `buildCommitCallbacks()` — all delegate to candidate ports (messaging, npc, archive, etc.)
+**Confidence:** ✅ Verified
+
+### Finding
+
+TurnCallbacks is a **hidden interaction channel** that passes 21
+callbacks from the UI/store layer into the domain layer. All 21
+target State. This is functionally equivalent to 21 direct store
+imports — but invisible to import-graph analysis.
+
+**Impact:** Any import-graph-based boundary analysis undercounts
+the true coupling by 21 callback edges. The candidate port
+migration addressed these (pendingCommit now uses ports), but
+ChatArea still builds callbacks via direct `useAppStore.getState()`.
+
+### Error/Edge Flow (G5 fix)
+
+**Error flow: LLM failure during turn**
+```
+ChatArea.runTurn()
+  → turnOrchestrator.run()
+    → llmCall() → THROWS
+      → catch: callbacks.setStreaming(false)
+      → catch: callbacks.updateLastAssistant(errorText)
+      → catch: notify.error("LLM request failed")
+  → turnOrchestrator returns without calling handlePostTurn
+  → pendingCommit NOT triggered
+  → user sees error message in chat bubble
+```
+**Evidence:** turnOrchestrator.ts lines 452-478 (catch block)
+**Confidence:** ✅ Verified

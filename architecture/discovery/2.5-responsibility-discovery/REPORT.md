@@ -164,3 +164,41 @@ chat, npc, settings) are the problem.
    inform 2.7 Boundary Validation.
 
 3. Do NOT design ports yet.
+
+---
+
+## G2 Fix: campaignStore Line-Level Responsibility Evidence
+
+**File:** src/store/campaignStore.ts (280 lines)
+**Symbol:** campaignStore (module-level exports)
+**Confidence:** ✅ Verified
+
+### 7 Responsibilities with Exact Line Ranges
+
+| # | Responsibility | Lines | Symbols | Evidence |
+|---|---------------|-------|---------|----------|
+| R1 | Campaign CRUD | 13-80 | listCampaigns, getCampaign, saveCampaign, deleteCampaign | ✅ idb-keyval get/set on campaigns array |
+| R2 | Campaign State persistence | 82-173 | saveCampaignState, loadCampaignState, stripEphemeralFields | ✅ idb-keyval get/set on `state_${id}` |
+| R3 | Lore chunk persistence | 175-201 | saveLoreChunks, getLoreChunks | ✅ idb-keyval get/set on `lore_${id}` + calls upgradeVectorOnlyDefault (lore domain logic, line 179-200) |
+| R4 | NPC ledger persistence | 203-229 | saveNPCLedger, getNPCLedger | ✅ idb-keyval get/set on `npcs_${id}` + calls affinityToPcRelation (NPC domain logic, line 209-228) |
+| R5 | Pressure persistence | 231-239 | savePressure, getPressure | ✅ idb-keyval get/set on `pressure_${id}` |
+| R6 | Archive/Timeline/Entity load | 241-268 | loadArchiveIndex, loadSemanticFacts, loadChapters, loadTimeline, loadEntities | ✅ idb-keyval get on `archive_index_${id}`, etc. |
+| R7 | Divergence persistence | 270-280 | saveDivergenceRegister, loadDivergenceRegister | ✅ idb-keyval get/set on `divergence_${id}` |
+
+### Domain Logic Violations (within campaignStore)
+
+| # | Violation | Line | Symbol | Should be in |
+|---|-----------|------|--------|-------------|
+| V1 | Lore chunk upgrade | 179-200 | upgradeVectorOnlyDefault call in getLoreChunks | services/lore |
+| V2 | NPC affinity mapping | 209-228 | affinityToPcRelation call in getNPCLedger | services/npc |
+| V3 | Image storage deletion | 34-50 | imageStorage.deleteAll call in deleteCampaign | services/storage |
+| V4 | Data migration | 278-280 | migrateV1ToV2 call in loadCampaignState | services/campaign-state |
+| V5 | API backup (dynamic) | 249-267 | api.backup.create (4x dynamic import) | services/apiClient |
+
+### Imports (3 static service imports — all violations)
+
+| Line | Import | Target | Responsibility |
+|------|--------|--------|---------------|
+| 7 | imageStorage | services/storage/imageStorage | Image storage (V3) |
+| 8 | upgradeVectorOnlyDefault | services/lore/loreIndexer | Lore upgrade (V1) |
+| 9 | affinityToPcRelation | services/npc/agencyBands | NPC affinity (V2) |
