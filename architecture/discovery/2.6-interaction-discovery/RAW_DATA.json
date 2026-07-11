@@ -1,0 +1,208 @@
+{
+  "total_interactions": 114,
+  "interaction_pairs": [
+    {
+      "source": "Other",
+      "target": "CAP-2_NPC_Agency",
+      "static": 25,
+      "dynamic": 0,
+      "total": 25
+    },
+    {
+      "source": "Adapters",
+      "target": "Ports",
+      "static": 10,
+      "dynamic": 0,
+      "total": 10
+    },
+    {
+      "source": "CAP-1_NPC_Gen",
+      "target": "CAP-2_NPC_Agency",
+      "static": 10,
+      "dynamic": 0,
+      "total": 10
+    },
+    {
+      "source": "Adapters",
+      "target": "CAP-16_State",
+      "static": 9,
+      "dynamic": 0,
+      "total": 9
+    },
+    {
+      "source": "CAP-17_UI",
+      "target": "CAP-16_State",
+      "static": 3,
+      "dynamic": 3,
+      "total": 6
+    },
+    {
+      "source": "CAP-16_State",
+      "target": "CAP-13_Storage",
+      "static": 5,
+      "dynamic": 0,
+      "total": 5
+    },
+    {
+      "source": "CAP-16_State",
+      "target": "CAP-14_API",
+      "static": 0,
+      "dynamic": 5,
+      "total": 5
+    },
+    {
+      "source": "Other",
+      "target": "CAP-3_NPC_Detect",
+      "static": 5,
+      "dynamic": 0,
+      "total": 5
+    },
+    {
+      "source": "CAP-17_UI",
+      "target": "CAP-4_Turn",
+      "static": 4,
+      "dynamic": 0,
+      "total": 4
+    },
+    {
+      "source": "CAP-16_State",
+      "target": "CAP-11_Engine",
+      "static": 3,
+      "dynamic": 0,
+      "total": 3
+    },
+    {
+      "source": "Utils",
+      "target": "CAP-8_LLM",
+      "static": 3,
+      "dynamic": 0,
+      "total": 3
+    },
+    {
+      "source": "Other",
+      "target": "Utils",
+      "static": 3,
+      "dynamic": 0,
+      "total": 3
+    },
+    {
+      "source": "Other",
+      "target": "CAP-8_LLM",
+      "static": 3,
+      "dynamic": 0,
+      "total": 3
+    },
+    {
+      "source": "Other",
+      "target": "CAP-16_State",
+      "static": 3,
+      "dynamic": 0,
+      "total": 3
+    },
+    {
+      "source": "Other",
+      "target": "CAP-10_Lore",
+      "static": 2,
+      "dynamic": 0,
+      "total": 2
+    },
+    {
+      "source": "CAP-14_API",
+      "target": "Ports",
+      "static": 0,
+      "dynamic": 2,
+      "total": 2
+    },
+    {
+      "source": "CAP-1_NPC_Gen",
+      "target": "Utils",
+      "static": 2,
+      "dynamic": 0,
+      "total": 2
+    },
+    {
+      "source": "CAP-1_NPC_Gen",
+      "target": "CAP-3_NPC_Detect",
+      "static": 2,
+      "dynamic": 0,
+      "total": 2
+    },
+    {
+      "source": "Other",
+      "target": "CAP-1_NPC_Gen",
+      "static": 2,
+      "dynamic": 0,
+      "total": 2
+    },
+    {
+      "source": "CAP-16_State",
+      "target": "CAP-7_Embedding",
+      "static": 1,
+      "dynamic": 0,
+      "total": 1
+    },
+    {
+      "source": "CAP-16_State",
+      "target": "CAP-10_Lore",
+      "static": 1,
+      "dynamic": 0,
+      "total": 1
+    },
+    {
+      "source": "CAP-16_State",
+      "target": "CAP-2_NPC_Agency",
+      "static": 1,
+      "dynamic": 0,
+      "total": 1
+    },
+    {
+      "source": "Other",
+      "target": "Types",
+      "static": 1,
+      "dynamic": 0,
+      "total": 1
+    },
+    {
+      "source": "Other",
+      "target": "CAP-13_Storage",
+      "static": 1,
+      "dynamic": 0,
+      "total": 1
+    },
+    {
+      "source": "CAP-14_API",
+      "target": "CAP-13_Storage",
+      "static": 1,
+      "dynamic": 0,
+      "total": 1
+    },
+    {
+      "source": "Adapters",
+      "target": "CAP-17_UI",
+      "static": 1,
+      "dynamic": 0,
+      "total": 1
+    },
+    {
+      "source": "CAP-17_UI",
+      "target": "CAP-14_API",
+      "static": 1,
+      "dynamic": 0,
+      "total": 1
+    },
+    {
+      "source": "CAP-17_UI",
+      "target": "CAP-8_LLM",
+      "static": 1,
+      "dynamic": 0,
+      "total": 1
+    },
+    {
+      "source": "CAP-3_NPC_Detect",
+      "target": "Utils",
+      "static": 1,
+      "dynamic": 0,
+      "total": 1
+    }
+  ]
+}
