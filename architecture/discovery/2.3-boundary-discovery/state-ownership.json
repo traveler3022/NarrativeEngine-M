@@ -1,0 +1,1028 @@
+{
+  "state_types": [
+    {
+      "type": "LootPoolEntry",
+      "file": "types/loot.ts",
+      "field_count": 3,
+      "fields": [
+        "text",
+        "tier",
+        "budget"
+      ]
+    },
+    {
+      "type": "LootPickNode",
+      "file": "types/loot.ts",
+      "field_count": 4,
+      "fields": [
+        "kind",
+        "axis",
+        "weights",
+        "branches"
+      ]
+    },
+    {
+      "type": "LootDrawSpec",
+      "file": "types/loot.ts",
+      "field_count": 3,
+      "fields": [
+        "pool",
+        "as",
+        "filterBy"
+      ]
+    },
+    {
+      "type": "LootDrawNode",
+      "file": "types/loot.ts",
+      "field_count": 3,
+      "fields": [
+        "kind",
+        "draws",
+        "next"
+      ]
+    },
+    {
+      "type": "LootAmountNode",
+      "file": "types/loot.ts",
+      "field_count": 6,
+      "fields": [
+        "kind",
+        "unit",
+        "min",
+        "max",
+        "scaleBySource",
+        "next"
+      ]
+    },
+    {
+      "type": "LootComposeNode",
+      "file": "types/loot.ts",
+      "field_count": 2,
+      "fields": [
+        "kind",
+        "template"
+      ]
+    },
+    {
+      "type": "LootTree",
+      "file": "types/loot.ts",
+      "field_count": 5,
+      "fields": [
+        "root",
+        "nodes",
+        "pools",
+        "/** optional",
+        "sources"
+      ]
+    },
+    {
+      "type": "LootProfile",
+      "file": "types/loot.ts",
+      "field_count": 5,
+      "fields": [
+        "id",
+        "/** Hard override",
+        "entryNode",
+        "/** Soft override",
+        "reweight"
+      ]
+    },
+    {
+      "type": "LootItem",
+      "file": "types/loot.ts",
+      "field_count": 3,
+      "fields": [
+        "label",
+        "parts",
+        "tierWord"
+      ]
+    },
+    {
+      "type": "LootDropResult",
+      "file": "types/loot.ts",
+      "field_count": 3,
+      "fields": [
+        "appendToInput",
+        "items",
+        "trace"
+      ]
+    },
+    {
+      "type": "ResolveLootOpts",
+      "file": "types/loot.ts",
+      "field_count": 4,
+      "fields": [
+        "profile",
+        "source",
+        "rolls",
+        "rng"
+      ]
+    },
+    {
+      "type": "LLMProvider",
+      "file": "types/index.ts",
+      "field_count": 8,
+      "fields": [
+        "id",
+        "label",
+        "endpoint",
+        "apiKey",
+        "modelName",
+        "streamingEnabled",
+        "apiFormat",
+        "thinkingEffort"
+      ]
+    },
+    {
+      "type": "SamplingConfig",
+      "file": "types/index.ts",
+      "field_count": 11,
+      "fields": [
+        "temperature",
+        "top_p",
+        "top_k",
+        "min_p",
+        "frequency_penalty",
+        "presence_penalty",
+        "repetition_penalty",
+        "dry_multiplier",
+        "dry_base",
+        "dry_allowed_length"
+      ]
+    },
+    {
+      "type": "StreamingStats",
+      "file": "types/index.ts",
+      "field_count": 3,
+      "fields": [
+        "tokens",
+        "elapsed",
+        "speed"
+      ]
+    },
+    {
+      "type": "AIPreset",
+      "file": "types/index.ts",
+      "field_count": 13,
+      "fields": [
+        "id",
+        "name",
+        "storyAIProviderId",
+        "summarizerAIProviderId",
+        "utilityAIProviderId",
+        "auxiliaryAIProviderId",
+        "imageAIProviderId",
+        "sampling",
+        "storyAI",
+        "summarizerAI"
+      ]
+    },
+    {
+      "type": "AppSettings",
+      "file": "types/index.ts",
+      "field_count": 31,
+      "fields": [
+        "presets",
+        "activePresetId",
+        "contextLimit",
+        "autoCondenseEnabled",
+        "condenseAggressiveness",
+        "debugMode",
+        "theme",
+        "showReasoning",
+        "uiScale",
+        "enableDeepArchiveSearch"
+      ]
+    },
+    {
+      "type": "CondenserState",
+      "file": "types/index.ts",
+      "field_count": 1,
+      "fields": [
+        "condensedUpToIndex"
+      ]
+    },
+    {
+      "type": "DiceConfig",
+      "file": "types/index.ts",
+      "field_count": 5,
+      "fields": [
+        "catastrophe",
+        "failure",
+        "success",
+        "triumph",
+        "crit"
+      ]
+    },
+    {
+      "type": "SurpriseConfig",
+      "file": "types/index.ts",
+      "field_count": 4,
+      "fields": [
+        "initialDC",
+        "dcReduction",
+        "types",
+        "tones"
+      ]
+    },
+    {
+      "type": "EncounterConfig",
+      "file": "types/index.ts",
+      "field_count": 4,
+      "fields": [
+        "initialDC",
+        "dcReduction",
+        "types",
+        "tones"
+      ]
+    },
+    {
+      "type": "WorldEventConfig",
+      "file": "types/index.ts",
+      "field_count": 6,
+      "fields": [
+        "initialDC",
+        "dcReduction",
+        "who",
+        "where",
+        "why",
+        "what"
+      ]
+    },
+    {
+      "type": "NpcIntroConfig",
+      "file": "types/index.ts",
+      "field_count": 3,
+      "fields": [
+        "initialDC",
+        "dcReduction",
+        "characters"
+      ]
+    },
+    {
+      "type": "RuleChunkMeta",
+      "file": "types/index.ts",
+      "field_count": 6,
+      "fields": [
+        "id",
+        "activationModes",
+        "triggerKeywords",
+        "secondaryKeywords",
+        "priority",
+        "keywordsUserEdited"
+      ]
+    },
+    {
+      "type": "GameContext",
+      "file": "types/index.ts",
+      "field_count": 42,
+      "fields": [
+        "loreRaw",
+        "rulesRaw",
+        "rulesChunkMeta",
+        "starter",
+        "continuePrompt",
+        "inventory",
+        "inventoryLastScene",
+        "characterProfile",
+        "characterProfileLastScene",
+        "surpriseDC"
+      ]
+    },
+    {
+      "type": "ArcStage",
+      "file": "types/index.ts",
+      "field_count": 2,
+      "fields": [
+        "label",
+        "surface"
+      ]
+    },
+    {
+      "type": "ArcRecord",
+      "file": "types/index.ts",
+      "field_count": 11,
+      "fields": [
+        "id",
+        "type",
+        "title",
+        "seed",
+        "ladder",
+        "currentRung",
+        "tickDC",
+        "stance",
+        "status",
+        "bornScene"
+      ]
+    },
+    {
+      "type": "CharacterTrait",
+      "file": "types/index.ts",
+      "field_count": 9,
+      "fields": [
+        "id",
+        "subject",
+        "category",
+        "text",
+        "importance",
+        "eventTags",
+        "sceneEstablished",
+        "superseded",
+        "source"
+      ]
+    },
+    {
+      "type": "CharacterIdentity",
+      "file": "types/index.ts",
+      "field_count": 7,
+      "fields": [
+        "name",
+        "race",
+        "class",
+        "archetype",
+        "level",
+        "appearance",
+        "portraitSeed"
+      ]
+    },
+    {
+      "type": "CharacterProfileState",
+      "file": "types/index.ts",
+      "field_count": 4,
+      "fields": [
+        "identity",
+        "stats",
+        "activeTraits",
+        "legacyNotes"
+      ]
+    },
+    {
+      "type": "ChatMessage",
+      "file": "types/index.ts",
+      "field_count": 23,
+      "fields": [
+        "id",
+        "role",
+        "content",
+        "displayContent",
+        "timestamp",
+        "debugPayload",
+        "name",
+        "tool_calls",
+        "id",
+        "type"
+      ]
+    },
+    {
+      "type": "SwipeVariant",
+      "file": "types/index.ts",
+      "field_count": 6,
+      "fields": [
+        "id",
+        "text",
+        "reasoningContent",
+        "sceneStakes",
+        "tagPresent",
+        "streaming"
+      ]
+    },
+    {
+      "type": "SceneSteer",
+      "file": "types/index.ts",
+      "field_count": 7,
+      "fields": [
+        "focusNpcIds",
+        "focusPc",
+        "framing",
+        "pov",
+        "note",
+        "promptOverride",
+        "rewrite"
+      ]
+    },
+    {
+      "type": "SceneEvent",
+      "file": "types/index.ts",
+      "field_count": 9,
+      "fields": [
+        "eventType",
+        "importance",
+        "text",
+        "characters",
+        "locations",
+        "items",
+        "concepts",
+        "cause",
+        "result"
+      ]
+    },
+    {
+      "type": "Campaign",
+      "file": "types/index.ts",
+      "field_count": 5,
+      "fields": [
+        "id",
+        "name",
+        "coverImage",
+        "createdAt",
+        "lastPlayedAt"
+      ]
+    },
+    {
+      "type": "LoreChunk",
+      "file": "types/index.ts",
+      "field_count": 19,
+      "fields": [
+        "id",
+        "header",
+        "content",
+        "tokens",
+        "alwaysInclude",
+        "triggerKeywords",
+        "secondaryKeywords",
+        "scanDepth",
+        "category",
+        "linkedEntities"
+      ]
+    },
+    {
+      "type": "CharacterIntroEntry",
+      "file": "types/index.ts",
+      "field_count": 4,
+      "fields": [
+        "name",
+        "type",
+        "location",
+        "boostKeywords"
+      ]
+    },
+    {
+      "type": "EngineSeed",
+      "file": "types/index.ts",
+      "field_count": 9,
+      "fields": [
+        "surpriseTypes",
+        "surpriseTones",
+        "encounterTypes",
+        "encounterTones",
+        "worldWho",
+        "worldWhere",
+        "worldWhy",
+        "worldWhat",
+        "characterIntros"
+      ]
+    },
+    {
+      "type": "OpenAITool",
+      "file": "types/index.ts",
+      "field_count": 8,
+      "fields": [
+        "type",
+        "function",
+        "name",
+        "description",
+        "parameters",
+        "type",
+        "properties",
+        "required"
+      ]
+    },
+    {
+      "type": "PayloadTrace",
+      "file": "types/index.ts",
+      "field_count": 8,
+      "fields": [
+        "source",
+        "classification",
+        "tokens",
+        "reason",
+        "preview",
+        "included",
+        "position",
+        "childMessages"
+      ]
+    },
+    {
+      "type": "NotebookNote",
+      "file": "types/index.ts",
+      "field_count": 3,
+      "fields": [
+        "id",
+        "text",
+        "timestamp"
+      ]
+    },
+    {
+      "type": "BackupMeta",
+      "file": "types/index.ts",
+      "field_count": 7,
+      "fields": [
+        "timestamp",
+        "label",
+        "trigger",
+        "hash",
+        "fileCount",
+        "isAuto",
+        "campaignName"
+      ]
+    },
+    {
+      "type": "BackupCreateResult",
+      "file": "types/index.ts",
+      "field_count": 1,
+      "fields": [
+        "skipped"
+      ]
+    },
+    {
+      "type": "EntityEntry",
+      "file": "types/index.ts",
+      "field_count": 6,
+      "fields": [
+        "id",
+        "name",
+        "type",
+        "aliases",
+        "firstSeen",
+        "factCount"
+      ]
+    },
+    {
+      "type": "TimelineEvent",
+      "file": "types/index.ts",
+      "field_count": 9,
+      "fields": [
+        "id",
+        "sceneId",
+        "chapterId",
+        "subject",
+        "predicate",
+        "object",
+        "summary",
+        "importance",
+        "source"
+      ]
+    },
+    {
+      "type": "LoreCheckSelection",
+      "file": "types/index.ts",
+      "field_count": 5,
+      "fields": [
+        "messageId",
+        "selectedText",
+        "start",
+        "end",
+        "surroundingContext"
+      ]
+    },
+    {
+      "type": "LoreCheckCitation",
+      "file": "types/index.ts",
+      "field_count": 2,
+      "fields": [
+        "ref",
+        "label"
+      ]
+    },
+    {
+      "type": "LoreCheckResult",
+      "file": "types/index.ts",
+      "field_count": 6,
+      "fields": [
+        "verdict",
+        "issues",
+        "citations",
+        "suggestedRewrite",
+        "originalText",
+        "rawResponse"
+      ]
+    },
+    {
+      "type": "PinnedExcerpt",
+      "file": "types/index.ts",
+      "field_count": 5,
+      "fields": [
+        "id",
+        "sourceMessageId",
+        "text",
+        "createdAt",
+        "isFullMessage"
+      ]
+    },
+    {
+      "type": "DivergenceEntry",
+      "file": "types/archive.ts",
+      "field_count": 13,
+      "fields": [
+        "id",
+        "chapterId",
+        "category",
+        "text",
+        "sceneRef",
+        "npcIds",
+        "knownBy",
+        "subjectToken",
+        "pinned",
+        "enabled"
+      ]
+    },
+    {
+      "type": "TopicCluster",
+      "file": "types/archive.ts",
+      "field_count": 3,
+      "fields": [
+        "id",
+        "name",
+        "factIds"
+      ]
+    },
+    {
+      "type": "TopicClusters",
+      "file": "types/archive.ts",
+      "field_count": 3,
+      "fields": [
+        "groups",
+        "generatedAt",
+        "generatedFromFactCount"
+      ]
+    },
+    {
+      "type": "DivergenceRegister",
+      "file": "types/archive.ts",
+      "field_count": 7,
+      "fields": [
+        "entries",
+        "chapterToggles",
+        "categoryToggles",
+        "lastUpdatedSceneId",
+        "lastUpdatedAt",
+        "version",
+        "topicClusters"
+      ]
+    },
+    {
+      "type": "ArchiveIndexEntry",
+      "file": "types/archive.ts",
+      "field_count": 11,
+      "fields": [
+        "sceneId",
+        "timestamp",
+        "keywords",
+        "npcsMentioned",
+        "npcsWitnessed",
+        "witnessSource",
+        "userSnippet",
+        "keywordStrengths",
+        "npcStrengths",
+        "importance"
+      ]
+    },
+    {
+      "type": "ArchiveScene",
+      "file": "types/archive.ts",
+      "field_count": 3,
+      "fields": [
+        "sceneId",
+        "content",
+        "tokens"
+      ]
+    },
+    {
+      "type": "SemanticFact",
+      "file": "types/archive.ts",
+      "field_count": 9,
+      "fields": [
+        "id",
+        "subject",
+        "predicate",
+        "object",
+        "importance",
+        "sceneId",
+        "timestamp",
+        "source",
+        "confidence"
+      ]
+    },
+    {
+      "type": "ArchiveChapter",
+      "file": "types/archive.ts",
+      "field_count": 17,
+      "fields": [
+        "chapterId",
+        "title",
+        "sceneRange",
+        "sceneIds",
+        "summary",
+        "keywords",
+        "npcs",
+        "majorEvents",
+        "unresolvedThreads",
+        "tone"
+      ]
+    },
+    {
+      "type": "NPCDrives",
+      "file": "types/npc.ts",
+      "field_count": 3,
+      "fields": [
+        "coreWant",
+        "sessionWant",
+        "sceneWant"
+      ]
+    },
+    {
+      "type": "NPCWants",
+      "file": "types/npc.ts",
+      "field_count": 3,
+      "fields": [
+        "short",
+        "medium",
+        "long"
+      ]
+    },
+    {
+      "type": "Goal",
+      "file": "types/npc.ts",
+      "field_count": 10,
+      "fields": [
+        "text",
+        "horizon",
+        "tier",
+        "base_heat",
+        "lastAdvancedTick",
+        "failStreak",
+        "progress",
+        "quota",
+        "state",
+        "justifiedEventFlag"
+      ]
+    },
+    {
+      "type": "NPCBehavioralTrigger",
+      "file": "types/npc.ts",
+      "field_count": 2,
+      "fields": [
+        "keyword",
+        "shift"
+      ]
+    },
+    {
+      "type": "NPCPressureHistory",
+      "file": "types/npc.ts",
+      "field_count": 4,
+      "fields": [
+        "turn",
+        "type",
+        "delta",
+        "reason"
+      ]
+    },
+    {
+      "type": "NPCPressure",
+      "file": "types/npc.ts",
+      "field_count": 4,
+      "fields": [
+        "ignored",
+        "engaged",
+        "lastDecayTurn",
+        "history"
+      ]
+    },
+    {
+      "type": "StatBlock",
+      "file": "types/npc.ts",
+      "field_count": 6,
+      "fields": [
+        "VIT",
+        "PWR",
+        "RES",
+        "FOC",
+        "SPD",
+        "WIL"
+      ]
+    },
+    {
+      "type": "NPCEntry",
+      "file": "types/npc.ts",
+      "field_count": 53,
+      "fields": [
+        "id",
+        "name",
+        "aliases",
+        "appearance",
+        "appearanceTags",
+        "faction",
+        "storyRelevance",
+        "disposition",
+        "status",
+        "goals"
+      ]
+    },
+    {
+      "type": "ArmedLoot",
+      "file": "types/store.ts",
+      "field_count": 3,
+      "fields": [
+        "rolls",
+        "/** Soft override",
+        "reweight"
+      ]
+    },
+    {
+      "type": "ReindexState",
+      "file": "types/store.ts",
+      "field_count": 4,
+      "fields": [
+        "active",
+        "total",
+        "done",
+        "reason"
+      ]
+    },
+    {
+      "type": "CampaignState",
+      "file": "types/store.ts",
+      "field_count": 4,
+      "fields": [
+        "context",
+        "messages",
+        "condenser",
+        "pinnedExcerpts"
+      ]
+    }
+  ],
+  "state_mutator_count": {
+    "settings": 204,
+    "updated": 81,
+    "resets": 74,
+    "updates": 57,
+    "setList": 52,
+    "setTimeout": 50,
+    "adder": 41,
+    "updatedNpc": 36,
+    "updateNPC": 34,
+    "updateContext": 30,
+    "setPipelinePhase": 26,
+    "addTrace": 26,
+    "setStreaming": 23,
+    "setStreamingStats": 21,
+    "clearTimeout": 18,
+    "addMessage": 16,
+    "resetId": 16,
+    "replacement": 16,
+    "setLastPayloadTrace": 15,
+    "setArchiveIndex": 14,
+    "settled": 14,
+    "applyBandToGoal": 14,
+    "updatedGoal": 14,
+    "setting": 14,
+    "updateLastAssistant": 13,
+    "deleteByTypeAndId": 13,
+    "setDivergenceRegister": 12,
+    "setState": 12,
+    "sets": 12,
+    "clearPendingTurnSnapshot": 12
+  },
+  "state_mutator_files": {
+    "settings": [
+      "ports/settings.ts",
+      "ports/settings.ts",
+      "ports/settings.ts",
+      "ports/settings.ts",
+      "store/settingsMigration.ts"
+    ],
+    "updated": [
+      "hooks/useLoreIndexer.ts",
+      "hooks/useLoreIndexer.ts",
+      "hooks/useLoreIndexer.ts",
+      "components/hooks/useSwipeVariants.ts",
+      "components/hooks/useSwipeVariants.ts"
+    ],
+    "resets": [
+      "store/settingsMigration.ts",
+      "store/settingsMigration.ts",
+      "store/settingsMigration.ts",
+      "store/settingsMigration.ts",
+      "store/settingsMigration.ts"
+    ],
+    "updates": [
+      "ports/uiState.ts",
+      "store/slices/chatSlice.ts",
+      "store/slices/chatSlice.ts",
+      "store/slices/chatSlice.ts",
+      "store/slices/chatSlice.ts"
+    ],
+    "setList": [
+      "services/campaignBundle.ts",
+      "services/campaignBundle.ts",
+      "services/campaignBundle.ts",
+      "services/campaignBundle.ts",
+      "services/campaignBundle.ts"
+    ],
+    "setTimeout": [
+      "utils/llmCall.ts",
+      "utils/llmCall.ts",
+      "utils/stripThink.ts",
+      "hooks/useLoreIndexer.ts",
+      "hooks/useRulesIndexer.ts"
+    ],
+    "adder": [
+      "types/index.ts",
+      "types/index.ts",
+      "types/index.ts",
+      "types/index.ts",
+      "types/index.ts"
+    ],
+    "updatedNpc": [
+      "store/slices/npcSlice.ts",
+      "store/slices/npcSlice.ts",
+      "store/slices/npcSlice.ts",
+      "services/turn/turnPostProcess.ts",
+      "services/turn/turnPostProcess.ts"
+    ],
+    "updateNPC": [
+      "ports/npc.ts",
+      "ports/npc.ts",
+      "ports/npc.ts",
+      "ports/npc.ts",
+      "adapters/npcAdapter.ts"
+    ],
+    "updateContext": [
+      "ports/campaignContext.ts",
+      "adapters/campaignContextAdapter.ts",
+      "hooks/useRulesIndexer.ts",
+      "hooks/useRulesIndexer.ts",
+      "hooks/useRulesIndexer.ts"
+    ],
+    "setPipelinePhase": [
+      "ports/uiState.ts",
+      "ports/uiState.ts",
+      "ports/uiState.ts",
+      "ports/uiState.ts",
+      "adapters/uiStateAdapter.ts"
+    ],
+    "addTrace": [
+      "services/payload/payloadWorldContext.ts",
+      "services/payload/payloadWorldContext.ts",
+      "services/payload/payloadWorldContext.ts",
+      "services/payload/payloadWorldContext.ts",
+      "services/payload/payloadWorldContext.ts"
+    ],
+    "setStreaming": [
+      "ports/messaging.ts",
+      "ports/messaging.ts",
+      "ports/messaging.ts",
+      "adapters/messagingAdapter.ts",
+      "adapters/messagingAdapter.ts"
+    ],
+    "setStreamingStats": [
+      "ports/uiState.ts",
+      "ports/uiState.ts",
+      "ports/uiState.ts",
+      "ports/uiState.ts",
+      "adapters/uiStateAdapter.ts"
+    ],
+    "clearTimeout": [
+      "hooks/useLoreIndexer.ts",
+      "hooks/useRulesIndexer.ts",
+      "store/slices/settingsSlice.ts",
+      "store/slices/npcSlice.ts",
+      "store/slices/saveController.ts"
+    ],
+    "addMessage": [
+      "ports/messaging.ts",
+      "adapters/messagingAdapter.ts",
+      "adapters/messagingAdapter.ts",
+      "store/slices/chatSlice.ts",
+      "store/slices/chatSlice.ts"
+    ],
+    "resetId": [
+      "store/settingsMigration.ts",
+      "store/settingsMigration.ts",
+      "store/settingsMigration.ts",
+      "store/settingsMigration.ts",
+      "store/settingsMigration.ts"
+    ],
+    "replacement": [
+      "types/index.ts",
+      "store/slices/chatSlice.ts",
+      "store/slices/chatSlice.ts",
+      "store/slices/chatSlice.ts",
+      "store/slices/chatSlice.ts"
+    ],
+    "setLastPayloadTrace": [
+      "ports/uiState.ts",
+      "ports/uiState.ts",
+      "ports/uiState.ts",
+      "ports/uiState.ts",
+      "adapters/uiStateAdapter.ts"
+    ],
+    "setArchiveIndex": [
+      "ports/archive.ts",
+      "adapters/archiveAdapter.ts",
+      "components/hooks/useMessageEditor.ts",
+      "components/hooks/useMessageEditor.ts",
+      "components/hooks/useMessageEditor.ts"
+    ]
+  }
+}

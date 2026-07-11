@@ -1,0 +1,2505 @@
+{
+  "total_files": 278,
+  "clusters": {
+    "App.tsx": 1,
+    "adapters": 10,
+    "components/chat": 13,
+    "components/context-drawer": 16,
+    "components/engine-trace": 1,
+    "components/hooks": 4,
+    "components/npc-ledger": 5,
+    "components/pc": 2,
+    "components/root": 22,
+    "components/settings": 5,
+    "hooks": 3,
+    "i18n": 3,
+    "main.tsx": 1,
+    "ports": 10,
+    "services/arc": 6,
+    "services/archive": 9,
+    "services/campaign-state": 9,
+    "services/embedding": 7,
+    "services/engine": 10,
+    "services/image": 4,
+    "services/infrastructure": 8,
+    "services/llm": 7,
+    "services/lore": 11,
+    "services/npc": 32,
+    "services/payload": 10,
+    "services/retrieval": 1,
+    "services/root": 5,
+    "services/storage": 10,
+    "services/tts": 2,
+    "services/turn": 24,
+    "store/root": 3,
+    "store/slices": 9,
+    "test": 1,
+    "types": 6,
+    "utils": 8
+  },
+  "intra_cluster_imports": 829,
+  "inter_cluster_imports": 166,
+  "coupling_ratio": 0.16683417085427135,
+  "inter_cluster_edges": [
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/slices/npcSlice.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/slices"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/slices/chatSlice.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/slices"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/slices/loreSlice.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/slices"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/slices/archiveSlice.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/slices"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/slices/campaignSlice.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/slices"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/slices/settingsSlice.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/slices"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/slices/pressureSlice.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/slices"
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/../types/store.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/.."
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/../services/engine/constants.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/.."
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/../services/embedding/embeddingScheduler.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/.."
+    },
+    {
+      "source": "store/useAppStore.ts",
+      "target": "store/slices/uiSlice.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/slices"
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "store/../services/storage/imageStorage.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/.."
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "store/../services/apiClient.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/.."
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "store/../types/index.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/.."
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "store/../types/store.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/.."
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "store/../services/lore/loreIndexer.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/.."
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "store/../services/npc/agencyBands.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/.."
+    },
+    {
+      "source": "store/campaignStore.ts",
+      "target": "store/../services/campaign-state/index.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/.."
+    },
+    {
+      "source": "store/settingsMigration.ts",
+      "target": "store/../utils/uid.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/.."
+    },
+    {
+      "source": "store/settingsMigration.ts",
+      "target": "store/../types/index.ts",
+      "src_cluster": "store/root",
+      "tgt_cluster": "store/.."
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "services/storage/index.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/storage"
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "services/infrastructure/index.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/infrastructure"
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "services/lore/lootTreeLoader.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/lore"
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "services/storage/_helpers.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/storage"
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "services/../types/store.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/.."
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "services/../utils/uid.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/.."
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "services/../types/index.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/.."
+    },
+    {
+      "source": "services/campaignBundle.ts",
+      "target": "services/embedding/index.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/embedding"
+    },
+    {
+      "source": "services/apiClient.ts",
+      "target": "services/storage/index.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/storage"
+    },
+    {
+      "source": "services/apiClient.ts",
+      "target": "services/infrastructure/index.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/infrastructure"
+    },
+    {
+      "source": "services/apiClient.ts",
+      "target": "services/../ports/campaignRepository.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/.."
+    },
+    {
+      "source": "services/apiClient.ts",
+      "target": "services/storage/backupStorage.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/storage"
+    },
+    {
+      "source": "services/apiClient.ts",
+      "target": "services/../types/index.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/.."
+    },
+    {
+      "source": "services/chatEngine.ts",
+      "target": "services/npc/index.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/npc"
+    },
+    {
+      "source": "services/chatEngine.ts",
+      "target": "services/archive/index.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/archive"
+    },
+    {
+      "source": "services/chatEngine.ts",
+      "target": "services/payload/index.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/payload"
+    },
+    {
+      "source": "services/chatEngine.ts",
+      "target": "services/llm/llmService.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/llm"
+    },
+    {
+      "source": "services/chatEngine.ts",
+      "target": "services/engine/index.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/engine"
+    },
+    {
+      "source": "services/callLLM.ts",
+      "target": "services/../utils/llmCall.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/.."
+    },
+    {
+      "source": "services/callLLM.ts",
+      "target": "services/llm/llmRequestQueue.ts",
+      "src_cluster": "services/root",
+      "tgt_cluster": "services/llm"
+    },
+    {
+      "source": "main.tsx",
+      "target": "adapters/uiToastAdapter.ts",
+      "src_cluster": "main.tsx",
+      "tgt_cluster": "adapters"
+    },
+    {
+      "source": "main.tsx",
+      "target": "App.tsx",
+      "src_cluster": "main.tsx",
+      "tgt_cluster": "App.tsx"
+    },
+    {
+      "source": "main.tsx",
+      "target": "adapters/uiStateAdapter.ts",
+      "src_cluster": "main.tsx",
+      "tgt_cluster": "adapters"
+    },
+    {
+      "source": "main.tsx",
+      "target": "adapters/chapterRepositoryAdapter.ts",
+      "src_cluster": "main.tsx",
+      "tgt_cluster": "adapters"
+    },
+    {
+      "source": "main.tsx",
+      "target": "adapters/campaignRepositoryAdapter.ts",
+      "src_cluster": "main.tsx",
+      "tgt_cluster": "adapters"
+    },
+    {
+      "source": "main.tsx",
+      "target": "adapters/archiveAdapter.ts",
+      "src_cluster": "main.tsx",
+      "tgt_cluster": "adapters"
+    },
+    {
+      "source": "main.tsx",
+      "target": "adapters/settingsAdapter.ts",
+      "src_cluster": "main.tsx",
+      "tgt_cluster": "adapters"
+    },
+    {
+      "source": "main.tsx",
+      "target": "adapters/messagingAdapter.ts",
+      "src_cluster": "main.tsx",
+      "tgt_cluster": "adapters"
+    },
+    {
+      "source": "main.tsx",
+      "target": "i18n/index.tsx",
+      "src_cluster": "main.tsx",
+      "tgt_cluster": "i18n"
+    },
+    {
+      "source": "main.tsx",
+      "target": "adapters/campaignContextAdapter.ts",
+      "src_cluster": "main.tsx",
+      "tgt_cluster": "adapters"
+    },
+    {
+      "source": "main.tsx",
+      "target": "adapters/loreRepositoryAdapter.ts",
+      "src_cluster": "main.tsx",
+      "tgt_cluster": "adapters"
+    },
+    {
+      "source": "main.tsx",
+      "target": "adapters/npcAdapter.ts",
+      "src_cluster": "main.tsx",
+      "tgt_cluster": "adapters"
+    },
+    {
+      "source": "App.tsx",
+      "target": "services/backHandler.ts",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "services/root"
+    },
+    {
+      "source": "App.tsx",
+      "target": "hooks/useRulesIndexer.ts",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "hooks"
+    },
+    {
+      "source": "App.tsx",
+      "target": "services/tts/speech.ts",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "services/tts"
+    },
+    {
+      "source": "App.tsx",
+      "target": "store/campaignStore.ts",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "store/root"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/SettingsModal.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/root"
+    },
+    {
+      "source": "App.tsx",
+      "target": "services/turn/index.ts",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "services/turn"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/ErrorBoundary.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/root"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/Toast.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/root"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/MobileNavBar.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/root"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/Header.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/root"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/ConfirmSheet.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/root"
+    },
+    {
+      "source": "App.tsx",
+      "target": "hooks/useLoreIndexer.ts",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "hooks"
+    },
+    {
+      "source": "App.tsx",
+      "target": "store/useAppStore.ts",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "store/root"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/ContextDrawer.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/root"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/chat/LoreCheckModal.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/chat"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/chat/LootRollModal.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/chat"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/CampaignHub.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/root"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/BackupModal.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/root"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/ChatArea.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/root"
+    },
+    {
+      "source": "App.tsx",
+      "target": "components/NPCLedgerModal.tsx",
+      "src_cluster": "App.tsx",
+      "tgt_cluster": "components/root"
+    },
+    {
+      "source": "components/DedupReviewModal.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/DedupReviewModal.tsx",
+      "target": "components/../hooks/useBackHandler.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/DedupReviewModal.tsx",
+      "target": "components/../services/campaign-state/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/TelemetryStrip.tsx",
+      "target": "components/../services/llm/utilityCallTracker.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/TelemetryStrip.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/TelemetryStrip.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/LootDropTraceView.tsx",
+      "target": "components/../services/engine/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/GenerationProgress.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/context-drawer/MemoryTab.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/context-drawer"
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/context-drawer/EnginesTab.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/context-drawer"
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/context-drawer/RulesManagerTab.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/context-drawer"
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/context-drawer/GalleryTab.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/context-drawer"
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/context-drawer/LoreTab.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/context-drawer"
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/context-drawer/BookkeepingTab.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/context-drawer"
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/context-drawer/ChapterTab.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/context-drawer"
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/../hooks/useBackHandler.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/context-drawer/RulesTab.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/context-drawer"
+    },
+    {
+      "source": "components/ContextDrawer.tsx",
+      "target": "components/context-drawer/ResolvedStatePanel.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/context-drawer"
+    },
+    {
+      "source": "components/SamplingPanel.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/SamplingPanel.tsx",
+      "target": "components/../utils/samplingProfiles.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/UtilityCallStrip.tsx",
+      "target": "components/../services/llm/utilityCallTracker.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/SettingsModal.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/SettingsModal.tsx",
+      "target": "components/settings/PresetsPanel.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/settings"
+    },
+    {
+      "source": "components/SettingsModal.tsx",
+      "target": "components/settings/AdvancedEmbeddingPanel.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/settings"
+    },
+    {
+      "source": "components/SettingsModal.tsx",
+      "target": "components/../i18n/index.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/SettingsModal.tsx",
+      "target": "components/../hooks/useBackHandler.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/SettingsModal.tsx",
+      "target": "components/settings/GlobalSettingsPanel.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/settings"
+    },
+    {
+      "source": "components/SettingsModal.tsx",
+      "target": "components/settings/ProvidersPanel.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/settings"
+    },
+    {
+      "source": "components/SettingsModal.tsx",
+      "target": "components/settings/DebugPanel.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/settings"
+    },
+    {
+      "source": "components/SceneNoteEditor.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/TokenGauge.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/TokenGauge.tsx",
+      "target": "components/../services/campaign-state/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/TokenGauge.tsx",
+      "target": "components/../services/infrastructure/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCReviewModal.tsx",
+      "target": "components/../hooks/useBackHandler.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCReviewModal.tsx",
+      "target": "components/../services/npc/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/MobileNavBar.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/MobileNavBar.tsx",
+      "target": "components/../i18n/index.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/MobileNavBar.tsx",
+      "target": "components/../utils/haptics.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/CampaignHub.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/CampaignHub.tsx",
+      "target": "components/../services/campaignBundle.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/CampaignHub.tsx",
+      "target": "components/../store/slices/npcSlice.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/CampaignHub.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/CampaignHub.tsx",
+      "target": "components/../services/apiClient.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/CampaignHub.tsx",
+      "target": "components/../store/campaignStore.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/CampaignHub.tsx",
+      "target": "components/../services/lore/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/CampaignHub.tsx",
+      "target": "components/../hooks/useBackHandler.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/CampaignHub.tsx",
+      "target": "components/../store/slices/campaignSlice.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/chat/RegenerateSheet.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/chat"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/pc/PCCreationWizard.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/pc"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/../utils/haptics.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/hooks/useRetryStoryAI.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/hooks"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/chat/RenameNpcModal.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/chat"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/../services/turn/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/chat/MessageBubble.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/chat"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/chat/PinnedMemoriesPanel.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/chat"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/hooks/useSwipeVariants.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/hooks"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/hooks/useCondenser.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/hooks"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/chat/ActionSpeedDial.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/chat"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/../store/campaignStore.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/chat/ChatInput.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/chat"
+    },
+    {
+      "source": "components/ChatArea.tsx",
+      "target": "components/hooks/useMessageEditor.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/hooks"
+    },
+    {
+      "source": "components/ConfirmSheet.tsx",
+      "target": "components/../hooks/useBackHandler.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/ConfirmSheet.tsx",
+      "target": "components/../utils/haptics.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/BackupModal.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/BackupModal.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/BackupModal.tsx",
+      "target": "components/../services/apiClient.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/BackupModal.tsx",
+      "target": "components/../hooks/useBackHandler.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCPressureInspector.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCPressureInspector.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../services/apiClient.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../services/storage/imageStorage.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../services/image/portrait.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../services/chatEngine.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/npc-ledger/NPCListView.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/npc-ledger"
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/npc-ledger/NPCGalleryView.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/npc-ledger"
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../utils/uid.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../hooks/useBackHandler.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/npc-ledger/NPCEditForm.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/npc-ledger"
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/npc-ledger/NPCSuggestionsPanel.tsx",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/npc-ledger"
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../services/campaign-state/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/NPCLedgerModal.tsx",
+      "target": "components/../services/npc/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/PayloadTraceView.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/PayloadTraceView.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/Header.tsx",
+      "target": "components/../store/useAppStore.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/Header.tsx",
+      "target": "components/../types/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/Header.tsx",
+      "target": "components/../services/apiClient.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/Header.tsx",
+      "target": "components/../store/campaignStore.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/Header.tsx",
+      "target": "components/../utils/haptics.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    },
+    {
+      "source": "components/Header.tsx",
+      "target": "components/../services/npc/index.ts",
+      "src_cluster": "components/root",
+      "tgt_cluster": "components/.."
+    }
+  ],
+  "hub_files": [
+    {
+      "file": "store/slices/npcSlice.ts",
+      "imported_by_clusters": [
+        "store/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "store/slices/chatSlice.ts",
+      "imported_by_clusters": [
+        "store/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "store/slices/loreSlice.ts",
+      "imported_by_clusters": [
+        "store/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "store/slices/archiveSlice.ts",
+      "imported_by_clusters": [
+        "store/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "store/slices/campaignSlice.ts",
+      "imported_by_clusters": [
+        "store/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "store/slices/settingsSlice.ts",
+      "imported_by_clusters": [
+        "store/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "store/slices/pressureSlice.ts",
+      "imported_by_clusters": [
+        "store/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "store/../types/store.ts",
+      "imported_by_clusters": [
+        "store/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "store/../services/engine/constants.ts",
+      "imported_by_clusters": [
+        "store/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "store/../services/embedding/embeddingScheduler.ts",
+      "imported_by_clusters": [
+        "store/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "store/slices/uiSlice.ts",
+      "imported_by_clusters": [
+        "store/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "store/../services/storage/imageStorage.ts",
+      "imported_by_clusters": [
+        "store/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "store/../services/apiClient.ts",
+      "imported_by_clusters": [
+        "store/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "store/../types/index.ts",
+      "imported_by_clusters": [
+        "store/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "store/../services/lore/loreIndexer.ts",
+      "imported_by_clusters": [
+        "store/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "store/../services/npc/agencyBands.ts",
+      "imported_by_clusters": [
+        "store/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "store/../services/campaign-state/index.ts",
+      "imported_by_clusters": [
+        "store/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "store/../utils/uid.ts",
+      "imported_by_clusters": [
+        "store/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "services/storage/index.ts",
+      "imported_by_clusters": [
+        "services/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "services/infrastructure/index.ts",
+      "imported_by_clusters": [
+        "services/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "services/lore/lootTreeLoader.ts",
+      "imported_by_clusters": [
+        "services/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "services/storage/_helpers.ts",
+      "imported_by_clusters": [
+        "services/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "services/../types/store.ts",
+      "imported_by_clusters": [
+        "services/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "services/../utils/uid.ts",
+      "imported_by_clusters": [
+        "services/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "services/../types/index.ts",
+      "imported_by_clusters": [
+        "services/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "services/embedding/index.ts",
+      "imported_by_clusters": [
+        "services/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "services/../ports/campaignRepository.ts",
+      "imported_by_clusters": [
+        "services/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "services/storage/backupStorage.ts",
+      "imported_by_clusters": [
+        "services/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "services/npc/index.ts",
+      "imported_by_clusters": [
+        "services/root"
+      ],
+      "cluster_count": 1
+    },
+    {
+      "file": "services/archive/index.ts",
+      "imported_by_clusters": [
+        "services/root"
+      ],
+      "cluster_count": 1
+    }
+  ],
+  "type_owners": {
+    "ACTION_POOL": [
+      "services/npc/agencyPools.ts"
+    ],
+    "ACTIVITY_DECAY": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "ACTIVITY_PROMOTE": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "ACTIVITY_RELEGATE": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "AGGRESSIVENESS_RATIOS": [
+      "services/payload/condenser.ts"
+    ],
+    "AIPreset": [
+      "types/index.ts"
+    ],
+    "AMBITIOUS_HEAT_BONUS": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "ANCHOR_BEFORE_INPUT": [
+      "services/infrastructure/utilityPrompts.ts"
+    ],
+    "APPEARANCE_UPDATE_RULES": [
+      "services/infrastructure/utilityPrompts.ts"
+    ],
+    "ARCHETYPE_PRESETS": [
+      "services/engine/pcCreationScript.ts"
+    ],
+    "ARC_BAND_RUNG_DELTA": [
+      "services/arc/arcConstants.ts"
+    ],
+    "ARC_STANCE_MOD": [
+      "services/arc/arcConstants.ts"
+    ],
+    "ARC_SURFACE_EMIT_MIN": [
+      "services/arc/arcConstants.ts"
+    ],
+    "ARC_SURFACE_TIER": [
+      "services/arc/arcConstants.ts"
+    ],
+    "ARC_TICK_DC": [
+      "services/arc/arcConstants.ts"
+    ],
+    "AUDITION_PROB": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "ActionEntry": [
+      "services/npc/agencyPools.ts"
+    ],
+    "ActionSpeedDial": [
+      "components/chat/ActionSpeedDial.tsx"
+    ],
+    "AddNpcDeps": [
+      "services/npc/manualAdd.ts"
+    ],
+    "AddNpcResult": [
+      "services/npc/manualAdd.ts"
+    ],
+    "AdvancedEmbeddingPanel": [
+      "components/settings/AdvancedEmbeddingPanel.tsx"
+    ],
+    "AiTier": [
+      "types/index.ts",
+      "services/turn/aiTier.ts"
+    ],
+    "ApiFormat": [
+      "types/index.ts"
+    ],
+    "AppSettings": [
+      "types/index.ts"
+    ],
+    "ArcInjectorButton": [
+      "components/chat/ArcInjectorButton.tsx"
+    ],
+    "ArcRecord": [
+      "types/index.ts"
+    ],
+    "ArcStage": [
+      "types/index.ts"
+    ],
+    "ArcStance": [
+      "types/index.ts"
+    ],
+    "ArcSurface": [
+      "types/index.ts"
+    ],
+    "ArcType": [
+      "types/index.ts"
+    ],
+    "Archetype": [
+      "types/npc.ts"
+    ],
+    "ArchiveChapter": [
+      "types/archive.ts"
+    ],
+    "ArchiveIndexEntry": [
+      "types/archive.ts"
+    ],
+    "ArchivePort": [
+      "ports/archive.ts"
+    ],
+    "ArchiveScene": [
+      "types/archive.ts"
+    ],
+    "ArchiveSlice": [
+      "store/slices/archiveSlice.ts"
+    ],
+    "ArmedLoot": [
+      "types/store.ts"
+    ],
+    "AssignSubjectTokensResult": [
+      "services/campaign-state/factClusterer.ts"
+    ],
+    "AssistantMessage": [
+      "types/llmMessages.ts"
+    ],
+    "AutoSealResult": [
+      "services/archive/archiveChapterEngine.ts"
+    ],
+    "AxisEnvelope": [
+      "services/npc/dispositionGroups.ts"
+    ],
+    "AxisModifier": [
+      "services/npc/dispositionGroups.ts"
+    ],
+    "AxisSpread": [
+      "services/npc/dispositionGroups.ts"
+    ],
+    "BAND_PROGRESS": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "BASE_HEAT": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "BURST_THRESHOLD": [
+      "services/npc/reactionRepression.ts"
+    ],
+    "BackfillProgress": [
+      "services/embedding/backfillRunner.ts"
+    ],
+    "BackupCreateResult": [
+      "types/index.ts"
+    ],
+    "BackupData": [
+      "services/storage/backupStorage.ts"
+    ],
+    "BackupMeta": [
+      "types/index.ts"
+    ],
+    "BackupModal": [
+      "components/BackupModal.tsx"
+    ],
+    "Band": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "BehaviorDirectiveOpts": [
+      "services/npc/npcBehaviorDirective.ts"
+    ],
+    "BookkeepingTab": [
+      "components/context-drawer/BookkeepingTab.tsx"
+    ],
+    "BudgetMap": [
+      "services/payload/payloadBudgeter.ts"
+    ],
+    "BuildPayloadOptions": [
+      "services/payload/payloadBuilder.ts"
+    ],
+    "CATEGORY_DEFINITIONS": [
+      "services/campaign-state/divergenceRegister.ts"
+    ],
+    "CATEGORY_LABELS": [
+      "services/campaign-state/divergenceRegister.ts"
+    ],
+    "CLAUDE_BUDGET_MAP": [
+      "utils/llmApiHelper.ts"
+    ],
+    "COLLISION_OPPORTUNITY_BONUS": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "COLLISION_TANGLE_PROB": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "COLOR_ROLL_BASE": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "COLOR_ROLL_TRAITS": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "COLOR_ROLL_TRAIT_BONUS": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "COMBAT_TIER_ARCHETYPE_RUBRIC": [
+      "services/npc/npcDetector.ts"
+    ],
+    "CORE_FLOOR_TRAITS": [
+      "types/index.ts"
+    ],
+    "CREATION_QUESTIONS": [
+      "services/engine/pcCreationScript.ts"
+    ],
+    "CacheRollup": [
+      "services/llm/cacheTelemetry.ts"
+    ],
+    "CallStat": [
+      "services/llm/cacheTelemetry.ts"
+    ],
+    "Campaign": [
+      "types/index.ts"
+    ],
+    "CampaignBundle": [
+      "services/campaignBundle.ts"
+    ],
+    "CampaignContextPort": [
+      "ports/campaignContext.ts"
+    ],
+    "CampaignHub": [
+      "components/CampaignHub.tsx"
+    ],
+    "CampaignRepositoryPort": [
+      "ports/campaignRepository.ts"
+    ],
+    "CampaignSavePayload": [
+      "store/slices/saveController.ts"
+    ],
+    "CampaignSlice": [
+      "store/slices/campaignSlice.ts"
+    ],
+    "CampaignState": [
+      "types/store.ts"
+    ],
+    "ChapterCard": [
+      "components/context-drawer/ChapterCard.tsx"
+    ],
+    "ChapterRepositoryPort": [
+      "ports/chapterRepository.ts"
+    ],
+    "ChapterSummaryOutput": [
+      "services/archive/chapterSummaryWriter.ts"
+    ],
+    "ChapterTab": [
+      "components/context-drawer/ChapterTab.tsx"
+    ],
+    "CharIntroResult": [
+      "services/engine/charIntroEngine.ts"
+    ],
+    "CharacterIdentity": [
+      "types/index.ts"
+    ],
+    "CharacterIntroEntry": [
+      "types/index.ts"
+    ],
+    "CharacterProfileEditor": [
+      "components/context-drawer/CharacterProfileEditor.tsx"
+    ],
+    "CharacterProfileState": [
+      "types/index.ts"
+    ],
+    "CharacterTrait": [
+      "types/index.ts"
+    ],
+    "ChatArea": [
+      "components/ChatArea.tsx"
+    ],
+    "ChatInput": [
+      "components/chat/ChatInput.tsx"
+    ],
+    "ChatMessage": [
+      "types/index.ts"
+    ],
+    "ChatSlice": [
+      "store/slices/chatSlice.ts"
+    ],
+    "ClusteringCancelled": [
+      "services/campaign-state/factClusterer.ts"
+    ],
+    "Collision": [
+      "services/npc/nameSwap.ts"
+    ],
+    "CombatTier": [
+      "types/npc.ts"
+    ],
+    "CombinedSealResult": [
+      "services/archive/divergenceExtractor.ts"
+    ],
+    "ComposeInput": [
+      "services/image/composePrompt.ts"
+    ],
+    "ComposedPrompt": [
+      "services/image/composePrompt.ts"
+    ],
+    "CondenseAggressiveness": [
+      "types/index.ts"
+    ],
+    "CondenserState": [
+      "types/index.ts"
+    ],
+    "ConfirmSheet": [
+      "components/ConfirmSheet.tsx"
+    ],
+    "ContentWithChips": [
+      "components/chat/ContentWithChips.tsx"
+    ],
+    "ContextDrawer": [
+      "components/ContextDrawer.tsx"
+    ],
+    "ContextSourceClassification": [
+      "types/archive.ts"
+    ],
+    "CreationQuestion": [
+      "services/engine/pcCreationScript.ts"
+    ],
+    "DECAY_RATE": [
+      "services/npc/npcPressureTracker.ts"
+    ],
+    "DEEP_TIER_CAP": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "DEFAULT_ENCOUNTER_TONES": [
+      "services/engine/constants.ts"
+    ],
+    "DEFAULT_ENCOUNTER_TYPES": [
+      "services/engine/constants.ts"
+    ],
+    "DEFAULT_STATS": [
+      "services/engine/pcCreationScript.ts"
+    ],
+    "DEFAULT_STYLE": [
+      "services/image/composePrompt.ts"
+    ],
+    "DEFAULT_SURPRISE_TONES": [
+      "services/engine/constants.ts"
+    ],
+    "DEFAULT_SURPRISE_TYPES": [
+      "services/engine/constants.ts"
+    ],
+    "DEFAULT_WORLD_WHAT": [
+      "services/engine/constants.ts"
+    ],
+    "DEFAULT_WORLD_WHERE": [
+      "services/engine/constants.ts"
+    ],
+    "DEFAULT_WORLD_WHO": [
+      "services/engine/constants.ts"
+    ],
+    "DEFAULT_WORLD_WHY": [
+      "services/engine/constants.ts"
+    ],
+    "DIGEST_PLAYER_CAP": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "DIVERGENCE_CATEGORIES": [
+      "services/campaign-state/divergenceRegister.ts"
+    ],
+    "DRIVES_UPDATE_RULES": [
+      "services/infrastructure/utilityPrompts.ts"
+    ],
+    "DRIVE_MULT": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "DebugPanel": [
+      "components/settings/DebugPanel.tsx"
+    ],
+    "DedupCancelled": [
+      "services/campaign-state/factDeduper.ts"
+    ],
+    "DedupGroup": [
+      "services/campaign-state/factDeduper.ts"
+    ],
+    "DedupResult": [
+      "services/campaign-state/factDeduper.ts"
+    ],
+    "DedupReviewModal": [
+      "components/DedupReviewModal.tsx"
+    ],
+    "DetectedCollision": [
+      "services/npc/agencyCollision.ts"
+    ],
+    "DiceConfig": [
+      "types/index.ts"
+    ],
+    "DiceHandlerResult": [
+      "services/turn/toolHandlers.ts"
+    ],
+    "DigestVisibility": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "DirectRewriteInput": [
+      "services/lore/loreCheck.ts"
+    ],
+    "DivergenceCategory": [
+      "types/archive.ts"
+    ],
+    "DivergenceEntry": [
+      "types/archive.ts"
+    ],
+    "DivergenceEntryModal": [
+      "components/chat/DivergenceEntryModal.tsx"
+    ],
+    "DivergenceRegister": [
+      "types/archive.ts"
+    ],
+    "DownloadProgress": [
+      "services/embedding/embedder.ts"
+    ],
+    "EMBEDDING_VERSION": [
+      "services/storage/embeddingStorage.ts"
+    ],
+    "EMPTY_REGISTER": [
+      "services/campaign-state/divergenceRegister.ts"
+    ],
+    "ENVELOPES": [
+      "services/npc/dispositionGroups.ts"
+    ],
+    "EVENT_TYPES_LIST": [
+      "services/infrastructure/utilityPrompts.ts"
+    ],
+    "EmbeddingRecord": [
+      "services/storage/embeddingStorage.ts"
+    ],
+    "EncounterConfig": [
+      "types/index.ts"
+    ],
+    "EngineRollResult": [
+      "services/engine/engineRolls.ts"
+    ],
+    "EngineSeed": [
+      "types/index.ts"
+    ],
+    "EngineTraceView": [
+      "components/engine-trace/EngineTraceView.tsx"
+    ],
+    "EnginesTab": [
+      "components/context-drawer/EnginesTab.tsx"
+    ],
+    "EntityEntry": [
+      "types/index.ts"
+    ],
+    "ErrorBoundary": [
+      "components/ErrorBoundary.tsx"
+    ],
+    "GOAL_BASE_DC": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "GROUP_KEYS": [
+      "services/npc/dispositionGroups.ts"
+    ],
+    "GalleryTab": [
+      "components/context-drawer/GalleryTab.tsx"
+    ],
+    "GameContext": [
+      "types/index.ts"
+    ],
+    "GatheredContext": [
+      "services/turn/turnContext.ts"
+    ],
+    "Gender": [
+      "services/npc/nameBank.ts"
+    ],
+    "GenerateImageOpts": [
+      "services/image/imageClient.ts"
+    ],
+    "GenerationProgress": [
+      "components/GenerationProgress.tsx"
+    ],
+    "GlobalSettingsPanel": [
+      "components/settings/GlobalSettingsPanel.tsx"
+    ],
+    "Goal": [
+      "types/npc.ts"
+    ],
+    "GoalHorizon": [
+      "types/npc.ts"
+    ],
+    "GoalState": [
+      "types/npc.ts"
+    ],
+    "GroupEnvelope": [
+      "services/npc/dispositionGroups.ts"
+    ],
+    "GroupModifiers": [
+      "services/npc/dispositionGroups.ts"
+    ],
+    "HEARTBEAT_DC": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "HEX_AXIS_MAX": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "HEX_AXIS_MIN": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "HEX_DRIFT_MAX_STEP": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "Header": [
+      "components/Header.tsx"
+    ],
+    "HexAxis": [
+      "types/npc.ts"
+    ],
+    "I18nProvider": [
+      "i18n/index.tsx"
+    ],
+    "INPUT_DELIMITER": [
+      "services/infrastructure/utilityPrompts.ts"
+    ],
+    "IndexingProgress": [
+      "services/lore/loreIndexer.ts",
+      "services/lore/rulesIndexer.ts"
+    ],
+    "JSON_ARRAY_ONLY_FOOTER": [
+      "services/infrastructure/utilityPrompts.ts"
+    ],
+    "JSON_ONLY_FOOTER": [
+      "services/infrastructure/utilityPrompts.ts"
+    ],
+    "KARMA_CAP": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "KARMA_PER_FAIL": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "KNOWNBY_RULES": [
+      "services/infrastructure/utilityPrompts.ts"
+    ],
+    "KnownByToken": [
+      "services/campaign-state/knowledgeScope.ts"
+    ],
+    "LADDER_MAX": [
+      "services/arc/arcConstants.ts"
+    ],
+    "LADDER_MIN": [
+      "services/arc/arcConstants.ts"
+    ],
+    "LANGUAGES": [
+      "i18n/index.tsx"
+    ],
+    "LLMCallPriority": [
+      "services/llm/llmRequestQueue.ts"
+    ],
+    "LLMChatMessage": [
+      "types/llmMessages.ts"
+    ],
+    "LLMProvider": [
+      "types/index.ts"
+    ],
+    "LLMRequestQueue": [
+      "services/llm/llmRequestQueue.ts"
+    ],
+    "LLMUsage": [
+      "types/llmMessages.ts"
+    ],
+    "Lang": [
+      "i18n/index.tsx"
+    ],
+    "LootAmountNode": [
+      "types/loot.ts"
+    ],
+    "LootComposeNode": [
+      "types/loot.ts"
+    ],
+    "LootDrawNode": [
+      "types/loot.ts"
+    ],
+    "LootDrawSpec": [
+      "types/loot.ts"
+    ],
+    "LootDropRecord": [
+      "services/engine/lootDropTelemetry.ts"
+    ],
+    "LootDropResult": [
+      "types/loot.ts"
+    ],
+    "LootDropTraceView": [
+      "components/LootDropTraceView.tsx"
+    ],
+    "LootItem": [
+      "types/loot.ts"
+    ],
+    "LootNode": [
+      "types/loot.ts"
+    ],
+    "LootNodeId": [
+      "types/loot.ts"
+    ],
+    "LootPickNode": [
+      "types/loot.ts"
+    ],
+    "LootPool": [
+      "types/loot.ts"
+    ],
+    "LootPoolEntry": [
+      "types/loot.ts"
+    ],
+    "LootProfile": [
+      "types/loot.ts"
+    ],
+    "LootRollModal": [
+      "components/chat/LootRollModal.tsx"
+    ],
+    "LootTree": [
+      "types/loot.ts"
+    ],
+    "LoreCategory": [
+      "types/index.ts"
+    ],
+    "LoreCheckCategory": [
+      "types/index.ts"
+    ],
+    "LoreCheckCitation": [
+      "types/index.ts"
+    ],
+    "LoreCheckInput": [
+      "services/lore/loreCheck.ts"
+    ],
+    "LoreCheckModal": [
+      "components/chat/LoreCheckModal.tsx"
+    ],
+    "LoreCheckResult": [
+      "types/index.ts"
+    ],
+    "LoreCheckSelection": [
+      "types/index.ts"
+    ],
+    "LoreCheckVerdict": [
+      "types/index.ts"
+    ],
+    "LoreChunk": [
+      "types/index.ts"
+    ],
+    "LoreHandlerResult": [
+      "services/turn/toolHandlers.ts"
+    ],
+    "LoreRepositoryPort": [
+      "ports/loreRepository.ts"
+    ],
+    "LoreSlice": [
+      "store/slices/loreSlice.ts"
+    ],
+    "LoreTab": [
+      "components/context-drawer/LoreTab.tsx"
+    ],
+    "MAX_ACTIVE_ARCS": [
+      "services/arc/arcConstants.ts"
+    ],
+    "MAX_SWIPES": [
+      "services/turn/swipeGeneration.ts"
+    ],
+    "MEDIUM_WANTS": [
+      "services/npc/agencyPools.ts"
+    ],
+    "MODIFIERS": [
+      "services/npc/dispositionGroups.ts"
+    ],
+    "ManualRollMode": [
+      "types/index.ts"
+    ],
+    "ManualRollResult": [
+      "services/engine/engineRolls.ts"
+    ],
+    "MemoryTab": [
+      "components/context-drawer/MemoryTab.tsx"
+    ],
+    "MessageBubble": [
+      "components/chat/MessageBubble.tsx"
+    ],
+    "MessagingPort": [
+      "ports/messaging.ts"
+    ],
+    "MobileNavBar": [
+      "components/MobileNavBar.tsx"
+    ],
+    "NAME_CULTURES": [
+      "services/npc/nameBank.ts"
+    ],
+    "NPCBehavioralTrigger": [
+      "types/npc.ts"
+    ],
+    "NPCCapability": [
+      "ports/npc.ts"
+    ],
+    "NPCDrives": [
+      "types/npc.ts"
+    ],
+    "NPCEditForm": [
+      "components/npc-ledger/NPCEditForm.tsx"
+    ],
+    "NPCEntry": [
+      "types/npc.ts"
+    ],
+    "NPCGalleryView": [
+      "components/npc-ledger/NPCGalleryView.tsx"
+    ],
+    "NPCLedgerModal": [
+      "components/NPCLedgerModal.tsx"
+    ],
+    "NPCListView": [
+      "components/npc-ledger/NPCListView.tsx"
+    ],
+    "NPCPortraitSection": [
+      "components/npc-ledger/NPCPortraitSection.tsx"
+    ],
+    "NPCPressure": [
+      "types/npc.ts"
+    ],
+    "NPCPressureHistory": [
+      "types/npc.ts"
+    ],
+    "NPCPressureInspector": [
+      "components/NPCPressureInspector.tsx"
+    ],
+    "NPCReviewAction": [
+      "components/NPCReviewModal.tsx"
+    ],
+    "NPCReviewCancelled": [
+      "services/npc/npcReview.ts"
+    ],
+    "NPCReviewCandidate": [
+      "services/npc/npcReview.ts"
+    ],
+    "NPCReviewModal": [
+      "components/NPCReviewModal.tsx"
+    ],
+    "NPCReviewResult": [
+      "services/npc/npcReview.ts"
+    ],
+    "NPCSlice": [
+      "store/slices/npcSlice.ts"
+    ],
+    "NPCSuggestionsPanel": [
+      "components/npc-ledger/NPCSuggestionsPanel.tsx"
+    ],
+    "NPCWants": [
+      "types/npc.ts"
+    ],
+    "NPC_INNER_STATE_RULES": [
+      "services/infrastructure/utilityPrompts.ts"
+    ],
+    "NPC_UPDATE_COOLDOWN": [
+      "services/turn/aiTier.ts"
+    ],
+    "NotebookHandlerResult": [
+      "services/turn/toolHandlers.ts"
+    ],
+    "NotebookNote": [
+      "types/index.ts"
+    ],
+    "NotificationLevel": [
+      "ports/notification.ts"
+    ],
+    "NotificationSink": [
+      "ports/notification.ts"
+    ],
+    "NpcIntroConfig": [
+      "types/index.ts"
+    ],
+    "NpcResolution": [
+      "services/npc/npcManualResolve.ts"
+    ],
+    "NpcStrategy": [
+      "services/payload/payloadWorldContext.ts"
+    ],
+    "NpcSuggestion": [
+      "ports/npc.ts",
+      "store/slices/npcSlice.ts"
+    ],
+    "OUTCOME_AXIS_MAP": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "OpenAICompletionResponse": [
+      "types/llmMessages.ts"
+    ],
+    "OpenAIMessage": [
+      "services/llm/llmService.ts"
+    ],
+    "OpenAITool": [
+      "types/index.ts"
+    ],
+    "PCCreationOverrides": [
+      "services/npc/npcGeneration.ts"
+    ],
+    "PCCreationResult": [
+      "components/pc/PCCreationWizard.tsx"
+    ],
+    "PCCreationWizard": [
+      "components/pc/PCCreationWizard.tsx"
+    ],
+    "PC_POINT_BUY": [
+      "services/engine/pcCreationScript.ts"
+    ],
+    "PC_RELATION_MAX": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "PC_RELATION_MAX_STEP": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "PC_RELATION_MIN": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "PORTRAIT_NEGATIVE": [
+      "services/image/composePrompt.ts"
+    ],
+    "PROPER_NOUN_STOP_WORDS": [
+      "utils/stopWords.ts"
+    ],
+    "PayloadTrace": [
+      "types/index.ts"
+    ],
+    "PayloadTraceView": [
+      "components/PayloadTraceView.tsx"
+    ],
+    "PersonalityHex": [
+      "types/npc.ts"
+    ],
+    "PinnedExcerpt": [
+      "types/index.ts"
+    ],
+    "PinnedMemoriesPanel": [
+      "components/chat/PinnedMemoriesPanel.tsx"
+    ],
+    "PipelinePhase": [
+      "types/index.ts"
+    ],
+    "PlannerResult": [
+      "services/turn/stages/plannerStage.ts"
+    ],
+    "PointBuyAllocation": [
+      "services/engine/pcCreationScript.ts"
+    ],
+    "PoolTier": [
+      "services/npc/agencyPools.ts"
+    ],
+    "PrecontextBox": [
+      "components/chat/PrecontextBox.tsx"
+    ],
+    "PresetsPanel": [
+      "components/settings/PresetsPanel.tsx"
+    ],
+    "PressureSlice": [
+      "store/slices/pressureSlice.ts"
+    ],
+    "PressureUpdate": [
+      "services/npc/npcPressureTracker.ts"
+    ],
+    "ProgressiveChunk": [
+      "services/embedding/embeddingScheduler.ts"
+    ],
+    "ProvidersPanel": [
+      "components/settings/ProvidersPanel.tsx"
+    ],
+    "QUOTA_BY_HORIZON": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "QUOTA_HINTS": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "REACTION_VOCAB": [
+      "services/npc/agencyPools.ts"
+    ],
+    "RELATION_TONES": [
+      "services/npc/relationMeter.ts"
+    ],
+    "RUNG_CEILING_DEFAULT": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "RUNG_DEFAULT": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "RUNG_LABELS": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "RUNG_MAX": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "RUNG_MIN": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "ReactionContext": [
+      "services/npc/reactionMenu.ts"
+    ],
+    "ReactionEntry": [
+      "services/npc/agencyPools.ts"
+    ],
+    "ReactionGate": [
+      "services/npc/agencyPools.ts"
+    ],
+    "RecommenderResult": [
+      "services/payload/contextRecommender.ts"
+    ],
+    "RegenerateSheet": [
+      "components/chat/RegenerateSheet.tsx"
+    ],
+    "RegenerateSheetProps": [
+      "components/chat/RegenerateSheet.tsx"
+    ],
+    "ReindexState": [
+      "types/store.ts"
+    ],
+    "RelationGraph": [
+      "types/npc.ts"
+    ],
+    "RelationTone": [
+      "services/npc/agencyCollision.ts",
+      "services/npc/relationMeter.ts"
+    ],
+    "RenameNpcModal": [
+      "components/chat/RenameNpcModal.tsx"
+    ],
+    "RepressKind": [
+      "services/npc/reactionRepression.ts"
+    ],
+    "RepressionEvent": [
+      "services/npc/reactionRepression.ts"
+    ],
+    "RepressionOutcome": [
+      "services/npc/reactionRepression.ts"
+    ],
+    "RerankCandidate": [
+      "services/payload/semanticReranker.ts"
+    ],
+    "ResolveLootOpts": [
+      "types/loot.ts"
+    ],
+    "ResolvedStatePanel": [
+      "components/context-drawer/ResolvedStatePanel.tsx"
+    ],
+    "ResolvedTheme": [
+      "services/infrastructure/themeService.ts"
+    ],
+    "ResolvedTruth": [
+      "services/campaign-state/timelineResolver.ts"
+    ],
+    "Role": [
+      "types/llmMessages.ts"
+    ],
+    "RuleChunkMeta": [
+      "types/index.ts"
+    ],
+    "RulesManagerTab": [
+      "components/context-drawer/RulesManagerTab.tsx"
+    ],
+    "RulesTab": [
+      "components/context-drawer/RulesTab.tsx"
+    ],
+    "SAMPLING_FIELDS": [
+      "utils/samplingProfiles.ts"
+    ],
+    "SAMPLING_PROFILES": [
+      "utils/samplingProfiles.ts"
+    ],
+    "SCENE_EVENT_RULES": [
+      "services/infrastructure/utilityPrompts.ts"
+    ],
+    "SHORT_WANTS": [
+      "services/npc/agencyPools.ts"
+    ],
+    "STAT_KEYS": [
+      "services/engine/pcCreationScript.ts"
+    ],
+    "SUPERSEDE_RULES": [
+      "types/index.ts"
+    ],
+    "SWIPE_BASE_TEMP_OFFSET": [
+      "services/turn/swipeGeneration.ts"
+    ],
+    "SWIPE_SYSTEM_LINE": [
+      "services/turn/swipeGeneration.ts"
+    ],
+    "SamplingConfig": [
+      "types/index.ts"
+    ],
+    "SamplingPanel": [
+      "components/SamplingPanel.tsx"
+    ],
+    "SamplingProfile": [
+      "utils/samplingProfiles.ts"
+    ],
+    "SaveFile": [
+      "services/infrastructure/saveFilePicker.ts"
+    ],
+    "SceneEvent": [
+      "types/index.ts"
+    ],
+    "SceneEventType": [
+      "types/index.ts"
+    ],
+    "SceneNoteEditor": [
+      "components/SceneNoteEditor.tsx"
+    ],
+    "SceneRecord": [
+      "services/storage/_helpers.ts"
+    ],
+    "SceneStakes": [
+      "types/npc.ts"
+    ],
+    "SceneSteer": [
+      "types/index.ts"
+    ],
+    "SearchHit": [
+      "services/embedding/vectorSearch.ts"
+    ],
+    "SelectTickTargetResult": [
+      "services/npc/agencyAudition.ts"
+    ],
+    "SelectedTraits": [
+      "services/campaign-state/semanticMemory.ts"
+    ],
+    "SemanticCandidates": [
+      "services/turn/stages/retrievalTypes.ts"
+    ],
+    "SemanticFact": [
+      "types/archive.ts"
+    ],
+    "SettingsModal": [
+      "components/SettingsModal.tsx"
+    ],
+    "SettingsPort": [
+      "ports/settings.ts"
+    ],
+    "SettingsSlice": [
+      "store/slices/settingsSlice.ts"
+    ],
+    "SpawnArcAnchor": [
+      "services/arc/arcSpawn.ts"
+    ],
+    "SpawnArcInput": [
+      "services/arc/arcSpawn.ts"
+    ],
+    "SpeakCallbacks": [
+      "services/tts/speech.ts"
+    ],
+    "SpeakHandle": [
+      "services/tts/speech.ts"
+    ],
+    "StableContentResult": [
+      "services/payload/payloadStableContent.ts"
+    ],
+    "StatBlock": [
+      "types/npc.ts"
+    ],
+    "StatKey": [
+      "services/engine/pcCreationScript.ts"
+    ],
+    "StreamingStats": [
+      "types/index.ts"
+    ],
+    "SubjectTokenUpdate": [
+      "services/campaign-state/factClusterer.ts"
+    ],
+    "SurpriseConfig": [
+      "types/index.ts"
+    ],
+    "SwapContext": [
+      "services/npc/nameSwap.ts"
+    ],
+    "SwapResult": [
+      "services/npc/nameSwap.ts"
+    ],
+    "SwapVerdict": [
+      "services/npc/nameSwap.ts"
+    ],
+    "SwipeGenerationOptions": [
+      "services/turn/swipeGeneration.ts"
+    ],
+    "SwipeGenerationResult": [
+      "services/turn/swipeGeneration.ts"
+    ],
+    "SwipeVariant": [
+      "types/index.ts"
+    ],
+    "SystemMessage": [
+      "types/llmMessages.ts"
+    ],
+    "TIMELINE_PREDICATES": [
+      "types/index.ts"
+    ],
+    "TIMESKIP_CAP": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "TIMESKIP_K": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "TOOL_DEFINITIONS": [
+      "services/turn/toolHandlers.ts"
+    ],
+    "TRAIT_NAMES": [
+      "services/npc/agencyPools.ts"
+    ],
+    "TRAIT_VOCAB": [
+      "services/npc/agencyPools.ts"
+    ],
+    "TTRPG_PERSONA_ARCHIVIST": [
+      "services/infrastructure/utilityPrompts.ts"
+    ],
+    "TTRPG_PERSONA_GM_ASSISTANT": [
+      "services/infrastructure/utilityPrompts.ts"
+    ],
+    "TTRPG_PERSONA_RETRIEVAL_PLANNER": [
+      "services/infrastructure/utilityPrompts.ts"
+    ],
+    "TTRPG_PERSONA_STATE_ANALYZER": [
+      "services/infrastructure/utilityPrompts.ts"
+    ],
+    "TYPE_COOLDOWN_SEAMS": [
+      "services/arc/arcConstants.ts"
+    ],
+    "TangleOutcome": [
+      "services/npc/agencyCollision.ts"
+    ],
+    "TelemetryStrip": [
+      "components/TelemetryStrip.tsx"
+    ],
+    "TemplateField": [
+      "components/context-drawer/TemplateField.tsx"
+    ],
+    "ThemeSetting": [
+      "services/infrastructure/themeService.ts"
+    ],
+    "ThinkingEffort": [
+      "types/index.ts"
+    ],
+    "TickChoice": [
+      "services/npc/agencySelection.ts"
+    ],
+    "TickDelta": [
+      "services/npc/agencyDigest.ts"
+    ],
+    "TierFeature": [
+      "services/turn/aiTier.ts"
+    ],
+    "TimelineDotRow": [
+      "components/context-drawer/TimelineDotRow.tsx"
+    ],
+    "TimelineEvent": [
+      "types/index.ts"
+    ],
+    "TimelinePredicate": [
+      "types/index.ts"
+    ],
+    "TimeskipAmbiguous": [
+      "services/npc/agencyTimeskipRun.ts"
+    ],
+    "TimeskipConfig": [
+      "services/npc/agencyTimeskipRun.ts"
+    ],
+    "TimeskipDetected": [
+      "services/npc/agencyTimeskipRun.ts"
+    ],
+    "TimeskipNarrationResult": [
+      "services/npc/agencyTimeskipRun.ts"
+    ],
+    "TimeskipResult": [
+      "services/npc/agencyTimeskipRun.ts"
+    ],
+    "ToastContainer": [
+      "components/Toast.tsx"
+    ],
+    "Toggle": [
+      "components/context-drawer/Toggle.tsx"
+    ],
+    "TokenCounter": [
+      "components/context-drawer/TokenCounter.tsx"
+    ],
+    "TokenGauge": [
+      "components/TokenGauge.tsx"
+    ],
+    "ToolCall": [
+      "types/llmMessages.ts"
+    ],
+    "ToolCallChips": [
+      "components/chat/ToolCallChips.tsx"
+    ],
+    "ToolContext": [
+      "services/turn/toolHandlers.ts"
+    ],
+    "ToolResultMessage": [
+      "types/llmMessages.ts"
+    ],
+    "TopicCluster": [
+      "types/archive.ts"
+    ],
+    "TopicClusters": [
+      "types/archive.ts"
+    ],
+    "TraitEntry": [
+      "services/npc/agencyPools.ts"
+    ],
+    "TurnCallbacks": [
+      "services/turn/turnTypes.ts"
+    ],
+    "TurnState": [
+      "services/turn/turnTypes.ts"
+    ],
+    "UISlice": [
+      "store/slices/uiSlice.ts"
+    ],
+    "UIStatePort": [
+      "ports/uiState.ts"
+    ],
+    "UserMessage": [
+      "types/llmMessages.ts"
+    ],
+    "UtilityCallHandle": [
+      "services/llm/utilityCallTracker.ts"
+    ],
+    "UtilityCallOpts": [
+      "services/turn/turnTypes.ts"
+    ],
+    "UtilityCallRecord": [
+      "services/llm/utilityCallTracker.ts"
+    ],
+    "UtilityCallStatus": [
+      "services/llm/utilityCallTracker.ts"
+    ],
+    "UtilityCallStrip": [
+      "components/UtilityCallStrip.tsx"
+    ],
+    "UtilityLLM": [
+      "services/turn/turnTypes.ts"
+    ],
+    "UtilityTimeoutError": [
+      "utils/llmCall.ts"
+    ],
+    "VISIBILITY_RUBRIC": [
+      "services/npc/agencyConstants.ts"
+    ],
+    "VectorLike": [
+      "services/storage/embeddingStorage.ts"
+    ],
+    "WANT_POOL": [
+      "services/npc/agencyPools.ts"
+    ],
+    "WantEntry": [
+      "services/npc/agencyPools.ts"
+    ],
+    "WitnessSource": [
+      "types/index.ts",
+      "types/archive.ts"
+    ],
+    "WorldBlock": [
+      "services/payload/payloadWorldContext.ts"
+    ],
+    "WorldEventConfig": [
+      "types/index.ts"
+    ],
+    "WorldPrimerPanel": [
+      "components/pc/WorldPrimerPanel.tsx"
+    ]
+  }
+}
