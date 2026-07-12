@@ -6,7 +6,7 @@ import {
 import { useAppStore } from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import type { PipelinePhase, StreamingStats, LLMProvider } from '../types';
-import { runTurn, commitPendingTurn, findRetryableMessage } from '../services/turn';
+import { runTurn } from '../services/turn';
 import { TelemetryStrip } from './TelemetryStrip';
 import { useMessageEditor } from './hooks/useMessageEditor';
 import { useCondenser } from './hooks/useCondenser';
@@ -17,13 +17,9 @@ import { PinnedMemoriesPanel } from './chat/PinnedMemoriesPanel';
 
 import { ChatInput } from './chat/ChatInput';
 import { appConfirm } from './ConfirmSheet';
-import { hapticLight } from '../utils/haptics';
 import { ActionSpeedDial } from './chat/ActionSpeedDial';
 import { RenameNpcModal } from './chat/RenameNpcModal';
 import { PCCreationWizard } from './pc/PCCreationWizard';
-import { RegenerateSheet } from './chat/RegenerateSheet';
-import { useSwipeVariants } from './hooks/useSwipeVariants';
-import { useRetryStoryAI } from './hooks/useRetryStoryAI';
 
 export function ChatArea() {
     const {
@@ -107,23 +103,6 @@ export function ChatArea() {
     const [forcedAIs, setForcedAIs] = useState<('enemy' | 'neutral' | 'ally')[]>([]);
     const [showScrollFab, setShowScrollFab] = useState(false);
     const [showPCCreator, setShowPCCreator] = useState(false);
-    const [swipeSheetMessageId, setSwipeSheetMessageId] = useState<string | null>(null);
-
-    // Swipe Generation v1: the hook must be keyed on the PENDING message id
-    // (the latest GM message with a swipe set), NOT on whether the sheet is
-    // open. The bubble's touch-swipe gestures call prevSwipe/generateSwipe
-    // even when the sheet is closed. The sheet reads from the same hook via props.
-    const pendingMessageId = useMemo(() => {
-        for (let i = messages.length - 1; i >= 0; i--) {
-            const m = messages[i];
-            if (m.role === 'assistant' && m.pendingCommit && m.swipeSet?.length) return m.id;
-            if (m.role === 'system' && m.name === 'scene-marker') break;
-        }
-        return null;
-    }, [messages]);
-
-    const swipe = useSwipeVariants(pendingMessageId);
-    const retry = useRetryStoryAI();
 
     const [streamingStats, setStreamingStatsLocal] = useState<StreamingStats | null>(null);
     const streamStartRef = useRef<number>(0);
@@ -167,19 +146,6 @@ export function ChatArea() {
         const llmInput = textToUse;
 
         try {
-            // Swipe Generation v1: commit any pending swipe turn BEFORE the next
-            // turn's gatherContext (handlePostTurn clears agencyDigest/arcDigest
-            // and appends the archive scene the next payload builds against).
-            // Ordering: commit is awaited before runTurn starts.
-            await commitPendingTurn();
-            // Smart Retry v1: clear stale `retryable` on any old bubble before the
-            // new turn starts. The snapshot was just nulled by commitPendingTurn's
-            // no-pending-message branch, so any prior Retry button is now dead —
-            // hide it so the user doesn't tap a button that can't resolve.
-            const staleRetry = findRetryableMessage(useAppStore.getState().messages);
-            if (staleRetry) {
-                useAppStore.getState().updateMessage(staleRetry.id, { retryable: undefined, precontext: undefined });
-            }
             await runTurn({
             input: llmInput,
             displayInput: textToUse,
@@ -457,16 +423,6 @@ export function ChatArea() {
                         showReasoning={settings.showReasoning ?? false}
                         debugMode={settings.debugMode ?? false}
                         toolResult={msg.tool_calls?.[0] ? toolResultById.get(msg.tool_calls[0].id) : undefined}
-                        onOpenSwipeSheet={(id) => setSwipeSheetMessageId(id)}
-                        onSwipeNavigate={(_id, direction) => {
-                            // Touch-swipe on the bubble navigates EXISTING filled slots.
-                            // New variants are generated only via the Generate button in the
-                            // sheet (with optional guidance), not by swiping past the end.
-                            hapticLight();
-                            if (direction === 'prev') swipe.prevSwipe();
-                            else swipe.nextSwipe();
-                        }}
-                        onRetry={(id) => retry.retryStoryAI(id)}
                     />
                 ))}
 
@@ -547,18 +503,6 @@ export function ChatArea() {
                     onCancel={() => setShowPCCreator(false)}
                 />
             )}
-
-            <RegenerateSheet
-                messageId={swipeSheetMessageId}
-                onClose={() => setSwipeSheetMessageId(null)}
-                swipeGenLoading={swipe.swipeGenLoading}
-                generateSwipe={swipe.generateSwipe}
-                nextSwipe={swipe.nextSwipe}
-                prevSwipe={swipe.prevSwipe}
-                getSessionOffset={swipe.getSessionOffset}
-                setSessionOffset={swipe.setSessionOffset}
-                getSwipeTemperature={swipe.getSwipeTemperature}
-            />
         </div>
     );
 }

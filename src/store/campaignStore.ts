@@ -57,26 +57,15 @@ export async function deleteCampaign(id: string): Promise<void> {
 // the WebView renderer's heap, pushing it toward the OOM ceiling. The live copy
 // in the store keeps its payloads, so the viewer still works for the current
 // session; only the persisted/reloaded copy is slimmed.
-//
-// Also strips Smart Retry v1 ephemeral fields (`retryable`, `precontext`):
-// `retryable` is a transient UI state that must NOT survive reload (a crashed
-// mid-retry turn just doesn't have a Retry button anymore — user resends, per
-// the "crash = gone" rule). `precontext.capturedPayloadRef` is a string key
-// into the in-memory `pendingSnapshot` singleton; on reload it's a dangling
-// key with no resolution, so there's no value in persisting it either. Both
-// are stripped here on save AND load — the load-side strip gives free cleanup
-// of any pre-fix saves that slipped to disk. `swipeSet`/`pendingCommit` are
-// deliberately NOT stripped — they are crash-safety markers that must persist.
 function stripEphemeralFields(state: CampaignState): CampaignState {
     const messages = state.messages;
     if (!Array.isArray(messages)) return state;
     const needsDebugStrip = messages.some(m => m.debugPayload !== undefined);
-    const needsRetryStrip = messages.some(m => m.retryable !== undefined || m.precontext !== undefined);
-    if (!needsDebugStrip && !needsRetryStrip) return state;
+    if (!needsDebugStrip) return state;
     return {
         ...state,
         messages: messages.map(m => {
-            const { debugPayload: _drop, retryable: _r, precontext: _pc, ...rest } = m;
+            const { debugPayload: _drop, ...rest } = m;
             return rest as ChatMessage;
         }),
     };

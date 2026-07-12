@@ -28,7 +28,6 @@ import {
     loadCampaignState, getLoreChunks, getNPCLedger, loadArchiveIndex,
   loadChapters, loadSemanticFacts, loadDivergenceRegister,
 } from './store/campaignStore';
-import { reconcilePendingCommitOnLaunch } from './services/turn';
 
 const DEFAULT_CONDENSER = { condensedUpToIndex: -1 };
 
@@ -166,14 +165,6 @@ export default function App() {
         divergenceRegister: divReg ?? { entries: [], chapterToggles: {}, categoryToggles: {}, lastUpdatedSceneId: '', lastUpdatedAt: 0, version: 2 as const },
       });
       setCampaignLoaded(true);
-
-      // Swipe Generation v1: crash-safety reconciliation. If the app died
-      // mid-browse with a pendingCommit marker, fire the deferred handlePostTurn
-      // with the then-visible variant's text, then clear the marker. WebView
-      // renderer death is a known real-world event; without this the chat and
-      // archive silently diverge. Runs after state hydration so the store is
-      // ready. Fire-and-forget — the user shouldn't wait on a toast.
-      reconcilePendingCommitOnLaunch().catch(e => console.warn('[Reconcile] failed:', e));
     })();
 
     return () => { cancelled = true; };

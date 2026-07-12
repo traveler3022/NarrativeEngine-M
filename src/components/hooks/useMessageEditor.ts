@@ -3,7 +3,6 @@ import type { ChatMessage } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
 import { api } from '../../services/apiClient';
 import { toast } from '../Toast';
-import { clearPendingTurnSnapshot, findPendingCommitMessage, findRetryableMessage, getActiveSnapshotId, getCachedSwipePayload, patchCachedUserPrompt } from '../../services/turn';
 
 interface UseMessageEditorDeps {
     messages: ChatMessage[];
@@ -97,41 +96,6 @@ export function useMessageEditor(deps: UseMessageEditorDeps) {
         const deps = depsRef.current;
         const sceneId = findSceneIdForMessage(deps.messages, id);
 
-        // Swipe Generation v1: if we're deleting the latest GM message (the one
-        // carrying the pendingCommit), discard the swipe set AND the pendingCommit
-        // marker. Nothing commits — the turn is thrown away. findSceneIdForMessage
-        // returns null for a pending turn (no scene-marker exists yet), so the
-        // archive-skip below already handles the "no archive to delete" case.
-        const deletingPending = findPendingCommitMessage(deps.messages)?.id === id;
-        if (deletingPending) {
-            clearPendingTurnSnapshot();
-        }
-
-        // Smart Retry v1: if we're deleting a retryable bubble (story AI was
-        // aborted/failed), clear the in-memory snapshot — it's the only consumer
-        // of the cached precontext. Also handles the case where the deleted
-        // message is a user msg whose paired assistant carries `precontext` —
-        // per the orphan rule, deleting the user prompt orphans the precontext.
-        const deletingRetryable = findRetryableMessage(deps.messages)?.id === id;
-        if (deletingRetryable) {
-            clearPendingTurnSnapshot();
-        }
-        if (!deletingRetryable) {
-            // Maybe the deleted message is a user msg whose NEXT assistant carries
-            // precontext (orphan cleanup per the rule: precontext without its
-            // triggering user prompt is meaningless).
-            const idx = deps.messages.findIndex(m => m.id === id);
-            const nextAssistant = idx !== -1
-                ? deps.messages.slice(idx + 1).find(m => m.role === 'assistant')
-                : undefined;
-            if (nextAssistant?.precontext || nextAssistant?.retryable) {
-                if (nextAssistant.precontext?.capturedPayloadRef === getActiveSnapshotId()) {
-                    clearPendingTurnSnapshot();
-                }
-                useAppStore.getState().updateMessage(nextAssistant.id, { retryable: undefined, precontext: undefined });
-            }
-        }
-
         // Remove the GM/user bubble + its trailing scene-marker from chat.
         const idx = deps.messages.findIndex(m => m.id === id);
         const markerId = idx !== -1
@@ -140,15 +104,7 @@ export function useMessageEditor(deps: UseMessageEditorDeps) {
         useAppStore.getState().deleteMessage(id);
         if (markerId) useAppStore.getState().deleteMessage(markerId);
 
-        // A pending turn has no scene in the archive (handlePostTurn was deferred),
-        // so there's nothing to delete from IndexedDB. Bail early.
-        if (deletingPending || !sceneId || !deps.activeCampaignId) {
-            if (deletingPending) return;
-            if (!sceneId || !deps.activeCampaignId) return;
-        }
-        // A retryable bubble also has no archived scene (story AI never finished,
-        // handlePostTurn never ran). Bail the same way.
-        if (deletingRetryable) return;
+        if (!sceneId || !deps.activeCampaignId) return;
         try {
             await api.backup.create(deps.activeCampaignId, { trigger: 'pre-scene-delete', isAuto: true }).catch(() => {});
             await api.archive.deleteScene(deps.activeCampaignId, sceneId);
@@ -186,39 +142,7 @@ export function useMessageEditor(deps: UseMessageEditorDeps) {
         if (!msg) return;
 
         if (msg.role === 'user') {
-            // Smart Retry v1: soft-edit path. If the NEXT assistant message
-            // carries `retryable` (story AI was aborted/failed, precontext is
-            // cached), patch the cached payload's user-msg slot in place —
-            // preserving engine appendages — and update the live user message
-            // content. The user then taps Retry to regenerate with the new
-            // prompt + the cached precontext (no regather, no archive rollback).
-            // If no cached precontext exists, fall through to the hard-rewind
-            // path (today's behavior).
-            const idx = deps.messages.findIndex(m => m.id === id);
-            const nextAssistant = idx !== -1
-                ? deps.messages.slice(idx + 1).find(m => m.role === 'assistant')
-                : undefined;
-            const canSoftEdit = !!(nextAssistant?.retryable && getCachedSwipePayload());
-            if (canSoftEdit) {
-                // Patch the cached payload in place (preserves engine tags).
-                patchCachedUserPrompt(newContent.trim());
-                // Update the live user message content so the chat reflects the edit.
-                useAppStore.getState().updateMessageContent(msg.id, newContent.trim());
-                // Wipe any stale swipeSet on the assistant bubble (prior variants
-                // answered the old prompt). Keep retryable so the Retry button shows.
-                if (nextAssistant!.swipeSet) {
-                    useAppStore.getState().updateMessage(nextAssistant!.id, {
-                        swipeSet: undefined,
-                        swipeActiveIndex: undefined,
-                        content: '',
-                        displayContent: '',
-                        reasoning_content: undefined,
-                    });
-                }
-                setEditingMessageId(null);
-                return;
-            }
-            // Hard-rewind path (today's behavior): archive rollback + delete + resend.
+            // Hard-rewind path: archive rollback + delete + resend.
             rollbackArchiveFrom(msg.timestamp);
             deps.deleteMessagesFrom(msg.id);
             setEditingMessageId(null);
@@ -226,31 +150,7 @@ export function useMessageEditor(deps: UseMessageEditorDeps) {
                 deps.onAfterEdit(newContent.trim());
             }, 50);
         } else {
-            // Swipe Generation v1: if this is a pending swipe message, the edit
-            // applies to the visible variant ONLY. Update the variant's text in
-            // the swipeSet so commit reads the edited text. findSceneIdForMessage
-            // returns null for a pending turn (no scene-marker exists yet), so
-            // syncEditedSceneText is already a no-op — no archive to update.
-            if (msg.swipeSet && msg.pendingCommit) {
-                const activeIdx = msg.swipeActiveIndex ?? 0;
-                const updatedSwipeSet = msg.swipeSet.map((v, i) =>
-                    i === activeIdx ? { ...v, text: newContent.trim() } : v
-                );
-                const store = useAppStore.getState();
-                const idx = store.messages.findIndex(m => m.id === id);
-                if (idx !== -1) {
-                    const updated = [...store.messages];
-                    updated[idx] = {
-                        ...updated[idx],
-                        content: newContent.trim(),
-                        displayContent: newContent.trim(),
-                        swipeSet: updatedSwipeSet,
-                    };
-                    useAppStore.setState({ messages: updated });
-                }
-            } else {
-                useAppStore.getState().updateMessageContent(msg.id, newContent.trim());
-            }
+            useAppStore.getState().updateMessageContent(msg.id, newContent.trim());
             setEditingMessageId(null);
             syncEditedSceneText(msg.id, newContent.trim());
         }
@@ -263,29 +163,6 @@ export function useMessageEditor(deps: UseMessageEditorDeps) {
         if (idx === -1) return;
         const prevMsgs = msgs.slice(0, idx);
         const lastUser = [...prevMsgs].reverse().find(m => m.role === 'user');
-
-        // Swipe Generation v1: a historical rewind that rolls back past the
-        // pending GM message discards the swipe set AND the pendingCommit.
-        // Nothing commits. The pending message is in `msgs` after `idx` (or IS
-        // the message at `idx` if the user is regenerating the GM bubble itself).
-        const pending = findPendingCommitMessage(msgs);
-        if (pending) {
-            const pendingIdx = msgs.findIndex(m => m.id === pending.id);
-            if (pendingIdx >= idx) {
-                // The pending turn is being rolled back — discard it without commit.
-                clearPendingTurnSnapshot();
-            }
-        }
-        // Smart Retry v1: a retryable bubble being rolled back also discards the
-        // cached precontext (the snapshot was captured pre-story-AI for retry).
-        // Same leak-prevention as the pending path above.
-        const retryable = findRetryableMessage(msgs);
-        if (retryable) {
-            const retryableIdx = msgs.findIndex(m => m.id === retryable.id);
-            if (retryableIdx >= idx) {
-                clearPendingTurnSnapshot();
-            }
-        }
 
         if (lastUser) {
             rollbackArchiveFrom(lastUser.timestamp);
