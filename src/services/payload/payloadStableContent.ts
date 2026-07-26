@@ -3,6 +3,43 @@ import { countTokens } from '../infrastructure';
 import { renderRegisterForPayload } from '../campaign-state';
 import type { BudgetMap } from './payloadBudgeter';
 
+// ── Thinking-mode detector (WO-B §4.2) ────────────────────────────────────────
+// Replaces the previous brittle regex over model names
+// (`/deepseek-r|qwq|qwen.*think|r1/i`) — every frontier model in 2026 (GPT-5.x,
+// Claude 4.x, Gemini 2.5, DeepSeek-R) supports thinking via a request param, so
+// the user's per-provider `thinkingEffort` dropdown is the single source of
+// truth. Exported so payloadBuilder.ts can gate the per-turn CoT invocation
+// line on the same test without re-implementing the resolution.
+export function isThinkingEnabled(settings: AppSettings): boolean {
+    const activePreset = settings.presets?.find((p) => p.id === settings.activePresetId);
+    const storyProviderId: string | undefined = activePreset?.storyAIProviderId;
+    const storyProvider = storyProviderId ? settings.providers?.find((p) => p.id === storyProviderId) : undefined;
+    const effort = storyProvider?.thinkingEffort ?? activePreset?.storyAI?.thinkingEffort;
+    return effort !== undefined && effort !== 'off';
+}
+
+// ── WRITER_COT (WO-B §4.3) ────────────────────────────────────────────────────
+// [FABLE-AUTHORED] — block labels verified against mobile's payloadWorldContext:
+//   [ACTIVE NPC CONTEXT], [FACTS KNOWN TO ON-STAGE CHARACTERS], [DICE OUTCOMES].
+// Mobile has no signature kit and no [LOCATION] block (WO §2 — separate ports),
+// so Step 4's signature-kit sentence and [LOCATION] sentence are dropped from
+// the mainApp version; the [DICE OUTCOMES] clause stays (mobile has engine rolls).
+// [DIRECTOR BRIEF] does not exist until WO-A lands; the conditional "if present"
+// wording is already forward-compatible.
+//
+// This constant goes in `stableParts` (ABOVE the prefix-cache boundary) and must
+// be byte-identical across turns. Do NOT interpolate anything per-turn into this
+// string. The per-turn invocation line (`writerCotNudge`) is a separate small
+// volatile nudge in payloadBuilder.ts.
+const WRITER_COT = `[WRITER REASONING FRAMEWORK]
+Work through these steps in your internal reasoning before writing the narrative. Never show the steps in the narrative output. Always produce the full narrative response after your reasoning ends.
+Step 1 — Deconstruct: break the player's input into discrete intents. Judge each against the rules and MC boundaries. Impossible or implausible demands are narrated as attempts with consequences, not successes.
+Step 2 - Director Brief: if a [DIRECTOR BRIEF] block is present, honor its MANDATORY world-law or fair-adjudication corrections and any compatible SUGGESTION. It does not schedule drama or dictate every character's reaction.
+Step 3 - On-stage minds: first state the player's visible action and result without moral interpretation. For each character in [ACTIVE NPC CONTEXT], consider their current goal and emotional state, what they know and do not know (check [FACTS KNOWN TO ON-STAGE CHARACTERS]), their disposition and competence, and their relationship to the player. Then choose a proportionate response: speech, action, observation, help, challenge, humour, silence, withdrawal, or a shared crowd response. Characters may converge when the same event gives them the same reason to react; they may differ when their perspectives differ. Do not force either. A boundary produces push-back only when the concrete action actually crosses it; never infer a larger injury, hostile intent, or moral failing merely to make drama.
+Step 4 — Engine truth: honor [DICE OUTCOMES] exactly as resolved — never soften failures or upgrade successes.
+Step 5 - Beat map: draft 5-8 beats. Include every MANDATORY directive from Step 2 and the reactions that actually follow from Step 3. Give the player a playable opening - a response, consequence, piece of information, offer, challenge, or changed situation - rather than forcing a twist, argument, or lesson.
+Step 6 - Final audit: the player's action drives the scene; reactions are grounded in what each character observed and values; no unearned NPC chorus or retroactive moralisation; no cliches or purple prose. Then write the scene.`;
+
 export interface StableContentResult {
     stableContent: string;
     stableTokens: number;
@@ -52,12 +89,13 @@ export function buildStablePreamble(opts: {
     if (context.starterActive && context.starter) stableParts.push(context.starter);
     if (context.continuePromptActive && context.continuePrompt) stableParts.push(context.continuePrompt);
 
-    const activePreset = settings.presets.find(p => p.id === settings.activePresetId);
-    const storyProvider = activePreset ? settings.providers.find(p => p.id === activePreset.storyAIProviderId) : undefined;
-    const modelName = storyProvider?.modelName ?? '';
-    const isReasoningModel = /deepseek-r|qwq|qwen.*think|r1/i.test(modelName);
-    if (isReasoningModel) {
-        stableParts.push("IMPORTANT: If you use a 'thinking' or 'reasoning' block (<think>...</think>), you MUST still provide the full narrative response AFTER the closing tag. Never end a turn with only a thinking block.");
+    // Only inject when the active story provider has thinking mode enabled (any
+    // effort level except 'off'). The `thinkingEffort` dropdown on the provider
+    // is the single source of truth — model-name guessing is gone (WO-B §4.1).
+    // `isThinkingEnabled` does its own preset+provider resolution.
+    if (isThinkingEnabled(settings)) {
+        stableParts.push("IMPORTANT: If you use a 'thinking' or 'reasoning' block (or any internal reasoning), you MUST still provide the full narrative response AFTER it ends. Never end a turn with only reasoning.");
+        stableParts.push(WRITER_COT);
     }
 
     stableParts.push(
