@@ -1,4 +1,4 @@
-name: Debug Build
+name: Debug APK
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  build-apk:
     runs-on: ubuntu-latest
 
     steps:
@@ -15,21 +15,33 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+        with:
+          api-level: 34
+          build-tools: 34.0.0
 
       - name: Install dependencies
-        run: npm install --ignore-scripts
+        run: npm ci
 
-      - name: Build engine package
-        run: cd packages/engine && npm run build
+      - name: Build web assets and sync Capacitor
+        run: npm run build:apk
 
-      - name: Build (TypeScript + Vite)
-        run: npm run build
+      - name: Build Debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
 
-      - name: Upload build artifacts
-        if: success()
+      - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: dist
-          path: dist/
+          name: debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
