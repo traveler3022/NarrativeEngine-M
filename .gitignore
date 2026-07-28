@@ -60,3 +60,4 @@ coverage/
 *.tsbuildinfo
 Thumbs.db
 
+package-lock.json
