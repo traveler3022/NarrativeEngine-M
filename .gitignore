@@ -11,6 +11,9 @@ node_modules
 dist
 dist-ssr
 data
+!src/data/nameBank.json
+!src/data/nameBlocklist.json
+!src/data/json.d.ts
 *.local
 
 # Editor directories and files
