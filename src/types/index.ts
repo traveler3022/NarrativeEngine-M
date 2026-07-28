@@ -773,6 +773,7 @@ export type NPCEntry = {
     recalledByEmbedding?: boolean;
     lastUpdateScene?: number;
     isPC?: boolean;
+    archived?: boolean;
     combatTier?: 'minion' | 'grunt' | 'elite' | 'boss' | 'legendary';
     archetype?: 'bulwark' | 'assassin' | 'caster' | 'skirmisher' | 'brute';
     stats?: {
