@@ -12,33 +12,26 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-
       - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v2
+        uses: android-actions/setup-android@v3
         with:
           api-level: 34
           build-tools: 34.0.0
-
       - name: Install dependencies
         run: npm install --ignore-scripts
-
       - name: Build web assets and sync Capacitor
         run: npm run build:apk
-
       - name: Build Debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
-
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
